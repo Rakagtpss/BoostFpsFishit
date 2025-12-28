@@ -1,260 +1,136 @@
---[[ 
- FISH IT ULTRA BOOSTER SAFE & MODULAR
- AutoFishing & FastReel scan RemoteEvent otomatis
- Delta Executor Compatible
-]]
+-- FPS Booster & CPU Optimizer with Modern UI & Toggle
+-- Place in StarterPlayerScripts or Run via Executor
 
--- SERVICES
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Stats = game:GetService("Stats")
 local Lighting = game:GetService("Lighting")
-local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 
-local Player = Players.LocalPlayer
+local player = Players.LocalPlayer
+local pGui = player:WaitForChild("PlayerGui")
 
--- =========================
--- STATE
--- =========================
-local State = {
-    FPSBoost = false,
-    PingBoost = false,
-    Disable3D = false,
-    AutoLowGfx = false,
-    UltraExtreme = false,
-    UIHidden = false,
-    AutoFishing = false,
-    FastReel = false,
-    DelayBait = 0.2,
-    DelayBobber = 0.1
-}
+-- Variables to store original settings
+local boosterEnabled = false
+local originalSettings = {}
 
--- =========================
--- CREATE UI SAFE
--- =========================
-local oldGui = Player.PlayerGui:FindFirstChild("FishItUltraUI")
-if oldGui then oldGui:Destroy() end
-
-local gui = Instance.new("ScreenGui")
-gui.Name = "FishItUltraUI"
-gui.ResetOnSpawn = false
-gui.Parent = Player:WaitForChild("PlayerGui")
-
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.fromOffset(220,320)
-main.Position = UDim2.fromScale(0.7,0.05)
-main.BackgroundColor3 = Color3.fromRGB(22,28,38)
-main.BorderSizePixel = 0
-main.Active = true
-main.Draggable = true
-Instance.new("UICorner", main).CornerRadius = UDim.new(0,10)
-
--- RESIZE HANDLE
-local resize = Instance.new("Frame", main)
-resize.Size = UDim2.fromOffset(20,20)
-resize.Position = UDim2.new(1,-20,1,-20)
-resize.BackgroundColor3 = Color3.fromRGB(50,80,120)
-Instance.new("UICorner", resize).CornerRadius = UDim.new(0,5)
-resize.Active = true
-resize.Draggable = true
-resize.MouseMoved:Connect(function()
-    local mouse = Player:GetMouse()
-    main.Size = UDim2.fromOffset(math.max(150,mouse.X-main.AbsolutePosition.X), math.max(200,mouse.Y-main.AbsolutePosition.Y))
-end)
-
--- Title
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1,0,0.12,0)
-title.BackgroundTransparency = 1
-title.Text = "🎣 FISH IT ULTRA"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 13
-title.TextColor3 = Color3.fromRGB(200,230,255)
-
--- =========================
--- BUTTON CREATOR
--- =========================
-local function Button(txt,y)
-    local b = Instance.new("TextButton", main)
-    b.Size = UDim2.new(0.85,0,0.08,0)
-    b.Position = UDim2.new(0.075,0,y,0)
-    b.BackgroundColor3 = Color3.fromRGB(28,38,55)
-    b.TextColor3 = Color3.fromRGB(220,240,255)
-    b.Text = txt
-    b.Font = Enum.Font.Gotham
-    b.TextSize = 12
-    b.BorderSizePixel = 0
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
-    return b
-end
-
--- =========================
--- BUTTONS TERPISAH
--- =========================
-local btnFPS      = Button("FPS BOOST: OFF",0.15)
-local btnPing     = Button("PING BOOST: OFF",0.25)
-local btn3D       = Button("DISABLE 3D: OFF",0.35)
-local btnLow      = Button("LOW GRAPHIC: OFF",0.45)
-local btnUltra    = Button("ULTRA EXTREME: OFF",0.55)
-local btnHide     = Button("HIDE UI: OFF",0.65)
-local btnAutoFish = Button("AUTO FISH: OFF",0.75)
-local btnFastReel = Button("FAST REEL: OFF",0.85)
-
--- =========================
--- FLOATING FPS / PING
--- =========================
-local miniGui = Instance.new("ScreenGui", Player.PlayerGui)
-local miniFrame = Instance.new("Frame", miniGui)
-miniFrame.Size = UDim2.fromOffset(100,35)
-miniFrame.Position = UDim2.fromScale(0.8,0.02)
-miniFrame.BackgroundColor3 = Color3.fromRGB(12,22,35)
-miniFrame.BorderSizePixel = 0
-miniFrame.Active = true
-miniFrame.Draggable = true
-Instance.new("UICorner", miniFrame).CornerRadius = UDim.new(0,6)
-local miniLabel = Instance.new("TextLabel", miniFrame)
-miniLabel.Size = UDim2.new(1,0,1,0)
-miniLabel.BackgroundTransparency = 1
-miniLabel.Font = Enum.Font.GothamBold
-miniLabel.TextSize = 12
-miniLabel.TextColor3 = Color3.fromRGB(200,220,255)
-miniLabel.Text = "FPS: -- | PING: --"
-
--- =========================
--- BOOSTER FUNCTIONS
--- =========================
-local function FPSBoost(on)
-    for _,v in ipairs(Lighting:GetChildren()) do
-        if v:IsA("PostEffect") then pcall(function() v.Enabled = not on end) end
-    end
-    pcall(function() Lighting.GlobalShadows = not on end)
-    pcall(function() Lighting.FogEnd = on and 9e9 or 100000 end)
-end
-
-local function PingBoost(on)
-    pcall(function() settings().Network.IncomingReplicationLag = on and 0 or 0.1 end)
-end
-
-local function Disable3D(on)
-    pcall(function() RunService:Set3dRenderingEnabled(not on) end)
-end
-
-local function AutoLowGraphic()
-    pcall(function()
-        for _,v in ipairs(Workspace:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.Material = Enum.Material.Plastic
-                v.Reflectance = 0
+-- 1. FUNGSI OPTIMASI
+local function toggleBoost(state)
+    boosterEnabled = state
+    
+    if state then
+        -- Simpan settings lama & terapkan optimasi
+        Lighting.GlobalShadows = false
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("PostProcessEffect") or v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("SunRaysEffect") then
+                v.Enabled = false
+            elseif v:IsA("BasePart") then
                 v.CastShadow = false
-            elseif v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 1
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = false end
-        end
-    end)
-end
-
--- =========================
--- AUTO FIND RemoteEvent
--- =========================
-local fishingEvent = nil
-local function findFishingRemote()
-    for _,v in pairs(game:GetDescendants()) do
-        if v:IsA("RemoteEvent") and v.Name:lower():find("reel") then
-            return v
-        end
-    end
-    return nil
-end
-
--- =========================
--- AUTO FISHING / FAST REEL LOOP
--- =========================
-RunService.Heartbeat:Connect(function()
-    if State.AutoLowGfx then AutoLowGraphic() end
-
-    -- Auto find RemoteEvent jika belum ditemukan
-    if not fishingEvent then
-        fishingEvent = findFishingRemote()
-        if fishingEvent then
-            print("RemoteEvent Fish It ditemukan:", fishingEvent:GetFullName())
-        end
-    end
-
-    -- AUTO FISHING
-    if State.AutoFishing and fishingEvent then
-        pcall(function()
-            fishingEvent:FireServer() -- bait
-            task.wait(State.DelayBait)
-            if State.FastReel then
-                fishingEvent:FireServer()
-                task.wait(State.DelayBobber/2)
-            else
-                task.wait(State.DelayBobber)
-                fishingEvent:FireServer()
             end
-        end)
+        end
+    else
+        -- Kembalikan ke normal (Sederhana)
+        Lighting.GlobalShadows = true
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic
+        
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("PostProcessEffect") or v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("SunRaysEffect") then
+                v.Enabled = true
+            elseif v:IsA("BasePart") then
+                v.CastShadow = true
+            end
+        end
+    end
+end
+
+-- 2. MEMBUAT MODERN UI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ModernBoosterUI"
+screenGui.Parent = pGui
+screenGui.ResetOnSpawn = false
+
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 180, 0, 110)
+mainFrame.Position = UDim2.new(0, 20, 0, 20)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 10)
+uiCorner.Parent = mainFrame
+
+-- Stats Labels (FPS & PING)
+local statsLabel = Instance.new("TextLabel")
+statsLabel.Size = UDim2.new(1, -20, 0, 40)
+statsLabel.Position = UDim2.new(0, 10, 0, 10)
+statsLabel.BackgroundTransparency = 1
+statsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+statsLabel.Font = Enum.Font.GothamMedium
+statsLabel.TextSize = 14
+statsLabel.TextXAlignment = Enum.TextXAlignment.Left
+statsLabel.Text = "FPS: --\nPing: -- ms"
+statsLabel.Parent = mainFrame
+
+-- Toggle Button
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(1, -20, 0, 35)
+toggleBtn.Position = UDim2.new(0, 10, 0, 60)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Red (OFF)
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 12
+toggleBtn.Text = "BOOSTER: OFF"
+toggleBtn.AutoButtonColor = true
+toggleBtn.Parent = mainFrame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 8)
+btnCorner.Parent = toggleBtn
+
+-- 3. INTERAKSI & UPDATE LOOP
+toggleBtn.MouseButton1Click:Connect(function()
+    boosterEnabled = not boosterEnabled
+    if boosterEnabled then
+        toggleBtn.Text = "BOOSTER: ON"
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 100) -- Green
+        toggleBoost(true)
+    else
+        toggleBtn.Text = "BOOSTER: OFF"
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Red
+        toggleBoost(false)
     end
 end)
 
--- =========================
--- MINI FLOATING COUNTER
--- =========================
-local frames,last = 0,tick()
-RunService.RenderStepped:Connect(function()
-    frames += 1
-    if tick()-last >= 1 then
-        local fps = frames
-        frames = 0
-        last = tick()
-        local ping = 0
-        pcall(function() ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()) end)
-        miniLabel.Text = "FPS:"..fps.." | PING:"..ping
+-- Real-time Loop
+RunService.RenderStepped:Connect(function(dt)
+    local fps = math.floor(1 / dt)
+    local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+    statsLabel.Text = string.format("FPS: %d\nPing: %d ms", fps, ping)
+end)
+
+-- Dragging Functionality (Bisa digeser di layar)
+local dragging, dragInput, dragStart, startPos
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
     end
 end)
 
--- =========================
--- BUTTON EVENTS TERPISAH
--- =========================
-btnFPS.MouseButton1Click:Connect(function()
-    State.FPSBoost = not State.FPSBoost
-    FPSBoost(State.FPSBoost)
-    btnFPS.Text = "FPS BOOST: "..(State.FPSBoost and "ON" or "OFF")
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
 end)
 
-btnPing.MouseButton1Click:Connect(function()
-    State.PingBoost = not State.PingBoost
-    PingBoost(State.PingBoost)
-    btnPing.Text = "PING BOOST: "..(State.PingBoost and "ON" or "OFF")
-end)
-
-btn3D.MouseButton1Click:Connect(function()
-    State.Disable3D = not State.Disable3D
-    Disable3D(State.Disable3D)
-    btn3D.Text = "DISABLE 3D: "..(State.Disable3D and "ON" or "OFF")
-end)
-
-btnLow.MouseButton1Click:Connect(function()
-    State.AutoLowGfx = not State.AutoLowGfx
-    btnLow.Text = "LOW GRAPHIC: "..(State.AutoLowGfx and "ON" or "OFF")
-end)
-
-btnUltra.MouseButton1Click:Connect(function()
-    State.UltraExtreme = not State.UltraExtreme
-    btnUltra.Text = "ULTRA EXTREME: "..(State.UltraExtreme and "ON" or "OFF")
-end)
-
-btnHide.MouseButton1Click:Connect(function()
-    State.UIHidden = not State.UIHidden
-    main.Visible = not State.UIHidden
-    btnHide.Text = "HIDE UI: "..(State.UIHidden and "ON" or "OFF")
-end)
-
-btnAutoFish.MouseButton1Click:Connect(function()
-    State.AutoFishing = not State.AutoFishing
-    btnAutoFish.Text = "AUTO FISH: "..(State.AutoFishing and "ON" or "OFF")
-end)
-
-btnFastReel.MouseButton1Click:Connect(function()
-    State.FastReel = not State.FastReel
-    btnFastReel.Text = "FAST REEL: "..(State.FastReel and "ON" or "OFF")
+mainFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
 end)
