@@ -1,3 +1,8 @@
+--[[ 
+    Cloud Phone FPS & CPU Booster
+    Classic UI + Toggle Buttons + Status Lamp
+]]
+
 --------------------------------------------------
 -- SERVICES
 --------------------------------------------------
@@ -10,9 +15,8 @@ local Camera = workspace.CurrentCamera
 -- SCREEN GUI
 --------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "RakaGanteng"
+ScreenGui.Name = "CloudBoosterUI"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 pcall(function()
     ScreenGui.Parent = CoreGui
 end)
@@ -22,127 +26,35 @@ end)
 --------------------------------------------------
 local Main = Instance.new("Frame")
 Main.Parent = ScreenGui
-Main.Size = UDim2.fromOffset(240, 275)
-Main.Position = UDim2.new(0, 15, 0.35, 0)
-Main.BackgroundColor3 = Color3.fromRGB(15, 18, 25)
+Main.Size = UDim2.fromOffset(240, 220)
+Main.Position = UDim2.new(0, 20, 0.3, 0)
+Main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Main.Active = true
 Main.Draggable = true
-Main.ZIndex = 1
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
---------------------------------------------------
--- TITLE
---------------------------------------------------
 local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, -20, 0, 28)
-Title.Position = UDim2.fromOffset(10, 6)
+Title.Size = UDim2.new(1, 0, 0, 28)
 Title.BackgroundTransparency = 1
-Title.Text = "Fish It BOOST"
-Title.TextColor3 = Color3.fromRGB(0, 200, 255)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.ZIndex = 2
-
---------------------------------------------------
--- FPS TEXT
---------------------------------------------------
-local FPSText = Instance.new("TextLabel", Main)
-FPSText.Size = UDim2.new(1, -20, 0, 24)
-FPSText.Position = UDim2.fromOffset(10, 38)
-FPSText.BackgroundTransparency = 1
-FPSText.Text = "FPS : 0"
-FPSText.TextColor3 = Color3.fromRGB(0, 255, 160)
-FPSText.Font = Enum.Font.GothamBold
-FPSText.TextSize = 14
-FPSText.TextXAlignment = Enum.TextXAlignment.Left
-FPSText.ZIndex = 2
-
---------------------------------------------------
--- BUTTON HELPER
---------------------------------------------------
-local function setupButton(btn)
-    btn.Active = true
-    btn.Selectable = true
-    btn.AutoButtonColor = true
-    btn.ZIndex = 3
-end
-
---------------------------------------------------
--- BOOST BUTTON
---------------------------------------------------
-local BoostBtn = Instance.new("TextButton", Main)
-BoostBtn.Size = UDim2.new(1, -20, 0, 34)
-BoostBtn.Position = UDim2.fromOffset(10, 65)
-BoostBtn.BackgroundColor3 = Color3.fromRGB(40, 200, 120)
-BoostBtn.Text = "BOOST : ON"
-BoostBtn.Font = Enum.Font.GothamBold
-BoostBtn.TextSize = 14
-BoostBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", BoostBtn)
-setupButton(BoostBtn)
-
---------------------------------------------------
--- SAFE 3D BUTTON
---------------------------------------------------
-local RenderBtn = Instance.new("TextButton", Main)
-RenderBtn.Size = UDim2.new(1, -20, 0, 34)
-RenderBtn.Position = UDim2.fromOffset(10, 105)
-RenderBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-RenderBtn.Text = "3D RENDER : ON"
-RenderBtn.Font = Enum.Font.GothamBold
-RenderBtn.TextSize = 14
-RenderBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", RenderBtn)
-setupButton(RenderBtn)
-
---------------------------------------------------
--- FPS LOCK LABEL
---------------------------------------------------
-local LockLabel = Instance.new("TextLabel", Main)
-LockLabel.Size = UDim2.new(1, -20, 0, 22)
-LockLabel.Position = UDim2.fromOffset(10, 145)
-LockLabel.BackgroundTransparency = 1
-LockLabel.Text = "FPS LOCK"
-LockLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-LockLabel.Font = Enum.Font.GothamBold
-LockLabel.TextSize = 13
-LockLabel.TextXAlignment = Enum.TextXAlignment.Left
-LockLabel.ZIndex = 2
-
---------------------------------------------------
--- FPS LOCK BUTTONS
---------------------------------------------------
-local function makeLockBtn(text, x, y, cap)
-    local btn = Instance.new("TextButton", Main)
-    btn.Size = UDim2.fromOffset(45, 30)
-    btn.Position = UDim2.fromOffset(x, y)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    btn.Text = text
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 13
-    btn.TextColor3 = Color3.new(1,1,1)
-    Instance.new("UICorner", btn)
-    setupButton(btn)
-
-    btn.MouseButton1Click:Connect(function()
-        if setfpscap then
-            setfpscap(cap)
-        end
-    end)
-end
-
-makeLockBtn("30", 10, 170, 30)
-makeLockBtn("60", 65, 170, 60)
-makeLockBtn("90", 120, 170, 90)
-makeLockBtn("120", 175, 170, 120)
-makeLockBtn("UN", 10, 205, 999)
+Title.Text = "Cloud Booster"
+Title.TextColor3 = Color3.fromRGB(255, 255, 0)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 16
 
 --------------------------------------------------
 -- FPS COUNTER
 --------------------------------------------------
-local frames = 0
-local last = tick()
+local FPSText = Instance.new("TextLabel", Main)
+FPSText.Size = UDim2.new(1, -10, 0, 22)
+FPSText.Position = UDim2.fromOffset(5, 35)
+FPSText.BackgroundTransparency = 1
+FPSText.Text = "FPS : 0"
+FPSText.TextColor3 = Color3.fromRGB(0, 255, 120)
+FPSText.Font = Enum.Font.SourceSansBold
+FPSText.TextSize = 14
+FPSText.TextXAlignment = Enum.TextXAlignment.Left
+
+local frames, last = 0, tick()
 RunService.RenderStepped:Connect(function()
     frames += 1
     if tick() - last >= 1 then
@@ -153,9 +65,33 @@ RunService.RenderStepped:Connect(function()
 end)
 
 --------------------------------------------------
--- BOOST LOGIC
+-- BUTTON + LAMP HELPER
 --------------------------------------------------
-local Boost = true
+local function makeButtonWithLamp(text, posY, color)
+    local btn = Instance.new("TextButton", Main)
+    btn.Size = UDim2.new(1, -40, 0, 30)
+    btn.Position = UDim2.fromOffset(10, posY)
+    btn.BackgroundColor3 = color
+    btn.Text = text
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 14
+    btn.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+    local lamp = Instance.new("Frame", Main)
+    lamp.Size = UDim2.fromOffset(20, 20)
+    lamp.Position = UDim2.fromOffset(210, posY+5)
+    lamp.BackgroundColor3 = Color3.fromRGB(0,255,0) -- default hijau
+    Instance.new("UICorner", lamp).CornerRadius = UDim.new(1,0)
+
+    return btn, lamp
+end
+
+--------------------------------------------------
+-- BOOSTER TOGGLE
+--------------------------------------------------
+local BoostOn = true
+local BoostBtn, BoostLamp = makeButtonWithLamp("BOOSTER : ON", 65, Color3.fromRGB(40,200,120))
 
 local function EnableBoost()
     Lighting.GlobalShadows = false
@@ -163,16 +99,6 @@ local function EnableBoost()
     Lighting.Brightness = 0
     Lighting.EnvironmentDiffuseScale = 0
     Lighting.EnvironmentSpecularScale = 0
-
-    for _,v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") then
-            v.Enabled = false
-        elseif v:IsA("BasePart") then
-            v.Material = Enum.Material.Plastic
-            v.Reflectance = 0
-        end
-    end
-
     settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
 end
 
@@ -181,52 +107,89 @@ local function DisableBoost()
     settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic
 end
 
---------------------------------------------------
--- SAFE DISABLE 3D (FIXED)
---------------------------------------------------
-local Render3D = true
-local savedType = Camera.CameraType
-local savedCFrame = Camera.CFrame
-
-local function Disable3DSafe()
-    savedType = Camera.CameraType
-    savedCFrame = Camera.CFrame
-    Camera.CameraType = Enum.CameraType.Scriptable
-    Camera.CFrame = CFrame.new(0, 9999, 0)
-end
-
-local function Enable3DSafe()
-    Camera.CameraType = savedType
-    Camera.CFrame = savedCFrame
-end
-
---------------------------------------------------
--- BUTTON EVENTS
---------------------------------------------------
-EnableBoost()
-
 BoostBtn.MouseButton1Click:Connect(function()
-    Boost = not Boost
-    if Boost then
-        BoostBtn.Text = "BOOST : ON"
+    BoostOn = not BoostOn
+    if BoostOn then
+        BoostBtn.Text = "BOOSTER : ON"
         BoostBtn.BackgroundColor3 = Color3.fromRGB(40,200,120)
+        BoostLamp.BackgroundColor3 = Color3.fromRGB(0,255,0)
         EnableBoost()
     else
-        BoostBtn.Text = "BOOST : OFF"
+        BoostBtn.Text = "BOOSTER : OFF"
         BoostBtn.BackgroundColor3 = Color3.fromRGB(200,60,60)
+        BoostLamp.BackgroundColor3 = Color3.fromRGB(255,0,0)
         DisableBoost()
     end
 end)
 
-RenderBtn.MouseButton1Click:Connect(function()
-    Render3D = not Render3D
-    if Render3D then
-        RenderBtn.Text = "3D RENDER : ON"
-        RenderBtn.BackgroundColor3 = Color3.fromRGB(70,70,70)
-        Enable3DSafe()
+--------------------------------------------------
+-- FPS LOCK TOGGLE
+--------------------------------------------------
+local FPSLockOn = true
+local FPSBtn, FPSLamp = makeButtonWithLamp("FPS LOCK : UNLIMITED", 105, Color3.fromRGB(70,70,200))
+
+FPSBtn.MouseButton1Click:Connect(function()
+    FPSLockOn = not FPSLockOn
+    if FPSLockOn then
+        FPSBtn.Text = "FPS LOCK : UNLIMITED"
+        FPSBtn.BackgroundColor3 = Color3.fromRGB(70,70,200)
+        FPSLamp.BackgroundColor3 = Color3.fromRGB(0,255,0)
+        if typeof(setfpscap) == "function" then
+            setfpscap(999)
+        end
     else
-        RenderBtn.Text = "3D RENDER : OFF"
-        RenderBtn.BackgroundColor3 = Color3.fromRGB(120,40,40)
-        Disable3DSafe()
+        FPSBtn.Text = "FPS LOCK : DEFAULT"
+        FPSBtn.BackgroundColor3 = Color3.fromRGB(120,40,40)
+        FPSLamp.BackgroundColor3 = Color3.fromRGB(255,0,0)
+        if typeof(setfpscap) == "function" then
+            setfpscap(60)
+        end
     end
 end)
+
+--------------------------------------------------
+-- 3D RENDER TOGGLE
+--------------------------------------------------
+local RenderOn = true
+local RenderBtn, RenderLamp = makeButtonWithLamp("3D RENDER : ON", 145, Color3.fromRGB(90,90,90))
+
+local savedType = Camera.CameraType
+local savedCFrame = Camera.CFrame
+
+local function Disable3D()
+    savedType = Camera.CameraType
+    savedCFrame = Camera.CFrame
+    Camera.CameraType = Enum.CameraType.Scriptable
+    Camera.CFrame = CFrame.new(0, 9999, 0)
+    pcall(function()
+        RunService:Set3dRenderingEnabled(false)
+    end)
+end
+
+local function Enable3D()
+    Camera.CameraType = savedType
+    Camera.CFrame = savedCFrame
+    pcall(function()
+        RunService:Set3dRenderingEnabled(true)
+    end)
+end
+
+RenderBtn.MouseButton1Click:Connect(function()
+    RenderOn = not RenderOn
+    if RenderOn then
+        RenderBtn.Text = "3D RENDER : ON"
+        RenderBtn.BackgroundColor3 = Color3.fromRGB(90,90,90)
+        RenderLamp.BackgroundColor3 = Color3.fromRGB(0,255,0)
+        Enable3D()
+    else
+        RenderBtn.Text = "3D RENDER : OFF"
+        RenderBtn.BackgroundColor3 = Color3.fromRGB(150,40,40)
+        RenderLamp.BackgroundColor3 = Color3.fromRGB(255,0,0)
+        Disable3D()
+    end
+end)
+
+--------------------------------------------------
+-- AUTO ENABLE BOOSTER
+--------------------------------------------------
+EnableBoost()
