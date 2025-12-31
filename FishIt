@@ -1,124 +1,200 @@
 --[[
     Script Name: RakaGanteng
-    Features: Walk On Water, No Render, Auto Lock FPS, Reduce Map, CPU Booster, Speed Boat, Auto Follow TP
-    UI Style: Classic Wide (Blue & Cyan)
+    Theme: Modern Navy Wide (Lite)
+    Features: Walk On Water, No Render, FPS Unlocker, Map/CPU Booster, Custom Speed, Auto Follow.
 ]]
 
-local Library = {}
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local L_Player = Players.LocalPlayer
+
+-- UI Core
 local SG = Instance.new("ScreenGui", game.CoreGui)
-SG.Name = "RakaGantengUI"
+SG.Name = "RakaGanteng_Modern"
 
--- Main Frame
 local Main = Instance.new("Frame", SG)
-Main.Size = UDim2.new(0, 450, 0, 300)
-Main.Position = UDim2.new(0.5, -225, 0.5, -150)
-Main.BackgroundColor3 = Color3.fromRGB(10, 20, 30)
-Main.BorderSizePixel = 2
-Main.BorderColor3 = Color3.fromRGB(0, 255, 255) -- Cyan Border
+Main.Size = UDim2.new(0, 520, 0, 380)
+Main.Position = UDim2.new(0.5, -260, 0.5, -190)
+Main.BackgroundColor3 = Color3.fromRGB(10, 20, 35) -- Navy Dark
+Main.BorderSizePixel = 0
 
--- Title
-local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.BackgroundColor3 = Color3.fromRGB(0, 100, 255) -- Blue
-Title.Text = "RAKA GANTENG - MULTI HUB"
-Title.TextColor3 = Color3.new(1, 1, 1)
+local Corner = Instance.new("UICorner", Main)
+Corner.CornerRadius = UDim.new(0, 8)
+
+-- Header
+local Header = Instance.new("Frame", Main)
+Header.Size = UDim2.new(1, 0, 0, 50)
+Header.BackgroundColor3 = Color3.fromRGB(15, 30, 55) -- Navy Medium
+Header.BorderSizePixel = 0
+local HCorner = Instance.new("UICorner", Header)
+
+local Title = Instance.new("TextLabel", Header)
+Title.Size = UDim2.new(1, -20, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.Text = "RAKAGANTENG | MODERN HUB"
+Title.TextColor3 = Color3.fromRGB(0, 200, 255)
+Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
-Title.Font = Enum.Font.SourceSansBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.BackgroundTransparency = 1
 
--- Container (Scrolling)
-local Container = Instance.new("ScrollingFrame", Main)
-Container.Size = UDim2.new(1, -20, 1, -50)
-Container.Position = UDim2.new(0, 10, 0, 45)
-Container.BackgroundTransparency = 1
-Container.CanvasSize = UDim2.new(0, 0, 1.5, 0)
-Container.ScrollBarThickness = 4
+-- Container
+local Scroll = Instance.new("ScrollingFrame", Main)
+Scroll.Size = UDim2.new(1, -20, 1, -70)
+Scroll.Position = UDim2.new(0, 10, 0, 60)
+Scroll.BackgroundTransparency = 1
+Scroll.ScrollBarThickness = 2
+Scroll.CanvasSize = UDim2.new(0, 0, 1.8, 0)
 
-local UIList = Instance.new("UIListLayout", Container)
-UIList.Padding = UDim.new(0, 5)
+local Layout = Instance.new("UIListLayout", Scroll)
+Layout.Padding = UDim.new(0, 10)
 
--- Function to Create Buttons
-local function CreateButton(txt, callback)
-    local btn = Instance.new("TextButton", Container)
-    btn.Size = UDim2.new(1, 0, 0, 35)
-    btn.BackgroundColor3 = Color3.fromRGB(0, 50, 150)
-    btn.Text = txt
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.Font = Enum.Font.SourceSans
-    btn.TextSize = 16
-    
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0, 4)
-
-    btn.MouseButton1Click:Connect(callback)
+-- Function: Create Input Box
+local function CreateInput(placeholder, callback)
+    local Input = Instance.new("TextBox", Scroll)
+    Input.Size = UDim2.new(1, 0, 0, 35)
+    Input.BackgroundColor3 = Color3.fromRGB(20, 40, 75)
+    Input.PlaceholderText = placeholder
+    Input.Text = ""
+    Input.TextColor3 = Color3.new(1, 1, 1)
+    Input.Font = Enum.Font.Gotham
+    Input.TextSize = 14
+    local IC = Instance.new("UICorner", Input)
+    Input.FocusLost:Connect(function() callback(Input.Text) end)
 end
 
---- FEATURES ---
+-- Function: Create Toggle
+local function CreateToggle(name, callback)
+    local active = false
+    local Btn = Instance.new("TextButton", Scroll)
+    Btn.Size = UDim2.new(1, 0, 0, 40)
+    Btn.BackgroundColor3 = Color3.fromRGB(25, 50, 90)
+    Btn.Text = name .. " : OFF"
+    Btn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    Btn.Font = Enum.Font.GothamSemibold
+    Btn.TextSize = 14
+    local BC = Instance.new("UICorner", Btn)
+    
+    Btn.MouseButton1Click:Connect(function()
+        active = not active
+        Btn.Text = name .. (active and " : ON" or " : OFF")
+        Btn.BackgroundColor3 = active and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(25, 50, 90)
+        Btn.TextColor3 = active and Color3.new(1,1,1) or Color3.fromRGB(180, 180, 180)
+        callback(active)
+    end)
+end
+
+--- LOGIC FEATURES ---
 
 -- 1. Walk On Water
-CreateButton("Toggle Walk On Water", function()
-    local p = game.Players.LocalPlayer.Character
-    if p and p:FindFirstChild("HumanoidRootPart") then
-        local platform = Instance.new("Part", workspace)
-        platform.Size = Vector3.new(1000, 1, 1000)
-        platform.Anchored = true
-        platform.Transparency = 0.5
-        platform.Color = Color3.fromRGB(0, 255, 255)
-        platform.Position = Vector3.new(p.HumanoidRootPart.Position.X, 0, p.HumanoidRootPart.Position.Z) -- Asumsi level air di 0
-        print("Walk on Water Active")
-    end
-end)
+local WaterFloor = Instance.new("Part")
+WaterFloor.Size = Vector3.new(5000, 1, 5000)
+WaterFloor.Transparency = 1
+WaterFloor.Anchored = true
+WaterFloor.CanCollide = false
+WaterFloor.Parent = workspace
 
--- 2. No Render (Optimization)
-CreateButton("No Render (Performance)", function()
-    game:GetService("RunService"):Set3dRenderingEnabled(false)
-    print("Rendering Disabled to Save GPU")
-end)
-
--- 3. Auto Lock FPS
-CreateButton("Lock FPS (60)", function()
-    setfpscap(60)
-    print("FPS Locked to 60")
-end)
-
--- 4. Reduce Map & CPU Booster
-CreateButton("Reduce Map / CPU Boost", function()
-    for _, v in pairs(game.Workspace:GetDescendants()) do
-        if v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then
-            v.Material = Enum.Material.SmoothPlastic
-            v.CastShadow = false
-        elseif v:IsA("Decal") or v:IsA("Texture") then
-            v:Destroy()
-        end
-    end
-    print("Map Simplified")
-end)
-
--- 5. Speed for Boat
-CreateButton("Speed Boat (x2)", function()
-    for _, v in pairs(workspace:GetChildren()) do
-        if v.Name:lower():find("boat") or v.Name:lower():find("ship") then
-            local body = v:FindFirstChildWhichIsA("BasePart", true)
-            if body then
-                body.Velocity = body.CFrame.LookVector * 100
+CreateToggle("Walk On Water", function(state)
+    WaterFloor.CanCollide = state
+    spawn(function()
+        while WaterFloor.CanCollide do
+            local hrp = L_Player.Character and L_Player.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                WaterFloor.Position = Vector3.new(hrp.Position.X, -0.5, hrp.Position.Z)
             end
+            task.wait()
         end
+    end)
+end)
+
+-- 2. No Render
+CreateToggle("No Render (Performance)", function(state)
+    RunService:Set3dRenderingEnabled(not state)
+end)
+
+-- 3. Unlock FPS
+CreateToggle("Unlock FPS", function(state)
+    if setfpscap then setfpscap(state and 999 or 60) end
+end)
+
+-- 4. Booster Map & CPU
+CreateToggle("Booster Map/CPU", function(state)
+    if state then
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false
+            elseif v:IsA("Decal") or v:IsA("Texture") then v:Destroy() end
+        end
+        settings().Rendering.QualityLevel = 1
     end
 end)
 
--- 6. Auto Follow Teleport (Target: Random Player)
-CreateButton("Auto Follow TP", function()
-    local target = nil
-    for _, v in pairs(game.Players:GetPlayers()) do
-        if v ~= game.Players.LocalPlayer then target = v break end
-    end
-    
-    if target then
-        game:GetService("RunService").RenderStepped:Connect(function()
-            if target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+-- 5. Speed Custom (Char & Boat)
+local customSpeed = 16
+CreateInput("Set Speed (Contoh: 100)", function(val)
+    customSpeed = tonumber(val) or 16
+end)
+
+CreateToggle("Speed Boost Active", function(state)
+    _G.SpeedToggle = state
+    spawn(function()
+        while _G.SpeedToggle do
+            local char = L_Player.Character
+            if char then
+                local hum = char:FindFirstChild("Humanoid")
+                if hum then
+                    hum.WalkSpeed = customSpeed
+                    if hum.SeatPart and hum.SeatPart:IsA("VehicleSeat") then
+                        hum.SeatPart.MaxSpeed = customSpeed
+                        hum.SeatPart.Velocity = hum.SeatPart.CFrame.LookVector * customSpeed
+                    end
+                end
             end
-        end)
+            task.wait()
+        end
+        if L_Player.Character and L_Player.Character:FindFirstChild("Humanoid") then
+            L_Player.Character.Humanoid.WalkSpeed = 16
+        end
+    end)
+end)
+
+-- 6. Auto Follow Teleport
+local targetName = ""
+CreateInput("Nama Player yg di-Follow...", function(val)
+    targetName = val:lower()
+end)
+
+CreateToggle("Auto Follow TP", function(state)
+    _G.Follow = state
+    spawn(function()
+        while _G.Follow do
+            for _, v in pairs(Players:GetPlayers()) do
+                if v.Name:lower():find(targetName) and v ~= L_Player then
+                    if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                        L_Player.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 4)
+                    end
+                end
+            end
+            task.wait()
+        end
+    end)
+end)
+
+-- Draggable UI
+local dragStart, startPos, dragging
+Main.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true dragStart = i.Position startPos = Main.Position
     end
+end)
+UserInputService.InputChanged:Connect(function(i)
+    if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = i.Position - dragStart
+        Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
 end)
 
 print("RakaGanteng Script Loaded!")
