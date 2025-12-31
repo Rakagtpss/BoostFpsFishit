@@ -1,8 +1,6 @@
 --[[ 
-    SCRIPT: Walk on Water + No Render + Speed
-    Dibuat oleh: Gemini AI
-    Cara Pakai: Execute menggunakan Executor (Synapse, Krnl, Fluxus, Delta, dll)
-    Toggle UI: Tekan RIGHT CONTROL
+    GEMINI HUB V3: Karakter & Vehicle Speed
+    Fitur: Speed Karakter, Speed Perahu/Mobil, FPS Lock, Walk on Water, No Render
 ]]
 
 local Players = game:GetService("Players")
@@ -12,241 +10,176 @@ local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
 
 -- --- UI SETUP ---
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
+
 local SpeedBox = Instance.new("TextBox")
 local SpeedButton = Instance.new("TextButton")
+local BoatButton = Instance.new("TextButton") -- TOMBOL BARU UNTUK KENDARAAN
+local FpsBox = Instance.new("TextBox")
+local FpsButton = Instance.new("TextButton")
 local WaterButton = Instance.new("TextButton")
 local RenderButton = Instance.new("TextButton")
-local MinimizeLabel = Instance.new("TextLabel")
 
--- Properties UI (Styling Dark Mode)
-ScreenGui.Name = "GeminiTool"
+ScreenGui.Name = "RakaGanteng"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-MainFrame.BorderSizePixel = 0
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.Size = UDim2.new(0, 220, 0, 420) -- Ukuran ditambah
 MainFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
-MainFrame.Size = UDim2.new(0, 220, 0, 260)
 MainFrame.Active = true
-MainFrame.Draggable = true -- Bisa digeser
+MainFrame.Draggable = true
 
-Title.Name = "Title"
 Title.Parent = MainFrame
-Title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Gemini Hub"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 18
+Title.Text = "Gemini Hub V3"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextSize = 16
 
--- --- SPEED SECTION ---
-SpeedBox.Name = "SpeedBox"
-SpeedBox.Parent = MainFrame
-SpeedBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-SpeedBox.Position = UDim2.new(0.1, 0, 0.2, 0)
-SpeedBox.Size = UDim2.new(0.8, 0, 0, 35)
-SpeedBox.Font = Enum.Font.Gotham
-SpeedBox.PlaceholderText = "Input Speed (e.g 50)"
-SpeedBox.Text = ""
-SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedBox.TextSize = 14
+-- Helper Function Create Button
+local function createBtn(name, pos, text, color)
+    local btn = Instance.new("TextButton")
+    btn.Name = name
+    btn.Parent = MainFrame
+    btn.Position = pos
+    btn.Size = UDim2.new(0.8, 0, 0, 30)
+    btn.BackgroundColor3 = color or Color3.fromRGB(60, 60, 60)
+    btn.Font = Enum.Font.GothamBold
+    btn.Text = text
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.TextSize = 12
+    return btn
+end
 
-SpeedButton.Name = "SpeedButton"
-SpeedButton.Parent = MainFrame
-SpeedButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-SpeedButton.Position = UDim2.new(0.1, 0, 0.35, 0)
-SpeedButton.Size = UDim2.new(0.8, 0, 0, 35)
-SpeedButton.Font = Enum.Font.GothamBold
-SpeedButton.Text = "Set Speed"
-SpeedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedButton.TextSize = 14
+local function createBox(name, pos, placeholder)
+    local box = Instance.new("TextBox")
+    box.Name = name
+    box.Parent = MainFrame
+    box.Position = pos
+    box.Size = UDim2.new(0.8, 0, 0, 30)
+    box.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    box.PlaceholderText = placeholder
+    box.Text = ""
+    box.TextColor3 = Color3.new(1,1,1)
+    return box
+end
 
--- --- WALK ON WATER SECTION ---
-WaterButton.Name = "WaterButton"
-WaterButton.Parent = MainFrame
-WaterButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Merah (Off)
-WaterButton.Position = UDim2.new(0.1, 0, 0.55, 0)
-WaterButton.Size = UDim2.new(0.8, 0, 0, 35)
-WaterButton.Font = Enum.Font.GothamBold
-WaterButton.Text = "Walk On Water: OFF"
-WaterButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-WaterButton.TextSize = 14
+-- Layouting
+SpeedBox = createBox("SpeedBox", UDim2.new(0.1, 0, 0.12, 0), "Player Speed")
+SpeedButton = createBtn("SpeedBtn", UDim2.new(0.1, 0, 0.20, 0), "Set Player Speed")
 
--- --- DISABLE RENDER SECTION ---
-RenderButton.Name = "RenderButton"
-RenderButton.Parent = MainFrame
-RenderButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Merah (Off)
-RenderButton.Position = UDim2.new(0.1, 0, 0.75, 0)
-RenderButton.Size = UDim2.new(0.8, 0, 0, 35)
-RenderButton.Font = Enum.Font.GothamBold
-RenderButton.Text = "Disable 3D: OFF"
-RenderButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-RenderButton.TextSize = 14
+BoatButton = createBtn("BoatBtn", UDim2.new(0.1, 0, 0.30, 0), "Boat Speed: OFF", Color3.fromRGB(200, 50, 50))
 
-MinimizeLabel.Name = "MinLabel"
-MinimizeLabel.Parent = MainFrame
-MinimizeLabel.BackgroundTransparency = 1
-MinimizeLabel.Position = UDim2.new(0, 0, 0.9, 0)
-MinimizeLabel.Size = UDim2.new(1, 0, 0, 20)
-MinimizeLabel.Font = Enum.Font.Gotham
-MinimizeLabel.Text = "Press Right-Ctrl to Toggle UI"
-MinimizeLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-MinimizeLabel.TextSize = 10
+FpsBox = createBox("FpsBox", UDim2.new(0.1, 0, 0.42, 0), "FPS Cap (e.g 60)")
+FpsButton = createBtn("FpsBtn", UDim2.new(0.1, 0, 0.50, 0), "Set FPS Lock")
 
--- --- BLACK SCREEN OVERLAY ---
-local BlackScreen = Instance.new("Frame")
-BlackScreen.Parent = ScreenGui
-BlackScreen.BackgroundColor3 = Color3.new(0,0,0)
-BlackScreen.Size = UDim2.new(1,0,1,0)
-BlackScreen.ZIndex = 999999
-BlackScreen.Visible = false
-local BlackLabel = Instance.new("TextLabel")
-BlackLabel.Parent = BlackScreen
-BlackLabel.Size = UDim2.new(1,0,1,0)
-BlackLabel.BackgroundTransparency = 1
-BlackLabel.TextColor3 = Color3.new(1,1,1)
-BlackLabel.Text = "3D Render Disabled (Saving Resources)\nClick Button again to Enable"
-BlackLabel.TextSize = 24
+WaterButton = createBtn("WaterBtn", UDim2.new(0.1, 0, 0.62, 0), "Walk On Water: OFF", Color3.fromRGB(200, 50, 50))
+RenderButton = createBtn("RenderBtn", UDim2.new(0.1, 0, 0.75, 0), "Disable 3D: OFF", Color3.fromRGB(200, 50, 50))
 
--- --- LOGIC VARIABLES ---
-local speedEnabled = false
-local targetSpeed = 16
+-- --- LOGIC ---
+local vSpeedEnabled = false
+local playerSpeed = 16
 local waterEnabled = false
-local renderDisabled = false
 local waterPart = nil
 
--- --- FUNCTIONS ---
-
--- 1. SPEED LOGIC
+-- 1. Player Speed
 SpeedButton.MouseButton1Click:Connect(function()
-    local num = tonumber(SpeedBox.Text)
-    if num then
-        targetSpeed = num
-        speedEnabled = true
-        SpeedButton.Text = "Speed Set to " .. num
-        SpeedButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        
-        -- Apply langsung
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.WalkSpeed = targetSpeed
-        end
+    playerSpeed = tonumber(SpeedBox.Text) or 16
+    SpeedButton.Text = "Speed: " .. playerSpeed
+end)
+
+-- 2. Boat Speed (Vehicle Speed)
+BoatButton.MouseButton1Click:Connect(function()
+    vSpeedEnabled = not vSpeedEnabled
+    if vSpeedEnabled then
+        BoatButton.Text = "Boat Speed: ON"
+        BoatButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
     else
-        SpeedButton.Text = "Invalid Number"
-        task.wait(1)
-        SpeedButton.Text = "Set Speed"
+        BoatButton.Text = "Boat Speed: OFF"
+        BoatButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
     end
 end)
 
--- Loop untuk memaksa speed (agar tidak direset game)
+-- 3. Loop Utama (Speed & Vehicle)
 RunService.Stepped:Connect(function()
-    if speedEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        if LocalPlayer.Character.Humanoid.WalkSpeed ~= targetSpeed then
-            LocalPlayer.Character.Humanoid.WalkSpeed = targetSpeed
+    local char = LocalPlayer.Character
+    if not char then return end
+    
+    -- Speed Karakter
+    if char:FindFirstChild("Humanoid") then
+        char.Humanoid.WalkSpeed = playerSpeed
+        
+        -- Speed Kendaraan (Boat/Mobil)
+        if vSpeedEnabled and char.Humanoid.SeatPart and char.Humanoid.SeatPart:IsA("VehicleSeat") then
+            local seat = char.Humanoid.SeatPart
+            -- Mengubah MaxSpeed kursi kendaraan
+            seat.MaxSpeed = tonumber(SpeedBox.Text) or 100
+            -- Memberikan dorongan fisik (Velocity) agar lebih cepat
+            seat.AssemblyLinearVelocity = seat.CFrame.LookVector * seat.MaxSpeed
         end
     end
 end)
 
--- 2. WALK ON WATER LOGIC
+-- 4. Walk On Water (Jesus Mode)
 WaterButton.MouseButton1Click:Connect(function()
     waterEnabled = not waterEnabled
-    if waterEnabled then
-        WaterButton.Text = "Walk On Water: ON"
-        WaterButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-    else
-        WaterButton.Text = "Walk On Water: OFF"
-        WaterButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        if waterPart then waterPart:Destroy() waterPart = nil end
-    end
+    WaterButton.Text = "Walk On Water: " .. (waterEnabled and "ON" or "OFF")
+    WaterButton.BackgroundColor3 = waterEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+    if not waterEnabled and waterPart then waterPart:Destroy() waterPart = nil end
 end)
 
 RunService.Heartbeat:Connect(function()
     if not waterEnabled then return end
-    
     local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    
-    local root = char.HumanoidRootPart
-    
-    -- Cek apakah ada air di bawah
-    local rayOrigin = root.Position
-    local rayDirection = Vector3.new(0, -15, 0)
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {char, waterPart}
-    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-    raycastParams.IgnoreWater = false -- Deteksi air
-    
-    local rayResult = Workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-    
-    if rayResult and rayResult.Material == Enum.Material.Water then
-        -- Jika belum ada part, buat part
-        if not waterPart then
-            waterPart = Instance.new("Part")
-            waterPart.Name = "JesusPart"
-            waterPart.Size = Vector3.new(10, 1, 10)
-            waterPart.Transparency = 0.5
-            waterPart.Anchored = true
-            waterPart.CanCollide = true
-            waterPart.BrickColor = BrickColor.new("Cyan")
-            waterPart.Parent = Workspace
-        end
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local root = char.HumanoidRootPart
+        local params = RaycastParams.new()
+        params.FilterDescendantsInstances = {char, waterPart}
+        params.IgnoreWater = false
+        local res = Workspace:Raycast(root.Position, Vector3.new(0, -15, 0), params)
         
-        -- Posisikan part tepat di bawah kaki, tapi setinggi air
-        -- Mengambil posisi Y air agak tricky, kita kunci di posisi impact raycast
-        waterPart.Position = Vector3.new(root.Position.X, rayResult.Position.Y, root.Position.Z)
-        waterPart.Velocity = Vector3.new(0,0,0)
-    else
-        -- Jika tidak di atas air, sembunyikan partnya
-        if waterPart then
+        if res and res.Material == Enum.Material.Water then
+            if not waterPart then
+                waterPart = Instance.new("Part", Workspace)
+                waterPart.Size = Vector3.new(15, 1, 15)
+                waterPart.Anchored = true
+                waterPart.Transparency = 0.7
+                waterPart.BrickColor = BrickColor.new("Cyan")
+            end
+            waterPart.Position = Vector3.new(root.Position.X, res.Position.Y, root.Position.Z)
+        elseif waterPart then
             waterPart.Position = Vector3.new(0, -1000, 0)
         end
     end
 end)
 
--- 3. DISABLE 3D RENDER LOGIC
+-- 5. Lain-lain (FPS & Render)
+FpsButton.MouseButton1Click:Connect(function()
+    if setfpscap then setfpscap(tonumber(FpsBox.Text) or 60) end
+end)
+
+local BlackScreen = Instance.new("Frame", ScreenGui)
+BlackScreen.Size = UDim2.new(1,0,1,0)
+BlackScreen.BackgroundColor3 = Color3.new(0,0,0)
+BlackScreen.Visible = false
+BlackScreen.ZIndex = 999
+
 RenderButton.MouseButton1Click:Connect(function()
-    renderDisabled = not renderDisabled
-    
-    if renderDisabled then
-        RenderButton.Text = "Disable 3D: ON"
-        RenderButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        
-        BlackScreen.Visible = true
-        
-        -- Coba matikan 3D rendering (Executor dependent)
-        pcall(function()
-            RunService:Set3dRenderingEnabled(false)
-        end)
-    else
-        RenderButton.Text = "Disable 3D: OFF"
-        RenderButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        
-        BlackScreen.Visible = false
-        
-        -- Nyalakan kembali 3D rendering
-        pcall(function()
-            RunService:Set3dRenderingEnabled(true)
-        end)
-    end
+    local renderOff = not BlackScreen.Visible
+    BlackScreen.Visible = renderOff
+    RenderButton.Text = "Disable 3D: " .. (renderOff and "ON" or "OFF")
+    RenderButton.BackgroundColor3 = renderOff and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+    pcall(function() RunService:Set3dRenderingEnabled(not renderOff) end)
 end)
 
--- 4. TOGGLE UI (Right Control)
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.KeyCode == Enum.KeyCode.RightControl then
-        MainFrame.Visible = not MainFrame.Visible
-    end
+UserInputService.InputBegan:Connect(function(i)
+    if i.KeyCode == Enum.KeyCode.RightControl then MainFrame.Visible = not MainFrame.Visible end
 end)
-
--- Notifikasi Awal
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Gemini Hub Loaded";
-    Text = "Press Right-Ctrl to Toggle UI";
-    Duration = 5;
-})
