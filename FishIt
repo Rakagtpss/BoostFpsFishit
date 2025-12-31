@@ -1,7 +1,7 @@
 --[[ 
-    RAKAGANTENG HUB V5: PRO Edition
-    Update: Fix Disable 3D Overlay, Add Minimize Button, Auto Follow, Boat Speed
-    Toggle Sembunyi Total: RIGHT CONTROL
+    RAKAGANTENG HUB V8: Advanced Fishing Edition
+    Update: Custom Delay Bait & Delay Reel, Auto Teleport, Boat Speed
+    Toggle UI: RIGHT CONTROL
 ]]
 
 local Players = game:GetService("Players")
@@ -9,27 +9,26 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local LocalPlayer = Players.LocalPlayer
 
 -- --- UI SETUP ---
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "RakaGantengHubV5"
+ScreenGui.Name = "RakaGantengHubV8"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.DisplayOrder = 100 
 
--- Black Screen (Overlay)
 local BlackScreen = Instance.new("Frame", ScreenGui)
 BlackScreen.Size = UDim2.new(1, 0, 1, 0)
 BlackScreen.BackgroundColor3 = Color3.new(0, 0, 0)
 BlackScreen.Visible = false
 BlackScreen.ZIndex = 1 
 
--- Main Frame
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MainFrame.Size = UDim2.new(0, 230, 0, 380)
+MainFrame.Size = UDim2.new(0, 230, 0, 450) -- Ukuran ditambah untuk input baru
 MainFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
 MainFrame.BorderSizePixel = 0
 MainFrame.ZIndex = 10 
@@ -40,13 +39,12 @@ local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1, -40, 0, 40)
 Title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "  RAKAGANTENG HUB V5"
+Title.Text = "  RAKAGANTENG HUB V8"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.TextSize = 14
 Title.ZIndex = 11
 
--- Tombol Minimize
 local MinBtn = Instance.new("TextButton", MainFrame)
 MinBtn.Size = UDim2.new(0, 40, 0, 40)
 MinBtn.Position = UDim2.new(1, -40, 0, 0)
@@ -60,7 +58,7 @@ local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
 ScrollFrame.Size = UDim2.new(1, 0, 1, -45)
 ScrollFrame.Position = UDim2.new(0, 0, 0, 45)
 ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 1.6, 0)
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 2.0, 0)
 ScrollFrame.ScrollBarThickness = 3
 ScrollFrame.ZIndex = 11
 
@@ -68,7 +66,6 @@ local UIList = Instance.new("UIListLayout", ScrollFrame)
 UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIList.Padding = UDim.new(0, 7)
 
--- Helper Functions
 local function createBtn(text, color)
     local btn = Instance.new("TextButton", ScrollFrame)
     btn.Size = UDim2.new(0.9, 0, 0, 35)
@@ -76,7 +73,7 @@ local function createBtn(text, color)
     btn.Font = Enum.Font.GothamBold
     btn.Text = text
     btn.TextColor3 = Color3.new(1,1,1)
-    btn.TextSize = 12
+    btn.TextSize = 11
     btn.ZIndex = 12
     return btn
 end
@@ -89,27 +86,65 @@ local function createBox(placeholder)
     box.Text = ""
     box.TextColor3 = Color3.new(1,1,1)
     box.ZIndex = 12
+    box.Font = Enum.Font.SourceSans
     return box
 end
 
--- Elements
-local FollowBox = createBox("Target Player Name")
-local FollowBtn = createBtn("Auto Follow: OFF", Color3.fromRGB(180, 50, 50))
-local SpeedBox = createBox("Speed Amount (16-500)")
+-- --- ELEMENTS ---
+local FishingBtn = createBtn("Auto Fishing: OFF", Color3.fromRGB(180, 50, 50))
+local BaitBox = createBox("Delay Bait (Throwing) - e.g 1")
+local ReelBox = createBox("Delay Reel (Pulling) - e.g 5")
+
+local FollowBox = createBox("Target Name (Teleport)")
+local FollowBtn = createBtn("Auto Teleport: OFF", Color3.fromRGB(180, 50, 50))
+
+local SpeedBox = createBox("Speed / Boat / FPS Value")
 local SpeedBtn = createBtn("Set Player Speed")
 local BoatBtn = createBtn("Boat Speed: OFF", Color3.fromRGB(180, 50, 50))
-local FpsBox = createBox("FPS Cap (e.g 30)")
 local FpsBtn = createBtn("Lock FPS")
+
 local WaterBtn = createBtn("Walk On Water: OFF", Color3.fromRGB(180, 50, 50))
 local RenderBtn = createBtn("Disable 3D: OFF", Color3.fromRGB(180, 50, 50))
 
 -- --- LOGIC ---
+local fishingEnabled = false
+
+local function click()
+    VirtualInputManager:SendMouseButtonEvent(500, 500, 0, true, game, 1)
+    task.wait(0.05)
+    VirtualInputManager:SendMouseButtonEvent(500, 500, 0, false, game, 1)
+end
+
+FishingBtn.MouseButton1Click:Connect(function()
+    fishingEnabled = not fishingEnabled
+    FishingBtn.Text = "Auto Fishing: " .. (fishingEnabled and "ON" or "OFF")
+    FishingBtn.BackgroundColor3 = fishingEnabled and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(180, 50, 50)
+    
+    if fishingEnabled then
+        task.spawn(function()
+            while fishingEnabled do
+                local baitDelay = tonumber(BaitBox.Text) or 1
+                local reelDelay = tonumber(ReelBox.Text) or 5
+                
+                -- Melempar Umpan
+                click()
+                task.wait(baitDelay)
+                
+                -- Jika masih aktif, Tarik Ikan
+                if not fishingEnabled then break end
+                click()
+                task.wait(reelDelay)
+            end
+        end)
+    end
+end)
+
+-- LOGIC LAIN (Tetap sama dengan V7 untuk stabilitas)
 local minimized = false
-local followEnabled, followTarget = false, nil
+local tpEnabled, tpTarget = false, nil
 local vSpeedEnabled, playerSpeed = false, 16
 local waterEnabled, waterPart = false, nil
 
--- 1. Minimize Function
 MinBtn.MouseButton1Click:Connect(function()
     minimized = not minimized
     if minimized then
@@ -117,14 +152,41 @@ MinBtn.MouseButton1Click:Connect(function()
         MainFrame:TweenSize(UDim2.new(0, 230, 0, 40), "Out", "Quart", 0.3, true)
         MinBtn.Text = "+"
     else
-        MainFrame:TweenSize(UDim2.new(0, 230, 0, 380), "Out", "Quart", 0.3, true)
+        MainFrame:TweenSize(UDim2.new(0, 230, 0, 450), "Out", "Quart", 0.3, true)
         task.wait(0.3)
         ScrollFrame.Visible = true
         MinBtn.Text = "—"
     end
 end)
 
--- 2. Disable 3D Logic
+FollowBtn.MouseButton1Click:Connect(function()
+    tpEnabled = not tpEnabled
+    if tpEnabled then
+        local t = FollowBox.Text:lower()
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= LocalPlayer and (v.Name:lower():find(t) or v.DisplayName:lower():find(t)) then
+                tpTarget = v; break
+            end
+        end
+        if tpTarget then
+            FollowBtn.Text = "TP to: " .. tpTarget.DisplayName
+            FollowBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+        else
+            tpEnabled = false; FollowBtn.Text = "Not Found"; task.wait(1); FollowBtn.Text = "Auto Teleport: OFF"
+        end
+    else
+        tpTarget = nil; FollowBtn.Text = "Auto Teleport: OFF"; FollowBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+    end
+end)
+
+SpeedBtn.MouseButton1Click:Connect(function() playerSpeed = tonumber(SpeedBox.Text) or 16 end)
+BoatBtn.MouseButton1Click:Connect(function()
+    vSpeedEnabled = not vSpeedEnabled
+    BoatBtn.Text = "Boat Speed: " .. (vSpeedEnabled and "ON" or "OFF")
+    BoatBtn.BackgroundColor3 = vSpeedEnabled and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(180, 50, 50)
+end)
+FpsBtn.MouseButton1Click:Connect(function() if setfpscap then setfpscap(tonumber(SpeedBox.Text) or 60) end end)
+
 RenderBtn.MouseButton1Click:Connect(function()
     local renderOff = not BlackScreen.Visible
     BlackScreen.Visible = renderOff
@@ -133,47 +195,6 @@ RenderBtn.MouseButton1Click:Connect(function()
     pcall(function() RunService:Set3dRenderingEnabled(not renderOff) end)
 end)
 
--- 3. Auto Follow
-FollowBtn.MouseButton1Click:Connect(function()
-    followEnabled = not followEnabled
-    if followEnabled then
-        local t = FollowBox.Text:lower()
-        for _, v in pairs(Players:GetPlayers()) do
-            if v ~= LocalPlayer and (v.Name:lower():find(t) or v.DisplayName:lower():find(t)) then
-                followTarget = v; break
-            end
-        end
-        if followTarget then
-            FollowBtn.Text = "Following: " .. followTarget.DisplayName
-            FollowBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-        else
-            followEnabled = false
-            FollowBtn.Text = "Not Found"; task.wait(1); FollowBtn.Text = "Auto Follow: OFF"
-        end
-    else
-        followTarget = nil
-        FollowBtn.Text = "Auto Follow: OFF"
-        FollowBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-    end
-end)
-
--- 4. Speed & Boat
-SpeedBtn.MouseButton1Click:Connect(function()
-    playerSpeed = tonumber(SpeedBox.Text) or 16
-end)
-
-BoatBtn.MouseButton1Click:Connect(function()
-    vSpeedEnabled = not vSpeedEnabled
-    BoatBtn.Text = "Boat Speed: " .. (vSpeedEnabled and "ON" or "OFF")
-    BoatBtn.BackgroundColor3 = vSpeedEnabled and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(180, 50, 50)
-end)
-
--- 5. FPS Lock
-FpsBtn.MouseButton1Click:Connect(function()
-    if setfpscap then setfpscap(tonumber(FpsBox.Text) or 60) end
-end)
-
--- 6. Walk On Water
 WaterBtn.MouseButton1Click:Connect(function()
     waterEnabled = not waterEnabled
     WaterBtn.Text = "Walk On Water: " .. (waterEnabled and "ON" or "OFF")
@@ -181,15 +202,12 @@ WaterBtn.MouseButton1Click:Connect(function()
     if not waterEnabled and waterPart then waterPart:Destroy() waterPart = nil end
 end)
 
--- LOOP
 RunService.Stepped:Connect(function()
     local char = LocalPlayer.Character
-    if char and char:FindFirstChild("Humanoid") then
-        char.Humanoid.WalkSpeed = playerSpeed
-        if followEnabled and followTarget and followTarget.Character and followTarget.Character:FindFirstChild("HumanoidRootPart") then
-            if (followTarget.Character.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude > 5 then
-                char.Humanoid:MoveTo(followTarget.Character.HumanoidRootPart.Position)
-            end
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        if char:FindFirstChild("Humanoid") then char.Humanoid.WalkSpeed = playerSpeed end
+        if tpEnabled and tpTarget and tpTarget.Character and tpTarget.Character:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = tpTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
         end
         if vSpeedEnabled and char.Humanoid.SeatPart and char.Humanoid.SeatPart:IsA("VehicleSeat") then
             char.Humanoid.SeatPart.MaxSpeed = tonumber(SpeedBox.Text) or 100
@@ -198,7 +216,6 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Water Loop
 RunService.Heartbeat:Connect(function()
     if not waterEnabled then return end
     local char = LocalPlayer.Character
@@ -215,7 +232,6 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Toggle UI Total
 UserInputService.InputBegan:Connect(function(i)
     if i.KeyCode == Enum.KeyCode.RightControl then MainFrame.Visible = not MainFrame.Visible end
 end)
