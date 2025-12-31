@@ -1,65 +1,107 @@
 --========================================
--- FISH IT CLASSIC TOOL (FULL FIX FINAL)
+-- FISH IT CLASSIC TOOL (DELTA FIX)
 --========================================
 
--- SERVICES
-local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local pg = player:WaitForChild("PlayerGui")
-
 local char = player.Character or player.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
---========================================
--- CLEAN UI
---========================================
+--==============================
+-- CLEAN OLD UI
+--==============================
 pcall(function()
-    if pg:FindFirstChild("FishIt_UI") then
-        pg.FishIt_UI:Destroy()
+    if CoreGui:FindFirstChild("FishIt_UI") then
+        CoreGui.FishIt_UI:Destroy()
     end
 end)
 
---========================================
--- UI
---========================================
+--==============================
+-- SCREEN GUI (DELTA SAFE)
+--==============================
 local gui = Instance.new("ScreenGui")
 gui.Name = "FishIt_UI"
+gui.IgnoreGuiInset = true
 gui.ResetOnSpawn = false
-gui.Parent = pg
+gui.DisplayOrder = 999999
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+gui.Parent = CoreGui
 
+--==============================
+-- MAIN FRAME
+--==============================
 local main = Instance.new("Frame")
 main.Parent = gui
-main.Size = UDim2.new(0,270,0,300)
-main.Position = UDim2.new(0,20,0.28,0)
+main.Size = UDim2.fromOffset(280, 260)
+main.Position = UDim2.fromOffset(40, 180)
 main.BackgroundColor3 = Color3.fromRGB(15,15,15)
-main.Active = true
-main.Draggable = true
+main.BorderSizePixel = 0
+main.Visible = true
+main.ZIndex = 50
 
 Instance.new("UICorner", main).CornerRadius = UDim.new(0,10)
 Instance.new("UIStroke", main).Color = Color3.fromRGB(0,255,0)
 
-local title = Instance.new("TextLabel", main)
+--==============================
+-- TITLE
+--==============================
+local title = Instance.new("TextLabel")
+title.Parent = main
 title.Size = UDim2.new(1,0,0,32)
 title.BackgroundTransparency = 1
 title.Text = "FISH IT CLASSIC TOOL"
 title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 15
+title.ZIndex = 60
 
---========================================
--- TOGGLE SYSTEM (NO BUG)
---========================================
+--==============================
+-- SIMPLE DRAG (DELTA SAFE)
+--==============================
+local UIS = game:GetService("UserInputService")
+local dragging, dragStart, startPos
+
+main.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = i.Position
+        startPos = main.Position
+    end
+end)
+
+UIS.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+UIS.InputChanged:Connect(function(i)
+    if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
+        local delta = i.Position - dragStart
+        main.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+--==============================
+-- TOGGLE SYSTEM (DELTA WORKING)
+--==============================
 local toggles = {}
 
-local function CreateToggle(text, y)
-    local f = Instance.new("Frame", main)
-    f.Size = UDim2.new(1,-20,0,36)
-    f.Position = UDim2.new(0,10,0,y)
-    f.BackgroundTransparency = 1
+local function Toggle(text, y)
+    local row = Instance.new("Frame", main)
+    row.Size = UDim2.new(1,-20,0,36)
+    row.Position = UDim2.new(0,10,0,y)
+    row.BackgroundTransparency = 1
+    row.ZIndex = 60
 
-    local lbl = Instance.new("TextLabel", f)
+    local lbl = Instance.new("TextLabel", row)
     lbl.Size = UDim2.new(0.65,0,1,0)
     lbl.BackgroundTransparency = 1
     lbl.Text = text
@@ -67,8 +109,9 @@ local function CreateToggle(text, y)
     lbl.Font = Enum.Font.SourceSans
     lbl.TextSize = 14
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.ZIndex = 61
 
-    local btn = Instance.new("TextButton", f)
+    local btn = Instance.new("TextButton", row)
     btn.Size = UDim2.new(0.3,0,0.7,0)
     btn.Position = UDim2.new(0.7,0,0.15,0)
     btn.Text = "OFF"
@@ -76,6 +119,7 @@ local function CreateToggle(text, y)
     btn.TextSize = 13
     btn.TextColor3 = Color3.new(1,1,1)
     btn.BackgroundColor3 = Color3.fromRGB(140,0,0)
+    btn.ZIndex = 62
     Instance.new("UICorner", btn).CornerRadius = UDim.new(1,0)
 
     toggles[text] = false
@@ -89,21 +133,22 @@ local function CreateToggle(text, y)
     end)
 end
 
-CreateToggle("Walk On Water", 40)
-CreateToggle("Disable 3D Render", 80)
+Toggle("Walk On Water", 45)
+Toggle("Disable 3D", 85)
 
---========================================
+--==============================
 -- FPS LOCK
---========================================
-local function FPSButton(text, y, cap)
+--==============================
+local function FPS(text, y, cap)
     local b = Instance.new("TextButton", main)
-    b.Size = UDim2.new(1,-20,0,30)
+    b.Size = UDim2.new(1,-20,0,28)
     b.Position = UDim2.new(0,10,0,y)
     b.Text = text
     b.BackgroundColor3 = Color3.fromRGB(25,25,25)
     b.TextColor3 = Color3.new(1,1,1)
     b.Font = Enum.Font.SourceSans
     b.TextSize = 13
+    b.ZIndex = 60
     Instance.new("UICorner", b)
 
     b.MouseButton1Click:Connect(function()
@@ -113,60 +158,8 @@ local function FPSButton(text, y, cap)
     end)
 end
 
-FPSButton("FPS LOCK 30", 140, 30)
-FPSButton("FPS LOCK 60", 175, 60)
-FPSButton("FPS LOCK 120", 210, 120)
+FPS("FPS 30", 140, 30)
+FPS("FPS 60", 175, 60)
+FPS("FPS 120", 210, 120)
 
---========================================
--- WALK ON WATER (REAL)
---========================================
-local bp = Instance.new("BodyPosition")
-bp.MaxForce = Vector3.new(0, math.huge, 0)
-bp.P = 10000
-
-RunService.Heartbeat:Connect(function()
-    if toggles["Walk On Water"] then
-        local ray = workspace:Raycast(
-            hrp.Position,
-            Vector3.new(0,-15,0)
-        )
-
-        if ray and ray.Instance then
-            if ray.Instance:IsA("Terrain") or ray.Instance.Material == Enum.Material.Water then
-                bp.Position = Vector3.new(
-                    hrp.Position.X,
-                    ray.Position.Y + 2.4,
-                    hrp.Position.Z
-                )
-                bp.Parent = hrp
-            end
-        end
-    else
-        bp.Parent = nil
-    end
-end)
-
---========================================
--- DISABLE 3D RENDER (REAL)
---========================================
-local renderOff = false
-
-RunService.RenderStepped:Connect(function()
-    if toggles["Disable 3D Render"] then
-        if not renderOff then
-            pcall(function()
-                RunService:Set3dRenderingEnabled(false)
-            end)
-            renderOff = true
-        end
-    else
-        if renderOff then
-            pcall(function()
-                RunService:Set3dRenderingEnabled(true)
-            end)
-            renderOff = false
-        end
-    end
-end)
-
-print("✅ FISH IT CLASSIC TOOL – FULL FEATURE ACTIVE")
+print("✅ DELTA FIX LOADED — UI & TOGGLE MUNCUL")
