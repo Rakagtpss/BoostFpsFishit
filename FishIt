@@ -1,13 +1,12 @@
 --[[ 
-    RAKAGANTENG HUB V16: Ultimate Speed Edition
-    Fitur: Fast Reel, Skip Caught UI, No Animation, Anti-AFK, Reduce Map, Auto Spam
+    RAKAGANTENG HUB V17: Instant God Fishing
+    Fitur: Instant Cast, No Wait, Skip All UI, Anti-AFK, Map Optimizer
     Toggle UI: RIGHT CONTROL
 ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
@@ -20,160 +19,125 @@ LocalPlayer.Idled:Connect(function()
     VirtualUser:ClickButton2(Vector2.new())
 end)
 
--- --- UI SETUP ---
+-- --- UI SETUP (MODERN WIDE) ---
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "RakaUltimateV16"
+ScreenGui.Name = "RakaGodV17"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MainFrame.Size = UDim2.new(0, 480, 0, 250) -- Melebar
-MainFrame.Position = UDim2.new(0.5, -240, 0.4, -125)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+MainFrame.Size = UDim2.new(0, 460, 0, 240)
+MainFrame.Position = UDim2.new(0.5, -230, 0.4, -120)
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = "RAKAGANTENG HUB V16 - ULTIMATE SPEED"
-Title.TextColor3 = Color3.new(1,1,1)
+Title.Size = UDim2.new(1, 0, 0, 45)
+Title.Text = "RAKAGANTENG HUB V17 - INSTANT FISHING"
+Title.TextColor3 = Color3.fromRGB(255, 200, 50)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
 
 local Container = Instance.new("Frame", MainFrame)
-Container.Size = UDim2.new(1, -20, 1, -50)
-Container.Position = UDim2.new(0, 10, 0, 45)
+Container.Size = UDim2.new(1, -20, 1, -60)
+Container.Position = UDim2.new(0, 10, 0, 50)
 Container.BackgroundTransparency = 1
 
 local LeftCol = Instance.new("Frame", Container); LeftCol.Size = UDim2.new(0.5, -5, 1, 0); LeftCol.BackgroundTransparency = 1
 local RightCol = Instance.new("Frame", Container); RightCol.Size = UDim2.new(0.5, -5, 1, 0); RightCol.Position = UDim2.new(0.5, 5, 0, 0); RightCol.BackgroundTransparency = 1
 
 local function createLayout(parent)
-    local list = Instance.new("UIListLayout", parent); list.Padding = UDim.new(0, 6); list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    local list = Instance.new("UIListLayout", parent); list.Padding = UDim.new(0, 8); list.HorizontalAlignment = Enum.HorizontalAlignment.Center
 end
 createLayout(LeftCol); createLayout(RightCol)
 
 local function createBtn(parent, text, color)
     local btn = Instance.new("TextButton", parent)
-    btn.Size = UDim2.new(1, 0, 0, 30); btn.BackgroundColor3 = color or Color3.fromRGB(35, 35, 35)
+    btn.Size = UDim2.new(1, 0, 0, 35); btn.BackgroundColor3 = color or Color3.fromRGB(30, 30, 30)
     btn.Font = Enum.Font.GothamMedium; btn.Text = text; btn.TextColor3 = Color3.new(1,1,1); btn.TextSize = 10
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5); return btn
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6); return btn
 end
 
 local function createBox(parent, placeholder)
     local box = Instance.new("TextBox", parent)
-    box.Size = UDim2.new(1, 0, 0, 30); box.BackgroundColor3 = Color3.fromRGB(25, 25, 25); box.PlaceholderText = placeholder
+    box.Size = UDim2.new(1, 0, 0, 32); box.BackgroundColor3 = Color3.fromRGB(20, 20, 20); box.PlaceholderText = placeholder
     box.Text = ""; box.TextColor3 = Color3.new(1,1,1); box.TextSize = 10
-    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 5); return box
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6); return box
 end
 
 -- --- ELEMENTS ---
-local FishingBtn = createBtn(LeftCol, "ULTRA SPAM FISHING: OFF", Color3.fromRGB(180, 50, 50))
-local BaitBox = createBox(LeftCol, "Bait Delay (e.g 0.1)")
-local ReelBox = createBox(LeftCol, "Reel Delay (e.g 0.1)")
-local ReduceMapBtn = createBtn(LeftCol, "REDUCE MAP / LAG", Color3.fromRGB(70, 70, 70))
+local FishingBtn = createBtn(LeftCol, "INSTANT FISHING: OFF", Color3.fromRGB(150, 40, 40))
+local SpeedBox = createBox(LeftCol, "Spam Speed (e.g 0.05)")
+local SkipUIBtn = createBtn(LeftCol, "AUTO SKIP UI: ON", Color3.fromRGB(50, 120, 50))
 
-local SpeedBox = createBox(RightCol, "Walkspeed (16-500)")
-local SpeedBtn = createBtn(RightCol, "SET PLAYER SPEED")
-local FollowBox = createBox(RightCol, "Player Name (Auto TP)")
-local FollowBtn = createBtn(RightCol, "AUTO TP: OFF")
+local WalkSpeedBox = createBox(RightCol, "Walkspeed")
+local SetSpeedBtn = createBtn(RightCol, "SET SPEED")
+local OptimizeBtn = createBtn(RightCol, "REDUCE LAG (MAP)")
 local HideBtn = createBtn(RightCol, "HIDE MENU (RT-CTRL)")
 
--- --- LOGIC: REDUCE MAP ---
-ReduceMapBtn.MouseButton1Click:Connect(function()
-    for _, v in pairs(Workspace:GetDescendants()) do
-        if v:IsA("Part") or v:IsA("MeshPart") then
-            if v.Transparency < 1 then v.Transparency = 0.5 end -- Mengurangi beban render
-        elseif v:IsA("Texture") or v:IsA("Decal") then
-            v:Destroy()
-        end
-    end
-    ReduceMapBtn.Text = "MAP REDUCED"
-end)
-
--- --- LOGIC: NO ANIMATION & SKIP CAUGHT ---
--- Menghapus animasi memancing secara paksa
-local function noAnim()
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("Humanoid") then
-        for _, anim in pairs(char.Humanoid:GetPlayingAnimationTracks()) do
-            anim:Stop()
-        end
-    end
+-- --- LOGIC: INSTANT FISHING ---
+local fishingEnabled = false
+local function doInstantClick()
+    VirtualInputManager:SendMouseButtonEvent(500, 500, 0, true, game, 1)
+    task.wait(0.01)
+    VirtualInputManager:SendMouseButtonEvent(500, 500, 0, false, game, 1)
 end
 
--- --- LOGIC: SPAM FISHING ---
-local fishingEnabled = false
 FishingBtn.MouseButton1Click:Connect(function()
     fishingEnabled = not fishingEnabled
-    FishingBtn.Text = "ULTRA SPAM FISHING: " .. (fishingEnabled and "ON" or "OFF")
-    FishingBtn.BackgroundColor3 = fishingEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
+    FishingBtn.Text = "INSTANT FISHING: " .. (fishingEnabled and "ON" or "OFF")
+    FishingBtn.BackgroundColor3 = fishingEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 40, 40)
     
     task.spawn(function()
         while fishingEnabled do
-            local d1 = tonumber(BaitBox.Text) or 0.1
-            local d2 = tonumber(ReelBox.Text) or 0.1
+            local waitTime = tonumber(SpeedBox.Text) or 0.05
             
-            -- Lempar
-            VirtualInputManager:SendMouseButtonEvent(500, 500, 0, true, game, 1)
-            task.wait(0.01)
-            VirtualInputManager:SendMouseButtonEvent(500, 500, 0, false, game, 1)
-            task.wait(d1)
+            -- Step 1: Lempar Umpan
+            doInstantClick()
+            task.wait(0.05) -- Jeda mikro agar sistem game tidak lag
             
-            -- No Anim Call
-            noAnim() 
+            -- Step 2: Langsung Tarik (Instant Reel)
+            doInstantClick()
             
-            -- Tarik
-            if not fishingEnabled then break end
-            VirtualInputManager:SendMouseButtonEvent(500, 500, 0, true, game, 1)
-            task.wait(0.01)
-            VirtualInputManager:SendMouseButtonEvent(500, 500, 0, false, game, 1)
+            -- Step 3: Skip UI Ikan (Kirim Enter berulang sangat cepat)
+            for i = 1, 3 do
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+                task.wait(0.01)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+            end
             
-            -- Skip Caught UI (Simulasi Enter/Click Close)
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-            task.wait(0.01)
-            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-            
-            task.wait(d2)
+            task.wait(waitTime)
         end
     end)
 end)
 
--- --- UTILS & NAVIGATION ---
-local playerSpeed = 16
-local tpEnabled, tpTarget = false, nil
-
-SpeedBtn.MouseButton1Click:Connect(function() playerSpeed = tonumber(SpeedBox.Text) or 16 end)
-
-FollowBtn.MouseButton1Click:Connect(function()
-    tpEnabled = not tpEnabled
-    if tpEnabled then
-        local t = FollowBox.Text:lower()
-        for _, v in pairs(Players:GetPlayers()) do
-            if v ~= LocalPlayer and (v.Name:lower():find(t) or v.DisplayName:lower():find(t)) then
-                tpTarget = v; break
-            end
-        end
-        FollowBtn.BackgroundColor3 = tpTarget and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(180, 50, 50)
-    else
-        tpTarget = nil; FollowBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-    end
-end)
-
-RunService.Stepped:Connect(function()
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        if char:FindFirstChild("Humanoid") then char.Humanoid.WalkSpeed = playerSpeed end
-        if tpEnabled and tpTarget and tpTarget.Character and tpTarget.Character:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.CFrame = tpTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+-- --- LOGIC: OPTIMIZE MAP ---
+OptimizeBtn.MouseButton1Click:Connect(function()
+    for _, v in pairs(game:GetService("Workspace"):GetDescendants()) do
+        if v:IsA("Part") or v:IsA("MeshPart") then
+            v.Material = Enum.Material.SmoothPlastic
+            if v.Transparency < 1 then v.Transparency = 0.5 end
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            v:Destroy()
         end
     end
+    OptimizeBtn.Text = "OPTIMIZED!"
 end)
 
+-- --- HIDE MENU & NAVIGATION ---
 local function toggleUI() MainFrame.Visible = not MainFrame.Visible end
 HideBtn.MouseButton1Click:Connect(toggleUI)
 UserInputService.InputBegan:Connect(function(input, processed)
     if not processed and input.KeyCode == Enum.KeyCode.RightControl then toggleUI() end
+end)
+
+local currentSpeed = 16
+SetSpeedBtn.MouseButton1Click:Connect(function() currentSpeed = tonumber(WalkSpeedBox.Text) or 16 end)
+RunService.Stepped:Connect(function()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = currentSpeed
+    end
 end)
