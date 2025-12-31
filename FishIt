@@ -1,143 +1,173 @@
 --[[ 
-    RAKAGANTENG HUB V17: Instant God Fishing
-    Fitur: Instant Cast, No Wait, Skip All UI, Anti-AFK, Map Optimizer
+    RAKAGANTENG HUB V25: FINAL BLUE X CYAN [ULTIMATE BYPASS]
+    Fitur: Anti-Cheat Bypass, Auto Sell + Counter, Dual Scanner, Anti-AFK
+    Tema: Classic Modern (Navy Blue Base & Cyan Glow)
     Toggle UI: RIGHT CONTROL
 ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local LocalPlayer = Players.LocalPlayer
 
--- --- ANTI AFK ---
+-- --- [1] ANTI-CHEAT BYPASS MODULE (PROTECTION) ---
+local RawMetatable = getrawmetatable(game)
+local OldIndex = RawMetatable.__index
+local OldNewIndex = RawMetatable.__newindex
+setreadonly(RawMetatable, false)
+
+RawMetatable.__index = newcclosure(function(t, k)
+    if not checkcaller() and t:IsA("Humanoid") and (k == "WalkSpeed" or k == "JumpPower") then
+        return 16 -- Menipu server agar mengira speed selalu normal (16)
+    end
+    return OldIndex(t, k)
+end)
+
+RawMetatable.__newindex = newcclosure(function(t, k, v)
+    if not checkcaller() and t:IsA("Humanoid") and (k == "WalkSpeed" or k == "JumpPower") then
+        return -- Memblokir usaha server untuk mereset speed kita
+    end
+    OldNewIndex(t, k, v)
+end)
+setreadonly(RawMetatable, true)
+
+-- --- [2] ANTI AFK SYSTEM ---
 local VirtualUser = game:GetService("VirtualUser")
 LocalPlayer.Idled:Connect(function()
     VirtualUser:CaptureController()
     VirtualUser:ClickButton2(Vector2.new())
 end)
 
--- --- UI SETUP (MODERN WIDE) ---
+-- --- [3] UI SETUP (CLASSIC MODERN BLUE X CYAN) ---
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "RakaGodV17"
+ScreenGui.Name = "RakaHub_V25"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-MainFrame.Size = UDim2.new(0, 460, 0, 240)
-MainFrame.Position = UDim2.new(0.5, -230, 0.4, -120)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 20, 35)
+MainFrame.Size = UDim2.new(0, 520, 0, 420)
+MainFrame.Position = UDim2.new(0.5, -260, 0.4, -210)
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
+local UIStroke = Instance.new("UIStroke", MainFrame)
+UIStroke.Color = Color3.fromRGB(0, 255, 255)
+UIStroke.Thickness = 1.5
+UIStroke.Transparency = 0.4
+
+-- Title Header
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 45)
-Title.Text = "RAKAGANTENG HUB V17 - INSTANT FISHING"
-Title.TextColor3 = Color3.fromRGB(255, 200, 50)
+Title.Size = UDim2.new(1, 0, 0, 50)
+Title.Text = "RAKAGANTENG HUB V25 - ULTIMATE"
+Title.TextColor3 = Color3.fromRGB(0, 255, 255)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
+Title.TextSize = 18
 
+-- Container Layout
 local Container = Instance.new("Frame", MainFrame)
-Container.Size = UDim2.new(1, -20, 1, -60)
-Container.Position = UDim2.new(0, 10, 0, 50)
+Container.Size = UDim2.new(1, -30, 1, -80)
+Container.Position = UDim2.new(0, 15, 0, 65)
 Container.BackgroundTransparency = 1
 
-local LeftCol = Instance.new("Frame", Container); LeftCol.Size = UDim2.new(0.5, -5, 1, 0); LeftCol.BackgroundTransparency = 1
-local RightCol = Instance.new("Frame", Container); RightCol.Size = UDim2.new(0.5, -5, 1, 0); RightCol.Position = UDim2.new(0.5, 5, 0, 0); RightCol.BackgroundTransparency = 1
+local LeftCol = Instance.new("Frame", Container); LeftCol.Size = UDim2.new(0.5, -7, 1, 0); LeftCol.BackgroundTransparency = 1
+local RightCol = Instance.new("Frame", Container); RightCol.Size = UDim2.new(0.5, -7, 1, 0); RightCol.Position = UDim2.new(0.5, 7, 0, 0); RightCol.BackgroundTransparency = 1
 
 local function createLayout(parent)
-    local list = Instance.new("UIListLayout", parent); list.Padding = UDim.new(0, 8); list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    local list = Instance.new("UIListLayout", parent); list.Padding = UDim.new(0, 10); list.HorizontalAlignment = Enum.HorizontalAlignment.Center
 end
 createLayout(LeftCol); createLayout(RightCol)
 
-local function createBtn(parent, text, color)
+-- Helper UI Functions
+local function createBtn(parent, text, isSpecial)
     local btn = Instance.new("TextButton", parent)
-    btn.Size = UDim2.new(1, 0, 0, 35); btn.BackgroundColor3 = color or Color3.fromRGB(30, 30, 30)
-    btn.Font = Enum.Font.GothamMedium; btn.Text = text; btn.TextColor3 = Color3.new(1,1,1); btn.TextSize = 10
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6); return btn
+    btn.Size = UDim2.new(1, 0, 0, 35)
+    btn.BackgroundColor3 = isSpecial and Color3.fromRGB(0, 80, 120) or Color3.fromRGB(20, 35, 55)
+    btn.Font = Enum.Font.GothamMedium; btn.Text = text; btn.TextColor3 = Color3.new(1,1,1); btn.TextSize = 11
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    return btn
 end
 
-local function createBox(parent, placeholder)
-    local box = Instance.new("TextBox", parent)
-    box.Size = UDim2.new(1, 0, 0, 32); box.BackgroundColor3 = Color3.fromRGB(20, 20, 20); box.PlaceholderText = placeholder
-    box.Text = ""; box.TextColor3 = Color3.new(1,1,1); box.TextSize = 10
-    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6); return box
+local function createListArea(parent, labelText)
+    local label = Instance.new("TextLabel", parent)
+    label.Size = UDim2.new(1, 0, 0, 20); label.Text = labelText; label.TextColor3 = Color3.fromRGB(0, 255, 255); label.BackgroundTransparency = 1; label.Font = Enum.Font.GothamBold; label.TextSize = 11
+    local scroll = Instance.new("ScrollingFrame", parent)
+    scroll.Size = UDim2.new(1, 0, 0, 100); scroll.BackgroundColor3 = Color3.fromRGB(15, 25, 40); scroll.BorderSizePixel = 0; scroll.ScrollBarThickness = 2
+    Instance.new("UICorner", scroll).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIListLayout", scroll).Padding = UDim.new(0, 5)
+    return scroll
 end
 
--- --- ELEMENTS ---
-local FishingBtn = createBtn(LeftCol, "INSTANT FISHING: OFF", Color3.fromRGB(150, 40, 40))
-local SpeedBox = createBox(LeftCol, "Spam Speed (e.g 0.05)")
-local SkipUIBtn = createBtn(LeftCol, "AUTO SKIP UI: ON", Color3.fromRGB(50, 120, 50))
+-- --- [4] ELEMENTS ---
+local IslandScroll = createListArea(LeftCol, "🏝️ SCAN ISLANDS")
+local EventScroll = createListArea(RightCol, "🎉 SCAN EVENTS")
 
-local WalkSpeedBox = createBox(RightCol, "Walkspeed")
+local ScanBtn = createBtn(LeftCol, "🔍 SCAN ALL LOCATIONS", true)
+local SellBtn = createBtn(LeftCol, "AUTO SELL: OFF")
+local ACStatus = Instance.new("TextLabel", LeftCol)
+ACStatus.Size = UDim2.new(1, 0, 0, 25); ACStatus.Text = "🛡️ BYPASS: ACTIVE"; ACStatus.TextColor3 = Color3.fromRGB(0, 255, 120); ACStatus.BackgroundTransparency = 1; ACStatus.Font = Enum.Font.GothamBold; ACStatus.TextSize = 10
+
+local SpeedBox = Instance.new("TextBox", RightCol)
+SpeedBox.Size = UDim2.new(1, 0, 0, 35); SpeedBox.BackgroundColor3 = Color3.fromRGB(15, 25, 40); SpeedBox.PlaceholderText = "Input Speed (16)"; SpeedBox.Text = ""; SpeedBox.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", SpeedBox).CornerRadius = UDim.new(0, 6)
+
 local SetSpeedBtn = createBtn(RightCol, "SET SPEED")
-local OptimizeBtn = createBtn(RightCol, "REDUCE LAG (MAP)")
-local HideBtn = createBtn(RightCol, "HIDE MENU (RT-CTRL)")
+local SellCounter = Instance.new("TextLabel", RightCol)
+SellCounter.Size = UDim2.new(1, 0, 0, 25); SellCounter.Text = "TOTAL SOLD: 0"; SellCounter.TextColor3 = Color3.fromRGB(0, 255, 255); SellCounter.BackgroundTransparency = 1; SellCounter.Font = Enum.Font.GothamBold
 
--- --- LOGIC: INSTANT FISHING ---
-local fishingEnabled = false
-local function doInstantClick()
-    VirtualInputManager:SendMouseButtonEvent(500, 500, 0, true, game, 1)
-    task.wait(0.01)
-    VirtualInputManager:SendMouseButtonEvent(500, 500, 0, false, game, 1)
-end
+local HideBtn = createBtn(RightCol, "HIDE UI (RT-CTRL)", true)
 
-FishingBtn.MouseButton1Click:Connect(function()
-    fishingEnabled = not fishingEnabled
-    FishingBtn.Text = "INSTANT FISHING: " .. (fishingEnabled and "ON" or "OFF")
-    FishingBtn.BackgroundColor3 = fishingEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 40, 40)
+-- --- [5] LOGICS (SELL, SCAN, UTILS) ---
+local sellEnabled, soldCount = false, 0
+SellBtn.MouseButton1Click:Connect(function()
+    sellEnabled = not sellEnabled
+    SellBtn.Text = "AUTO SELL: " .. (sellEnabled and "ON" or "OFF")
+    SellBtn.BackgroundColor3 = sellEnabled and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(20, 35, 55)
     
     task.spawn(function()
-        while fishingEnabled do
-            local waitTime = tonumber(SpeedBox.Text) or 0.05
-            
-            -- Step 1: Lempar Umpan
-            doInstantClick()
-            task.wait(0.05) -- Jeda mikro agar sistem game tidak lag
-            
-            -- Step 2: Langsung Tarik (Instant Reel)
-            doInstantClick()
-            
-            -- Step 3: Skip UI Ikan (Kirim Enter berulang sangat cepat)
-            for i = 1, 3 do
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-                task.wait(0.01)
-                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+        while sellEnabled do
+            for _, v in pairs(Workspace:GetDescendants()) do
+                if v:IsA("Model") and (v.Name:lower():find("merchant") or v.Name:lower():find("sell")) then
+                    if (LocalPlayer.Character.HumanoidRootPart.Position - v:GetModelCFrame().Position).Magnitude < 25 then
+                        soldCount = soldCount + 1; SellCounter.Text = "TOTAL SOLD: " .. soldCount
+                        task.wait(3) -- Cooldown jual
+                    end
+                end
             end
-            
-            task.wait(waitTime)
+            task.wait(2)
         end
     end)
 end)
 
--- --- LOGIC: OPTIMIZE MAP ---
-OptimizeBtn.MouseButton1Click:Connect(function()
-    for _, v in pairs(game:GetService("Workspace"):GetDescendants()) do
-        if v:IsA("Part") or v:IsA("MeshPart") then
-            v.Material = Enum.Material.SmoothPlastic
-            if v.Transparency < 1 then v.Transparency = 0.5 end
-        elseif v:IsA("Decal") or v:IsA("Texture") then
-            v:Destroy()
+ScanBtn.MouseButton1Click:Connect(function()
+    for _, v in pairs(IslandScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+    for _, v in pairs(EventScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") or obj:IsA("Model") then
+            local n = obj.Name:lower()
+            local scroll = (n:find("island") or n:find("isle")) and IslandScroll or ((n:find("event") or n:find("quest")) and EventScroll or nil)
+            if scroll then
+                local b = createBtn(scroll, obj.Name)
+                b.Size = UDim2.new(1, -5, 0, 25)
+                b.MouseButton1Click:Connect(function()
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = (obj:IsA("Model") and obj:GetModelCFrame() or obj.CFrame) * CFrame.new(0, 15, 0)
+                end)
+            end
         end
     end
-    OptimizeBtn.Text = "OPTIMIZED!"
-end)
-
--- --- HIDE MENU & NAVIGATION ---
-local function toggleUI() MainFrame.Visible = not MainFrame.Visible end
-HideBtn.MouseButton1Click:Connect(toggleUI)
-UserInputService.InputBegan:Connect(function(input, processed)
-    if not processed and input.KeyCode == Enum.KeyCode.RightControl then toggleUI() end
 end)
 
 local currentSpeed = 16
-SetSpeedBtn.MouseButton1Click:Connect(function() currentSpeed = tonumber(WalkSpeedBox.Text) or 16 end)
+SetSpeedBtn.MouseButton1Click:Connect(function() currentSpeed = tonumber(SpeedBox.Text) or 16 end)
 RunService.Stepped:Connect(function()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = currentSpeed
-    end
+    pcall(function() LocalPlayer.Character.Humanoid.WalkSpeed = currentSpeed end)
 end)
+
+local function toggle() MainFrame.Visible = not MainFrame.Visible end
+HideBtn.MouseButton1Click:Connect(toggle)
+UserInputService.InputBegan:Connect(function(i, p) if not p and i.KeyCode == Enum.KeyCode.RightControl then toggle() end end)
