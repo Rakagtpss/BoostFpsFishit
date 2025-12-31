@@ -1,26 +1,31 @@
 --========================================
--- FISH IT CLASSIC TOOL (DELTA FIX)
+-- FISH IT CLASSIC TOOL
+-- FULL DELTA SAFE VERSION
+-- No Render + Walk On Water + Speed
 --========================================
 
+-- SERVICES
 local CoreGui = game:GetService("CoreGui")
-local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+
 local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
-local hrp = char:WaitForChild("HumanoidRootPart")
+local humanoid = char:WaitForChild("Humanoid")
 
---==============================
--- CLEAN OLD UI
---==============================
+--========================================
+-- CLEAN UI
+--========================================
 pcall(function()
     if CoreGui:FindFirstChild("FishIt_UI") then
         CoreGui.FishIt_UI:Destroy()
     end
 end)
 
---==============================
--- SCREEN GUI (DELTA SAFE)
---==============================
+--========================================
+-- GUI ROOT (DELTA SAFE)
+--========================================
 local gui = Instance.new("ScreenGui")
 gui.Name = "FishIt_UI"
 gui.IgnoreGuiInset = true
@@ -29,37 +34,23 @@ gui.DisplayOrder = 999999
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 gui.Parent = CoreGui
 
---==============================
+--========================================
 -- MAIN FRAME
---==============================
-local main = Instance.new("Frame")
-main.Parent = gui
-main.Size = UDim2.fromOffset(280, 260)
+--========================================
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.fromOffset(290, 300)
 main.Position = UDim2.fromOffset(40, 180)
 main.BackgroundColor3 = Color3.fromRGB(15,15,15)
 main.BorderSizePixel = 0
-main.Visible = true
 main.ZIndex = 50
+main.Active = true
 
 Instance.new("UICorner", main).CornerRadius = UDim.new(0,10)
 Instance.new("UIStroke", main).Color = Color3.fromRGB(0,255,0)
 
---==============================
--- TITLE
---==============================
-local title = Instance.new("TextLabel")
-title.Parent = main
-title.Size = UDim2.new(1,0,0,32)
-title.BackgroundTransparency = 1
-title.Text = "FISH IT CLASSIC TOOL"
-title.TextColor3 = Color3.new(1,1,1)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 15
-title.ZIndex = 60
-
---==============================
--- SIMPLE DRAG (DELTA SAFE)
---==============================
+--========================================
+-- DRAG (DELTA SAFE)
+--========================================
 local UIS = game:GetService("UserInputService")
 local dragging, dragStart, startPos
 
@@ -89,9 +80,21 @@ UIS.InputChanged:Connect(function(i)
     end
 end)
 
---==============================
--- TOGGLE SYSTEM (DELTA WORKING)
---==============================
+--========================================
+-- TITLE
+--========================================
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,32)
+title.BackgroundTransparency = 1
+title.Text = "FISH IT CLASSIC TOOL"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 15
+title.ZIndex = 60
+
+--========================================
+-- TOGGLE SYSTEM
+--========================================
 local toggles = {}
 
 local function Toggle(text, y)
@@ -133,33 +136,55 @@ local function Toggle(text, y)
     end)
 end
 
-Toggle("Walk On Water", 45)
-Toggle("Disable 3D", 85)
+-- TOGGLES
+Toggle("No Render", 45)
+Toggle("Walk On Water", 85)
+Toggle("Speed", 125)
 
---==============================
--- FPS LOCK
---==============================
-local function FPS(text, y, cap)
-    local b = Instance.new("TextButton", main)
-    b.Size = UDim2.new(1,-20,0,28)
-    b.Position = UDim2.new(0,10,0,y)
-    b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(25,25,25)
-    b.TextColor3 = Color3.new(1,1,1)
-    b.Font = Enum.Font.SourceSans
-    b.TextSize = 13
-    b.ZIndex = 60
-    Instance.new("UICorner", b)
+--========================================
+-- FEATURE: SPEED (SAFE)
+--========================================
+local DEFAULT_SPEED = humanoid.WalkSpeed
+local SPEED_VALUE = 28
 
-    b.MouseButton1Click:Connect(function()
-        if typeof(setfpscap) == "function" then
-            setfpscap(cap)
+RunService.Heartbeat:Connect(function()
+    if toggles["Speed"] then
+        humanoid.WalkSpeed = SPEED_VALUE
+    else
+        humanoid.WalkSpeed = DEFAULT_SPEED
+    end
+end)
+
+--========================================
+-- FEATURE: WALK ON WATER (ANTI TENGGELAM)
+--========================================
+RunService.Heartbeat:Connect(function()
+    if toggles["Walk On Water"] then
+        if humanoid:GetState() == Enum.HumanoidStateType.Swimming then
+            humanoid:ChangeState(Enum.HumanoidStateType.Running)
         end
-    end)
-end
+    end
+end)
 
-FPS("FPS 30", 140, 30)
-FPS("FPS 60", 175, 60)
-FPS("FPS 120", 210, 120)
+--========================================
+-- FEATURE: NO RENDER (ULTRA LOW)
+--========================================
+local saved = {
+    Brightness = Lighting.Brightness,
+    FogEnd = Lighting.FogEnd,
+    GlobalShadows = Lighting.GlobalShadows
+}
 
-print("✅ DELTA FIX LOADED — UI & TOGGLE MUNCUL")
+RunService.RenderStepped:Connect(function()
+    if toggles["No Render"] then
+        Lighting.Brightness = 0
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 60
+    else
+        Lighting.Brightness = saved.Brightness
+        Lighting.GlobalShadows = saved.GlobalShadows
+        Lighting.FogEnd = saved.FogEnd
+    end
+end)
+
+print("✅ FISH IT DELTA FULL TOOL LOADED")
