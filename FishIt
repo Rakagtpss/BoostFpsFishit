@@ -1,98 +1,132 @@
 -- Services
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local VirtualUser = game:GetService("VirtualUser")
 
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+LocalPlayer.CharacterAdded:Connect(function(char) Character = char end)
 
--- UI Configuration (Navy Blue Theme)
+-- UI Configuration
 local GUI = Instance.new("ScreenGui")
 GUI.Name = "ModernNavyHub"
+GUI.ResetOnSpawn = false
 GUI.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
+-- Main Frame
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 600, 0, 350)
-MainFrame.Position = UDim2.new(0.5, -300, 0.5, -175)
-MainFrame.BackgroundColor3 = Color3.fromRGB(10, 25, 47) -- Navy Dark
+MainFrame.Size = UDim2.new(0, 450, 0, 400) -- Ukuran diperbesar untuk Teleport
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -200)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 25, 47)
 MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
 MainFrame.Parent = GUI
 
 local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 10)
 UICorner.Parent = MainFrame
 
+-- Judul
 local Title = Instance.new("TextLabel")
-Title.Text = "NAVY MODERN HUB | v1.0"
-Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "NAVY MODERN HUB | v1.1"
+Title.Size = UDim2.new(1, 0, 0, 50)
 Title.TextColor3 = Color3.fromRGB(100, 200, 255)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
 Title.Parent = MainFrame
 
---- 1. ANTI-AFK FEATURE ---
-LocalPlayer.Idled:Connect(function()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new())
-    print("Anti-AFK: Mencegah pemutusan koneksi.")
-end)
+-- Tempat Tombol (Scrolling Frame)
+local ButtonContainer = Instance.new("ScrollingFrame")
+ButtonContainer.Size = UDim2.new(1, -20, 1, -70)
+ButtonContainer.Position = UDim2.new(0, 10, 0, 60)
+ButtonContainer.BackgroundTransparency = 1
+ButtonContainer.CanvasSize = UDim2.new(0, 0, 1.5, 0)
+ButtonContainer.ScrollBarThickness = 4
+ButtonContainer.Parent = MainFrame
 
---- 2. WALK ON WATER (Logic) ---
-local function WalkOnWater(enable)
-    local terrain = workspace:FindFirstChildOfClass("Terrain")
-    if terrain then
-        terrain.CanCollide = enable
-    end
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = ButtonContainer
+UIListLayout.Padding = UDim.new(0, 8)
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+--- FUNGSI PEMBANTU ---
+local function CreateButton(text, color, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Text = text
+    Btn.Size = UDim2.new(0.9, 0, 0, 40)
+    Btn.BackgroundColor3 = color
+    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.Font = Enum.Font.GothamSemibold
+    Btn.TextSize = 14
+    Btn.Parent = ButtonContainer
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Btn
+    Btn.MouseButton1Click:Connect(callback)
+    return Btn
 end
 
---- 3. SPEED FOR BOAT (Logic) ---
-local function SetBoatSpeed(speed)
-    local vehicle = Character:FindFirstChildOfClass("Humanoid").SeatPart
-    if vehicle and vehicle:IsA("VehicleSeat") then
-        vehicle.MaxSpeed = speed
-    end
-end
+--- FITUR TELEPORT ---
+local TeleportBox = Instance.new("TextBox")
+TeleportBox.Name = "TPBox"
+TeleportBox.PlaceholderText = "Ketik Nama Player Disini..."
+TeleportBox.Size = UDim2.new(0.9, 0, 0, 40)
+TeleportBox.BackgroundColor3 = Color3.fromRGB(20, 40, 70)
+TeleportBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TeleportBox.Font = Enum.Font.Gotham
+TeleportBox.TextSize = 14
+TeleportBox.Parent = ButtonContainer
 
---- 4. TELEPORT TO PLAYER ---
-local function TeleportToPlayer(targetName)
-    local target = Players:FindFirstChild(targetName)
-    if target and target.Character then
-        Character:MoveTo(target.Character.HumanoidRootPart.Position)
-    end
-end
-
---- 5. PERFORMANCE BOOSTER (FPS/CPU/PING) ---
-local function OptimizeGame()
-    settings().Rendering.QualityLevel = 1
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("BasePart") then
-            v.Material = Enum.Material.SmoothPlastic
-            v.CastShadow = false
-        elseif v:IsA("Decal") or v:IsA("Texture") then
-            v:Destroy()
+local TPBtn = CreateButton("TELEPORT KE PLAYER", Color3.fromRGB(0, 150, 255), function()
+    local targetName = TeleportBox.Text:lower()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Name:lower():sub(1, #targetName) == targetName then
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame
+                print("Berhasil teleport ke: " .. player.Name)
+            end
+            break
         end
     end
-    print("Optimization: Grafik disederhanakan untuk performa.")
-end
-
---- 6. ANTI-STAFF DETECTION ---
-Players.PlayerAdded:Connect(function(player)
-    -- Contoh logika sederhana: cek jika user memiliki role tertentu (Group ID diperlukan)
-    -- if player:GetRankInGroup(0000) > 100 then print("Staff detected!") end
-    print("Player baru bergabung: " .. player.Name)
 end)
 
---- FITUR TAMBAHAN: INFINITE JUMP ---
-UserInputService.JumpRequest:Connect(function()
-    Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+--- FITUR LAINNYA ---
+
+local wowActive = false
+CreateButton("Toggle Walk on Water", Color3.fromRGB(20, 50, 100), function()
+    wowActive = not wowActive
+    local terrain = workspace:FindFirstChildOfClass("Terrain")
+    if terrain then terrain.CanCollide = wowActive end
 end)
 
--- Tombol Close Sederhana
+CreateButton("Set Boat Speed (200)", Color3.fromRGB(20, 50, 100), function()
+    local hum = Character:FindFirstChildOfClass("Humanoid")
+    if hum and hum.SeatPart then hum.SeatPart.MaxSpeed = 200 end
+end)
+
+CreateButton("Optimize FPS", Color3.fromRGB(40, 100, 80), function()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
+    end
+end)
+
+-- Tombol Close
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Text = "X"
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Position = UDim2.new(1, -35, 0, 5)
+CloseBtn.Position = UDim2.new(1, -35, 0, 10)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.Parent = MainFrame
 CloseBtn.MouseButton1Click:Connect(function() GUI:Destroy() end)
+
+--- LOGIC DASAR (Anti-AFK & Jump) ---
+LocalPlayer.Idled:Connect(function() VirtualUser:CaptureController() VirtualUser:ClickButton2(Vector2.new()) end)
+UserInputService.JumpRequest:Connect(function()
+    if Character and Character:FindFirstChildOfClass("Humanoid") then
+        Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
