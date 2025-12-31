@@ -1,194 +1,226 @@
--- Booster + Ping UI (LocalScript)
--- Letakkan di StarterGui
+-- cloud_booster.lua (Luau / LocalScript)
+-- UI klasik + booster + ping keepalive + FPS lock (preset + slider)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
+local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
-if not player then return end
+local playerGui = player:WaitForChild("PlayerGui")
 
--- GameSettings via UserSettings (bisa tidak ada di environment tertentu)
-local successUserSettings, UserSettings = pcall(function() return UserSettings() end)
-local GameSettings = successUserSettings and UserSettings and UserSettings.GameSettings or nil
+-- ====== Konfigurasi ======
+local PING_URL = "https://httpbin.org/get"
+local PING_INTERVAL = 5
+local DEFAULT_FPS_LOCK = 60
 
--- UI buat
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "BoosterPingUI"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = player:WaitForChild("PlayerGui")
-
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 240, 0, 110)
-mainFrame.Position = UDim2.new(0, 12, 0, 12)
-mainFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-mainFrame.BorderSizePixel = 0
-mainFrame.Parent = screenGui
-
-local uiCorner = Instance.new("UICorner", mainFrame)
-uiCorner.CornerRadius = UDim.new(0, 8)
-
-local title = Instance.new("TextLabel", mainFrame)
-title.Size = UDim2.new(1, -16, 0, 28)
-title.Position = UDim2.new(0, 8, 0, 8)
-title.BackgroundTransparency = 1
-title.Text = "Booster CPU + Ping"
-title.TextColor3 = Color3.fromRGB(240,240,240)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 18
-title.TextXAlignment = Enum.TextXAlignment.Left
-
-local pingLabel = Instance.new("TextLabel", mainFrame)
-pingLabel.Size = UDim2.new(1, -16, 0, 28)
-pingLabel.Position = UDim2.new(0, 8, 0, 36)
-pingLabel.BackgroundTransparency = 1
-pingLabel.Text = "Ping: -- ms"
-pingLabel.TextColor3 = Color3.fromRGB(220,220,220)
-pingLabel.Font = Enum.Font.SourceSans
-pingLabel.TextSize = 16
-pingLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local boostButton = Instance.new("TextButton", mainFrame)
-boostButton.Size = UDim2.new(1, -16, 0, 30)
-boostButton.Position = UDim2.new(0, 8, 0, 68)
-boostButton.Text = "Enable Boost"
-boostButton.Font = Enum.Font.SourceSansBold
-boostButton.TextSize = 16
-boostButton.TextColor3 = Color3.fromRGB(20,20,20)
-boostButton.BackgroundColor3 = Color3.fromRGB(125, 200, 75)
-boostButton.AutoButtonColor = true
-local bCorner = Instance.new("UICorner", boostButton)
-bCorner.CornerRadius = UDim.new(0, 6)
-
--- State & storage untuk restore
-local boosted = false
-local savedState = {
-    quality = nil,
-    lighting = {},
-    particles = {},
-    decals = {}
+-- ====== State ======
+local state = {
+    boosterOn = false,
+    pingOn = false,
+    fpsLockOn = false,
+    fpsTarget = DEFAULT_FPS_LOCK,
 }
 
--- Fungsi helper untuk save/disable visual effects
-local function saveAndDisableVisuals()
-    -- Save Quality
-    if GameSettings then
-        pcall(function()
-            savedState.quality = GameSettings.SavedQualityLevel
-            -- set to lowest (0 atau 1 tergantung environment), gunakan 1 agar kompatibel
-            GameSettings.SavedQualityLevel = 1
-        end)
-    end
+-- ====== UI utama ======
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "CloudBoosterGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
 
-    -- Lighting changes
-    pcall(function()
-        savedState.lighting.GlobalShadows = Lighting.GlobalShadows
-        savedState.lighting.FogEnd = Lighting.FogEnd
-        savedState.lighting.Brightness = Lighting.Brightness
-        -- apply lighter settings
-        Lighting.GlobalShadows = false
-        Lighting.FogEnd = 9e9
-        Lighting.Brightness = math.max(1, Lighting.Brightness * 0.9)
-    end)
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 280)
+frame.Position = UDim2.new(0, 20, 0, 80)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
 
-    -- Disable particle emitters, trails, and make decals invisible (store previous)
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("ParticleEmitter") or obj:IsA("Trail") then
-            local ok, _ = pcall(function()
-                savedState.particles[obj] = obj.Enabled
-                obj.Enabled = false
-            end)
-        elseif obj:IsA("Decal") or obj:IsA("Texture") then
-            local ok, _ = pcall(function()
-                savedState.decals[obj] = obj.Transparency
-                obj.Transparency = 1
-            end)
-        end
-    end
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "Cloud Booster (UI Klasik)"
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.Parent = frame
+
+local function makeButton(name, y)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0, 260, 0, 36)
+    b.Position = UDim2.new(0, 20, 0, y)
+    b.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    b.TextColor3 = Color3.fromRGB(230,230,230)
+    b.Font = Enum.Font.SourceSans
+    b.TextSize = 16
+    b.Text = name
+    b.Parent = frame
+    return b
 end
 
-local function restoreVisuals()
-    -- Restore quality
-    if GameSettings then
-        pcall(function()
-            if savedState.quality ~= nil then
-                GameSettings.SavedQualityLevel = savedState.quality
+local btnStartBooster = makeButton("Start Booster", 40)
+local btnStopBooster  = makeButton("Stop Booster", 80)
+local btnStartPing    = makeButton("Start Ping Keepalive", 120)
+local btnStopPing     = makeButton("Stop Ping", 160)
+local btnStopFPS      = makeButton("Stop FPS Lock", 200)
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, -20, 0, 40)
+statusLabel.Position = UDim2.new(0, 10, 1, -50)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.fromRGB(200,200,200)
+statusLabel.Font = Enum.Font.SourceSans
+statusLabel.TextSize = 14
+statusLabel.Text = "Status: idle"
+statusLabel.Parent = frame
+
+local function updateStatus()
+    local s = ("Booster:%s  Ping:%s  FPSLock:%s (%d)"):format(
+        state.boosterOn and "ON" or "OFF",
+        state.pingOn and "ON" or "OFF",
+        state.fpsLockOn and "ON" or "OFF",
+        state.fpsTarget
+    )
+    statusLabel.Text = "Status: " .. s
+end
+
+-- ====== Booster simulasi ======
+local function startBooster()
+    state.boosterOn = true
+    updateStatus()
+end
+local function stopBooster()
+    state.boosterOn = false
+    updateStatus()
+end
+
+-- ====== Ping keepalive ======
+local pingThread = nil
+local function pingOnce()
+    local ok, res = pcall(function()
+        return HttpService:RequestAsync({Url = PING_URL, Method = "GET"})
+    end)
+    return ok and res and res.Success
+end
+local function startPing()
+    state.pingOn = true
+    pingThread = coroutine.create(function()
+        while state.pingOn do
+            pingOnce()
+            wait(PING_INTERVAL)
+        end
+    end)
+    coroutine.resume(pingThread)
+    updateStatus()
+end
+local function stopPing()
+    state.pingOn = false
+    pingThread = nil
+    updateStatus()
+end
+
+-- ====== FPS lock ======
+local fpsThread = nil
+local function startFPSLock(targetFPS)
+    state.fpsLockOn = true
+    state.fpsTarget = math.max(1, math.floor(targetFPS or DEFAULT_FPS_LOCK))
+    local interval = 1 / state.fpsTarget
+    fpsThread = coroutine.create(function()
+        local last = tick()
+        while state.fpsLockOn do
+            local now = tick()
+            if now - last >= interval then
+                -- pekerjaan yang dibatasi FPS
+                last = now
             end
-        end)
-    end
-
-    -- Restore lighting
-    pcall(function()
-        if savedState.lighting.GlobalShadows ~= nil then
-            Lighting.GlobalShadows = savedState.lighting.GlobalShadows
-        end
-        if savedState.lighting.FogEnd ~= nil then
-            Lighting.FogEnd = savedState.lighting.FogEnd
-        end
-        if savedState.lighting.Brightness ~= nil then
-            Lighting.Brightness = savedState.lighting.Brightness
+            wait(0.001)
         end
     end)
-
-    -- Restore particles
-    for obj, enabled in pairs(savedState.particles) do
-        if obj and obj.Parent then
-            pcall(function() obj.Enabled = enabled end)
-        end
-    end
-    savedState.particles = {}
-
-    -- Restore decals
-    for obj, trans in pairs(savedState.decals) do
-        if obj and obj.Parent then
-            pcall(function() obj.Transparency = trans end)
-        end
-    end
-    savedState.decals = {}
+    coroutine.resume(fpsThread)
+    updateStatus()
+end
+local function stopFPSLock()
+    state.fpsLockOn = false
+    fpsThread = nil
+    updateStatus()
 end
 
--- Toggle fungsi
-local function setBoost(state)
-    if state == boosted then return end
-    boosted = state
-    if boosted then
-        boostButton.Text = "Disable Boost"
-        boostButton.BackgroundColor3 = Color3.fromRGB(220, 80, 80)
-        -- enable boost
-        saveAndDisableVisuals()
-    else
-        boostButton.Text = "Enable Boost"
-        boostButton.BackgroundColor3 = Color3.fromRGB(125, 200, 75)
-        -- restore
-        restoreVisuals()
-    end
+-- ====== Tombol utama ======
+btnStartBooster.MouseButton1Click:Connect(startBooster)
+btnStopBooster.MouseButton1Click:Connect(stopBooster)
+btnStartPing.MouseButton1Click:Connect(startPing)
+btnStopPing.MouseButton1Click:Connect(stopPing)
+btnStopFPS.MouseButton1Click:Connect(stopFPSLock)
+
+-- ====== Panel FPS Control (preset + slider) ======
+local fpsFrame = Instance.new("Frame")
+fpsFrame.Size = UDim2.new(0, 300, 0, 140)
+fpsFrame.Position = UDim2.new(0, 340, 0, 80)
+fpsFrame.BackgroundColor3 = Color3.fromRGB(35,35,35)
+fpsFrame.Parent = screenGui
+
+local fpsTitle = Instance.new("TextLabel")
+fpsTitle.Size = UDim2.new(1, 0, 0, 30)
+fpsTitle.Text = "FPS Lock Control"
+fpsTitle.BackgroundTransparency = 1
+fpsTitle.TextColor3 = Color3.fromRGB(255,255,255)
+fpsTitle.Font = Enum.Font.SourceSansBold
+fpsTitle.TextSize = 18
+fpsTitle.Parent = fpsFrame
+
+local function makePresetButton(name, fps, x)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0, 60, 0, 30)
+    b.Position = UDim2.new(0, x, 0, 40)
+    b.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    b.TextColor3 = Color3.fromRGB(230,230,230)
+    b.Font = Enum.Font.SourceSans
+    b.TextSize = 14
+    b.Text = name
+    b.Parent = fpsFrame
+    b.MouseButton1Click:Connect(function()
+        startFPSLock(fps)
+    end)
 end
 
-boostButton.MouseButton1Click:Connect(function()
-    setBoost(not boosted)
-end)
+makePresetButton("30", 30, 10)
+makePresetButton("60", 60, 80)
+makePresetButton("90", 90, 150)
+makePresetButton("120", 120, 220)
 
--- Ping updater (menggunakan Player:GetNetworkPing())
-spawn(function()
-    while screenGui.Parent and player.Parent do
-        local ok, ping = pcall(function()
-            return player:GetNetworkPing()
-        end)
-        local ms = 0
-        if ok and type(ping) == "number" then
-            ms = math.floor(ping * 1000 + 0.5)
+-- slider
+local sliderFrame = Instance.new("Frame")
+sliderFrame.Size = UDim2.new(0, 260, 0, 20)
+sliderFrame.Position = UDim2.new(0, 20, 0, 80)
+sliderFrame.BackgroundColor3 = Color3.fromRGB(60,60,60)
+sliderFrame.Parent = fpsFrame
+
+local sliderKnob = Instance.new("Frame")
+sliderKnob.Size = UDim2.new(0, 10, 0, 20)
+sliderKnob.Position = UDim2.new(0, 0, 0, 0)
+sliderKnob.BackgroundColor3 = Color3.fromRGB(200,50,50)
+sliderKnob.Parent = sliderFrame
+sliderKnob.Active = true
+sliderKnob.Draggable = true
+
+local fpsValueLabel = Instance.new("TextLabel")
+fpsValueLabel.Size = UDim2.new(1, 0, 0, 30)
+fpsValueLabel.Position = UDim2.new(0, 0, 0, 110)
+fpsValueLabel.BackgroundTransparency = 1
+fpsValueLabel.TextColor3 = Color3.fromRGB(230,230,230)
+fpsValueLabel.Font = Enum.Font.SourceSans
+fpsValueLabel.TextSize = 14
+fpsValueLabel.Text = "FPS: "..DEFAULT_FPS_LOCK
+fpsValueLabel.Parent = fpsFrame
+
+sliderKnob.Changed:Connect(function(prop)
+    if prop == "Position" then
+        local relX = math.clamp(sliderKnob.Position.X.Offset, 0, 250)
+        local fpsVal = math.floor(30 + (relX/250) * (120-30))
+        fpsValueLabel.Text = "FPS: "..fpsVal
+        state.fpsTarget = fpsVal
+        if state.fpsLockOn then
+            startFPSLock(fpsVal)
         end
-        pingLabel.Text = ("Ping: %d ms"):format(ms)
-        wait(0.5)
     end
 end)
 
--- Clean up on leave/reset (restore)
-player.AncestryChanged:Connect(function()
-    if not player:IsDescendantOf(game) then
-        restoreVisuals()
-    end
-end)
-game:BindToClose(function()
-    restoreVisuals()
-end)
+updateStatus()
