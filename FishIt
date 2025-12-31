@@ -1,156 +1,86 @@
--- [[ RakaGanteng Hub - Fish It Edition ]] --
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+--[[ 
+⚠️ DISCLAIMER:
+Script ini hanya untuk tujuan pembelajaran dan eksperimen pribadi di tempat yang kamu miliki izin. 
+Menggunakan script seperti ini di game publik tanpa izin bisa melanggar TOS Roblox.
+]]
 
-local Window = Rayfield:CreateWindow({
-   Name = "RakaGanteng | Fish It 🎣",
-   LoadingTitle = "RakaGanteng v3.0",
-   LoadingSubtitle = "Super Lite Modern Black",
-   ConfigurationSaving = { Enabled = true, FolderName = "RakaGanteng_FishIt" },
-   KeySystem = false
-})
-
--- [[ SERVICES ]] --
-local LP = game.Players.LocalPlayer
-local RS = game:GetService("RunService")
-local TS = game:GetService("TeleportService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-
--- [[ VARIABLES ]] --
-local AutoFish = false
-local AutoSell = false
-local WalkOnWater = false
-
--- [[ TAB: FISHING ]] --
-local FishTab = Window:CreateTab("Auto Farm", 4483362458)
-
-FishTab:CreateToggle({
-   Name = "Auto Fishing (Cast & Catch)",
-   CurrentValue = false,
-   Callback = function(Value)
-      AutoFish = Value
-      task.spawn(function()
-         while AutoFish do
-            local Char = LP.Character
-            local Tool = Char:FindFirstChildOfClass("Tool") or LP.Backpack:FindFirstChildOfClass("Tool")
-            
-            if Tool and Tool:FindFirstChild("Events") then
-               -- Logika otomatis lempar pancing
-               Tool.Events.Cast:FireServer()
-               task.wait(2) -- Menunggu ikan menggigit
-               -- Logika otomatis tarik (Biasanya trigger event 'Catch')
-               Tool.Events.Catch:FireServer()
-            end
-            task.wait(0.5)
-         end
-      end)
-   end,
-})
-
-FishTab:CreateToggle({
-   Name = "Auto Claim Event Rewards",
-   CurrentValue = false,
-   Callback = function(Value)
-      _G.ClaimEvent = Value
-      while _G.ClaimEvent do
-         -- Mencoba memicu remote claim umum di Fish It
-         local event = game:GetService("ReplicatedStorage"):FindFirstChild("ClaimEvent", true)
-         if event then event:FireServer() end
-         task.wait(10)
-      end
-   end,
-})
-
--- [[ TAB: MOVEMENT ]] --
-local MoveTab = Window:CreateTab("Movement", 4483362458)
-
-MoveTab:CreateSlider({
-   Name = "Walk Speed",
-   Range = {16, 300},
-   Increment = 1,
-   CurrentValue = 16,
-   Callback = function(Value)
-      if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-         LP.Character.Humanoid.WalkSpeed = Value
-      end
-   end,
-})
-
--- FITUR WALK ON WATER (Sangat berguna di Fish It)
-local WaterPlatform = Instance.new("Part")
-WaterPlatform.Size = Vector3.new(10, 1, 10)
-WaterPlatform.Anchored = true
-WaterPlatform.Transparency = 1
-WaterPlatform.Parent = workspace
-
-RS.RenderStepped:Connect(function()
-    if WalkOnWater and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-        WaterPlatform.CFrame = CFrame.new(LP.Character.HumanoidRootPart.Position.X, 0.5, LP.Character.HumanoidRootPart.Position.Z)
-        WaterPlatform.CanCollide = true
-    else
-        WaterPlatform.CanCollide = false
-    end
-end)
-
-MoveTab:CreateToggle({
-   Name = "Walk On Water (Surf)",
-   CurrentValue = false,
-   Callback = function(Value)
-      WalkOnWater = Value
-   end,
-})
-
--- [[ TAB: PERFORMANCE & SERVER ]] --
-local SysTab = Window:CreateTab("System", 4483362458)
-
-SysTab:CreateButton({
-   Name = "Server Hop (Look for Boosters)",
-   Callback = function()
-      local Http = game:GetService("HttpService")
-      local API = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
-      local Raw = game:HttpGet(API)
-      local Decode = Http:JSONDecode(Raw)
-      for i,v in pairs(Decode.data) do
-         if v.playing < v.maxPlayers and v.id ~= game.JobId then
-            TS:TeleportToPlaceInstance(game.PlaceId, v.id)
-         end
-      end
-   end,
-})
-
-SysTab:CreateToggle({
-   Name = "No Render (Save Battery/CPU)",
-   CurrentValue = false,
-   Callback = function(Value)
-      RS:Set3dRenderingEnabled(not Value)
-   end,
-})
-
--- [[ FLOATING MINI FPS & PING ]] --
+-- UI Setup
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 100, 0, 40)
-MainFrame.Position = UDim2.new(0.05, 0, 0.1, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-MainFrame.Active = true
-MainFrame.Draggable = true
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0.4, 0, 0.5, 0)
+Frame.Position = UDim2.new(0.3, 0, 0.25, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(10, 30, 60)
+Frame.BorderSizePixel = 0
 
-local StatText = Instance.new("TextLabel", MainFrame)
-StatText.Size = UDim2.new(1, 0, 1, 0)
-StatText.BackgroundTransparency = 1
-StatText.TextColor3 = Color3.fromRGB(0, 255, 255)
-StatText.TextSize = 10
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0.1, 0)
+Title.Text = "⚙️ Raka's Utility Hub"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.SourceSansBold
+Title.TextScaled = true
 
-RS.Heartbeat:Connect(function()
-    local fps = math.floor(1/RS.Heartbeat:Wait())
-    local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
-    StatText.Text = "FPS: "..fps.."\nPING: "..ping.."ms"
-end)
-
--- [[ ANTI-STAFF ]] --
-game.Players.PlayerAdded:Connect(function(player)
-    if player:GetRankInGroup(0) > 10 then -- Ubah 0 jadi Group ID Fish It jika tahu
-        LP:Kick("Staff Detected: " .. player.Name)
+-- Walk on Water
+game:GetService("RunService").Stepped:Connect(function()
+    local char = game.Players.LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local pos = char.HumanoidRootPart.Position
+        if workspace:FindPartOnRay(Ray.new(pos, Vector3.new(0, -5, 0))).Name == "Water" then
+            char.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+            char.HumanoidRootPart.CFrame = CFrame.new(pos.X, workspace.Water.Position.Y + 3, pos.Z)
+        end
     end
 end)
 
-Rayfield:Notify({Title = "RakaGanteng Loaded", Content = "Siap untuk memancing!", Duration = 3})
+-- Anti-AFK
+local VirtualUser = game:GetService("VirtualUser")
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    VirtualUser:Button2Down(Vector2.new())
+    wait(1)
+    VirtualUser:Button2Up(Vector2.new())
+end)
+
+-- Fake Name/Level
+local player = game.Players.LocalPlayer
+player.Name = "Guest_" .. math.random(1000, 9999)
+player.DisplayName = "Level 1"
+
+-- Speed for Boat
+for _, v in pairs(workspace:GetDescendants()) do
+    if v:IsA("VehicleSeat") and v:IsDescendantOf(workspace) then
+        v.MaxSpeed = 200
+        v.Torque = 999999
+    end
+end
+
+-- Auto Teleport to Player
+function teleportToPlayer(targetName)
+    local target = game.Players:FindFirstChild(targetName)
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+    end
+end
+
+-- Anti Staff (Auto Leave if Staff Detected)
+local staffList = {"Admin", "Moderator", "Staff"}
+game.Players.PlayerAdded:Connect(function(plr)
+    for _, role in pairs(staffList) do
+        if string.find(string.lower(plr.Name), string.lower(role)) then
+            game:Shutdown()
+        end
+    end
+end)
+
+-- CPU/FPS/Ping Booster
+settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+game:GetService("Lighting").GlobalShadows = false
+game:GetService("Lighting").FogEnd = 100000
+game:GetService("Lighting").Brightness = 1
+for _, v in pairs(workspace:GetDescendants()) do
+    if v:IsA("Texture") or v:IsA("Decal") then
+        v:Destroy()
+    end
+end
+
+-- UI Wide Mode
+Frame.Size = UDim2.new(0.6, 0, 0.6, 0)
