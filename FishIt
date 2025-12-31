@@ -1,190 +1,252 @@
---========================================
--- FISH IT CLASSIC TOOL
--- FULL DELTA SAFE VERSION
--- No Render + Walk On Water + Speed
---========================================
+--[[ 
+    SCRIPT: Walk on Water + No Render + Speed
+    Dibuat oleh: Gemini AI
+    Cara Pakai: Execute menggunakan Executor (Synapse, Krnl, Fluxus, Delta, dll)
+    Toggle UI: Tekan RIGHT CONTROL
+]]
 
--- SERVICES
-local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
 
-local player = Players.LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
-local humanoid = char:WaitForChild("Humanoid")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
---========================================
--- CLEAN UI
---========================================
-pcall(function()
-    if CoreGui:FindFirstChild("FishIt_UI") then
-        CoreGui.FishIt_UI:Destroy()
-    end
-end)
+-- --- UI SETUP ---
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local SpeedBox = Instance.new("TextBox")
+local SpeedButton = Instance.new("TextButton")
+local WaterButton = Instance.new("TextButton")
+local RenderButton = Instance.new("TextButton")
+local MinimizeLabel = Instance.new("TextLabel")
 
---========================================
--- GUI ROOT (DELTA SAFE)
---========================================
-local gui = Instance.new("ScreenGui")
-gui.Name = "FishIt_UI"
-gui.IgnoreGuiInset = true
-gui.ResetOnSpawn = false
-gui.DisplayOrder = 999999
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-gui.Parent = CoreGui
+-- Properties UI (Styling Dark Mode)
+ScreenGui.Name = "GeminiTool"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
 
---========================================
--- MAIN FRAME
---========================================
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.fromOffset(290, 300)
-main.Position = UDim2.fromOffset(40, 180)
-main.BackgroundColor3 = Color3.fromRGB(15,15,15)
-main.BorderSizePixel = 0
-main.ZIndex = 50
-main.Active = true
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
+MainFrame.Size = UDim2.new(0, 220, 0, 260)
+MainFrame.Active = true
+MainFrame.Draggable = true -- Bisa digeser
 
-Instance.new("UICorner", main).CornerRadius = UDim.new(0,10)
-Instance.new("UIStroke", main).Color = Color3.fromRGB(0,255,0)
+Title.Name = "Title"
+Title.Parent = MainFrame
+Title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "Gemini Hub"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 18
 
---========================================
--- DRAG (DELTA SAFE)
---========================================
-local UIS = game:GetService("UserInputService")
-local dragging, dragStart, startPos
+-- --- SPEED SECTION ---
+SpeedBox.Name = "SpeedBox"
+SpeedBox.Parent = MainFrame
+SpeedBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+SpeedBox.Position = UDim2.new(0.1, 0, 0.2, 0)
+SpeedBox.Size = UDim2.new(0.8, 0, 0, 35)
+SpeedBox.Font = Enum.Font.Gotham
+SpeedBox.PlaceholderText = "Input Speed (e.g 50)"
+SpeedBox.Text = ""
+SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedBox.TextSize = 14
 
-main.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = i.Position
-        startPos = main.Position
-    end
-end)
+SpeedButton.Name = "SpeedButton"
+SpeedButton.Parent = MainFrame
+SpeedButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+SpeedButton.Position = UDim2.new(0.1, 0, 0.35, 0)
+SpeedButton.Size = UDim2.new(0.8, 0, 0, 35)
+SpeedButton.Font = Enum.Font.GothamBold
+SpeedButton.Text = "Set Speed"
+SpeedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedButton.TextSize = 14
 
-UIS.InputEnded:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
-end)
+-- --- WALK ON WATER SECTION ---
+WaterButton.Name = "WaterButton"
+WaterButton.Parent = MainFrame
+WaterButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Merah (Off)
+WaterButton.Position = UDim2.new(0.1, 0, 0.55, 0)
+WaterButton.Size = UDim2.new(0.8, 0, 0, 35)
+WaterButton.Font = Enum.Font.GothamBold
+WaterButton.Text = "Walk On Water: OFF"
+WaterButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+WaterButton.TextSize = 14
 
-UIS.InputChanged:Connect(function(i)
-    if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
-        local delta = i.Position - dragStart
-        main.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
-end)
+-- --- DISABLE RENDER SECTION ---
+RenderButton.Name = "RenderButton"
+RenderButton.Parent = MainFrame
+RenderButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Merah (Off)
+RenderButton.Position = UDim2.new(0.1, 0, 0.75, 0)
+RenderButton.Size = UDim2.new(0.8, 0, 0, 35)
+RenderButton.Font = Enum.Font.GothamBold
+RenderButton.Text = "Disable 3D: OFF"
+RenderButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+RenderButton.TextSize = 14
 
---========================================
--- TITLE
---========================================
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1,0,0,32)
-title.BackgroundTransparency = 1
-title.Text = "FISH IT CLASSIC TOOL"
-title.TextColor3 = Color3.new(1,1,1)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 15
-title.ZIndex = 60
+MinimizeLabel.Name = "MinLabel"
+MinimizeLabel.Parent = MainFrame
+MinimizeLabel.BackgroundTransparency = 1
+MinimizeLabel.Position = UDim2.new(0, 0, 0.9, 0)
+MinimizeLabel.Size = UDim2.new(1, 0, 0, 20)
+MinimizeLabel.Font = Enum.Font.Gotham
+MinimizeLabel.Text = "Press Right-Ctrl to Toggle UI"
+MinimizeLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+MinimizeLabel.TextSize = 10
 
---========================================
--- TOGGLE SYSTEM
---========================================
-local toggles = {}
+-- --- BLACK SCREEN OVERLAY ---
+local BlackScreen = Instance.new("Frame")
+BlackScreen.Parent = ScreenGui
+BlackScreen.BackgroundColor3 = Color3.new(0,0,0)
+BlackScreen.Size = UDim2.new(1,0,1,0)
+BlackScreen.ZIndex = 999999
+BlackScreen.Visible = false
+local BlackLabel = Instance.new("TextLabel")
+BlackLabel.Parent = BlackScreen
+BlackLabel.Size = UDim2.new(1,0,1,0)
+BlackLabel.BackgroundTransparency = 1
+BlackLabel.TextColor3 = Color3.new(1,1,1)
+BlackLabel.Text = "3D Render Disabled (Saving Resources)\nClick Button again to Enable"
+BlackLabel.TextSize = 24
 
-local function Toggle(text, y)
-    local row = Instance.new("Frame", main)
-    row.Size = UDim2.new(1,-20,0,36)
-    row.Position = UDim2.new(0,10,0,y)
-    row.BackgroundTransparency = 1
-    row.ZIndex = 60
+-- --- LOGIC VARIABLES ---
+local speedEnabled = false
+local targetSpeed = 16
+local waterEnabled = false
+local renderDisabled = false
+local waterPart = nil
 
-    local lbl = Instance.new("TextLabel", row)
-    lbl.Size = UDim2.new(0.65,0,1,0)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = text
-    lbl.TextColor3 = Color3.fromRGB(230,230,230)
-    lbl.Font = Enum.Font.SourceSans
-    lbl.TextSize = 14
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.ZIndex = 61
+-- --- FUNCTIONS ---
 
-    local btn = Instance.new("TextButton", row)
-    btn.Size = UDim2.new(0.3,0,0.7,0)
-    btn.Position = UDim2.new(0.7,0,0.15,0)
-    btn.Text = "OFF"
-    btn.Font = Enum.Font.SourceSansBold
-    btn.TextSize = 13
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.BackgroundColor3 = Color3.fromRGB(140,0,0)
-    btn.ZIndex = 62
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(1,0)
-
-    toggles[text] = false
-
-    btn.MouseButton1Click:Connect(function()
-        toggles[text] = not toggles[text]
-        btn.Text = toggles[text] and "ON" or "OFF"
-        btn.BackgroundColor3 = toggles[text]
-            and Color3.fromRGB(0,170,0)
-            or Color3.fromRGB(140,0,0)
-    end)
-end
-
--- TOGGLES
-Toggle("No Render", 45)
-Toggle("Walk On Water", 85)
-Toggle("Speed", 125)
-
---========================================
--- FEATURE: SPEED (SAFE)
---========================================
-local DEFAULT_SPEED = humanoid.WalkSpeed
-local SPEED_VALUE = 28
-
-RunService.Heartbeat:Connect(function()
-    if toggles["Speed"] then
-        humanoid.WalkSpeed = SPEED_VALUE
+-- 1. SPEED LOGIC
+SpeedButton.MouseButton1Click:Connect(function()
+    local num = tonumber(SpeedBox.Text)
+    if num then
+        targetSpeed = num
+        speedEnabled = true
+        SpeedButton.Text = "Speed Set to " .. num
+        SpeedButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        
+        -- Apply langsung
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = targetSpeed
+        end
     else
-        humanoid.WalkSpeed = DEFAULT_SPEED
+        SpeedButton.Text = "Invalid Number"
+        task.wait(1)
+        SpeedButton.Text = "Set Speed"
     end
 end)
 
---========================================
--- FEATURE: WALK ON WATER (ANTI TENGGELAM)
---========================================
-RunService.Heartbeat:Connect(function()
-    if toggles["Walk On Water"] then
-        if humanoid:GetState() == Enum.HumanoidStateType.Swimming then
-            humanoid:ChangeState(Enum.HumanoidStateType.Running)
+-- Loop untuk memaksa speed (agar tidak direset game)
+RunService.Stepped:Connect(function()
+    if speedEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        if LocalPlayer.Character.Humanoid.WalkSpeed ~= targetSpeed then
+            LocalPlayer.Character.Humanoid.WalkSpeed = targetSpeed
         end
     end
 end)
 
---========================================
--- FEATURE: NO RENDER (ULTRA LOW)
---========================================
-local saved = {
-    Brightness = Lighting.Brightness,
-    FogEnd = Lighting.FogEnd,
-    GlobalShadows = Lighting.GlobalShadows
-}
-
-RunService.RenderStepped:Connect(function()
-    if toggles["No Render"] then
-        Lighting.Brightness = 0
-        Lighting.GlobalShadows = false
-        Lighting.FogEnd = 60
+-- 2. WALK ON WATER LOGIC
+WaterButton.MouseButton1Click:Connect(function()
+    waterEnabled = not waterEnabled
+    if waterEnabled then
+        WaterButton.Text = "Walk On Water: ON"
+        WaterButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
     else
-        Lighting.Brightness = saved.Brightness
-        Lighting.GlobalShadows = saved.GlobalShadows
-        Lighting.FogEnd = saved.FogEnd
+        WaterButton.Text = "Walk On Water: OFF"
+        WaterButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        if waterPart then waterPart:Destroy() waterPart = nil end
     end
 end)
 
-print("✅ FISH IT DELTA FULL TOOL LOADED")
+RunService.Heartbeat:Connect(function()
+    if not waterEnabled then return end
+    
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    
+    local root = char.HumanoidRootPart
+    
+    -- Cek apakah ada air di bawah
+    local rayOrigin = root.Position
+    local rayDirection = Vector3.new(0, -15, 0)
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {char, waterPart}
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    raycastParams.IgnoreWater = false -- Deteksi air
+    
+    local rayResult = Workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+    
+    if rayResult and rayResult.Material == Enum.Material.Water then
+        -- Jika belum ada part, buat part
+        if not waterPart then
+            waterPart = Instance.new("Part")
+            waterPart.Name = "JesusPart"
+            waterPart.Size = Vector3.new(10, 1, 10)
+            waterPart.Transparency = 0.5
+            waterPart.Anchored = true
+            waterPart.CanCollide = true
+            waterPart.BrickColor = BrickColor.new("Cyan")
+            waterPart.Parent = Workspace
+        end
+        
+        -- Posisikan part tepat di bawah kaki, tapi setinggi air
+        -- Mengambil posisi Y air agak tricky, kita kunci di posisi impact raycast
+        waterPart.Position = Vector3.new(root.Position.X, rayResult.Position.Y, root.Position.Z)
+        waterPart.Velocity = Vector3.new(0,0,0)
+    else
+        -- Jika tidak di atas air, sembunyikan partnya
+        if waterPart then
+            waterPart.Position = Vector3.new(0, -1000, 0)
+        end
+    end
+end)
+
+-- 3. DISABLE 3D RENDER LOGIC
+RenderButton.MouseButton1Click:Connect(function()
+    renderDisabled = not renderDisabled
+    
+    if renderDisabled then
+        RenderButton.Text = "Disable 3D: ON"
+        RenderButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        
+        BlackScreen.Visible = true
+        
+        -- Coba matikan 3D rendering (Executor dependent)
+        pcall(function()
+            RunService:Set3dRenderingEnabled(false)
+        end)
+    else
+        RenderButton.Text = "Disable 3D: OFF"
+        RenderButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        
+        BlackScreen.Visible = false
+        
+        -- Nyalakan kembali 3D rendering
+        pcall(function()
+            RunService:Set3dRenderingEnabled(true)
+        end)
+    end
+end)
+
+-- 4. TOGGLE UI (Right Control)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+-- Notifikasi Awal
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "Gemini Hub Loaded";
+    Text = "Press Right-Ctrl to Toggle UI";
+    Duration = 5;
+})
