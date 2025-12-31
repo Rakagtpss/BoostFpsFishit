@@ -1,86 +1,98 @@
---[[ 
-⚠️ DISCLAIMER:
-Script ini hanya untuk tujuan pembelajaran dan eksperimen pribadi di tempat yang kamu miliki izin. 
-Menggunakan script seperti ini di game publik tanpa izin bisa melanggar TOS Roblox.
-]]
-
--- UI Setup
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0.4, 0, 0.5, 0)
-Frame.Position = UDim2.new(0.3, 0, 0.25, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(10, 30, 60)
-Frame.BorderSizePixel = 0
-
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0.1, 0)
-Title.Text = "⚙️ Raka's Utility Hub"
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.BackgroundTransparency = 1
-Title.Font = Enum.Font.SourceSansBold
-Title.TextScaled = true
-
--- Walk on Water
-game:GetService("RunService").Stepped:Connect(function()
-    local char = game.Players.LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        local pos = char.HumanoidRootPart.Position
-        if workspace:FindPartOnRay(Ray.new(pos, Vector3.new(0, -5, 0))).Name == "Water" then
-            char.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
-            char.HumanoidRootPart.CFrame = CFrame.new(pos.X, workspace.Water.Position.Y + 3, pos.Z)
-        end
-    end
-end)
-
--- Anti-AFK
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local VirtualUser = game:GetService("VirtualUser")
-game:GetService("Players").LocalPlayer.Idled:Connect(function()
-    VirtualUser:Button2Down(Vector2.new())
-    wait(1)
-    VirtualUser:Button2Up(Vector2.new())
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+
+-- UI Configuration (Navy Blue Theme)
+local GUI = Instance.new("ScreenGui")
+GUI.Name = "ModernNavyHub"
+GUI.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 600, 0, 350)
+MainFrame.Position = UDim2.new(0.5, -300, 0.5, -175)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 25, 47) -- Navy Dark
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = GUI
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+local Title = Instance.new("TextLabel")
+Title.Text = "NAVY MODERN HUB | v1.0"
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.TextColor3 = Color3.fromRGB(100, 200, 255)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.Parent = MainFrame
+
+--- 1. ANTI-AFK FEATURE ---
+LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+    print("Anti-AFK: Mencegah pemutusan koneksi.")
 end)
 
--- Fake Name/Level
-local player = game.Players.LocalPlayer
-player.Name = "Guest_" .. math.random(1000, 9999)
-player.DisplayName = "Level 1"
-
--- Speed for Boat
-for _, v in pairs(workspace:GetDescendants()) do
-    if v:IsA("VehicleSeat") and v:IsDescendantOf(workspace) then
-        v.MaxSpeed = 200
-        v.Torque = 999999
+--- 2. WALK ON WATER (Logic) ---
+local function WalkOnWater(enable)
+    local terrain = workspace:FindFirstChildOfClass("Terrain")
+    if terrain then
+        terrain.CanCollide = enable
     end
 end
 
--- Auto Teleport to Player
-function teleportToPlayer(targetName)
-    local target = game.Players:FindFirstChild(targetName)
-    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+--- 3. SPEED FOR BOAT (Logic) ---
+local function SetBoatSpeed(speed)
+    local vehicle = Character:FindFirstChildOfClass("Humanoid").SeatPart
+    if vehicle and vehicle:IsA("VehicleSeat") then
+        vehicle.MaxSpeed = speed
     end
 end
 
--- Anti Staff (Auto Leave if Staff Detected)
-local staffList = {"Admin", "Moderator", "Staff"}
-game.Players.PlayerAdded:Connect(function(plr)
-    for _, role in pairs(staffList) do
-        if string.find(string.lower(plr.Name), string.lower(role)) then
-            game:Shutdown()
+--- 4. TELEPORT TO PLAYER ---
+local function TeleportToPlayer(targetName)
+    local target = Players:FindFirstChild(targetName)
+    if target and target.Character then
+        Character:MoveTo(target.Character.HumanoidRootPart.Position)
+    end
+end
+
+--- 5. PERFORMANCE BOOSTER (FPS/CPU/PING) ---
+local function OptimizeGame()
+    settings().Rendering.QualityLevel = 1
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Material = Enum.Material.SmoothPlastic
+            v.CastShadow = false
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            v:Destroy()
         end
     end
-end)
-
--- CPU/FPS/Ping Booster
-settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-game:GetService("Lighting").GlobalShadows = false
-game:GetService("Lighting").FogEnd = 100000
-game:GetService("Lighting").Brightness = 1
-for _, v in pairs(workspace:GetDescendants()) do
-    if v:IsA("Texture") or v:IsA("Decal") then
-        v:Destroy()
-    end
+    print("Optimization: Grafik disederhanakan untuk performa.")
 end
 
--- UI Wide Mode
-Frame.Size = UDim2.new(0.6, 0, 0.6, 0)
+--- 6. ANTI-STAFF DETECTION ---
+Players.PlayerAdded:Connect(function(player)
+    -- Contoh logika sederhana: cek jika user memiliki role tertentu (Group ID diperlukan)
+    -- if player:GetRankInGroup(0000) > 100 then print("Staff detected!") end
+    print("Player baru bergabung: " .. player.Name)
+end)
+
+--- FITUR TAMBAHAN: INFINITE JUMP ---
+UserInputService.JumpRequest:Connect(function()
+    Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+end)
+
+-- Tombol Close Sederhana
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Text = "X"
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -35, 0, 5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.Parent = MainFrame
+CloseBtn.MouseButton1Click:Connect(function() GUI:Destroy() end)
