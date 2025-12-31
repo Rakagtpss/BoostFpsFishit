@@ -1,84 +1,103 @@
 --[[
- Fish It FINAL TOOL
- Walk On Water (ANTI MELAYANG)
+ Fish It Classic Tool - FINAL FIX
+ Walk On Water (AUTO DETECT AIR)
  Disable 3D
  FPS Lock
  Classic Black UI
 ]]
 
--- Services
+-- ================= SERVICES =================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 local Humanoid = Char:WaitForChild("Humanoid")
 
--- ===================== STATE =====================
+-- ================= STATE =================
 local WOW_Enabled = false
-local D3_Enabled = false
-local FPS_CAP = 0
-
+local WOW_Active = false
 local BV
-local Conn
+local LockConn
 
--- ===================== UI =====================
+-- ================= UI =================
 local Gui = Instance.new("ScreenGui", game.CoreGui)
-Gui.Name = "FishIt_ClassicUI"
+Gui.Name = "FishItClassicUI"
 
 local Main = Instance.new("Frame", Gui)
-Main.Size = UDim2.new(0, 180, 0, 190)
+Main.Size = UDim2.new(0, 200, 0, 230)
 Main.Position = UDim2.new(0.03, 0, 0.3, 0)
 Main.BackgroundColor3 = Color3.fromRGB(10,10,10)
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
-
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0,8)
 
 local function label(text, y)
     local l = Instance.new("TextLabel", Main)
-    l.Size = UDim2.new(1, -10, 0, 20)
+    l.Size = UDim2.new(1, -10, 0, 18)
     l.Position = UDim2.new(0, 5, 0, y)
     l.BackgroundTransparency = 1
     l.Text = text
-    l.TextColor3 = Color3.fromRGB(200,200,200)
+    l.TextColor3 = Color3.fromRGB(220,220,220)
     l.Font = Enum.Font.Code
     l.TextSize = 12
     l.TextXAlignment = Left
     return l
 end
 
-local function button(text, y)
-    local b = Instance.new("TextButton", Main)
-    b.Size = UDim2.new(1, -10, 0, 24)
-    b.Position = UDim2.new(0, 5, 0, y)
-    b.BackgroundColor3 = Color3.fromRGB(25,25,25)
-    b.TextColor3 = Color3.fromRGB(255,255,255)
-    b.Font = Enum.Font.Code
-    b.TextSize = 12
-    b.BorderSizePixel = 0
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
-    b.Text = text
-    return b
+-- ===== TOGGLE SWITCH (FIXED – PASTI MUNCUL) =====
+local function Toggle(text, y, callback)
+    local Holder = Instance.new("Frame", Main)
+    Holder.Size = UDim2.new(1, -10, 0, 30)
+    Holder.Position = UDim2.new(0, 5, 0, y)
+    Holder.BackgroundTransparency = 1
+
+    local Txt = Instance.new("TextLabel", Holder)
+    Txt.Size = UDim2.new(0.6, 0, 1, 0)
+    Txt.BackgroundTransparency = 1
+    Txt.Text = text
+    Txt.TextColor3 = Color3.fromRGB(230,230,230)
+    Txt.Font = Enum.Font.Code
+    Txt.TextSize = 12
+    Txt.TextXAlignment = Left
+
+    local Btn = Instance.new("TextButton", Holder)
+    Btn.Size = UDim2.new(0.3, 0, 0.65, 0)
+    Btn.Position = UDim2.new(0.7, 0, 0.18, 0)
+    Btn.Text = "OFF"
+    Btn.Font = Enum.Font.Code
+    Btn.TextSize = 11
+    Btn.TextColor3 = Color3.new(1,1,1)
+    Btn.BackgroundColor3 = Color3.fromRGB(120,0,0)
+    Btn.BorderSizePixel = 0
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(1,0)
+
+    local state = false
+    Btn.MouseButton1Click:Connect(function()
+        state = not state
+        Btn.Text = state and "ON" or "OFF"
+        Btn.BackgroundColor3 = state and Color3.fromRGB(0,160,0) or Color3.fromRGB(120,0,0)
+        callback(state)
+    end)
 end
 
-label("FISH IT CLASSIC TOOL", 5)
+label("FISH IT TOOL", 5)
 
--- ===================== WALK ON WATER =====================
-local WOW_Btn = button("Walk On Water : OFF", 30)
-
+-- ================= WALK ON WATER CORE =================
 local function WOW_Enable()
+    if WOW_Active then return end
+    WOW_Active = true
+
     BV = Instance.new("BodyVelocity")
     BV.MaxForce = Vector3.new(0, 1e6, 0)
     BV.Velocity = Vector3.zero
     BV.Parent = HRP
 
-    Humanoid:ChangeState(Enum.HumanoidStateType.Running)
-
-    Conn = RunService.Heartbeat:Connect(function()
-        if WOW_Enabled and HRP then
+    LockConn = RunService.Heartbeat:Connect(function()
+        if WOW_Enabled and WOW_Active and HRP then
             HRP.AssemblyLinearVelocity = Vector3.new(
                 HRP.AssemblyLinearVelocity.X,
                 0,
@@ -89,51 +108,71 @@ local function WOW_Enable()
 end
 
 local function WOW_Disable()
-    if Conn then Conn:Disconnect() Conn = nil end
+    WOW_Active = false
+    if LockConn then LockConn:Disconnect() LockConn = nil end
     if BV then BV:Destroy() BV = nil end
 end
 
-WOW_Btn.MouseButton1Click:Connect(function()
-    WOW_Enabled = not WOW_Enabled
-    WOW_Btn.Text = "Walk On Water : " .. (WOW_Enabled and "ON" or "OFF")
-    if WOW_Enabled then WOW_Enable() else WOW_Disable() end
+-- ================= AUTO DETECT AIR =================
+RunService.Heartbeat:Connect(function()
+    if not WOW_Enabled or not HRP then return end
+
+    local rayParams = RaycastParams.new()
+    rayParams.FilterDescendantsInstances = {Char}
+    rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+    local result = Workspace:Raycast(
+        HRP.Position,
+        Vector3.new(0, -8, 0),
+        rayParams
+    )
+
+    if result and result.Material == Enum.Material.Water then
+        WOW_Enable()
+    else
+        WOW_Disable()
+    end
 end)
 
--- ===================== DISABLE 3D =====================
-local D3_Btn = button("Disable 3D : OFF", 60)
+-- ================= TOGGLES =================
+Toggle("Walk On Water (Auto)", 35, function(v)
+    WOW_Enabled = v
+    if not v then WOW_Disable() end
+end)
 
-D3_Btn.MouseButton1Click:Connect(function()
-    D3_Enabled = not D3_Enabled
-    D3_Btn.Text = "Disable 3D : " .. (D3_Enabled and "ON" or "OFF")
+Toggle("Disable 3D", 70, function(v)
     pcall(function()
-        RunService:Set3dRenderingEnabled(not D3_Enabled)
+        RunService:Set3dRenderingEnabled(not v)
     end)
 end)
 
--- ===================== FPS LOCK =====================
-label("FPS LOCK", 95)
+-- ================= FPS LOCK =================
+label("FPS LOCK", 110)
 
-local FPS30 = button("30 FPS", 115)
-local FPS60 = button("60 FPS", 145)
-local FPS120 = button("120 FPS", 175)
-
-local function setFPS(v)
-    if setfpscap then
-        setfpscap(v)
-    end
+local function FPSBtn(text, y, val)
+    local b = Instance.new("TextButton", Main)
+    b.Size = UDim2.new(1, -10, 0, 26)
+    b.Position = UDim2.new(0, 5, 0, y)
+    b.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.Code
+    b.TextSize = 12
+    b.Text = text
+    b.BorderSizePixel = 0
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
+    b.MouseButton1Click:Connect(function()
+        if setfpscap then setfpscap(val) end
+    end)
 end
 
-FPS30.MouseButton1Click:Connect(function() setFPS(30) end)
-FPS60.MouseButton1Click:Connect(function() setFPS(60) end)
-FPS120.MouseButton1Click:Connect(function() setFPS(120) end)
+FPSBtn("30 FPS", 130, 30)
+FPSBtn("60 FPS", 160, 60)
+FPSBtn("120 FPS", 190, 120)
 
--- ===================== RESPAWN FIX =====================
+-- ================= RESPAWN FIX =================
 Player.CharacterAdded:Connect(function(c)
     Char = c
     HRP = c:WaitForChild("HumanoidRootPart")
     Humanoid = c:WaitForChild("Humanoid")
-    if WOW_Enabled then
-        task.wait(0.3)
-        WOW_Enable()
-    end
+    WOW_Disable()
 end)
