@@ -1,178 +1,159 @@
---[[
- Fish It Classic Tool - FINAL FIX
- Walk On Water (AUTO DETECT AIR)
- Disable 3D
- FPS Lock
- Classic Black UI
-]]
+--========================================
+-- FISH IT CLASSIC TOOL (FINAL FIX)
+-- Walk On Water + Disable 3D + FPS Lock
+--========================================
 
--- ================= SERVICES =================
+-- SERVICES
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local hrp = character:WaitForChild("HumanoidRootPart")
 
-local Player = Players.LocalPlayer
-local Char = Player.Character or Player.CharacterAdded:Wait()
-local HRP = Char:WaitForChild("HumanoidRootPart")
-local Humanoid = Char:WaitForChild("Humanoid")
+-- CLEAN UI
+local pg = player:WaitForChild("PlayerGui")
+pcall(function()
+    if pg:FindFirstChild("FishIt_UI") then
+        pg.FishIt_UI:Destroy()
+    end
+end)
 
--- ================= STATE =================
-local WOW_Enabled = false
-local WOW_Active = false
-local BV
-local LockConn
+--========================================
+-- UI
+--========================================
+local gui = Instance.new("ScreenGui", pg)
+gui.Name = "FishIt_UI"
+gui.ResetOnSpawn = false
 
--- ================= UI =================
-local Gui = Instance.new("ScreenGui", game.CoreGui)
-Gui.Name = "FishItClassicUI"
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 260, 0, 250)
+main.Position = UDim2.new(0, 20, 0.3, 0)
+main.BackgroundColor3 = Color3.fromRGB(10,10,10)
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,10)
+Instance.new("UIStroke", main).Color = Color3.fromRGB(0,255,0)
 
-local Main = Instance.new("Frame", Gui)
-Main.Size = UDim2.new(0, 200, 0, 230)
-Main.Position = UDim2.new(0.03, 0, 0.3, 0)
-Main.BackgroundColor3 = Color3.fromRGB(10,10,10)
-Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0,8)
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,30)
+title.BackgroundTransparency = 1
+title.Text = "FISH IT CLASSIC TOOL"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 15
 
-local function label(text, y)
-    local l = Instance.new("TextLabel", Main)
-    l.Size = UDim2.new(1, -10, 0, 18)
-    l.Position = UDim2.new(0, 5, 0, y)
+--========================================
+-- TOGGLE CREATOR (ANTI ERROR)
+--========================================
+local toggles = {}
+
+local function Toggle(name, y)
+    local f = Instance.new("Frame", main)
+    f.Size = UDim2.new(1,-20,0,35)
+    f.Position = UDim2.new(0,10,0,y)
+    f.BackgroundTransparency = 1
+
+    local l = Instance.new("TextLabel", f)
+    l.Size = UDim2.new(0.6,0,1,0)
     l.BackgroundTransparency = 1
-    l.Text = text
+    l.Text = name
     l.TextColor3 = Color3.fromRGB(220,220,220)
-    l.Font = Enum.Font.Code
-    l.TextSize = 12
+    l.Font = Enum.Font.SourceSans
+    l.TextSize = 14
     l.TextXAlignment = Left
-    return l
-end
 
--- ===== TOGGLE SWITCH (FIXED – PASTI MUNCUL) =====
-local function Toggle(text, y, callback)
-    local Holder = Instance.new("Frame", Main)
-    Holder.Size = UDim2.new(1, -10, 0, 30)
-    Holder.Position = UDim2.new(0, 5, 0, y)
-    Holder.BackgroundTransparency = 1
+    local b = Instance.new("TextButton", f)
+    b.Size = UDim2.new(0.3,0,0.7,0)
+    b.Position = UDim2.new(0.7,0,0.15,0)
+    b.Text = "OFF"
+    b.Font = Enum.Font.SourceSansBold
+    b.TextSize = 13
+    b.TextColor3 = Color3.new(1,1,1)
+    b.BackgroundColor3 = Color3.fromRGB(140,0,0)
+    Instance.new("UICorner", b).CornerRadius = UDim.new(1,0)
 
-    local Txt = Instance.new("TextLabel", Holder)
-    Txt.Size = UDim2.new(0.6, 0, 1, 0)
-    Txt.BackgroundTransparency = 1
-    Txt.Text = text
-    Txt.TextColor3 = Color3.fromRGB(230,230,230)
-    Txt.Font = Enum.Font.Code
-    Txt.TextSize = 12
-    Txt.TextXAlignment = Left
-
-    local Btn = Instance.new("TextButton", Holder)
-    Btn.Size = UDim2.new(0.3, 0, 0.65, 0)
-    Btn.Position = UDim2.new(0.7, 0, 0.18, 0)
-    Btn.Text = "OFF"
-    Btn.Font = Enum.Font.Code
-    Btn.TextSize = 11
-    Btn.TextColor3 = Color3.new(1,1,1)
-    Btn.BackgroundColor3 = Color3.fromRGB(120,0,0)
-    Btn.BorderSizePixel = 0
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(1,0)
-
-    local state = false
-    Btn.MouseButton1Click:Connect(function()
-        state = not state
-        Btn.Text = state and "ON" or "OFF"
-        Btn.BackgroundColor3 = state and Color3.fromRGB(0,160,0) or Color3.fromRGB(120,0,0)
-        callback(state)
+    toggles[name] = false
+    b.MouseButton1Click:Connect(function()
+        toggles[name] = not toggles[name]
+        b.Text = toggles[name] and "ON" or "OFF"
+        b.BackgroundColor3 = toggles[name] and Color3.fromRGB(0,170,0) or Color3.fromRGB(140,0,0)
     end)
 end
 
-label("FISH IT TOOL", 5)
+Toggle("Walk On Water", 40)
+Toggle("Disable 3D", 80)
 
--- ================= WALK ON WATER CORE =================
-local function WOW_Enable()
-    if WOW_Active then return end
-    WOW_Active = true
+--========================================
+-- FPS LOCK
+--========================================
+local function FPSBtn(text, y, cap)
+    local b = Instance.new("TextButton", main)
+    b.Size = UDim2.new(1,-20,0,28)
+    b.Position = UDim2.new(0,10,0,y)
+    b.Text = text
+    b.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.SourceSans
+    b.TextSize = 13
+    Instance.new("UICorner", b)
 
-    BV = Instance.new("BodyVelocity")
-    BV.MaxForce = Vector3.new(0, 1e6, 0)
-    BV.Velocity = Vector3.zero
-    BV.Parent = HRP
-
-    LockConn = RunService.Heartbeat:Connect(function()
-        if WOW_Enabled and WOW_Active and HRP then
-            HRP.AssemblyLinearVelocity = Vector3.new(
-                HRP.AssemblyLinearVelocity.X,
-                0,
-                HRP.AssemblyLinearVelocity.Z
-            )
+    b.MouseButton1Click:Connect(function()
+        if setfpscap then
+            setfpscap(cap)
         end
     end)
 end
 
-local function WOW_Disable()
-    WOW_Active = false
-    if LockConn then LockConn:Disconnect() LockConn = nil end
-    if BV then BV:Destroy() BV = nil end
-end
+FPSBtn("30 FPS", 130, 30)
+FPSBtn("60 FPS", 165, 60)
+FPSBtn("120 FPS", 200, 120)
 
--- ================= AUTO DETECT AIR =================
+--========================================
+-- WALK ON WATER (ANTI TERBANG)
+--========================================
+local rayParams = RaycastParams.new()
+rayParams.FilterDescendantsInstances = {character}
+rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+
 RunService.Heartbeat:Connect(function()
-    if not WOW_Enabled or not HRP then return end
-
-    local rayParams = RaycastParams.new()
-    rayParams.FilterDescendantsInstances = {Char}
-    rayParams.FilterType = Enum.RaycastFilterType.Blacklist
-
-    local result = Workspace:Raycast(
-        HRP.Position,
-        Vector3.new(0, -8, 0),
-        rayParams
-    )
-
-    if result and result.Material == Enum.Material.Water then
-        WOW_Enable()
-    else
-        WOW_Disable()
+    if toggles["Walk On Water"] then
+        local ray = workspace:Raycast(hrp.Position, Vector3.new(0,-8,0), rayParams)
+        if ray and ray.Instance and ray.Instance.Material == Enum.Material.Water then
+            hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
+            hrp.CFrame = CFrame.new(hrp.Position.X, ray.Position.Y + 2.5, hrp.Position.Z)
+        end
     end
 end)
 
--- ================= TOGGLES =================
-Toggle("Walk On Water (Auto)", 35, function(v)
-    WOW_Enabled = v
-    if not v then WOW_Disable() end
+--========================================
+-- DISABLE 3D (BLACK SCREEN FPS BOOST)
+--========================================
+local blackSky = Instance.new("Sky")
+blackSky.SkyboxBk = ""
+blackSky.SkyboxDn = ""
+blackSky.SkyboxFt = ""
+blackSky.SkyboxLf = ""
+blackSky.SkyboxRt = ""
+blackSky.SkyboxUp = ""
+
+RunService.RenderStepped:Connect(function()
+    if toggles["Disable 3D"] then
+        Lighting.Brightness = 0
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        if not Lighting:FindFirstChild("BlackSky") then
+            blackSky.Name = "BlackSky"
+            blackSky.Parent = Lighting
+        end
+    else
+        Lighting.Brightness = 2
+        Lighting.GlobalShadows = true
+        if Lighting:FindFirstChild("BlackSky") then
+            Lighting.BlackSky:Destroy()
+        end
+    end
 end)
 
-Toggle("Disable 3D", 70, function(v)
-    pcall(function()
-        RunService:Set3dRenderingEnabled(not v)
-    end)
-end)
-
--- ================= FPS LOCK =================
-label("FPS LOCK", 110)
-
-local function FPSBtn(text, y, val)
-    local b = Instance.new("TextButton", Main)
-    b.Size = UDim2.new(1, -10, 0, 26)
-    b.Position = UDim2.new(0, 5, 0, y)
-    b.BackgroundColor3 = Color3.fromRGB(25,25,25)
-    b.TextColor3 = Color3.new(1,1,1)
-    b.Font = Enum.Font.Code
-    b.TextSize = 12
-    b.Text = text
-    b.BorderSizePixel = 0
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
-    b.MouseButton1Click:Connect(function()
-        if setfpscap then setfpscap(val) end
-    end)
-end
-
-FPSBtn("30 FPS", 130, 30)
-FPSBtn("60 FPS", 160, 60)
-FPSBtn("120 FPS", 190, 120)
-
--- ================= RESPAWN FIX =================
-Player.CharacterAdded:Connect(function(c)
-    Char = c
-    HRP = c:WaitForChild("HumanoidRootPart")
-    Humanoid = c:WaitForChild("Humanoid")
-    WOW_Disable()
-end)
+print("✅ FISH IT CLASSIC TOOL LOADED – NO ERROR")
