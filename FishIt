@@ -1,4 +1,4 @@
---[[ 
+loadstring(game:HttpGet("--[[ 
     RAKAGANTENG HUB V12: Fast Reel & Simple UI
     Update: Fast Reel Logic, Custom Bait/Reel Delay, Minimalist Design
     Toggle UI: RIGHT CONTROL
@@ -168,4 +168,4 @@ end)
 
 UserInputService.InputBegan:Connect(function(i)
     if i.KeyCode == Enum.KeyCode.RightControl then MainFrame.Visible = not MainFrame.Visible end
-end)
+end)"))()
