@@ -1,224 +1,214 @@
 --[[
-    Script Name: RakaGanteng - Super Lite Edition
-    Theme: Modern Black Wide
-    Keybind: 'R' to Hide/Show
+    Script Name: RakaGanteng Hub
+    Style: Modern Black Wide Lite
+    Features: Multi-Functional Optimization & Utility
 ]]
 
-local L_Player = game:GetService("Players").LocalPlayer
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
+local UIS = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
 
--- Main GUI
-local SG = Instance.new("ScreenGui", CoreGui)
-SG.Name = "RakaGanteng_V2"
+-- GUI Instance
+local SG = Instance.new("ScreenGui", game.CoreGui)
+SG.Name = "RakaGanteng_SuperLite"
 
-local MainFrame = Instance.new("Frame", SG)
-MainFrame.Size = UDim2.new(0, 550, 0, 320) -- Wide Design
-MainFrame.Position = UDim2.new(0.5, -275, 0.5, -160)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Deep Black
-MainFrame.BorderSizePixel = 0
-MainFrame.ClipsDescendants = true
+-- Main Frame (Wide Design)
+local Main = Instance.new("Frame", SG)
+Main.Size = UDim2.new(0, 550, 0, 320)
+Main.Position = UDim2.new(0.5, -275, 0.5, -160)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Main.BorderSizePixel = 0
 
-local Corner = Instance.new("UICorner", MainFrame)
-Corner.CornerRadius = UDim.new(0, 8)
+local UICorner = Instance.new("UICorner", Main)
+UICorner.CornerRadius = UDim.new(0, 8)
 
 -- Header
-local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 40)
+local Header = Instance.new("Frame", Main)
+Header.Size = UDim2.new(1, 0, 0, 35)
 Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Header.BorderSizePixel = 0
+Header.Parent = Main
 
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -100, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
-Title.Text = "RAKAGANTENG HUB | MODERN BLACK"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Text = "RAKAGANTENG | LITE PREDICTOR"
+Title.TextColor3 = Color3.new(1, 1, 1)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
-Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.BackgroundTransparency = 1
 
--- Stats Floating (FPS & PING)
-local StatsFrame = Instance.new("Frame", SG)
-StatsFrame.Size = UDim2.new(0, 120, 0, 40)
-StatsFrame.Position = UDim2.new(0, 10, 0, 10)
-StatsFrame.BackgroundColor3 = Color3.new(0,0,0)
-StatsFrame.BackgroundTransparency = 0.5
-local StatsText = Instance.new("TextLabel", StatsFrame)
-StatsText.Size = UDim2.new(1, 0, 1, 0)
-StatsText.TextColor3 = Color3.new(0, 1, 0)
-StatsText.TextSize = 12
-StatsText.Font = Enum.Font.Code
+-- Floating Stats (FPS & PING)
+local Stats = Instance.new("TextLabel", Main)
+Stats.Size = UDim2.new(0, 150, 0, 20)
+Stats.Position = UDim2.new(1, -160, 0, 40)
+Stats.BackgroundTransparency = 1
+Stats.TextColor3 = Color3.fromRGB(0, 255, 150)
+Stats.TextSize = 12
+Stats.Font = Enum.Font.Code
+Stats.Text = "FPS: 60 | PING: 0ms"
 
 spawn(function()
     while task.wait(1) do
-        local fps = math.floor(workspace:GetRealPhysicsFPS())
-        local ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
-        StatsText.Text = "FPS: "..fps.." | PING: "..ping
+        local fps = math.floor(1/game:GetService("RunService").RenderStepped:Wait())
+        local ping = tonumber(string.format("%.0f", LP:GetNetworkPing() * 1000))
+        Stats.Text = "FPS: "..fps.." | PING: "..ping.."ms"
     end
 end)
 
 -- Scroll Container
-local Scroll = Instance.new("ScrollingFrame", MainFrame)
-Scroll.Size = UDim2.new(1, -20, 1, -50)
-Scroll.Position = UDim2.new(0, 10, 0, 45)
+local Scroll = Instance.new("ScrollingFrame", Main)
+Scroll.Size = UDim2.new(1, -20, 1, -80)
+Scroll.Position = UDim2.new(0, 10, 0, 70)
 Scroll.BackgroundTransparency = 1
-Scroll.CanvasSize = UDim2.new(0, 0, 2.5, 0)
 Scroll.ScrollBarThickness = 2
+Scroll.CanvasSize = UDim2.new(0, 0, 2.5, 0)
 
 local Layout = Instance.new("UIListLayout", Scroll)
 Layout.Padding = UDim.new(0, 5)
 
 -- Modern Toggle Function
-local function AddToggle(name, callback)
+local function CreateToggle(name, desc, callback)
     local state = false
     local Btn = Instance.new("TextButton", Scroll)
-    Btn.Size = UDim2.new(1, 0, 0, 35)
+    Btn.Size = UDim2.new(1, 0, 0, 38)
     Btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    Btn.Text = "  [ OFF ] " .. name
+    Btn.Text = "  " .. name .. " [OFF]"
     Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
     Btn.Font = Enum.Font.Gotham
-    Btn.TextSize = 13
+    Btn.TextSize = 12
     Btn.TextXAlignment = Enum.TextXAlignment.Left
+    
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
 
     Btn.MouseButton1Click:Connect(function()
         state = not state
+        Btn.Text = "  " .. name .. (state and " [ON]" or " [OFF]")
         Btn.BackgroundColor3 = state and Color3.fromRGB(50, 50, 50) or Color3.fromRGB(30, 30, 30)
-        Btn.Text = state and "  [ ON ] " .. name or "  [ OFF ] " .. name
-        Btn.TextColor3 = state and Color3.new(0, 1, 1) or Color3.new(0.8, 0.8, 0.8)
+        Btn.TextColor3 = state and Color3.new(1, 1, 1) or Color3.fromRGB(200, 200, 200)
         callback(state)
     end)
 end
 
--- Input Box Function
-local function AddInput(placeholder, callback)
-    local Box = Instance.new("TextBox", Scroll)
-    Box.Size = UDim2.new(1, 0, 0, 35)
-    Box.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    Box.PlaceholderText = placeholder
-    Box.Text = ""
-    Box.TextColor3 = Color3.new(1,1,1)
-    Box.Font = Enum.Font.Gotham
-    Box.TextSize = 13
-    Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 4)
-    Box.FocusLost:Connect(function() callback(Box.Text) end)
-end
-
---- FEATURES IMPLEMENTATION ---
+--- FITUR LOGIC ---
 
 -- 1. Walk On Water
-local WaterFloor = Instance.new("Part")
-WaterFloor.Name = "RakaWater"
-WaterFloor.Size = Vector3.new(5000, 1, 5000)
-WaterFloor.Transparency = 1
-WaterFloor.Anchored = true
-WaterFloor.CanCollide = false
-WaterFloor.Parent = workspace
-
-AddToggle("Walk On Water", function(on)
-    WaterFloor.CanCollide = on
+local WoW = Instance.new("Part")
+WoW.Size = Vector3.new(5000, 1, 5000)
+WoW.Transparency = 1
+WoW.Anchored = true
+WoW.CanCollide = false
+WoW.Parent = workspace
+CreateToggle("Walk On Water", "", function(v)
+    WoW.CanCollide = v
     spawn(function()
-        while WaterFloor.CanCollide do
-            local hrp = L_Player.Character and L_Player.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then WaterFloor.Position = Vector3.new(hrp.Position.X, -0.5, hrp.Position.Z) end
+        while WoW.CanCollide do
+            local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then WoW.Position = Vector3.new(hrp.Position.X, -0.5, hrp.Position.Z) end
             task.wait()
         end
     end)
 end)
 
--- 2. Fake Name & Mini Size
-AddToggle("Fake Name & Mini Size", function(on)
-    local char = L_Player.Character
-    if on and char then
-        char.Humanoid.DisplayName = "Player"
-        char:SetPrimaryPartCFrame(char:GetPrimaryPartCFrame() * CFrame.new(0, 2, 0))
-        char.HumanoidRootPart.Size = Vector3.new(1, 1, 1) -- Visual only mini logic
+-- 2. Fake Name (Client Side)
+CreateToggle("Fake Name (RakaGanteng)", "", function(v)
+    local char = LP.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.DisplayName = v and "RakaGanteng" or LP.DisplayName
     end
 end)
 
--- 3. Anti Staff (Auto Leave)
-AddToggle("Anti Staff / Admin", function(on)
-    _G.AntiStaff = on
-    if on then
-        game.Players.PlayerAdded:Connect(function(plr)
-            if plr:GetRankInGroup(game.CreatorId) > 10 or plr.AccountAge < 1 then
-                L_Player:Kick("Staff Detected!")
-            end
-        end)
+-- 3. Mini Size
+CreateToggle("Mini Size Character", "", function(v)
+    local hum = LP.Character:FindFirstChildOfClass("Humanoid")
+    if v then
+        hum:FindFirstChild("BodyHeightScale").Value = 0.5
+        hum:FindFirstChild("BodyWidthScale").Value = 0.5
+    else
+        hum:FindFirstChild("BodyHeightScale").Value = 1
+        hum:FindFirstChild("BodyWidthScale").Value = 1
     end
 end)
 
--- 4. Speed Custom (Char & Boat)
-local customSpeed = 50
-AddInput("Set Speed (Default 50)", function(val) customSpeed = tonumber(val) or 50 end)
-AddToggle("Enable Speed Boost", function(on)
-    _G.Spd = on
+-- 4. Speed Custom (Boat & Character)
+local SpeedVal = 100
+CreateToggle("Speed Boost (Active)", "", function(v)
+    _G.Spd = v
     spawn(function()
         while _G.Spd do
-            local char = L_Player.Character
-            if char and char:FindFirstChild("Humanoid") then
-                char.Humanoid.WalkSpeed = customSpeed
-                if char.Humanoid.SeatPart then char.Humanoid.SeatPart.Velocity = char.Humanoid.SeatPart.CFrame.LookVector * customSpeed end
-            end
-            task.wait()
-        end
-    end)
-end)
-
--- 5. Scan & Teleport to Map (Click to TP)
-AddToggle("Click Scan to TP Map", function(on)
-    local mouse = L_Player:GetMouse()
-    local conn
-    if on then
-        conn = mouse.Button1Down:Connect(function()
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-                L_Player.Character:MoveTo(mouse.Hit.p)
-            end
-        end)
-    else
-        if conn then conn:Disconnect() end
-    end
-end)
-
--- 6. Follow Player
-local targetFollow = ""
-AddInput("Follow Name...", function(val) targetFollow = val:lower() end)
-AddToggle("Auto Follow TP", function(on)
-    _G.Follow = on
-    spawn(function()
-        while _G.Follow do
-            for _, v in pairs(game.Players:GetPlayers()) do
-                if v.Name:lower():find(targetFollow) and v.Character then
-                    L_Player.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
+            if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+                LP.Character.Humanoid.WalkSpeed = SpeedVal
+                if LP.Character.Humanoid.SeatPart then
+                    LP.Character.Humanoid.SeatPart.Velocity = LP.Character.Humanoid.SeatPart.CFrame.LookVector * SpeedVal
                 end
             end
             task.wait()
         end
+        LP.Character.Humanoid.WalkSpeed = 16
     end)
 end)
 
--- 7. Optimization (No Render, Booster)
-AddToggle("No Render (Save Power)", function(on) RunService:Set3dRenderingEnabled(not on) end)
-AddToggle("CPU & Map Booster", function(on)
-    if on then
-        for _, v in pairs(game:GetDescendants()) do
-            if v:IsA("BasePart") then v.Material = "SmoothPlastic" v.CastShadow = false
-            elseif v:IsA("Decal") then v:Destroy() end
+-- 5. Anti Staff
+CreateToggle("Anti Staff / Admin", "", function(v)
+    if v then
+        Players.PlayerAdded:Connect(function(plr)
+            if plr:GetRankInGroup(0) > 100 then -- Ganti 0 dengan Group ID game
+                LP:Kick("Staff detected!")
+            end
+        end)
+    end
+end)
+
+-- 6. Optimization (No Render, Booster Map/CPU)
+CreateToggle("Ultra Optimization (CPU/GPU)", "", function(v)
+    RunService:Set3dRenderingEnabled(not v)
+    if v then
+        for _, x in pairs(game:GetDescendants()) do
+            if x:IsA("BasePart") then x.Material = "SmoothPlastic" elseif x:IsA("Decal") then x:Destroy() end
         end
     end
 end)
 
--- 8. FPS Unlock
-AddToggle("Unlock FPS", function(on) if setfpscap then setfpscap(on and 999 or 60) end end)
+-- 7. Unlock FPS
+CreateToggle("Unlock FPS", "", function(v)
+    if setfpscap then setfpscap(v and 999 or 60) end
+end)
 
--- Hide / Show Logic
-local isHidden = false
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.R then
-        isHidden = not isHidden
-        MainFrame.Visible = not isHidden
+-- 8. Auto Follow Player
+local FollowBox = Instance.new("TextBox", Scroll)
+FollowBox.Size = UDim2.new(1, 0, 0, 35)
+FollowBox.PlaceholderText = "Target Name..."
+FollowBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+FollowBox.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", FollowBox)
+
+CreateToggle("Auto Follow Teleport", "", function(v)
+    _G.Follow = v
+    spawn(function()
+        while _G.Follow do
+            local target = Players:FindFirstChild(FollowBox.Text)
+            if target and target.Character then
+                LP.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
+            end
+            task.wait()
+        end
+    end)
+end)
+
+-- Hide/Show System (Right CTRL)
+local Visible = true
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        Visible = not Visible
+        Main.Visible = Visible
     end
 end)
 
-print("RakaGanteng Hub Executed! Press 'R' to Hide.")
+-- Dragging logic
+local d=false;local s;local p;Main.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then d=true;s=i.Position;p=Main.Position;i.Changed:Connect(function() if i.UserInputState==Enum.UserInputState.End then d=false end end) end end)
+Main.InputChanged:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseMovement then if d then local m=i.Position-s;Main.Position=UDim2.new(p.X.Scale,p.X.Offset+m.X,p.Y.Scale,p.Y.Offset+m.Y) end end end)
+
+print("RakaGanteng Hub Loaded! Press Right CTRL to Toggle UI.")
