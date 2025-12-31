@@ -1,226 +1,97 @@
--- cloud_booster.lua (Luau / LocalScript)
--- UI klasik + booster + ping keepalive + FPS lock (preset + slider)
+--[[ 
+ Walk On Water - Fish It FINAL
+ NO PLATFORM / NO MELAYANG
+ Mini UI + Toggle
+]]
 
+-- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local HttpService = game:GetService("HttpService")
 
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local Player = Players.LocalPlayer
+local Char = Player.Character or Player.CharacterAdded:Wait()
+local HRP = Char:WaitForChild("HumanoidRootPart")
+local Humanoid = Char:WaitForChild("Humanoid")
 
--- ====== Konfigurasi ======
-local PING_URL = "https://httpbin.org/get"
-local PING_INTERVAL = 5
-local DEFAULT_FPS_LOCK = 60
+-- State
+local Enabled = false
+local BV
+local Conn
 
--- ====== State ======
-local state = {
-    boosterOn = false,
-    pingOn = false,
-    fpsLockOn = false,
-    fpsTarget = DEFAULT_FPS_LOCK,
-}
+-- UI
+local Gui = Instance.new("ScreenGui", game.CoreGui)
+Gui.Name = "FishIt_WOW_FINAL"
 
--- ====== UI utama ======
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "CloudBoosterGUI"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = playerGui
+local Frame = Instance.new("Frame", Gui)
+Frame.Size = UDim2.new(0,130,0,55)
+Frame.Position = UDim2.new(0.5,-65,0.75,0)
+Frame.BackgroundColor3 = Color3.fromRGB(18,18,18)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,12)
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 280)
-frame.Position = UDim2.new(0, 20, 0, 80)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderSizePixel = 0
-frame.Parent = screenGui
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1,0,0,22)
+Title.BackgroundTransparency = 1
+Title.Text = "Walk On Water"
+Title.TextColor3 = Color3.fromRGB(0,170,255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 12
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "Cloud Booster (UI Klasik)"
-title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(255,255,255)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 18
-title.Parent = frame
+local Btn = Instance.new("TextButton", Frame)
+Btn.Size = UDim2.new(0.8,0,0,24)
+Btn.Position = UDim2.new(0.1,0,0.45,0)
+Btn.Text = "OFF"
+Btn.Font = Enum.Font.GothamBold
+Btn.TextSize = 12
+Btn.TextColor3 = Color3.new(1,1,1)
+Btn.BackgroundColor3 = Color3.fromRGB(170,0,0)
+Btn.BorderSizePixel = 0
+Instance.new("UICorner", Btn).CornerRadius = UDim.new(0,10)
 
-local function makeButton(name, y)
-    local b = Instance.new("TextButton")
-    b.Size = UDim2.new(0, 260, 0, 36)
-    b.Position = UDim2.new(0, 20, 0, y)
-    b.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    b.TextColor3 = Color3.fromRGB(230,230,230)
-    b.Font = Enum.Font.SourceSans
-    b.TextSize = 16
-    b.Text = name
-    b.Parent = frame
-    return b
-end
+-- Core
+local function Enable()
+    BV = Instance.new("BodyVelocity")
+    BV.MaxForce = Vector3.new(0, 1e6, 0) -- HANYA Y
+    BV.Velocity = Vector3.zero
+    BV.Parent = HRP
 
-local btnStartBooster = makeButton("Start Booster", 40)
-local btnStopBooster  = makeButton("Stop Booster", 80)
-local btnStartPing    = makeButton("Start Ping Keepalive", 120)
-local btnStopPing     = makeButton("Stop Ping", 160)
-local btnStopFPS      = makeButton("Stop FPS Lock", 200)
+    -- Paksa humanoid tidak masuk swim loop
+    Humanoid:ChangeState(Enum.HumanoidStateType.Running)
 
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, -20, 0, 40)
-statusLabel.Position = UDim2.new(0, 10, 1, -50)
-statusLabel.BackgroundTransparency = 1
-statusLabel.TextColor3 = Color3.fromRGB(200,200,200)
-statusLabel.Font = Enum.Font.SourceSans
-statusLabel.TextSize = 14
-statusLabel.Text = "Status: idle"
-statusLabel.Parent = frame
+    Conn = RunService.Heartbeat:Connect(function()
+        if not Enabled or not HRP then return end
 
-local function updateStatus()
-    local s = ("Booster:%s  Ping:%s  FPSLock:%s (%d)"):format(
-        state.boosterOn and "ON" or "OFF",
-        state.pingOn and "ON" or "OFF",
-        state.fpsLockOn and "ON" or "OFF",
-        state.fpsTarget
-    )
-    statusLabel.Text = "Status: " .. s
-end
-
--- ====== Booster simulasi ======
-local function startBooster()
-    state.boosterOn = true
-    updateStatus()
-end
-local function stopBooster()
-    state.boosterOn = false
-    updateStatus()
-end
-
--- ====== Ping keepalive ======
-local pingThread = nil
-local function pingOnce()
-    local ok, res = pcall(function()
-        return HttpService:RequestAsync({Url = PING_URL, Method = "GET"})
-    end)
-    return ok and res and res.Success
-end
-local function startPing()
-    state.pingOn = true
-    pingThread = coroutine.create(function()
-        while state.pingOn do
-            pingOnce()
-            wait(PING_INTERVAL)
-        end
-    end)
-    coroutine.resume(pingThread)
-    updateStatus()
-end
-local function stopPing()
-    state.pingOn = false
-    pingThread = nil
-    updateStatus()
-end
-
--- ====== FPS lock ======
-local fpsThread = nil
-local function startFPSLock(targetFPS)
-    state.fpsLockOn = true
-    state.fpsTarget = math.max(1, math.floor(targetFPS or DEFAULT_FPS_LOCK))
-    local interval = 1 / state.fpsTarget
-    fpsThread = coroutine.create(function()
-        local last = tick()
-        while state.fpsLockOn do
-            local now = tick()
-            if now - last >= interval then
-                -- pekerjaan yang dibatasi FPS
-                last = now
-            end
-            wait(0.001)
-        end
-    end)
-    coroutine.resume(fpsThread)
-    updateStatus()
-end
-local function stopFPSLock()
-    state.fpsLockOn = false
-    fpsThread = nil
-    updateStatus()
-end
-
--- ====== Tombol utama ======
-btnStartBooster.MouseButton1Click:Connect(startBooster)
-btnStopBooster.MouseButton1Click:Connect(stopBooster)
-btnStartPing.MouseButton1Click:Connect(startPing)
-btnStopPing.MouseButton1Click:Connect(stopPing)
-btnStopFPS.MouseButton1Click:Connect(stopFPSLock)
-
--- ====== Panel FPS Control (preset + slider) ======
-local fpsFrame = Instance.new("Frame")
-fpsFrame.Size = UDim2.new(0, 300, 0, 140)
-fpsFrame.Position = UDim2.new(0, 340, 0, 80)
-fpsFrame.BackgroundColor3 = Color3.fromRGB(35,35,35)
-fpsFrame.Parent = screenGui
-
-local fpsTitle = Instance.new("TextLabel")
-fpsTitle.Size = UDim2.new(1, 0, 0, 30)
-fpsTitle.Text = "FPS Lock Control"
-fpsTitle.BackgroundTransparency = 1
-fpsTitle.TextColor3 = Color3.fromRGB(255,255,255)
-fpsTitle.Font = Enum.Font.SourceSansBold
-fpsTitle.TextSize = 18
-fpsTitle.Parent = fpsFrame
-
-local function makePresetButton(name, fps, x)
-    local b = Instance.new("TextButton")
-    b.Size = UDim2.new(0, 60, 0, 30)
-    b.Position = UDim2.new(0, x, 0, 40)
-    b.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    b.TextColor3 = Color3.fromRGB(230,230,230)
-    b.Font = Enum.Font.SourceSans
-    b.TextSize = 14
-    b.Text = name
-    b.Parent = fpsFrame
-    b.MouseButton1Click:Connect(function()
-        startFPSLock(fps)
+        -- KUNCI Y (ini kuncinya)
+        HRP.AssemblyLinearVelocity = Vector3.new(
+            HRP.AssemblyLinearVelocity.X,
+            0,
+            HRP.AssemblyLinearVelocity.Z
+        )
     end)
 end
 
-makePresetButton("30", 30, 10)
-makePresetButton("60", 60, 80)
-makePresetButton("90", 90, 150)
-makePresetButton("120", 120, 220)
+local function Disable()
+    if Conn then Conn:Disconnect() Conn = nil end
+    if BV then BV:Destroy() BV = nil end
+end
 
--- slider
-local sliderFrame = Instance.new("Frame")
-sliderFrame.Size = UDim2.new(0, 260, 0, 20)
-sliderFrame.Position = UDim2.new(0, 20, 0, 80)
-sliderFrame.BackgroundColor3 = Color3.fromRGB(60,60,60)
-sliderFrame.Parent = fpsFrame
-
-local sliderKnob = Instance.new("Frame")
-sliderKnob.Size = UDim2.new(0, 10, 0, 20)
-sliderKnob.Position = UDim2.new(0, 0, 0, 0)
-sliderKnob.BackgroundColor3 = Color3.fromRGB(200,50,50)
-sliderKnob.Parent = sliderFrame
-sliderKnob.Active = true
-sliderKnob.Draggable = true
-
-local fpsValueLabel = Instance.new("TextLabel")
-fpsValueLabel.Size = UDim2.new(1, 0, 0, 30)
-fpsValueLabel.Position = UDim2.new(0, 0, 0, 110)
-fpsValueLabel.BackgroundTransparency = 1
-fpsValueLabel.TextColor3 = Color3.fromRGB(230,230,230)
-fpsValueLabel.Font = Enum.Font.SourceSans
-fpsValueLabel.TextSize = 14
-fpsValueLabel.Text = "FPS: "..DEFAULT_FPS_LOCK
-fpsValueLabel.Parent = fpsFrame
-
-sliderKnob.Changed:Connect(function(prop)
-    if prop == "Position" then
-        local relX = math.clamp(sliderKnob.Position.X.Offset, 0, 250)
-        local fpsVal = math.floor(30 + (relX/250) * (120-30))
-        fpsValueLabel.Text = "FPS: "..fpsVal
-        state.fpsTarget = fpsVal
-        if state.fpsLockOn then
-            startFPSLock(fpsVal)
-        end
+Btn.MouseButton1Click:Connect(function()
+    Enabled = not Enabled
+    if Enabled then
+        Btn.Text = "ON"
+        Btn.BackgroundColor3 = Color3.fromRGB(0,170,0)
+        Enable()
+    else
+        Btn.Text = "OFF"
+        Btn.BackgroundColor3 = Color3.fromRGB(170,0,0)
+        Disable()
     end
 end)
 
-updateStatus()
+Player.CharacterAdded:Connect(function(c)
+    Char = c
+    HRP = c:WaitForChild("HumanoidRootPart")
+    Humanoid = c:WaitForChild("Humanoid")
+end)
