@@ -1,6 +1,6 @@
 --[[ 
-    RAKAGANTENG HUB V10: Event & Big UI Edition
-    Update: Auto Teleport to Event, Bigger UI Layout, Clean Mobility
+    RAKAGANTENG HUB V11: Simple & Thin Edition
+    Fokus: Mobilitas Tinggi & UI Minimalis
     Toggle UI: RIGHT CONTROL
 ]]
 
@@ -12,9 +12,9 @@ local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
 
--- --- UI SETUP ---
+-- --- UI SETUP (SIMPLE & THIN) ---
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "RakaGantengHubV10"
+ScreenGui.Name = "RakaSimpleHub"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.DisplayOrder = 100 
@@ -26,87 +26,72 @@ BlackScreen.Visible = false
 BlackScreen.ZIndex = 1 
 
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-MainFrame.Size = UDim2.new(0, 280, 0, 450) -- UKURAN LEBIH BESAR (Lebar 280, Tinggi 450)
-MainFrame.Position = UDim2.new(0.3, 0, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.Size = UDim2.new(0, 200, 0, 310) -- Ukuran diperkecil & ramping
+MainFrame.Position = UDim2.new(0.05, 0, 0.2, 0)
 MainFrame.BorderSizePixel = 0
 MainFrame.ZIndex = 10 
 MainFrame.Active = true
 MainFrame.Draggable = true
 
--- Tambahkan Corner agar UI lebih modern
 local UICorner = Instance.new("UICorner", MainFrame)
-UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, -50, 0, 50)
-Title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "   RAKAGANTENG HUB V10"
+Title.Text = "RAKAGANTENG V11"
 Title.TextColor3 = Color3.new(1,1,1)
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.TextSize = 16 -- Teks Judul Lebih Besar
+Title.TextSize = 12
 Title.ZIndex = 11
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 8)
 
-local MinBtn = Instance.new("TextButton", MainFrame)
-MinBtn.Size = UDim2.new(0, 50, 0, 50)
-MinBtn.Position = UDim2.new(1, -50, 0, 0)
-MinBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-MinBtn.Text = "—"
-MinBtn.TextColor3 = Color3.new(1,1,1)
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.ZIndex = 11
+local ContentFrame = Instance.new("Frame", MainFrame)
+ContentFrame.Size = UDim2.new(1, 0, 1, -40)
+ContentFrame.Position = UDim2.new(0, 0, 0, 40)
+ContentFrame.BackgroundTransparency = 1
 
-local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
-ScrollFrame.Size = UDim2.new(1, 0, 1, -60)
-ScrollFrame.Position = UDim2.new(0, 0, 0, 60)
-ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 1.8, 0)
-ScrollFrame.ScrollBarThickness = 4
-ScrollFrame.ZIndex = 11
-
-local UIList = Instance.new("UIListLayout", ScrollFrame)
+local UIList = Instance.new("UIListLayout", ContentFrame)
 UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-UIList.Padding = UDim.new(0, 10) -- Jarak antar tombol lebih luas
+UIList.Padding = UDim.new(0, 5)
 
+-- Helper Functions
 local function createBtn(text, color)
-    local btn = Instance.new("TextButton", ScrollFrame)
-    btn.Size = UDim2.new(0.9, 0, 0, 45) -- Tombol lebih tinggi (45)
-    btn.BackgroundColor3 = color or Color3.fromRGB(55, 55, 55)
-    btn.Font = Enum.Font.GothamBold
+    local btn = Instance.new("TextButton", ContentFrame)
+    btn.Size = UDim2.new(0.9, 0, 0, 28)
+    btn.BackgroundColor3 = color or Color3.fromRGB(60, 60, 60)
+    btn.Font = Enum.Font.Gotham
     btn.Text = text
     btn.TextColor3 = Color3.new(1,1,1)
-    btn.TextSize = 13 -- Teks Tombol Lebih Besar
+    btn.TextSize = 11
     btn.ZIndex = 12
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     return btn
 end
 
 local function createBox(placeholder)
-    local box = Instance.new("TextBox", ScrollFrame)
-    box.Size = UDim2.new(0.9, 0, 0, 35) -- Box input lebih tinggi
-    box.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    local box = Instance.new("TextBox", ContentFrame)
+    box.Size = UDim2.new(0.9, 0, 0, 25)
+    box.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     box.PlaceholderText = placeholder
     box.Text = ""
     box.TextColor3 = Color3.new(1,1,1)
+    box.TextSize = 11
     box.ZIndex = 12
-    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 5)
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
     return box
 end
 
 -- --- ELEMENTS ---
-local EventBtn = createBtn("TP TO EVENT", Color3.fromRGB(70, 50, 150)) -- Warna Ungu Spesial
-
-local FollowBox = createBox("Target Player Name")
-local FollowBtn = createBtn("Auto Teleport: OFF", Color3.fromRGB(180, 50, 50))
-
-local SpeedBox = createBox("Value (Speed/Boat/FPS)")
-local SpeedBtn = createBtn("Set Player Speed")
-local BoatBtn = createBtn("Boat Speed: OFF", Color3.fromRGB(180, 50, 50))
-local FpsBtn = createBtn("Lock FPS")
-
-local WaterBtn = createBtn("Walk On Water: OFF", Color3.fromRGB(180, 50, 50))
-local RenderBtn = createBtn("Disable 3D: OFF", Color3.fromRGB(180, 50, 50))
+local FollowBox = createBox("Target Name")
+local FollowBtn = createBtn("Auto TP: OFF", Color3.fromRGB(150, 50, 50))
+local SpeedBox = createBox("Speed/Boat Value")
+local SpeedBtn = createBtn("Set Speed")
+local BoatBtn = createBtn("Boat Speed: OFF", Color3.fromRGB(150, 50, 50))
+local WaterBtn = createBtn("Walk On Water: OFF", Color3.fromRGB(150, 50, 50))
+local RenderBtn = createBtn("Disable 3D: OFF", Color3.fromRGB(150, 50, 50))
+local MinBtn = createBtn("MINIMIZE", Color3.fromRGB(80, 80, 80))
 
 -- --- LOGIC ---
 local minimized = false
@@ -114,46 +99,23 @@ local tpEnabled, tpTarget = false, nil
 local vSpeedEnabled, playerSpeed = false, 16
 local waterEnabled, waterPart = false, nil
 
--- 1. Function Teleport To Event
-EventBtn.MouseButton1Click:Connect(function()
-    local foundEvent = false
-    -- Mencari objek dengan nama "Event" di Workspace
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and (obj.Name:lower():find("event") or obj.Name:lower():find("finish")) then
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                char.HumanoidRootPart.CFrame = obj.CFrame * CFrame.new(0, 3, 0)
-                foundEvent = true
-                EventBtn.Text = "TP SUCCESS!"
-                task.wait(1)
-                EventBtn.Text = "TP TO EVENT"
-                break
-            end
-        end
-    end
-    if not foundEvent then
-        EventBtn.Text = "EVENT NOT FOUND"
-        task.wait(1)
-        EventBtn.Text = "TP TO EVENT"
-    end
-end)
-
--- 2. Minimize Function
+-- 1. Simple Minimize
 MinBtn.MouseButton1Click:Connect(function()
     minimized = not minimized
     if minimized then
-        ScrollFrame.Visible = false
-        MainFrame:TweenSize(UDim2.new(0, 280, 0, 50), "Out", "Quart", 0.3, true)
-        MinBtn.Text = "+"
+        ContentFrame.Visible = false
+        MainFrame:TweenSize(UDim2.new(0, 200, 0, 35), "Out", "Quart", 0.2, true)
+        MinBtn.Parent = MainFrame -- Tetap munculkan tombol min
+        MinBtn.Position = UDim2.new(0, 0, 1, 0)
     else
-        MainFrame:TweenSize(UDim2.new(0, 280, 0, 450), "Out", "Quart", 0.3, true)
-        task.wait(0.3)
-        ScrollFrame.Visible = true
-        MinBtn.Text = "—"
+        MainFrame:TweenSize(UDim2.new(0, 200, 0, 310), "Out", "Quart", 0.2, true)
+        task.wait(0.2)
+        ContentFrame.Visible = true
+        MinBtn.Parent = ContentFrame
     end
 end)
 
--- 3. Auto Teleport Player
+-- 2. Auto TP
 FollowBtn.MouseButton1Click:Connect(function()
     tpEnabled = not tpEnabled
     if tpEnabled then
@@ -164,26 +126,25 @@ FollowBtn.MouseButton1Click:Connect(function()
             end
         end
         if tpTarget then
-            FollowBtn.Text = "TP-ing to: " .. tpTarget.DisplayName
-            FollowBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+            FollowBtn.Text = "TP-ing: " .. tpTarget.DisplayName
+            FollowBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
         else
-            tpEnabled = false; FollowBtn.Text = "Not Found"; task.wait(1); FollowBtn.Text = "Auto Teleport: OFF"
+            tpEnabled = false; FollowBtn.Text = "Not Found"; task.wait(1); FollowBtn.Text = "Auto TP: OFF"
         end
     else
-        tpTarget = nil; FollowBtn.Text = "Auto Teleport: OFF"; FollowBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        tpTarget = nil; FollowBtn.Text = "Auto TP: OFF"; FollowBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
     end
 end)
 
--- 4. Speed & Boat & FPS
+-- 3. Speed & Boat
 SpeedBtn.MouseButton1Click:Connect(function() playerSpeed = tonumber(SpeedBox.Text) or 16 end)
 BoatBtn.MouseButton1Click:Connect(function()
     vSpeedEnabled = not vSpeedEnabled
     BoatBtn.Text = "Boat Speed: " .. (vSpeedEnabled and "ON" or "OFF")
-    BoatBtn.BackgroundColor3 = vSpeedEnabled and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(180, 50, 50)
+    BoatBtn.BackgroundColor3 = vSpeedEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
 end)
-FpsBtn.MouseButton1Click:Connect(function() if setfpscap then setfpscap(tonumber(SpeedBox.Text) or 60) end end)
 
--- 5. Main Loop
+-- 4. Main Loop
 RunService.Stepped:Connect(function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
@@ -198,19 +159,19 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- 6. Render & Water
+-- 5. Render & Water
 RenderBtn.MouseButton1Click:Connect(function()
     local renderOff = not BlackScreen.Visible
     BlackScreen.Visible = renderOff
     RenderBtn.Text = "Disable 3D: " .. (renderOff and "ON" or "OFF")
-    RenderBtn.BackgroundColor3 = renderOff and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(180, 50, 50)
+    RenderBtn.BackgroundColor3 = renderOff and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
     pcall(function() RunService:Set3dRenderingEnabled(not renderOff) end)
 end)
 
 WaterBtn.MouseButton1Click:Connect(function()
     waterEnabled = not waterEnabled
     WaterBtn.Text = "Walk On Water: " .. (waterEnabled and "ON" or "OFF")
-    WaterBtn.BackgroundColor3 = waterEnabled and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(180, 50, 50)
+    WaterBtn.BackgroundColor3 = waterEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
     if not waterEnabled and waterPart then waterPart:Destroy() waterPart = nil end
 end)
 
@@ -230,6 +191,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
+-- Toggle UI Total
 UserInputService.InputBegan:Connect(function(i)
     if i.KeyCode == Enum.KeyCode.RightControl then MainFrame.Visible = not MainFrame.Visible end
 end)
