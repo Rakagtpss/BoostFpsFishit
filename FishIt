@@ -1,98 +1,124 @@
-loadstring(game:HttpGet("--[[ 
-    RAKAGANTENG HUB V12: Fast Reel & Simple UI
-    Update: Fast Reel Logic, Custom Bait/Reel Delay, Minimalist Design
+--[[ 
+    RAKAGANTENG HUB V13: Modern Wide Edition
+    Style: Landscape Dark Glass, Minimalist Icons
     Toggle UI: RIGHT CONTROL
 ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local LocalPlayer = Players.LocalPlayer
 
--- --- UI SETUP ---
+-- --- UI SETUP (WIDE MODERN) ---
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "RakaSimpleFastReel"
+ScreenGui.Name = "RakaModernWide"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MainFrame.Size = UDim2.new(0, 200, 0, 380) -- Ukuran tetap ramping
-MainFrame.Position = UDim2.new(0.05, 0, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.Size = UDim2.new(0, 450, 0, 260) -- MELEBAR KE SAMPING
+MainFrame.Position = UDim2.new(0.5, -225, 0.4, -130)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 
 local UICorner = Instance.new("UICorner", MainFrame)
-UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.CornerRadius = UDim.new(0, 12)
 
-local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 35)
-Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+-- Glow/Shadow Effect
+local UIStroke = Instance.new("UIStroke", MainFrame)
+UIStroke.Color = Color3.fromRGB(45, 45, 45)
+UIStroke.Thickness = 1.5
+
+-- Header
+local Header = Instance.new("Frame", MainFrame)
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundTransparency = 1
+
+local Title = Instance.new("TextLabel", Header)
+Title.Size = UDim2.new(1, -20, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.Text = "RAKAGANTENG V12"
+Title.Text = "RAKAGANTENG HUB V13"
 Title.TextColor3 = Color3.new(1,1,1)
-Title.TextSize = 12
-Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 8)
+Title.TextSize = 14
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local Scroll = Instance.new("ScrollingFrame", MainFrame)
-Scroll.Size = UDim2.new(1, 0, 1, -40)
-Scroll.Position = UDim2.new(0, 0, 0, 40)
-Scroll.BackgroundTransparency = 1
-Scroll.BorderSizePixel = 0
-Scroll.CanvasSize = UDim2.new(0, 0, 1.5, 0)
-Scroll.ScrollBarThickness = 2
+-- Container (Split into 2 Columns)
+local Container = Instance.new("Frame", MainFrame)
+Container.Size = UDim2.new(1, -20, 1, -55)
+Container.Position = UDim2.new(0, 10, 0, 45)
+Container.BackgroundTransparency = 1
 
-local UIList = Instance.new("UIListLayout", Scroll)
-UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-UIList.Padding = UDim.new(0, 5)
+local LeftCol = Instance.new("Frame", Container)
+LeftCol.Size = UDim2.new(0.5, -5, 1, 0)
+LeftCol.BackgroundTransparency = 1
 
--- Helper Functions
-local function createBtn(text, color)
-    local btn = Instance.new("TextButton", Scroll)
-    btn.Size = UDim2.new(0.9, 0, 0, 28)
-    btn.BackgroundColor3 = color or Color3.fromRGB(60, 60, 60)
-    btn.Font = Enum.Font.Gotham
+local RightCol = Instance.new("Frame", Container)
+RightCol.Size = UDim2.new(0.5, -5, 1, 0)
+RightCol.Position = UDim2.new(0.5, 5, 0, 0)
+RightCol.BackgroundTransparency = 1
+
+local function createLayout(parent)
+    local list = Instance.new("UIListLayout", parent)
+    list.Padding = UDim.new(0, 8)
+    list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+end
+createLayout(LeftCol)
+createLayout(RightCol)
+
+-- Helper UI Functions
+local function createBtn(parent, text, color)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(1, 0, 0, 32)
+    btn.BackgroundColor3 = color or Color3.fromRGB(35, 35, 35)
+    btn.Font = Enum.Font.GothamMedium
     btn.Text = text
     btn.TextColor3 = Color3.new(1,1,1)
-    btn.TextSize = 10
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.TextSize = 11
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     return btn
 end
 
-local function createBox(placeholder)
-    local box = Instance.new("TextBox", Scroll)
-    box.Size = UDim2.new(0.9, 0, 0, 25)
-    box.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+local function createBox(parent, placeholder)
+    local box = Instance.new("TextBox", parent)
+    box.Size = UDim2.new(1, 0, 0, 32)
+    box.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     box.PlaceholderText = placeholder
     box.Text = ""
     box.TextColor3 = Color3.new(1,1,1)
+    box.Font = Enum.Font.Gotham
     box.TextSize = 10
-    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
     return box
 end
 
--- --- ELEMENTS ---
-local FishingBtn = createBtn("FAST FISHING: OFF", Color3.fromRGB(150, 50, 50))
-local BaitBox = createBox("Delay Lempar (Detik)")
-local ReelBox = createBox("Delay Tarik (Detik)")
-local FollowBox = createBox("Target Name")
-local FollowBtn = createBtn("Auto TP: OFF", Color3.fromRGB(150, 50, 50))
-local SpeedBox = createBox("Speed Value")
-local SpeedBtn = createBtn("Set Speed")
-local WaterBtn = createBtn("Walk On Water: OFF", Color3.fromRGB(150, 50, 50))
-local RenderBtn = createBtn("Disable 3D: OFF", Color3.fromRGB(150, 50, 50))
+-- --- LEFT COLUMN (FISHING & TP) ---
+local BaitBox = createBox(LeftCol, "Bait Delay (e.g 0.1)")
+local ReelBox = createBox(LeftCol, "Reel Delay (e.g 0.1)")
+local FishingBtn = createBtn(LeftCol, "FAST FISHING: OFF", Color3.fromRGB(180, 60, 60))
+local FollowBox = createBox(LeftCol, "Target Name")
+local FollowBtn = createBtn(LeftCol, "AUTO TP: OFF", Color3.fromRGB(180, 60, 60))
+
+-- --- RIGHT COLUMN (PLAYER & UTILS) ---
+local SpeedBox = createBox(RightCol, "Speed Value (16-500)")
+local SpeedBtn = createBtn(RightCol, "SET SPEED")
+local WaterBtn = createBtn(RightCol, "WALK ON WATER: OFF")
+local RenderBtn = createBtn(RightCol, "DISABLE 3D: OFF")
+local CloseBtn = createBtn(RightCol, "HIDE MENU [RT-CTRL]", Color3.fromRGB(50, 50, 50))
 
 -- --- LOGIC ---
 local fishingEnabled = false
 local tpEnabled, tpTarget = false, nil
 local playerSpeed = 16
 
--- Auto Clicker untuk Fishing
+-- Auto Clicker
 local function click()
     VirtualInputManager:SendMouseButtonEvent(500, 500, 0, true, game, 1)
     task.wait(0.05)
@@ -102,25 +128,20 @@ end
 FishingBtn.MouseButton1Click:Connect(function()
     fishingEnabled = not fishingEnabled
     FishingBtn.Text = "FAST FISHING: " .. (fishingEnabled and "ON" or "OFF")
-    FishingBtn.BackgroundColor3 = fishingEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
+    FishingBtn.BackgroundColor3 = fishingEnabled and Color3.fromRGB(60, 180, 60) or Color3.fromRGB(180, 60, 60)
     
     if fishingEnabled then
         task.spawn(function()
             while fishingEnabled do
-                local d1 = tonumber(BaitBox.Text) or 0.5 -- Default sangat cepat
-                local d2 = tonumber(ReelBox.Text) or 0.5 -- Default sangat cepat
-                
-                click() -- Lempar
-                task.wait(d1)
+                local d1, d2 = tonumber(BaitBox.Text) or 0.1, tonumber(ReelBox.Text) or 0.1
+                click() task.wait(d1)
                 if not fishingEnabled then break end
-                click() -- Tarik
-                task.wait(d2)
+                click() task.wait(d2)
             end
         end)
     end
 end)
 
--- Auto TP Logic
 FollowBtn.MouseButton1Click:Connect(function()
     tpEnabled = not tpEnabled
     if tpEnabled then
@@ -130,16 +151,16 @@ FollowBtn.MouseButton1Click:Connect(function()
                 tpTarget = v; break
             end
         end
-        FollowBtn.Text = tpTarget and "TP-ing: "..tpTarget.DisplayName or "Not Found"
-        FollowBtn.BackgroundColor3 = tpTarget and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
+        FollowBtn.Text = tpTarget and "TP: "..tpTarget.DisplayName or "NOT FOUND"
+        FollowBtn.BackgroundColor3 = tpTarget and Color3.fromRGB(60, 180, 60) or Color3.fromRGB(180, 60, 60)
     else
-        tpTarget = nil; FollowBtn.Text = "Auto TP: OFF"; FollowBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+        tpTarget = nil; FollowBtn.Text = "AUTO TP: OFF"; FollowBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
     end
 end)
 
 SpeedBtn.MouseButton1Click:Connect(function() playerSpeed = tonumber(SpeedBox.Text) or 16 end)
 
--- Main Loop
+-- Loops
 RunService.Stepped:Connect(function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
@@ -150,22 +171,23 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Walk on Water & Render
 local waterEnabled, waterPart = false, nil
 WaterBtn.MouseButton1Click:Connect(function()
     waterEnabled = not waterEnabled
-    WaterBtn.Text = "Walk On Water: " .. (waterEnabled and "ON" or "OFF")
-    WaterBtn.BackgroundColor3 = waterEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
+    WaterBtn.Text = "WATER: " .. (waterEnabled and "ON" or "OFF")
+    WaterBtn.BackgroundColor3 = waterEnabled and Color3.fromRGB(60, 180, 60) or Color3.fromRGB(35, 35, 35)
 end)
 
 local BlackScreen = Instance.new("Frame", ScreenGui)
-BlackScreen.Size = UDim2.new(1, 0, 1, 0); BlackScreen.BackgroundColor3 = Color3.new(0, 0, 0); BlackScreen.Visible = false
+BlackScreen.Size = UDim2.new(1,0,1,0); BlackScreen.BackgroundColor3 = Color3.new(0,0,0); BlackScreen.Visible = false; BlackScreen.ZIndex = 0
 RenderBtn.MouseButton1Click:Connect(function()
     BlackScreen.Visible = not BlackScreen.Visible
-    RenderBtn.Text = "Disable 3D: " .. (BlackScreen.Visible and "ON" or "OFF")
+    RenderBtn.Text = "3D RENDER: " .. (BlackScreen.Visible and "OFF" or "ON")
+    RenderBtn.BackgroundColor3 = BlackScreen.Visible and Color3.fromRGB(60, 180, 60) or Color3.fromRGB(35, 35, 35)
     pcall(function() RunService:Set3dRenderingEnabled(not BlackScreen.Visible) end)
 end)
 
+-- Keybind
 UserInputService.InputBegan:Connect(function(i)
     if i.KeyCode == Enum.KeyCode.RightControl then MainFrame.Visible = not MainFrame.Visible end
-end)"))()
+end)
