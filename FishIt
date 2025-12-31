@@ -1,6 +1,5 @@
 --========================================
--- FISH IT CLASSIC TOOL (REAL FIX)
--- Walk On Water + Disable 3D + FPS Lock
+-- FISH IT CLASSIC TOOL (FULL FIX FINAL)
 --========================================
 
 -- SERVICES
@@ -8,28 +7,33 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local player = Players.LocalPlayer
+local pg = player:WaitForChild("PlayerGui")
+
 local char = player.Character or player.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
 --========================================
 -- CLEAN UI
 --========================================
-local pg = player:WaitForChild("PlayerGui")
-if pg:FindFirstChild("FishIt_UI") then
-    pg.FishIt_UI:Destroy()
-end
+pcall(function()
+    if pg:FindFirstChild("FishIt_UI") then
+        pg.FishIt_UI:Destroy()
+    end
+end)
 
 --========================================
 -- UI
 --========================================
-local gui = Instance.new("ScreenGui", pg)
+local gui = Instance.new("ScreenGui")
 gui.Name = "FishIt_UI"
 gui.ResetOnSpawn = false
+gui.Parent = pg
 
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,260,0,260)
-main.Position = UDim2.new(0,20,0.3,0)
-main.BackgroundColor3 = Color3.fromRGB(12,12,12)
+local main = Instance.new("Frame")
+main.Parent = gui
+main.Size = UDim2.new(0,270,0,300)
+main.Position = UDim2.new(0,20,0.28,0)
+main.BackgroundColor3 = Color3.fromRGB(15,15,15)
 main.Active = true
 main.Draggable = true
 
@@ -37,7 +41,7 @@ Instance.new("UICorner", main).CornerRadius = UDim.new(0,10)
 Instance.new("UIStroke", main).Color = Color3.fromRGB(0,255,0)
 
 local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1,0,0,30)
+title.Size = UDim2.new(1,0,0,32)
 title.BackgroundTransparency = 1
 title.Text = "FISH IT CLASSIC TOOL"
 title.TextColor3 = Color3.new(1,1,1)
@@ -45,56 +49,58 @@ title.Font = Enum.Font.SourceSansBold
 title.TextSize = 15
 
 --========================================
--- TOGGLE SYSTEM
+-- TOGGLE SYSTEM (NO BUG)
 --========================================
 local toggles = {}
 
 local function CreateToggle(text, y)
     local f = Instance.new("Frame", main)
-    f.Size = UDim2.new(1,-20,0,35)
+    f.Size = UDim2.new(1,-20,0,36)
     f.Position = UDim2.new(0,10,0,y)
     f.BackgroundTransparency = 1
 
-    local l = Instance.new("TextLabel", f)
-    l.Size = UDim2.new(0.65,0,1,0)
-    l.BackgroundTransparency = 1
-    l.Text = text
-    l.TextColor3 = Color3.fromRGB(220,220,220)
-    l.Font = Enum.Font.SourceSans
-    l.TextSize = 14
-    l.TextXAlignment = Left
+    local lbl = Instance.new("TextLabel", f)
+    lbl.Size = UDim2.new(0.65,0,1,0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(230,230,230)
+    lbl.Font = Enum.Font.SourceSans
+    lbl.TextSize = 14
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
 
-    local b = Instance.new("TextButton", f)
-    b.Size = UDim2.new(0.3,0,0.7,0)
-    b.Position = UDim2.new(0.7,0,0.15,0)
-    b.Text = "OFF"
-    b.Font = Enum.Font.SourceSansBold
-    b.TextSize = 13
-    b.TextColor3 = Color3.new(1,1,1)
-    b.BackgroundColor3 = Color3.fromRGB(140,0,0)
-    Instance.new("UICorner", b).CornerRadius = UDim.new(1,0)
+    local btn = Instance.new("TextButton", f)
+    btn.Size = UDim2.new(0.3,0,0.7,0)
+    btn.Position = UDim2.new(0.7,0,0.15,0)
+    btn.Text = "OFF"
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 13
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.BackgroundColor3 = Color3.fromRGB(140,0,0)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(1,0)
 
     toggles[text] = false
 
-    b.MouseButton1Click:Connect(function()
+    btn.MouseButton1Click:Connect(function()
         toggles[text] = not toggles[text]
-        b.Text = toggles[text] and "ON" or "OFF"
-        b.BackgroundColor3 = toggles[text] and Color3.fromRGB(0,170,0) or Color3.fromRGB(140,0,0)
+        btn.Text = toggles[text] and "ON" or "OFF"
+        btn.BackgroundColor3 = toggles[text]
+            and Color3.fromRGB(0,170,0)
+            or Color3.fromRGB(140,0,0)
     end)
 end
 
 CreateToggle("Walk On Water", 40)
-CreateToggle("Disable 3D", 80)
+CreateToggle("Disable 3D Render", 80)
 
 --========================================
 -- FPS LOCK
 --========================================
-local function FPSBtn(text, y, cap)
+local function FPSButton(text, y, cap)
     local b = Instance.new("TextButton", main)
-    b.Size = UDim2.new(1,-20,0,28)
+    b.Size = UDim2.new(1,-20,0,30)
     b.Position = UDim2.new(0,10,0,y)
     b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    b.BackgroundColor3 = Color3.fromRGB(25,25,25)
     b.TextColor3 = Color3.new(1,1,1)
     b.Font = Enum.Font.SourceSans
     b.TextSize = 13
@@ -107,12 +113,12 @@ local function FPSBtn(text, y, cap)
     end)
 end
 
-FPSBtn("FPS 30", 130, 30)
-FPSBtn("FPS 60", 165, 60)
-FPSBtn("FPS 120", 200, 120)
+FPSButton("FPS LOCK 30", 140, 30)
+FPSButton("FPS LOCK 60", 175, 60)
+FPSButton("FPS LOCK 120", 210, 120)
 
 --========================================
--- WALK ON WATER (REAL WORKING)
+-- WALK ON WATER (REAL)
 --========================================
 local bp = Instance.new("BodyPosition")
 bp.MaxForce = Vector3.new(0, math.huge, 0)
@@ -120,10 +126,18 @@ bp.P = 10000
 
 RunService.Heartbeat:Connect(function()
     if toggles["Walk On Water"] then
-        local ray = workspace:Raycast(hrp.Position, Vector3.new(0,-12,0))
+        local ray = workspace:Raycast(
+            hrp.Position,
+            Vector3.new(0,-15,0)
+        )
+
         if ray and ray.Instance then
             if ray.Instance:IsA("Terrain") or ray.Instance.Material == Enum.Material.Water then
-                bp.Position = Vector3.new(hrp.Position.X, ray.Position.Y + 2.3, hrp.Position.Z)
+                bp.Position = Vector3.new(
+                    hrp.Position.X,
+                    ray.Position.Y + 2.4,
+                    hrp.Position.Z
+                )
                 bp.Parent = hrp
             end
         end
@@ -133,26 +147,26 @@ RunService.Heartbeat:Connect(function()
 end)
 
 --========================================
--- DISABLE 3D (REAL)
+-- DISABLE 3D RENDER (REAL)
 --========================================
-local renderDisabled = false
+local renderOff = false
 
 RunService.RenderStepped:Connect(function()
-    if toggles["Disable 3D"] then
-        if not renderDisabled then
+    if toggles["Disable 3D Render"] then
+        if not renderOff then
             pcall(function()
                 RunService:Set3dRenderingEnabled(false)
             end)
-            renderDisabled = true
+            renderOff = true
         end
     else
-        if renderDisabled then
+        if renderOff then
             pcall(function()
                 RunService:Set3dRenderingEnabled(true)
             end)
-            renderDisabled = false
+            renderOff = false
         end
     end
 end)
 
-print("✅ FISH IT CLASSIC TOOL – REAL FIX LOADED")
+print("✅ FISH IT CLASSIC TOOL – FULL FEATURE ACTIVE")
