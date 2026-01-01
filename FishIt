@@ -1,6 +1,7 @@
 --[[ 
- RakaGanteng UI - V10 (WIDE 330 - FISH IT EDITION)
- Khusus Fish It: Anti-Lag, No Water Particles, Aggressive Reduce
+ RakaGanteng UI - V10 (COMPACT REDUCE)
+ Optimized for: FISH IT
+ Lebar: 280px (Scannable & Clean)
 ]]
 
 local Players = game:GetService("Players")
@@ -23,7 +24,7 @@ local BV
 local Conn
 local OldShadows = Lighting.GlobalShadows
 
--- Anti-AFK (Internal)
+-- Anti-AFK
 Player.Idled:Connect(function()
     VU:CaptureController()
     VU:ClickButton2(Vector2.new())
@@ -33,63 +34,62 @@ end)
 local Gui = Instance.new("ScreenGui", game.CoreGui)
 Gui.Name = "RakaBeta"
 
--- Minimize Button (Navy Style)
+-- Minimize Button (Gaya Navy Modern)
 local MinBtn = Instance.new("TextButton", Gui)
-MinBtn.Size = UDim2.new(0, 35, 0, 35)
-MinBtn.Position = UDim2.new(0, 10, 0.5, -17)
-MinBtn.BackgroundColor3 = Color3.fromRGB(0, 35, 75)
+MinBtn.Size = UDim2.new(0, 32, 0, 32)
+MinBtn.Position = UDim2.new(0, 15, 0.5, -16)
+MinBtn.BackgroundColor3 = Color3.fromRGB(0, 40, 90)
 MinBtn.Text = "R"
 MinBtn.Font = Enum.Font.SourceSansBold
 MinBtn.TextColor3 = Color3.new(1,1,1)
-MinBtn.TextSize = 18
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 8)
-local StrokeM = Instance.new("UIStroke", MinBtn)
-StrokeM.Color = Color3.fromRGB(0, 100, 255)
-StrokeM.Thickness = 1.5
+MinBtn.TextSize = 16
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
+Instance.new("UIStroke", MinBtn).Color = Color3.fromRGB(0, 100, 255)
 
--- Main Frame (Lebar 330px)
+-- Main Frame (Width: 280px - Lebih Ringkas)
 local Frame = Instance.new("Frame", Gui)
-Frame.Size = UDim2.new(0, 330, 0, 145)
-Frame.Position = UDim2.new(0.5, -165, 0.4, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(5, 10, 25)
+Frame.Size = UDim2.new(0, 280, 0, 140) 
+Frame.Position = UDim2.new(0.5, -140, 0.4, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(3, 8, 15)
 Frame.Active = true
 Frame.Draggable = true
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
-local FrameStroke = Instance.new("UIStroke", Frame)
-FrameStroke.Color = Color3.fromRGB(0, 80, 160)
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
+local FStroke = Instance.new("UIStroke", Frame)
+FStroke.Color = Color3.fromRGB(0, 60, 130)
+FStroke.Thickness = 1.8
 
--- Header
+-- Header & Logo (Posisi Digeser)
 local Header = Instance.new("Frame", Frame)
 Header.Size = UDim2.new(1, 0, 0, 35)
 Header.BackgroundTransparency = 1
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.6, 0, 1, 0)
-Title.Position = UDim2.new(0, 15, 0, 0)
-Title.Text = "RAKA GANTENG V10 | FISH IT"
+Title.Size = UDim2.new(1, -20, 1, 0)
+Title.Position = UDim2.new(0, 12, 0, 0) -- Logo/Judul digeser sedikit ke kanan agar manis
+Title.Text = "RAKA GANTENG"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 15
+Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local FPSDisplay = Instance.new("TextLabel", Header)
 FPSDisplay.Size = UDim2.new(0.4, 0, 1, 0)
-FPSDisplay.Position = UDim2.new(0.6, -15, 0, 0)
-FPSDisplay.Text = "FPS: ..."
-FPSDisplay.TextColor3 = Color3.fromRGB(100, 200, 255)
+FPSDisplay.Position = UDim2.new(0.6, -12, 0, 0)
+FPSDisplay.Text = "FPS: 60"
+FPSDisplay.TextColor3 = Color3.fromRGB(0, 170, 255)
 FPSDisplay.Font = Enum.Font.Code
-FPSDisplay.TextSize = 13
+FPSDisplay.TextSize = 12
 FPSDisplay.TextXAlignment = Enum.TextXAlignment.Right
 
--- Button Grid
+-- Button Layout (2 Column Grid)
 local BtnGrid = Instance.new("Frame", Frame)
-BtnGrid.Size = UDim2.new(1, -20, 0, 65)
-BtnGrid.Position = UDim2.new(0, 10, 0, 45)
+BtnGrid.Size = UDim2.new(1, -20, 0, 60)
+BtnGrid.Position = UDim2.new(0, 10, 0, 40)
 BtnGrid.BackgroundTransparency = 1
 
 local UIGrid = Instance.new("UIGridLayout", BtnGrid)
-UIGrid.CellSize = UDim2.new(0, 100, 0, 30)
-UIGrid.CellPadding = UDim2.new(0, 5, 0, 5)
+UIGrid.CellSize = UDim2.new(0, 125, 0, 28)
+UIGrid.CellPadding = UDim2.new(0, 8, 0, 6)
 UIGrid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local function CreateBtn(text)
@@ -97,9 +97,10 @@ local function CreateBtn(text)
     B.Text = text
     B.Font = Enum.Font.SourceSansBold
     B.TextSize = 12
-    B.TextColor3 = Color3.new(1, 1, 1)
-    B.BackgroundColor3 = Color3.fromRGB(15, 45, 90)
+    B.TextColor3 = Color3.fromRGB(200, 200, 200)
+    B.BackgroundColor3 = Color3.fromRGB(15, 25, 50)
     Instance.new("UICorner", B).CornerRadius = UDim.new(0, 4)
+    Instance.new("UIStroke", B).Color = Color3.fromRGB(30, 50, 80)
     return B
 end
 
@@ -107,10 +108,10 @@ local BtnWOW = CreateBtn("Walk Water: OFF")
 local BtnRender = CreateBtn("No Render: OFF")
 local BtnReduce = CreateBtn("Reduce Map: OFF")
 
--- FPS Section
+-- FPS Selector (Mini)
 local FPSFrame = Instance.new("Frame", Frame)
 FPSFrame.Size = UDim2.new(1, -20, 0, 30)
-FPSFrame.Position = UDim2.new(0, 10, 0, 110)
+FPSFrame.Position = UDim2.new(0, 10, 0, 105)
 FPSFrame.BackgroundTransparency = 1
 
 local FPSLayout = Instance.new("UIListLayout", FPSFrame)
@@ -121,10 +122,10 @@ FPSLayout.Padding = UDim.new(0, 4)
 
 local function CreateFPS(val)
     local B = Instance.new("TextButton", FPSFrame)
-    B.Size = UDim2.new(0, 42, 0, 24)
+    B.Size = UDim2.new(0, 38, 0, 22)
     B.Text = tostring(val)
     B.Font = Enum.Font.SourceSansBold
-    B.TextSize = 11
+    B.TextSize = 10
     B.BackgroundColor3 = Color3.fromRGB(10, 20, 40)
     B.TextColor3 = Color3.fromRGB(150, 150, 150)
     Instance.new("UICorner", B).CornerRadius = UDim.new(0, 3)
@@ -161,11 +162,11 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Walk On Water (Y-Lock)
 BtnWOW.MouseButton1Click:Connect(function()
     WOW_Enabled = not WOW_Enabled
     BtnWOW.Text = WOW_Enabled and "Walk Water: ON" or "Walk Water: OFF"
-    BtnWOW.BackgroundColor3 = WOW_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(15, 45, 90)
+    BtnWOW.TextColor3 = WOW_Enabled and Color3.new(1,1,1) or Color3.fromRGB(200, 200, 200)
+    BtnWOW.BackgroundColor3 = WOW_Enabled and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(15, 25, 50)
     if WOW_Enabled then
         BV = Instance.new("BodyVelocity", HRP)
         BV.MaxForce = Vector3.new(0, 1e6, 0)
@@ -179,37 +180,28 @@ BtnWOW.MouseButton1Click:Connect(function()
     end
 end)
 
--- No Render (AFK Mode)
 BtnRender.MouseButton1Click:Connect(function()
     NoRender_Enabled = not NoRender_Enabled
     RunService:Set3dRenderingEnabled(not NoRender_Enabled)
     BtnRender.Text = NoRender_Enabled and "No Render: ON" or "No Render: OFF"
-    BtnRender.BackgroundColor3 = NoRender_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(15, 45, 90)
+    BtnRender.BackgroundColor3 = NoRender_Enabled and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(15, 25, 50)
 end)
 
--- Reduce Map (Agresif untuk Fish It)
 BtnReduce.MouseButton1Click:Connect(function()
     ReduceMap_Enabled = not ReduceMap_Enabled
     BtnReduce.Text = ReduceMap_Enabled and "Reduce Map: ON" or "Reduce Map: OFF"
-    BtnReduce.BackgroundColor3 = ReduceMap_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(15, 45, 90)
+    BtnReduce.BackgroundColor3 = ReduceMap_Enabled and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(15, 25, 50)
     
     if ReduceMap_Enabled then
         settings().Rendering.QualityLevel = 1
         Lighting.GlobalShadows = false
         for _, v in pairs(game:GetDescendants()) do
-            -- Menghapus partikel gelembung dan air yang berat
             if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Sparkles") or v:IsA("Fire") or v:IsA("Smoke") then
                 v.Enabled = false
-            -- Menghilangkan dekorasi tekstur di dasar air/map
             elseif v:IsA("Decal") or v:IsA("Texture") then
                 v.Transparency = 1
-            -- Mengubah semua part menjadi Smooth Plastic agar ringan
             elseif v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then
                 v.Material = Enum.Material.SmoothPlastic
-                v.Reflectance = 0
-            -- Mematikan efek visual tambahan
-            elseif v:IsA("PostProcessEffect") or v:IsA("Clouds") or v:IsA("Beams") then
-                v.Enabled = false
             end
         end
     else
