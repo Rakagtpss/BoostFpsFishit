@@ -1,6 +1,6 @@
 --[[ 
- RakaHensem Utility V5 WIDE - FAST REEL RE-LOGIC
- Fitur: Fast Reel (No Spam), UI Wide, FPS Display, Booster
+ RakaHensem Utility V5 WIDE - CUSTOM INPUT EDITION
+ Fitur: Fast Reel (New Args), Custom Delay Input, UI Wide, Anti-Spam
 ]]
 
 -- ================= SERVICES =================
@@ -17,10 +17,14 @@ local HRP = Char:WaitForChild("HumanoidRootPart")
 -- ================= STATE =================
 local Optimized = false
 local Minimized = false
-local WaterWalk = false
-local BV, Conn
+getgenv().fishingStart = false
 
--- Ambil Remotes secara dinamis
+-- Delays (Default)
+local delayBait = 0.5
+local delayReel = 0.8
+local delayReset = 0.1
+
+-- Remotes
 local NetFolder = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
 local ChargeRod = NetFolder:FindFirstChild("RF/ChargeFishingRod")
 local RequestGame = NetFolder:FindFirstChild("RF/RequestFishingMinigameStarted")
@@ -35,7 +39,7 @@ local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "RakaBoostV"
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 440, 0, 260) 
+MainFrame.Size = UDim2.new(0, 440, 0, 280) 
 MainFrame.Position = UDim2.new(0.5, -220, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.Active = true
@@ -49,24 +53,14 @@ Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.7, 1, 1, 0)
+Title.Size = UDim2.new(0.7, 0, 1, 0)
 Title.Position = UDim2.new(0.03, 0, 0, 0)
-Title.Text = "RAKA UTILITY V5 | UPDATED REMOTES"
+Title.Text = "RAKA UTILITY V5 | CUSTOM DELAY"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 11
 Title.TextColor3 = Color3.fromRGB(0, 255, 150)
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
-
-local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 60, 0, 20)
-MinBtn.Position = UDim2.new(1, -70, 0.2, 0)
-MinBtn.Text = "HIDE"
-MinBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 10
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
 -- Scrolling Content
 local Content = Instance.new("ScrollingFrame", MainFrame)
@@ -74,13 +68,14 @@ Content.Size = UDim2.new(1, -10, 1, -85)
 Content.Position = UDim2.new(0, 5, 0, 35)
 Content.ScrollBarThickness = 2
 Content.BackgroundTransparency = 1
-Content.CanvasSize = UDim2.new(0, 0, 0, 250) -- Dipastikan muncul semua
+Content.CanvasSize = UDim2.new(0, 0, 0, 320)
 
 local Grid = Instance.new("UIGridLayout", Content)
-Grid.CellSize = UDim2.new(0, 205, 0, 32)
+Grid.CellSize = UDim2.new(0, 205, 0, 35)
 Grid.CellPadding = UDim2.new(0, 8, 0, 8)
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
+-- ================= HELPER: UI COMPONENTS =================
 local function CreateButton(txt)
     local b = Instance.new("TextButton", Content)
     b.Text = txt
@@ -92,59 +87,74 @@ local function CreateButton(txt)
     return b
 end
 
--- ================= CREATE BUTTONS =================
+local function CreateInput(label, default)
+    local f = Instance.new("Frame", Content)
+    f.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 5)
+    
+    local tl = Instance.new("TextLabel", f)
+    tl.Size = UDim2.new(0.6, 0, 1, 0)
+    tl.Text = label
+    tl.Font = Enum.Font.GothamBold
+    tl.TextSize = 9
+    tl.TextColor3 = Color3.fromRGB(200, 200, 200)
+    tl.BackgroundTransparency = 1
+    
+    local ti = Instance.new("TextBox", f)
+    ti.Size = UDim2.new(0.35, 0, 0.7, 0)
+    ti.Position = UDim2.new(0.6, 0, 0.15, 0)
+    ti.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    ti.Text = tostring(default)
+    ti.TextColor3 = Color3.new(1, 1, 1)
+    ti.Font = Enum.Font.Code
+    ti.TextSize = 10
+    Instance.new("UICorner", ti).CornerRadius = UDim.new(0, 4)
+    
+    return ti
+end
+
+-- ================= CREATE ELEMENTS =================
 local FastBtn   = CreateButton("AUTO FISH: OFF")
-local BaitBtn   = CreateButton("DELAY BAIT: 0.5s")
-local ReelBtn   = CreateButton("DELAY REEL: 1.1s")
 local BoostBtn  = CreateButton("BOOSTER: OFF")
-local WowBtn    = CreateButton("WALK ON WATER: OFF")
+local InputBait = CreateInput("SET BAIT DELAY:", delayBait)
+local InputReel = CreateInput("SET REEL DELAY:", delayReel)
+local InputRst  = CreateInput("SET RESET DELAY:", delayReset)
 local FpsBtn    = CreateButton("FPS CAP: UNLIMITED")
 
--- ================= LOGIC: FAST REEL =================
-getgenv().fishingStart = false
-local delayBait = 0.5
-local delayReel = 1.1
-
+-- ================= LOGIC: AUTO FISH (NEW ARGS) =================
 FastBtn.MouseButton1Click:Connect(function()
     getgenv().fishingStart = not getgenv().fishingStart
     FastBtn.Text = getgenv().fishingStart and "AUTO FISH: ON" or "AUTO FISH: OFF"
     FastBtn.BackgroundColor3 = getgenv().fishingStart and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(30, 30, 30)
     
+    -- Update delay dari input box saat tombol ditekan
+    delayBait = tonumber(InputBait.Text) or 0.5
+    delayReel = tonumber(InputReel.Text) or 0.8
+    delayReset = tonumber(InputRst.Text) or 0.1
+
     if getgenv().fishingStart then
         task.spawn(function()
             while getgenv().fishingStart do
                 pcall(function()
-                    -- 1. Charge Rod (Timestamp Dynamic)
+                    -- Perintah 1: Charge
                     ChargeRod:InvokeServer({[4] = os.clock()})
                     task.wait(delayBait)
                     
-                    -- 2. Request Game
-                    RequestGame:InvokeServer(-1.23, 0.15, os.clock())
+                    -- Perintah 2: Request (Args sesuai permintaanmu)
+                    RequestGame:InvokeServer(-0.571874737739563, 1, os.clock())
                     task.wait(delayReel)
                     
-                    -- 3. Complete (Dapat Ikan)
+                    -- Perintah 3 & 4: Cancel & Complete (Instant Catch)
+                    CancelInput:InvokeServer()
                     CompleteGame:FireServer()
-                    
-                    -- 4. Reset (Anti-Stuck)
-                    if CancelInput then CancelInput:InvokeServer() end
                 end)
-                task.wait(0.2) -- Jeda antar siklus agar tidak spam/kick
+                task.wait(delayReset) -- Jeda antar lemparan
             end
         end)
     end
 end)
 
--- ================= LOGIC: CONFIG =================
-BaitBtn.MouseButton1Click:Connect(function()
-    delayBait = (delayBait >= 1) and 0.3 or delayBait + 0.2
-    BaitBtn.Text = "DELAY BAIT: "..string.format("%.1f", delayBait).."s"
-end)
-
-ReelBtn.MouseButton1Click:Connect(function()
-    delayReel = (delayReel >= 2) and 0.5 or delayReel + 0.3
-    ReelBtn.Text = "DELAY REEL: "..string.format("%.1f", delayReel).."s"
-end)
-
+-- ================= LOGIC: BOOSTER =================
 BoostBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     BoostBtn.Text = Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
@@ -152,22 +162,7 @@ BoostBtn.MouseButton1Click:Connect(function()
     Lighting.GlobalShadows = not Optimized
 end)
 
-WowBtn.MouseButton1Click:Connect(function()
-    WaterWalk = not WaterWalk
-    WowBtn.Text = WaterWalk and "WALK ON WATER: ON" or "WALK ON WATER: OFF"
-    if WaterWalk then
-        BV = Instance.new("BodyVelocity", HRP)
-        BV.MaxForce = Vector3.new(0, 1e6, 0)
-        Conn = RunService.Heartbeat:Connect(function()
-            HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
-        end)
-    else
-        if Conn then Conn:Disconnect() end
-        if BV then BV:Destroy() end
-    end
-end)
-
--- ================= FPS & MINIMIZE =================
+-- ================= FPS & HIDE =================
 local FPS = Instance.new("TextLabel", MainFrame)
 FPS.Size = UDim2.new(0.95, 0, 0, 30)
 FPS.Position = UDim2.new(0.025, 0, 1, -40)
@@ -175,22 +170,30 @@ FPS.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 FPS.TextColor3 = Color3.fromRGB(0, 255, 255)
 FPS.Text = "FPS: -- | RAKA UTILITY"
 FPS.Font = Enum.Font.Code
-FPS.TextSize = 12
+FPS.TextSize = 11
 Instance.new("UICorner", FPS)
 
 local f, t = 0, os.clock()
 RunService.RenderStepped:Connect(function()
     f += 1
     if os.clock() - t >= 1 then
-        FPS.Text = "FPS: "..f.." | STATUS: SECURE"
+        FPS.Text = "FPS: "..f.." | NEW ARGS ACTIVE"
         f, t = 0, os.clock()
     end
 end)
+
+local MinBtn = Instance.new("TextButton", Header)
+MinBtn.Size = UDim2.new(0, 50, 0, 20)
+MinBtn.Position = UDim2.new(1, -60, 0.2, 0)
+MinBtn.Text = "HIDE"
+MinBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+MinBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", MinBtn)
 
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     Content.Visible = not Minimized
     FPS.Visible = not Minimized
-    MainFrame:TweenSize(Minimized and UDim2.new(0, 440, 0, 30) or UDim2.new(0, 440, 0, 260), "Out", "Quad", 0.3, true)
+    MainFrame:TweenSize(Minimized and UDim2.new(0, 440, 0, 30) or UDim2.new(0, 440, 0, 280), "Out", "Quad", 0.3, true)
     MinBtn.Text = Minimized and "SHOW" or "HIDE"
 end)
