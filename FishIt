@@ -1,5 +1,5 @@
 --[[ 
- RakaHensem Utility V5 - Fixed UI Visibility
+ RakaHensem Utility V5 - Modular Optimized + Auto Fish
 ]]
 
 local Players = game:GetService("Players")
@@ -12,179 +12,141 @@ local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
--- State
+-- Fishing Remotes (Ensure these paths match your game)
+local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+local ChargeRod = Net:WaitForChild("RF/ChargeFishingRod")
+local RequestGame = Net:WaitForChild("RF/RequestFishingMinigameStarted")
+local CompleteGame = Net:WaitForChild("RE/CompleteFishingMinigame")
+local CancelInput = Net:WaitForChild("RF/CancelFishingInput")
+local AutoState = Net:WaitForChild("RF/UpdateAutoFishingState")
+
+-- State / Config
+getgenv().fishingStart = false
+local delayCharge = 1.15 -- Custom Bait Delay
+local delayTime = 0.56   -- Custom Reel Delay
 local RenderEnabled = true
 local Optimized = false
 local Minimized = false
 local Enabled = false
-getgenv().fishingStart = false
-
--- Clean Old UI
-for _, v in pairs(CoreGui:GetChildren()) do
-    if v.Name == "SeraphinWideFix" then v:Destroy() end
-end
+local BV, Conn
 
 -- UI Creation
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "SeraphinWideFix"
-Gui.Parent = CoreGui
-Gui.IgnoreGuiInset = true
-Gui.DisplayOrder = 999
+if CoreGui:FindFirstChild("RakaBoostV") then CoreGui.RakaBoostV:Destroy() end
+local Gui = Instance.new("ScreenGui", CoreGui)
+Gui.Name = "RakaBoostV"
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 260, 0, 300) 
-MainFrame.Position = UDim2.new(0.5, -130, 0.4, -150)
+MainFrame.Size = UDim2.new(0, 160, 0, 250) -- Adjusted for new buttons
+MainFrame.Position = UDim2.new(0.5, -80, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
 
 -- Header
 local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 35)
-Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
+Header.Size = UDim2.new(1, 0, 0, 25)
+Header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 6)
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.6, 0, 1, 0)
+Title.Size = UDim2.new(0.7, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN V5 FIXED"
+Title.Text = "SeraphinHelper V5"
 Title.TextColor3 = Color3.fromRGB(0, 255, 150)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 12
+Title.TextSize = 10
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 60, 0, 22)
-MinBtn.Position = UDim2.new(0.72, 0, 0.2, 0)
-MinBtn.Text = "HIDE"
-MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 10
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 5)
-
--- Scroll Container
+-- Scroll Frame
 local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
-ScrollFrame.Size = UDim2.new(1, -10, 1, -85)
-ScrollFrame.Position = UDim2.new(0, 5, 0, 40)
+ScrollFrame.Size = UDim2.new(1, 0, 1, -65)
+ScrollFrame.Position = UDim2.new(0, 0, 0, 30)
 ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 350)
-ScrollFrame.ScrollBarThickness = 3
-ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 150)
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 1.5, 0)
+ScrollFrame.ScrollBarThickness = 2
 
 local Layout = Instance.new("UIListLayout", ScrollFrame)
-Layout.Padding = UDim.new(0, 7)
+Layout.Padding = UDim.new(0, 4)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Helper UI Functions
-local function CreateButton(text, color)
+local function CreateButton(text)
     local btn = Instance.new("TextButton", ScrollFrame)
-    btn.Size = UDim2.new(0.9, 0, 0, 32)
+    btn.Size = UDim2.new(0.9, 0, 0, 25)
     btn.Text = text
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 10
+    btn.TextSize = 9
     btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.BackgroundColor3 = color or Color3.fromRGB(30, 30, 30)
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     return btn
 end
 
-local function CreateInput(placeholder)
-    local input = Instance.new("TextBox", ScrollFrame)
-    input.Size = UDim2.new(0.9, 0, 0, 32)
-    input.PlaceholderText = placeholder
-    input.Text = ""
-    input.Font = Enum.Font.Gotham
-    input.TextSize = 11
-    input.TextColor3 = Color3.new(1, 1, 1)
-    input.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    Instance.new("UICorner", input).CornerRadius = UDim.new(0, 6)
-    return input
+-- Fishing Logic
+local function startFishingSuperInstantLoop()
+    while getgenv().fishingStart do
+        pcall(function() 
+            CancelInput:InvokeServer()
+            task.wait(0.05)
+            ChargeRod:InvokeServer()
+            task.wait(0.05)
+            RequestGame:InvokeServer(-1.11, 0, 1763651451)
+            task.wait(delayCharge) -- Custom Bait Delay
+            CompleteGame:FireServer()
+            task.wait(delayTime)   -- Custom Reel Delay
+        end)
+        task.wait(0.1)
+    end
 end
 
--- UI Elements
-local BoostBtn = CreateButton("BOOSTER: OFF")
-local RenderBtn = CreateButton("3D RENDERING: ON")
-local WowBtn = CreateButton("WALK ON WATER: OFF")
+-- UI Buttons
+local FishBtn = CreateButton("AUTO FISH: OFF")
+local BaitDelayBtn = CreateButton("BAIT DELAY: " .. delayCharge .. "s")
+local ReelDelayBtn = CreateButton("REEL DELAY: " .. delayTime .. "s")
+local BoostBtn = CreateButton("BOOSTER (LOW GRAPHIC)")
 
-local Line = Instance.new("Frame", ScrollFrame)
-Line.Size = UDim2.new(0.9, 0, 0, 2)
-Line.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-Line.BorderSizePixel = 0
+FishBtn.MouseButton1Click:Connect(function()
+    getgenv().fishingStart = not getgenv().fishingStart
+    FishBtn.Text = getgenv().fishingStart and "AUTO FISH: ON" or "AUTO FISH: OFF"
+    FishBtn.BackgroundColor3 = getgenv().fishingStart and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 35)
+    if getgenv().fishingStart then
+        task.spawn(startFishingSuperInstantLoop)
+    end
+end)
 
-local ReelInp = CreateInput("Reel Delay (Default 0.5)")
-local BaitInp = CreateInput("Bait Delay (Default 1.1)")
-local FishBtn = CreateButton("START AUTO FISH", Color3.fromRGB(0, 120, 255))
+BaitDelayBtn.MouseButton1Click:Connect(function()
+    delayCharge = delayCharge >= 2.0 and 0.5 or delayCharge + 0.25
+    BaitDelayBtn.Text = "BAIT DELAY: " .. string.format("%.2f", delayCharge) .. "s"
+end)
 
+ReelDelayBtn.MouseButton1Click:Connect(function()
+    delayTime = delayTime >= 1.0 and 0.1 or delayTime + 0.1
+    ReelDelayBtn.Text = "REEL DELAY: " .. string.format("%.2f", delayTime) .. "s"
+end)
+
+-- Original Booster Logic
+BoostBtn.MouseButton1Click:Connect(function()
+    Optimized = not Optimized
+    BoostBtn.Text = Optimized and "BOOSTER: ACTIVE" or "BOOSTER: OFF"
+    BoostBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 35)
+    settings().Rendering.QualityLevel = Optimized and 1 or 0
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("Part") and Optimized then v.Material = Enum.Material.SmoothPlastic end
+    end
+end)
+
+-- FPS Display
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
-FpsDisplay.Size = UDim2.new(0.9, 0, 0, 30)
-FpsDisplay.Position = UDim2.new(0.05, 0, 1, -35)
+FpsDisplay.Size = UDim2.new(0.9, 0, 0, 25)
+FpsDisplay.Position = UDim2.new(0.05, 0, 1, -30)
 FpsDisplay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 FpsDisplay.TextColor3 = Color3.fromRGB(0, 255, 255)
 FpsDisplay.Text = "FPS: --"
 FpsDisplay.Font = Enum.Font.Code
-FpsDisplay.TextSize = 14
-Instance.new("UICorner", FpsDisplay).CornerRadius = UDim.new(0, 6)
+FpsDisplay.TextSize = 12
+Instance.new("UICorner", FpsDisplay).CornerRadius = UDim.new(0, 4)
 
--- --- LOGIC (With Safety Checks) --- --
-
-local function getRemotes()
-    -- Menggunakan pcall agar script tidak mati jika remote tidak ditemukan
-    local success, net = pcall(function()
-        return ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
-    end)
-    if success then return net end
-    return nil
-end
-
-local function fishingLoop()
-    local net = getRemotes()
-    if not net then warn("Remotes not found!") return end
-    
-    local ChargeRod = net:FindFirstChild("RF/ChargeFishingRod")
-    local RequestGame = net:FindFirstChild("RF/RequestFishingMinigameStarted")
-    local CompleteGame = net:FindFirstChild("RE/CompleteFishingMinigame")
-    local CancelInput = net:FindFirstChild("RF/CancelFishingInput")
-    
-    local args = { -1.115296483039856, 0, 1763651451.636425 }
-
-    while getgenv().fishingStart do
-        pcall(function()
-            local dReel = tonumber(ReelInp.Text) or 0.56
-            local dBait = tonumber(BaitInp.Text) or 1.15
-            
-            if ChargeRod then ChargeRod:InvokeServer() end
-            task.wait(0.05)
-            if RequestGame then RequestGame:InvokeServer(unpack(args)) end
-            task.wait(dBait)
-            if CompleteGame then CompleteGame:FireServer() end
-            task.wait(0.1)
-            if CancelInput then CancelInput:InvokeServer() end
-            task.wait(dReel)
-        end)
-    end
-end
-
-FishBtn.MouseButton1Click:Connect(function()
-    getgenv().fishingStart = not getgenv().fishingStart
-    FishBtn.Text = getgenv().fishingStart and "STOP AUTO FISH" or "START AUTO FISH"
-    FishBtn.BackgroundColor3 = getgenv().fishingStart and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(0, 120, 255)
-    if getgenv().fishingStart then task.spawn(fishingLoop) end
-end)
-
--- Minimize Function
-MinBtn.MouseButton1Click:Connect(function()
-    Minimized = not Minimized
-    MainFrame:TweenSize(Minimized and UDim2.new(0, 260, 0, 35) or UDim2.new(0, 260, 0, 300), "Out", "Quad", 0.3, true)
-    ScrollFrame.Visible = not Minimized
-    FpsDisplay.Visible = not Minimized
-    MinBtn.Text = Minimized and "SHOW" or "HIDE"
-end)
-
--- Basic FPS
 local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
@@ -193,12 +155,3 @@ RunService.RenderStepped:Connect(function()
         frames, lastT = 0, os.clock()
     end
 end)
-
--- Booster & WOW logic (Simpler for stability)
-BoostBtn.MouseButton1Click:Connect(function()
-    Optimized = not Optimized
-    BoostBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(30, 30, 30)
-    settings().Rendering.QualityLevel = Optimized and 1 or 0
-end)
-
-print("Seraphin Loaded Successfully!")
