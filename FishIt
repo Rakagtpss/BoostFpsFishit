@@ -1,6 +1,8 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
+local Terrain = game:GetService("Workspace"):FindFirstChildOfClass("Terrain")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
@@ -10,165 +12,145 @@ local Humanoid = Char:WaitForChild("Humanoid")
 -- State
 local Enabled = false
 local RenderDisabled = false
+local Optimized = false -- State Baru untuk Booster
 local Minimized = false
 local BV, Conn
 
 -- UI Creation
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "FishItBetaBoost"
+Gui.Name = "RakaHensem_Beta"
 Gui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 150, 0, 240)
+MainFrame.Size = UDim2.new(0, 180, 0, 280) -- Ukuran ditambah sedikit
 MainFrame.Position = UDim2.new(0.5, -90, 0.4, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.ClipsDescendants = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
--- Header (Tetap terlihat saat di-minimize)
+-- Header
 local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 25)
-Header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Header.BorderSizePixel = 0
+Header.Size = UDim2.new(1, 0, 0, 30)
+Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.5, 0, 1, 0)
-Title.Position = UDim2.new(0.04, 0, 0, 0)
-Title.Text = "rakaganteng"
-Title.TextColor3 = Color3.fromRGB(0, 170, 255)
+Title.Size = UDim2.new(0.6, 0, 1, 0)
+Title.Position = UDim2.new(0.05, 0, 0, 0)
+Title.Text = "RakaHensem"
+Title.TextColor3 = Color3.fromRGB(0, 255, 150)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
+Title.TextSize = 12
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Tombol Minimize yang Lebih Jelas
+-- Tombol Hide/Show
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 25, 0, 25)
-MinBtn.Position = UDim2.new(0.75, 0, 0.1, 0)
-MinBtn.Text = "Hide"
+MinBtn.Size = UDim2.new(0, 60, 0, 20)
+MinBtn.Position = UDim2.new(0.62, 0, 0.15, 0)
+MinBtn.Text = "HIDE"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+MinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 MinBtn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
+MinBtn.TextSize = 9
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
--- Content Frame (Akan disembunyikan saat minimize)
+-- Content Frame
 local Content = Instance.new("Frame", MainFrame)
 Content.Size = UDim2.new(1, 0, 1, -30)
 Content.Position = UDim2.new(0, 0, 0, 30)
 Content.BackgroundTransparency = 1
 
-local function CreateButton(name, text, pos, color)
+local function CreateButton(name, text, pos)
     local btn = Instance.new("TextButton", Content)
     btn.Name = name
-    btn.Size = UDim2.new(0.9, 0, 0, 3)
+    btn.Size = UDim2.new(0.9, 0, 0, 35)
     btn.Position = pos
     btn.Text = text
-    btn.Font = Enum.Font.GothamSemibold
-    btn.TextSize = 11
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 10
     btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.BackgroundColor3 = color
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     btn.BorderSizePixel = 0
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     return btn
 end
 
 -- Controls
-local WowBtn = CreateButton("WowBtn", "WOW: OFF", UDim2.new(0.05, 0, 0.05, 0), Color3.fromRGB(150, 0, 0))
-local RenderBtn = CreateButton("RenderBtn", "3D RENDER: OFF", UDim2.new(0.05, 0, 0.2, 0), Color3.fromRGB(0, 100, 200))
+local WowBtn = CreateButton("WowBtn", "WALK ON WATER: OFF", UDim2.new(0.05, 0, 0.05, 0))
+local RenderBtn = CreateButton("RenderBtn", "3D RENDER: ON", UDim2.new(0.05, 0, 0.20, 0))
+RenderBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+
+-- Tombol Booster CPU/GPU
+local BoostBtn = CreateButton("BoostBtn", "BOOSTER CPU+GPU: OFF", UDim2.new(0.05, 0, 0.35, 0))
 
 -- FPS Display
 local FpsDisplay = Instance.new("TextLabel", Content)
-FpsDisplay.Size = UDim2.new(0.10, 0, 0, 25)
-FpsDisplay.Position = UDim2.new(0.05, 0, 0.35, 0)
+FpsDisplay.Size = UDim2.new(0.9, 0, 0, 30)
+FpsDisplay.Position = UDim2.new(0.05, 0, 0.55, 0)
 FpsDisplay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 FpsDisplay.TextColor3 = Color3.fromRGB(0, 255, 120)
-FpsDisplay.Text = "FPS: CALC..."
+FpsDisplay.Text = "FPS: ..."
 FpsDisplay.Font = Enum.Font.Code
-FpsDisplay.TextSize = 14
+FpsDisplay.TextSize = 12
 Instance.new("UICorner", FpsDisplay).CornerRadius = UDim.new(0, 6)
 
--- FPS Limiter Label
-local FpsLabel = Instance.new("TextLabel", Content)
-FpsLabel.Text = "SET FPS LIMIT"
-FpsLabel.Size = UDim2.new(1,0,0,20)
-FpsLabel.Position = UDim2.new(0,0,0.5,0)
-FpsLabel.BackgroundTransparency = 1
-FpsLabel.TextColor3 = Color3.fromRGB(150,150,150)
-FpsLabel.Font = Enum.Font.GothamBold
-FpsLabel.TextSize = 9
-
-local FpsFrame = Instance.new("Frame", Content)
-FpsFrame.Size = UDim2.new(0.9, 0, 0, 35)
-FpsFrame.Position = UDim2.new(0.05, 0, 0.6, 0)
-FpsFrame.BackgroundTransparency = 1
-
---- FITUR BARU ---
-
--- 1. Real-time FPS Logic (Akurat & Smooth)
-local TimeCounter = 0
-local FrameCounter = 0
-RunService.RenderStepped:Connect(function(dt)
-    FrameCounter = FrameCounter + 1
-    TimeCounter = TimeCounter + dt
-    if TimeCounter >= 1 then
-        FpsDisplay.Text = "FPS: " .. FrameCounter
-        FrameCounter = 0
-        TimeCounter = 0
-    end
-end)
-
--- 2. Minimize Logic (Animasi halus)
+-- Minimize Logic
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    if Minimized then
-        -- Mengecilkan frame hanya sisa Header
-        MainFrame:TweenSize(UDim2.new(0, 180, 0, 30), "Out", "Quad", 0.2, true)
-        Content.Visible = false
-        MinBtn.Text = "Show"
-    else
-        -- Mengembalikan ke ukuran semula
-        MainFrame:TweenSize(UDim2.new(0, 180, 0, 240), "Out", "Quad", 0.2, true)
-        Content.Visible = true
-        MinBtn.Text = "Hide"
+    MainFrame:TweenSize(Minimized and UDim2.new(0, 180, 0, 30) or UDim2.new(0, 180, 0, 280), "Out", "Quad", 0.3, true)
+    Content.Visible = not Minimized
+    MinBtn.Text = Minimized and "SHOW" or "HIDE"
+end)
+
+-- FPS Counter
+local lastTime = tick()
+local frameCount = 0
+RunService.RenderStepped:Connect(function()
+    frameCount = frameCount + 1
+    if tick() - lastTime >= 1 then
+        FpsDisplay.Text = "FPS: " .. tostring(frameCount)
+        frameCount = 0
+        lastTime = tick()
     end
 end)
 
-------------------
-
--- FPS Limit Buttons
-local function SetFPS(cap)
-    if setfpscap then 
-        setfpscap(cap) 
+-- CPU/GPU Booster Function
+local function ToggleBooster(state)
+    if state then
+        -- Menurunkan beban CPU/GPU
+        settings().Rendering.QualityLevel = 1
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        if Terrain then Terrain.WaterWaveSize = 0 Terrain.WaterWaveSpeed = 0 Terrain.WaterReflectance = 0 Terrain.WaterTransparency = 0 end
+        
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("PostProcessEffect") or v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Enabled = false
+            end
+        end
     else
-        print("Executor anda tidak mendukung setfpscap")
+        -- Mengembalikan ke Normal
+        settings().Rendering.QualityLevel = 0 -- Automatic
+        Lighting.GlobalShadows = true
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("PostProcessEffect") or v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Enabled = true
+            end
+        end
     end
 end
 
-local fpsOptions = {30, 60, 144, 999}
-for i, v in ipairs(fpsOptions) do
-    local fbtn = Instance.new("TextButton", FpsFrame)
-    fbtn.Size = UDim2.new(0.22, 0, 0.8, 0)
-    fbtn.Position = UDim2.new((i-1)*0.26, 0, 0, 0)
-    fbtn.Text = v == 999 and "MAX" or tostring(v)
-    fbtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    fbtn.TextColor3 = Color3.new(1,1,1)
-    fbtn.Font = Enum.Font.GothamBold
-    fbtn.TextSize = 9
-    Instance.new("UICorner", fbtn).CornerRadius = UDim.new(0, 4)
-    
-    fbtn.MouseButton1Click:Connect(function()
-        SetFPS(v)
-        for _, b in pairs(FpsFrame:GetChildren()) do
-            if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(40, 40, 40) end
-        end
-        fbtn.BackgroundColor3 = Color3.fromRGB(0, 170, 120)
-    end)
-end
+-- Button Logic
+BoostBtn.MouseButton1Click:Connect(function()
+    Optimized = not Optimized
+    BoostBtn.Text = Optimized and "BOOSTER CPU+GPU: ON" or "BOOSTER CPU+GPU: OFF"
+    BoostBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(30, 30, 30)
+    ToggleBooster(Optimized)
+end)
 
--- Core Script Logic (Walk on Water)
 local function EnableWow()
     if BV then BV:Destroy() end
     BV = Instance.new("BodyVelocity")
@@ -185,29 +167,21 @@ local function EnableWow()
     end)
 end
 
-local function DisableWow()
-    if Conn then Conn:Disconnect() Conn = nil end
-    if BV then BV:Destroy() BV = nil end
-end
-
 WowBtn.MouseButton1Click:Connect(function()
     Enabled = not Enabled
-    WowBtn.Text = Enabled and "WOW: ON" or "WOW: OFF"
-    WowBtn.BackgroundColor3 = Enabled and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(150, 0, 0)
-    if Enabled then EnableWow() else DisableWow() end
+    WowBtn.Text = Enabled and "WALK ON WATER: ON" or "WALK ON WATER: OFF"
+    WowBtn.BackgroundColor3 = Enabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(30, 30, 30)
+    if Enabled then EnableWow() else if Conn then Conn:Disconnect() end if BV then BV:Destroy() end end
 end)
 
 RenderBtn.MouseButton1Click:Connect(function()
     RenderDisabled = not RenderDisabled
     RunService:Set3dRenderingEnabled(not RenderDisabled)
-    RenderBtn.Text = RenderDisabled and "3D RENDER: ON" or "3D RENDER: OFF"
-    RenderBtn.BackgroundColor3 = RenderDisabled and Color3.fromRGB(60, 60, 60) or Color3.fromRGB(0, 100, 200)
+    RenderBtn.Text = RenderDisabled and "3D RENDER: OFF" or "3D RENDER: ON"
+    RenderBtn.BackgroundColor3 = RenderDisabled and Color3.fromRGB(30, 30, 30) or Color3.fromRGB(0, 180, 100)
 end)
 
--- Character Reset Handler
 Player.CharacterAdded:Connect(function(c)
-    Char = c
-    HRP = c:WaitForChild("HumanoidRootPart")
-    Humanoid = c:WaitForChild("Humanoid")
+    Char, HRP, Humanoid = c, c:WaitForChild("HumanoidRootPart"), c:WaitForChild("Humanoid")
     if Enabled then task.wait(0.5) EnableWow() end
 end)
