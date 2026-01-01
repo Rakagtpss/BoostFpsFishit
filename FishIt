@@ -1,1 +1,295 @@
-dd
+--[[ 
+ RakaHensem Utility V11 - Totem Update
+ Update: Added Auto Place Totem (Every 60 Minutes)
+ Fix: FPS Cap logic & UI Layout
+]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
+
+local Player = Players.LocalPlayer
+-- Function to update character references safely
+local function GetChar()
+    return Player.Character or Player.CharacterAdded:Wait()
+end
+
+-- // State
+local AfkModeActive = false 
+local Optimized = false
+local Minimized = false
+local WowEnabled = false
+local AutoTotemEnabled = false
+local BV, Conn
+
+-- // FPS Settings
+local fpsLimits = {30, 60, 144, 999} 
+local currentLimitIndex = 4 
+
+-- // UI Config
+local UI_WIDTH = 210
+local UI_HEIGHT = 245 -- Sedikit diperpanjang untuk tombol baru
+local ACCENT = Color3.fromRGB(0, 255, 170)
+
+-- // Cleanup Old UI
+if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
+
+-- // UI Creation
+local Gui = Instance.new("ScreenGui", CoreGui)
+Gui.Name = "SeraphinHelper"
+
+local MainFrame = Instance.new("Frame", Gui)
+MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
+MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+-- Header
+local Header = Instance.new("Frame", MainFrame)
+Header.Size = UDim2.new(1, 0, 0, 35)
+Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
+
+local Title = Instance.new("TextLabel", Header)
+Title.Size = UDim2.new(0.6, 0, 1, 0)
+Title.Position = UDim2.new(0.05, 0, 0, 0)
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
+Title.RichText = true
+Title.TextColor3 = Color3.new(1,1,1)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 11
+Title.BackgroundTransparency = 1
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+local MinBtn = Instance.new("TextButton", Header)
+MinBtn.Size = UDim2.new(0, 45, 0, 22)
+MinBtn.Position = UDim2.new(0.75, 0, 0.5, -11)
+MinBtn.Text = "HIDE"
+MinBtn.TextColor3 = Color3.new(1, 1, 1)
+MinBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 9
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
+
+-- Scrolling Content
+local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
+ScrollFrame.Size = UDim2.new(1, -10, 1, -65) -- Adjusted size
+ScrollFrame.Position = UDim2.new(0, 5, 0, 40)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.ScrollBarThickness = 2
+ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+local Layout = Instance.new("UIListLayout", ScrollFrame)
+Layout.Padding = UDim.new(0, 6)
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local function CreateButton(text, layoutOrder)
+    local btn = Instance.new("TextButton", ScrollFrame)
+    btn.Size = UDim2.new(0.95, 0, 0, 35)
+    btn.Text = text
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 10
+    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    btn.LayoutOrder = layoutOrder or 0
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    return btn
+end
+
+-- // TOMBOL FITUR
+local PotatoBtn = CreateButton("POTATO MODE: OFF", 1)
+local WowBtn = CreateButton("WALK ON WATER: OFF", 2)
+local RenderBtn = CreateButton("AFK MODE (BLACK): OFF", 3)
+local TotemBtn = CreateButton("AUTO TOTEM (60m): OFF", 4) -- Tombol Baru
+local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED", 5)
+
+-- Footer FPS
+local FpsDisplay = Instance.new("TextLabel", MainFrame)
+FpsDisplay.Size = UDim2.new(1, 0, 0, 20)
+FpsDisplay.Position = UDim2.new(0, 0, 1, -20)
+FpsDisplay.BackgroundTransparency = 1
+FpsDisplay.TextColor3 = ACCENT
+FpsDisplay.Text = "FPS: --"
+FpsDisplay.Font = Enum.Font.Code
+FpsDisplay.TextSize = 10
+
+-- // LOGIC: AUTO PLACE TOTEM
+local function PlaceTotemLogic()
+    if not AutoTotemEnabled then return end
+    
+    local Char = GetChar()
+    local Humanoid = Char:FindFirstChild("Humanoid")
+    local Backpack = Player:FindFirstChild("Backpack")
+    
+    if not Humanoid or not Backpack then return end
+
+    local totemFound = nil
+
+    -- 1. Scan Backpack untuk item bernama "Totem"
+    for _, item in pairs(Backpack:GetChildren()) do
+        if item:IsA("Tool") and string.find(string.lower(item.Name), "totem") then
+            totemFound = item
+            break
+        end
+    end
+
+    -- 2. Jika tidak ada di backpack, cek apakah sedang dipegang
+    if not totemFound then
+        local heldItem = Char:FindFirstChildOfClass("Tool")
+        if heldItem and string.find(string.lower(heldItem.Name), "totem") then
+            totemFound = heldItem
+        end
+    end
+
+    -- 3. Eksekusi Equip dan Activate
+    if totemFound then
+        Humanoid:EquipTool(totemFound)
+        task.wait(0.5) -- Tunggu animasi equip
+        if totemFound.Parent == Char then
+            totemFound:Activate() -- Klik otomatis
+            print("[Seraphin] Totem Placed: " .. totemFound.Name)
+            
+            -- Kirim notifikasi kecil (Opsional)
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Seraphin Helper";
+                Text = "Placed: " .. totemFound.Name;
+                Duration = 3;
+            })
+        end
+    else
+        warn("[Seraphin] No Totem found in inventory!")
+    end
+end
+
+-- Loop Auto Totem (Menggunakan task.spawn agar tidak freeze UI)
+task.spawn(function()
+    while true do
+        if AutoTotemEnabled then
+            pcall(PlaceTotemLogic)
+            -- Tunggu 60 menit (60 * 60 = 3600 detik)
+            -- Kita gunakan loop kecil agar bisa mendeteksi jika dimatikan di tengah jalan
+            for i = 1, 3600 do 
+                if not AutoTotemEnabled then break end
+                task.wait(1)
+            end
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+TotemBtn.MouseButton1Click:Connect(function()
+    AutoTotemEnabled = not AutoTotemEnabled
+    TotemBtn.Text = AutoTotemEnabled and "AUTO TOTEM (60m): ON" or "AUTO TOTEM (60m): OFF"
+    TotemBtn.BackgroundColor3 = AutoTotemEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+    
+    if AutoTotemEnabled then
+        -- Langsung coba pasang saat pertama kali dinyalakan
+        task.spawn(function() pcall(PlaceTotemLogic) end)
+    end
+end)
+
+
+-- // LOGIC FPS CAP
+FpsCapBtn.MouseButton1Click:Connect(function()
+    currentLimitIndex = currentLimitIndex + 1
+    if currentLimitIndex > #fpsLimits then
+        currentLimitIndex = 1
+    end
+    
+    local newLimit = fpsLimits[currentLimitIndex]
+    
+    if setfpscap then
+        setfpscap(newLimit)
+    end
+    
+    if newLimit > 900 then
+        FpsCapBtn.Text = "FPS CAP: UNLIMITED"
+    else
+        FpsCapBtn.Text = "FPS CAP: " .. newLimit
+    end
+end)
+
+-- // LOGIC POTATO MODE
+PotatoBtn.MouseButton1Click:Connect(function()
+    Optimized = not Optimized
+    PotatoBtn.Text = Optimized and "POTATO MODE: ON" or "POTATO MODE: OFF"
+    PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+    
+    Lighting.GlobalShadows = not Optimized
+    if Optimized then
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.CastShadow = false
+            elseif v:IsA("Texture") or v:IsA("Decal") then
+                v.Transparency = 1
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Enabled = false
+            end
+        end
+    end
+end)
+
+-- // LOGIC AFK RENDER
+RenderBtn.MouseButton1Click:Connect(function()
+    AfkModeActive = not AfkModeActive
+    RunService:Set3dRenderingEnabled(not AfkModeActive)
+    RenderBtn.Text = AfkModeActive and "AFK MODE (BLACK): ON" or "AFK MODE (BLACK): OFF"
+    RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 35, 40)
+end)
+
+-- // LOGIC WALK ON WATER
+WowBtn.MouseButton1Click:Connect(function()
+    local HRP = GetChar():WaitForChild("HumanoidRootPart")
+    WowEnabled = not WowEnabled
+    WowBtn.Text = WowEnabled and "WOW: ON" or "WOW: OFF"
+    WowBtn.BackgroundColor3 = WowEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+    
+    if WowEnabled then
+        BV = Instance.new("BodyVelocity", HRP)
+        BV.MaxForce = Vector3.new(0, 1e6, 0)
+        BV.Velocity = Vector3.zero
+        Conn = RunService.Heartbeat:Connect(function()
+            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z) end
+        end)
+    else
+        if Conn then Conn:Disconnect() end
+        if BV then BV:Destroy() end
+    end
+end)
+
+-- // MINIMIZE FUNCTION
+MinBtn.MouseButton1Click:Connect(function()
+    Minimized = not Minimized
+    if Minimized then
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.3, true)
+        ScrollFrame.Visible = false
+        FpsDisplay.Visible = false
+        MinBtn.Text = "SHOW"
+    else
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
+        task.wait(0.2)
+        ScrollFrame.Visible = true
+        FpsDisplay.Visible = true
+        MinBtn.Text = "HIDE"
+    end
+end)
+
+-- // FPS COUNTER
+local lastT = os.clock()
+local frames = 0
+RunService.RenderStepped:Connect(function()
+    frames = frames + 1
+    if os.clock() - lastT >= 1 then
+        FpsDisplay.Text = "FPS: " .. frames
+        frames = 0
+        lastT = os.clock()
+    end
+end)
