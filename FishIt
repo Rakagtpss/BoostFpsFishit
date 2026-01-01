@@ -1,7 +1,3 @@
---[[ 
- Walk On Water + Optimizer + Real-time FPS - Fish It FINAL (Sempurna)
-]]
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -19,7 +15,7 @@ local BV, Conn
 
 -- UI Creation
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "FishIt_Ultimate_V3"
+Gui.Name = "FishItBetaBoost"
 Gui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", Gui)
@@ -41,10 +37,10 @@ Header.BorderSizePixel = 0
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.6, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "FISH IT UTILITY"
+Title.Text = "RakaGanteng😎"
 Title.TextColor3 = Color3.fromRGB(0, 170, 255)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 11
+Title.TextSize = 12
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -91,7 +87,7 @@ FpsDisplay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 FpsDisplay.TextColor3 = Color3.fromRGB(0, 255, 120)
 FpsDisplay.Text = "FPS: CALC..."
 FpsDisplay.Font = Enum.Font.Code
-FpsDisplay.TextSize = 12
+FpsDisplay.TextSize = 14
 Instance.new("UICorner", FpsDisplay).CornerRadius = UDim.new(0, 6)
 
 -- FPS Limiter Label
