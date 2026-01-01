@@ -1,7 +1,10 @@
 --[[ 
- Walk On Water - Fish It FINAL V3
- + NO RENDER
- + FPS UNLOCKER (UNLI) & LOW GRAPHICS
+ RakaGanteng UI - Final V4
+ Fitur:
+ 1. Walk On Water (Toggle)
+ 2. No Render (AFK Mode)
+ 3. Low Graphics (FPS Boost Visual)
+ 4. FPS Lock Selector (30/60/90/120/220)
 ]]
 
 -- Services
@@ -17,7 +20,7 @@ local Humanoid = Char:WaitForChild("Humanoid")
 -- State Variables
 local WOW_Enabled = false
 local NoRender_Enabled = false
-local FPS_Unlock_Enabled = false
+local LowGFX_Enabled = false
 
 local BV
 local Conn
@@ -28,67 +31,121 @@ local OldTech = Lighting.Technology
 
 -- UI Creation
 local Gui = Instance.new("ScreenGui", game.CoreGui)
-Gui.Name = "RakaGanteng"
+Gui.Name = "RakaGanteng_UI"
 
 local Frame = Instance.new("Frame", Gui)
-Frame.Size = UDim2.new(0, 140, 0, 135)
-Frame.Position = UDim2.new(0.5, -70, 0.7, 0)
+Frame.Size = UDim2.new(0, 160, 0, 210) -- Ukuran disesuaikan
+Frame.Position = UDim2.new(0.5, -80, 0.6, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 Frame.BorderSizePixel = 0
 Frame.Active = true
 Frame.Draggable = true
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
 
--- Title
+-- Title "RakaGanteng"
 local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0, 25)
+Title.Size = UDim2.new(1, 0, 0, 30)
 Title.BackgroundTransparency = 1
 Title.Text = "RakaGanteng"
-Title.TextColor3 = Color3.fromRGB(255, 170, 0) -- Warna Judul Orange
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 13
+Title.TextColor3 = Color3.fromRGB(0, 255, 255) -- Cyan Neon
+Title.Font = Enum.Font.GothamBlack
+Title.TextSize = 16
 
--- Layout Helper
-local Layout = Instance.new("UIListLayout", Frame)
-Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-Layout.SortOrder = Enum.SortOrder.LayoutOrder
-Layout.Padding = UDim.new(0, 5)
+-- Main Layout
+local MainLayout = Instance.new("UIListLayout", Frame)
+MainLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+MainLayout.SortOrder = Enum.SortOrder.LayoutOrder
+MainLayout.Padding = UDim.new(0, 5)
 
--- Spacer
+-- Spacer Title
 local Spacer = Instance.new("Frame", Frame)
 Spacer.BackgroundTransparency = 1
-Spacer.Size = UDim2.new(1, 0, 0, 20)
+Spacer.Size = UDim2.new(1, 0, 0, 25)
 Spacer.LayoutOrder = 0
 
--- Function Create Button
-local function CreateButton(text, order)
+-- Helper Function: Create Button
+local function CreateButton(text, color, order)
     local Btn = Instance.new("TextButton", Frame)
-    Btn.Size = UDim2.new(0.9, 0, 0, 28)
-    Btn.Text = text .. ": OFF"
+    Btn.Size = UDim2.new(0.9, 0, 0, 26)
+    Btn.Text = text
     Btn.Font = Enum.Font.GothamBold
-    Btn.TextSize = 11
+    Btn.TextSize = 12
     Btn.TextColor3 = Color3.new(1, 1, 1)
-    Btn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+    Btn.BackgroundColor3 = color
     Btn.BorderSizePixel = 0
     Btn.LayoutOrder = order
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
     return Btn
 end
 
-local BtnWOW = CreateButton("Water Walk", 1)
-local BtnRender = CreateButton("No Render", 2)
-local BtnFPS = CreateButton("Unli FPS", 3)
+-- Tombol Utama
+local BtnWOW = CreateButton("Water Walk: OFF", Color3.fromRGB(180, 0, 0), 1)
+local BtnRender = CreateButton("No Render: OFF", Color3.fromRGB(180, 0, 0), 2)
+local BtnGFX = CreateButton("Low GFX: OFF", Color3.fromRGB(180, 0, 0), 3)
+
+-- Label FPS Section
+local LabelFPS = Instance.new("TextLabel", Frame)
+LabelFPS.Size = UDim2.new(1, 0, 0, 15)
+LabelFPS.BackgroundTransparency = 1
+LabelFPS.Text = "- LOCK FPS -"
+LabelFPS.TextColor3 = Color3.fromRGB(150, 150, 150)
+LabelFPS.Font = Enum.Font.GothamBold
+LabelFPS.TextSize = 10
+LabelFPS.LayoutOrder = 4
+
+-- Container Tombol FPS (Grid)
+local FPSContainer = Instance.new("Frame", Frame)
+FPSContainer.Size = UDim2.new(0.9, 0, 0, 50)
+FPSContainer.BackgroundTransparency = 1
+FPSContainer.LayoutOrder = 5
+
+local Grid = Instance.new("UIGridLayout", FPSContainer)
+Grid.CellSize = UDim2.new(0, 42, 0, 22)
+Grid.CellPadding = UDim2.new(0, 5, 0, 5)
+Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- Function Bikin Tombol FPS Kecil
+local function CreateFPSBtn(val)
+    local Btn = Instance.new("TextButton", FPSContainer)
+    Btn.Text = tostring(val)
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 11
+    Btn.TextColor3 = Color3.new(1,1,1)
+    Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
+    
+    Btn.MouseButton1Click:Connect(function()
+        -- Reset warna tombol lain
+        for _, child in pairs(FPSContainer:GetChildren()) do
+            if child:IsA("TextButton") then
+                child.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            end
+        end
+        -- Highlight tombol aktif
+        Btn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        
+        -- Set FPS Cap
+        if setfpscap then
+            pcall(function() setfpscap(val) end)
+        end
+    end)
+end
+
+-- Generate Tombol FPS
+local FPS_List = {30, 60, 90, 120, 220}
+for _, val in ipairs(FPS_List) do
+    CreateFPSBtn(val)
+end
 
 ------------------------------------------------------
--- FITUR 1: WALK ON WATER
+-- LOGIC 1: WALK ON WATER
 ------------------------------------------------------
 local function EnableWOW()
     if not HRP then return end
     BV = Instance.new("BodyVelocity")
-    BV.MaxForce = Vector3.new(0, 1e6, 0) 
+    BV.MaxForce = Vector3.new(0, 1e6, 0)
     BV.Velocity = Vector3.zero
     BV.Parent = HRP
-
     Humanoid:ChangeState(Enum.HumanoidStateType.Running)
 
     Conn = RunService.Heartbeat:Connect(function()
@@ -114,43 +171,34 @@ BtnWOW.MouseButton1Click:Connect(function()
         EnableWOW()
     else
         BtnWOW.Text = "Water Walk: OFF"
-        BtnWOW.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        BtnWOW.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
         DisableWOW()
     end
 end)
 
 ------------------------------------------------------
--- FITUR 2: NO RENDER (AFK MODE)
+-- LOGIC 2: NO RENDER
 ------------------------------------------------------
 BtnRender.MouseButton1Click:Connect(function()
     NoRender_Enabled = not NoRender_Enabled
     RunService:Set3dRenderingEnabled(not NoRender_Enabled)
-    
     if NoRender_Enabled then
         BtnRender.Text = "No Render: ON"
         BtnRender.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
     else
         BtnRender.Text = "No Render: OFF"
-        BtnRender.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        BtnRender.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
     end
 end)
 
 ------------------------------------------------------
--- FITUR 3: FPS UNLOCKER (UNLI) & BOOST
+-- LOGIC 3: LOW GFX (Grafik Burik)
 ------------------------------------------------------
-local function SetUnliFPS(bool)
+local function SetLowGFX(bool)
     if bool then
-        -- 1. Unlock FPS ke Max (9999)
-        if setfpscap then 
-            pcall(function() setfpscap(9999) end) 
-        end
-        
-        -- 2. Turunkan Grafik biar enteng (Low Poly)
         settings().Rendering.QualityLevel = 1
         Lighting.GlobalShadows = false
         Lighting.Technology = Enum.Technology.Compatibility
-        
-        -- Hapus Texture (Optional: Biar makin kenceng)
         for _, v in pairs(workspace:GetDescendants()) do
             if v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then
                 v.Material = Enum.Material.SmoothPlastic
@@ -160,37 +208,31 @@ local function SetUnliFPS(bool)
             end
         end
     else
-        -- Balikin Normal (Cap 60)
-        if setfpscap then 
-            pcall(function() setfpscap(60) end) 
-        end
         settings().Rendering.QualityLevel = "Automatic"
         Lighting.GlobalShadows = OldShadows
         Lighting.Technology = OldTech
     end
 end
 
-BtnFPS.MouseButton1Click:Connect(function()
-    FPS_Unlock_Enabled = not FPS_Unlock_Enabled
-    SetUnliFPS(FPS_Unlock_Enabled)
-    
-    if FPS_Unlock_Enabled then
-        BtnFPS.Text = "Unli FPS: ON"
-        BtnFPS.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+BtnGFX.MouseButton1Click:Connect(function()
+    LowGFX_Enabled = not LowGFX_Enabled
+    SetLowGFX(LowGFX_Enabled)
+    if LowGFX_Enabled then
+        BtnGFX.Text = "Low GFX: ON"
+        BtnGFX.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
     else
-        BtnFPS.Text = "Unli FPS: OFF"
-        BtnFPS.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        BtnGFX.Text = "Low GFX: OFF"
+        BtnGFX.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
     end
 end)
 
 ------------------------------------------------------
--- CHARACTER HANDLING
+-- CHARACTER RELOAD
 ------------------------------------------------------
 Player.CharacterAdded:Connect(function(c)
     Char = c
     HRP = c:WaitForChild("HumanoidRootPart")
     Humanoid = c:WaitForChild("Humanoid")
-    
     if WOW_Enabled then
         task.wait(0.5)
         EnableWOW()
