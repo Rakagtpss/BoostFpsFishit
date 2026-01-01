@@ -1,5 +1,3 @@
-Berikut adalah script lengkap yang sudah digabungkan dengan fitur Auto Totem (setiap 60 menit) yang kamu minta.
-Saya telah menambahkan tombol baru di menu UI dan mengatur logikanya agar berjalan di thread terpisah (menggunakan task.spawn) sehingga tidak membuat game lag saat menunggu 60 menit.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
