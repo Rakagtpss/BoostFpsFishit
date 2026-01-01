@@ -1,8 +1,3 @@
---[[ 
- RakaHensem Utility V8 - Logic Fixed
- Logic: ON = Feature Active, OFF = Feature Disabled
-]]
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -12,12 +7,16 @@ local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
--- // State (Disesuaikan agar OFF di awal)
+-- // State
 local AfkModeActive = false 
 local Optimized = false
 local Minimized = false
 local WowEnabled = false
 local BV, Conn
+
+-- // FPS Settings
+local fpsLimits = {30, 60, 144, 999} -- Daftar pilihan limit
+local currentLimitIndex = 4 -- Mulai dari Unlimited (999)
 
 -- // UI Config
 local UI_WIDTH = 210
@@ -53,18 +52,19 @@ Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 12
+Title.TextSize = 11
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 25, 0, 25)
-MinBtn.Position = UDim2.new(0.85, 0, 0.5, -12.5)
-MinBtn.Text = "-"
+MinBtn.Size = UDim2.new(0, 45, 0, 22)
+MinBtn.Position = UDim2.new(0.75, 0, 0.5, -11)
+MinBtn.Text = "HIDE"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
 MinBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
 MinBtn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
+MinBtn.TextSize = 9
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
 -- Scrolling Content
 local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
@@ -83,17 +83,17 @@ local function CreateButton(text)
     btn.Size = UDim2.new(0.95, 0, 0, 35)
     btn.Text = text
     btn.Font = Enum.Font.GothamMedium
-    btn.TextSize = 11
+    btn.TextSize = 10
     btn.TextColor3 = Color3.fromRGB(220, 220, 220)
     btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     return btn
 end
 
--- // TOMBOL
+-- // TOMBOL FITUR
 local PotatoBtn = CreateButton("POTATO MODE: OFF")
 local WowBtn = CreateButton("WALK ON WATER: OFF")
-local RenderBtn = CreateButton("AFK MODE (BLACK): OFF")
+local RenderBtn = CreateButton("NO RENDER 3D: OFF")
 local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
 
 -- Footer FPS
@@ -106,9 +106,29 @@ FpsDisplay.Text = "FPS: --"
 FpsDisplay.Font = Enum.Font.Code
 FpsDisplay.TextSize = 12
 
--- // LOGIC
+-- // LOGIC PERBAIKAN FPS CAP
+FpsCapBtn.MouseButton1Click:Connect(function()
+    currentLimitIndex = currentLimitIndex + 1
+    if currentLimitIndex > #fpsLimits then
+        currentLimitIndex = 1
+    end
+    
+    local newLimit = fpsLimits[currentLimitIndex]
+    
+    -- Mengatur Cap FPS (Hanya bekerja jika executor mendukung setfpscap)
+    if setfpscap then
+        setfpscap(newLimit)
+    end
+    
+    -- Update Teks Tombol
+    if newLimit > 900 then
+        FpsCapBtn.Text = "FPS CAP: UNLIMITED"
+    else
+        FpsCapBtn.Text = "FPS CAP: " .. newLimit
+    end
+end)
 
--- 1. Potato Mode (ON = Aktif, OFF = Mati)
+-- 1. Potato Mode
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "POTATO MODE: ON" or "POTATO MODE: OFF"
@@ -129,12 +149,10 @@ PotatoBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 2. AFK Render Mode (ON = Layar Hitam, OFF = Normal)
+-- 2. AFK Render Mode
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
-    -- Jika AFK Mode ON, maka 3D Rendering DISABLED (false)
     RunService:Set3dRenderingEnabled(not AfkModeActive)
-    
     RenderBtn.Text = AfkModeActive and "AFK MODE (BLACK): ON" or "AFK MODE (BLACK): OFF"
     RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 35, 40)
 end)
@@ -157,13 +175,21 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 4. Minimize
+-- 4. Minimize Function
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    MainFrame:TweenSize(Minimized and UDim2.new(0, UI_WIDTH, 0, 35) or UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
-    ScrollFrame.Visible = not Minimized
-    FpsDisplay.Visible = not Minimized
-    MinBtn.Text = Minimized and "+" or "-"
+    if Minimized then
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.3, true)
+        ScrollFrame.Visible = false
+        FpsDisplay.Visible = false
+        MinBtn.Text = "SHOW"
+    else
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
+        task.wait(0.2)
+        ScrollFrame.Visible = true
+        FpsDisplay.Visible = true
+        MinBtn.Text = "HIDE"
+    end
 end)
 
 -- FPS Counter
