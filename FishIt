@@ -63,7 +63,7 @@ Content.BackgroundTransparency = 1
 local function CreateButton(name, text, pos, color)
     local btn = Instance.new("TextButton", Content)
     btn.Name = name
-    btn.Size = UDim2.new(0.9, 0, 0, 30)
+    btn.Size = UDim2.new(0.9, 0, 0, 3)
     btn.Position = pos
     btn.Text = text
     btn.Font = Enum.Font.GothamSemibold
@@ -81,7 +81,7 @@ local RenderBtn = CreateButton("RenderBtn", "3D RENDER: OFF", UDim2.new(0.05, 0,
 
 -- FPS Display
 local FpsDisplay = Instance.new("TextLabel", Content)
-FpsDisplay.Size = UDim2.new(0.10, 0, 0, 30)
+FpsDisplay.Size = UDim2.new(0.10, 0, 0, 25)
 FpsDisplay.Position = UDim2.new(0.05, 0, 0.35, 0)
 FpsDisplay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 FpsDisplay.TextColor3 = Color3.fromRGB(0, 255, 120)
