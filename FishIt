@@ -1,12 +1,6 @@
 --[[ 
- RakaGanteng UI - Final V7
+ RakaGanteng UI - Final V8 (FIXED LAYOUT)
  Tema: Classic Navy Light
- Fitur:
- 1. Walk On Water (Toggle)
- 2. No Render (AFK Mode)
- 3. Reduce All Map (Performance Boost)
- 4. FPS Lock Selector (30/60/90/120/220)
- 5. Minimize / Show Toggle Button
 ]]
 
 local Players = game:GetService("Players")
@@ -30,100 +24,95 @@ local OldShadows = Lighting.GlobalShadows
 
 -- UI Core
 local Gui = Instance.new("ScreenGui", game.CoreGui)
-Gui.Name = "RakaGanteng_V7"
+Gui.Name = "RakaGanteng_V8"
 
--- Tombol Minimize (Floating)
+-- Tombol Minimize
 local MinBtn = Instance.new("TextButton", Gui)
 MinBtn.Size = UDim2.new(0, 35, 0, 35)
 MinBtn.Position = UDim2.new(0, 15, 0.5, -17)
-MinBtn.BackgroundColor3 = Color3.fromRGB(0, 35, 70) -- Navy
+MinBtn.BackgroundColor3 = Color3.fromRGB(0, 35, 70)
 MinBtn.Text = "R"
 MinBtn.Font = Enum.Font.SourceSansBold
 MinBtn.TextColor3 = Color3.new(1,1,1)
 MinBtn.TextSize = 18
 MinBtn.Draggable = true
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 8)
-local StrokeMin = Instance.new("UIStroke", MinBtn)
-StrokeMin.Color = Color3.fromRGB(0, 80, 150)
-StrokeMin.Thickness = 2
+Instance.new("UIStroke", MinBtn).Color = Color3.fromRGB(0, 80, 150)
 
--- Main Frame (Klasik Navy)
+-- Main Frame
 local Frame = Instance.new("Frame", Gui)
-Frame.Size = UDim2.new(0, 170, 0, 290)
+Frame.Size = UDim2.new(0, 170, 0, 0) -- Tinggi otomatis
 Frame.Position = UDim2.new(0.5, -85, 0.4, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(0, 20, 40) -- Dark Navy
-Frame.BorderSizePixel = 0
+Frame.BackgroundColor3 = Color3.fromRGB(0, 20, 40)
 Frame.Active = true
 Frame.Draggable = true
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 5)
-local MainStroke = Instance.new("UIStroke", Frame)
-MainStroke.Color = Color3.fromRGB(0, 50, 100)
-MainStroke.Thickness = 2
+Instance.new("UIStroke", Frame).Color = Color3.fromRGB(0, 50, 100)
 
--- FPS Display
-local FPSDisplay = Instance.new("TextLabel", Frame)
-FPSDisplay.Size = UDim2.new(1, 0, 0, 20)
-FPSDisplay.Position = UDim2.new(0, 0, 0, 5)
-FPSDisplay.BackgroundTransparency = 1
-FPSDisplay.Text = "FPS: ..."
-FPSDisplay.TextColor3 = Color3.fromRGB(150, 200, 255)
-FPSDisplay.Font = Enum.Font.Code
-FPSDisplay.TextSize = 12
+-- SISTEM LAYOUT TERATUR
+local Padding = Instance.new("UIPadding", Frame)
+Padding.PaddingTop = UDim.new(0, 10)
+Padding.PaddingBottom = UDim.new(0, 10)
 
--- Title
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0, 25)
-Title.Position = UDim2.new(0, 0, 0, 25)
-Title.BackgroundTransparency = 1
-Title.Text = "RAKA GANTENG V7"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 15
-
--- List Layout
 local List = Instance.new("UIListLayout", Frame)
 List.HorizontalAlignment = Enum.HorizontalAlignment.Center
 List.SortOrder = Enum.SortOrder.LayoutOrder
 List.Padding = UDim.new(0, 8)
 
--- Spacer
-local Spacer = Instance.new("Frame", Frame)
-Spacer.Size = UDim2.new(1, 0, 0, 55)
-Spacer.BackgroundTransparency = 1
-Spacer.LayoutOrder = 0
+-- Menyesuaikan tinggi frame dengan isi secara otomatis
+Frame.AutomaticSize = Enum.AutomaticSize.Y 
 
--- Function: Create Classic Button
+-- FPS Display
+local FPSDisplay = Instance.new("TextLabel", Frame)
+FPSDisplay.Size = UDim2.new(1, 0, 0, 15)
+FPSDisplay.BackgroundTransparency = 1
+FPSDisplay.Text = "FPS: ..."
+FPSDisplay.TextColor3 = Color3.fromRGB(150, 200, 255)
+FPSDisplay.Font = Enum.Font.Code
+FPSDisplay.TextSize = 15
+FPSDisplay.LayoutOrder = 1
+
+-- Title
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 25)
+Title.BackgroundTransparency = 1
+Title.Text = "RAKA GANTENG V8"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 15
+Title.LayoutOrder = 2
+
+-- Function: Create Button
 local function CreateButton(text, order)
     local Btn = Instance.new("TextButton", Frame)
-    Btn.Size = UDim2.new(0, 150, 0, 30)
+    Btn.Size = UDim2.new(0, 150, 0, 32)
     Btn.Text = text
     Btn.Font = Enum.Font.SourceSansBold
     Btn.TextColor3 = Color3.new(1, 1, 1)
-    Btn.BackgroundColor3 = Color3.fromRGB(0, 45, 90) -- Classic Navy
+    Btn.BackgroundColor3 = Color3.fromRGB(0, 45, 90)
     Btn.LayoutOrder = order
-    Btn.BorderSizePixel = 0
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 3)
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
     return Btn
 end
 
-local BtnWOW = CreateButton("Water Walk: OFF", 1)
-local BtnRender = CreateButton("No Render: OFF", 2)
-local BtnReduce = CreateButton("Reduce Map: OFF", 3)
+local BtnWOW = CreateButton("Water Walk: OFF", 3)
+local BtnRender = CreateButton("No Render: OFF", 4)
+local BtnReduce = CreateButton("Reduce Map: OFF", 5)
 
 -- FPS Lock Section
 local LabelFPS = Instance.new("TextLabel", Frame)
-LabelFPS.Size = UDim2.new(1, 0, 0, 15)
+LabelFPS.Size = UDim2.new(1, 0, 0, 20)
 LabelFPS.Text = "[ SELECT FPS CAP ]"
 LabelFPS.TextColor3 = Color3.fromRGB(100, 150, 200)
 LabelFPS.Font = Enum.Font.SourceSansBold
 LabelFPS.TextSize = 10
 LabelFPS.BackgroundTransparency = 1
-LabelFPS.LayoutOrder = 4
+LabelFPS.LayoutOrder = 6
 
 local FPSContainer = Instance.new("Frame", Frame)
 FPSContainer.Size = UDim2.new(0, 150, 0, 60)
 FPSContainer.BackgroundTransparency = 1
-FPSContainer.LayoutOrder = 5
+FPSContainer.LayoutOrder = 7
 
 local Grid = Instance.new("UIGridLayout", FPSContainer)
 Grid.CellSize = UDim2.new(0, 45, 0, 25)
@@ -137,7 +126,6 @@ local function CreateFPSBtn(val)
     Btn.Font = Enum.Font.SourceSansBold
     Btn.BackgroundColor3 = Color3.fromRGB(0, 30, 60)
     Btn.TextColor3 = Color3.new(1,1,1)
-    Btn.BorderSizePixel = 0
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 2)
     
     Btn.MouseButton1Click:Connect(function()
@@ -170,7 +158,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Feature: Water Walk
+-- Feature Logics (WOW, Render, Reduce Map)
 BtnWOW.MouseButton1Click:Connect(function()
     WOW_Enabled = not WOW_Enabled
     BtnWOW.Text = WOW_Enabled and "Water Walk: ON" or "Water Walk: OFF"
@@ -191,7 +179,6 @@ BtnWOW.MouseButton1Click:Connect(function()
     end
 end)
 
--- Feature: No Render
 BtnRender.MouseButton1Click:Connect(function()
     NoRender_Enabled = not NoRender_Enabled
     RunService:Set3dRenderingEnabled(not NoRender_Enabled)
@@ -199,29 +186,21 @@ BtnRender.MouseButton1Click:Connect(function()
     BtnRender.BackgroundColor3 = NoRender_Enabled and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(0, 45, 90)
 end)
 
--- Feature: Reduce All Map (Performance Mode)
 BtnReduce.MouseButton1Click:Connect(function()
     ReduceMap_Enabled = not ReduceMap_Enabled
     BtnReduce.Text = ReduceMap_Enabled and "Reduce Map: ON" or "Reduce Map: OFF"
     BtnReduce.BackgroundColor3 = ReduceMap_Enabled and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(0, 45, 90)
-    
     if ReduceMap_Enabled then
         settings().Rendering.QualityLevel = 1
         Lighting.GlobalShadows = false
-        -- Hapus elemen berat di map
         for _, v in pairs(workspace:GetDescendants()) do
             if v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then
                 v.Material = Enum.Material.SmoothPlastic
-                v.Reflectance = 0
-            elseif v:IsA("Texture") or v:IsA("Decal") or v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                v.Enabled = false -- Matikan partikel/efek
-                if v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 1 end
-            elseif v:IsA("PostProcessEffect") or v:IsA("BloomEffect") or v:IsA("BlurEffect") then
-                v.Enabled = false -- Matikan efek visual berat
+            elseif v:IsA("Texture") or v:IsA("Decal") or v:IsA("ParticleEmitter") then
+                pcall(function() v.Enabled = false v.Transparency = 1 end)
             end
         end
     else
         Lighting.GlobalShadows = OldShadows
-        -- Catatan: Untuk mengembalikan texture map secara utuh biasanya perlu Rejoin
     end
 end)
