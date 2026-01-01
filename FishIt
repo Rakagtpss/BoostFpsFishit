@@ -1,7 +1,7 @@
 --[[ 
- RakaGanteng UI - Final V10 (2026 MODERN EDITION)
- Khusus Fish It: Auto Event (Meteor/Treasure/Special)
- UI: Modern Glass 280px | Draggable Logo
+ RakaGanteng UI - V10 (2026 FINAL UPDATE)
+ Feature: Smart Event Scanner & Auto-Follow (Real-time Tracking)
+ Optimized for: FISH IT
 ]]
 
 local Players = game:GetService("Players")
@@ -13,51 +13,50 @@ local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
 -- State Variables
+local AutoEvent = false
 local WOW_Enabled = false
 local NoRender_Enabled = false
-local AutoEvent = false
 local IsMinimized = false
 local BV, Conn
 
--- Anti-AFK (Internal)
+-- Anti-AFK
 Player.Idled:Connect(function()
     VU:CaptureController()
     VU:ClickButton2(Vector2.new())
 end)
 
--- UI Setup
+-- UI Setup (Modern 2026 - 280px)
 local Gui = Instance.new("ScreenGui", game.CoreGui)
-Gui.Name = "RakaGanteng_2026_V10"
+Gui.Name = "RakaGanteng_Final_Scan"
 
--- Floating & Draggable Logo Button
+-- Draggable Logo
 local MinBtn = Instance.new("TextButton", Gui)
 MinBtn.Size = UDim2.new(0, 38, 0, 38)
-MinBtn.Position = UDim2.new(0, 10, 0.5, -19)
-MinBtn.BackgroundColor3 = Color3.fromRGB(0, 15, 35)
+MinBtn.Position = UDim2.new(0, 15, 0.5, -19)
+MinBtn.BackgroundColor3 = Color3.fromRGB(2, 10, 30)
 MinBtn.Text = "R"
 MinBtn.Font = Enum.Font.GothamBold
 MinBtn.TextColor3 = Color3.fromRGB(0, 255, 255)
 MinBtn.TextSize = 20
-MinBtn.Active = true
 MinBtn.Draggable = true
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(1, 0)
 local MStroke = Instance.new("UIStroke", MinBtn)
 MStroke.Color = Color3.fromRGB(0, 150, 255)
 MStroke.Thickness = 2
 
--- Main Frame (280px Modern Glass)
+-- Main Frame
 local Frame = Instance.new("Frame", Gui)
-Frame.Size = UDim2.new(0, 280, 0, 160)
+Frame.Size = UDim2.new(0, 280, 0, 165)
 Frame.Position = UDim2.new(0.5, -140, 0.4, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(5, 10, 20)
 Frame.Active = true
 Frame.Draggable = true
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
 local FStroke = Instance.new("UIStroke", Frame)
-FStroke.Color = Color3.fromRGB(0, 120, 255)
-FStroke.Transparency = 0.4
+FStroke.Color = Color3.fromRGB(0, 100, 255)
+FStroke.Transparency = 0.5
 
--- Modern Header
+-- Header
 local Header = Instance.new("Frame", Frame)
 Header.Size = UDim2.new(1, 0, 0, 35)
 Header.BackgroundTransparency = 1
@@ -74,13 +73,13 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 local FPSDisplay = Instance.new("TextLabel", Header)
 FPSDisplay.Size = UDim2.new(1, -15, 1, 0)
 FPSDisplay.BackgroundTransparency = 1
-FPSDisplay.Text = "..."
-FPSDisplay.TextColor3 = Color3.fromRGB(0, 255, 180)
+FPSDisplay.Text = "60 FPS"
+FPSDisplay.TextColor3 = Color3.fromRGB(0, 255, 150)
 FPSDisplay.Font = Enum.Font.Code
 FPSDisplay.TextSize = 12
 FPSDisplay.TextXAlignment = Enum.TextXAlignment.Right
 
--- Buttons Container
+-- Buttons Grid
 local BtnGrid = Instance.new("Frame", Frame)
 BtnGrid.Size = UDim2.new(1, -20, 0, 80)
 BtnGrid.Position = UDim2.new(0, 10, 0, 45)
@@ -97,13 +96,13 @@ local function CreateBtn(text)
     B.Font = Enum.Font.GothamBold
     B.TextSize = 11
     B.TextColor3 = Color3.fromRGB(200, 200, 200)
-    B.BackgroundColor3 = Color3.fromRGB(20, 30, 55)
+    B.BackgroundColor3 = Color3.fromRGB(15, 25, 45)
     Instance.new("UICorner", B).CornerRadius = UDim.new(0, 8)
     Instance.new("UIStroke", B).Color = Color3.fromRGB(50, 70, 120)
     return B
 end
 
-local BtnEvent = CreateBtn("Auto Event: OFF")
+local BtnEvent = CreateBtn("Event Scan: OFF")
 local BtnWOW = CreateBtn("Walk Water")
 local BtnRender = CreateBtn("No Render")
 
@@ -124,9 +123,9 @@ local function CreateFPS(val)
     B.Text = tostring(val)
     B.Font = Enum.Font.GothamBold
     B.TextSize = 10
-    B.BackgroundColor3 = Color3.fromRGB(10, 20, 40)
-    B.TextColor3 = Color3.fromRGB(120, 120, 120)
-    Instance.new("UICorner", B).CornerRadius = UDim.new(0, 5)
+    B.BackgroundColor3 = Color3.fromRGB(10, 15, 30)
+    B.TextColor3 = Color3.fromRGB(150, 150, 150)
+    Instance.new("UICorner", B).CornerRadius = UDim.new(0, 4)
     B.MouseButton1Click:Connect(function()
         if setfpscap then pcall(function() setfpscap(val) end) end
     end)
@@ -135,7 +134,7 @@ end
 for _, v in ipairs({30, 60, 120, 240}) do CreateFPS(v) end
 
 ------------------------------------------------------
--- FUNCTIONALITIES
+-- LOGIC & SMART SCANNER
 ------------------------------------------------------
 
 MinBtn.MouseButton1Click:Connect(function()
@@ -144,45 +143,48 @@ MinBtn.MouseButton1Click:Connect(function()
     MinBtn.Text = IsMinimized and "+" or "R"
 end)
 
-local LastTick = tick()
-local Frames = 0
+-- FPS Monitor
 RunService.Heartbeat:Connect(function()
-    Frames = Frames + 1
-    if tick() - LastTick >= 1 then
-        FPSDisplay.Text = Frames .. " FPS"
-        Frames = 0
-        LastTick = tick()
-    end
+    FPSDisplay.Text = math.floor(1/RunService.Heartbeat:Wait()) .. " FPS"
 end)
 
--- AUTO TELEPORT EVENT (FISH IT SPECIAL)
+-- SMART SCAN & AUTO FOLLOW LOGIC
 BtnEvent.MouseButton1Click:Connect(function()
     AutoEvent = not AutoEvent
-    BtnEvent.Text = AutoEvent and "Event: ON" or "Event: OFF"
-    BtnEvent.BackgroundColor3 = AutoEvent and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(20, 30, 55)
+    BtnEvent.Text = AutoEvent and "Scanning..." or "Event Scan: OFF"
+    BtnEvent.BackgroundColor3 = AutoEvent and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(15, 25, 45)
     
-    spawn(function()
+    task.spawn(function()
         while AutoEvent do
-            task.wait(1.5)
-            for _, obj in pairs(workspace:GetDescendants()) do
-                -- Mencari objek khusus event di Fish It
-                if obj:IsA("Part") or obj:IsA("Model") then
-                    local name = obj.Name:lower()
-                    if name:find("meteor") or name:find("treasure") or name:find("event") or name:find("special") then
-                        local targetPos = obj:IsA("Model") and obj:GetModelCFrame() or obj.CFrame
-                        HRP.CFrame = targetPos + Vector3.new(0, 3, 0) -- Teleport sedikit di atas objek
-                        break
+            local found = false
+            -- Scanning Workspace for Event Targets
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("Part") or v:IsA("Model") then
+                    local n = v.Name:lower()
+                    if n:find("meteor") or n:find("event") or n:find("treasure") or n:find("special") then
+                        found = true
+                        local targetCF = v:IsA("Model") and v:GetModelCFrame() or v.CFrame
+                        
+                        -- Auto Follow: Terus memperbarui posisi jika objek bergerak
+                        HRP.CFrame = targetCF + Vector3.new(0, 5, 0) 
+                        BtnEvent.Text = "Following: " .. v.Name
                     end
                 end
+                if found then break end
             end
+            
+            if not found then
+                BtnEvent.Text = "Searching..."
+            end
+            task.wait(0.5) -- Scan interval cepat untuk mengikuti pergerakan
         end
     end)
 end)
 
--- WALK ON WATER
+-- Walk On Water
 BtnWOW.MouseButton1Click:Connect(function()
     WOW_Enabled = not WOW_Enabled
-    BtnWOW.BackgroundColor3 = WOW_Enabled and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(20, 30, 55)
+    BtnWOW.BackgroundColor3 = WOW_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(15, 25, 45)
     if WOW_Enabled then
         BV = Instance.new("BodyVelocity", HRP)
         BV.MaxForce = Vector3.new(0, 1e6, 0)
@@ -196,9 +198,9 @@ BtnWOW.MouseButton1Click:Connect(function()
     end
 end)
 
--- NO RENDER
+-- No Render
 BtnRender.MouseButton1Click:Connect(function()
     NoRender_Enabled = not NoRender_Enabled
     RunService:Set3dRenderingEnabled(not NoRender_Enabled)
-    BtnRender.BackgroundColor3 = NoRender_Enabled and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(20, 30, 55)
+    BtnRender.BackgroundColor3 = NoRender_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(15, 25, 45)
 end)
