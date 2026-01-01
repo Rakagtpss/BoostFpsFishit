@@ -1,5 +1,5 @@
 --[[ 
- RakaHensem Utility V5.1 - Modular Optimized + Totem Feature
+ RakaHensem Utility V5.6 - Wide Edition (Modular Optimized)
 ]]
 
 local Players = game:GetService("Players")
@@ -17,72 +17,73 @@ local RenderEnabled = true
 local Optimized = false
 local Minimized = false
 local Enabled = false
+local AutoTotem = false
 local BV, Conn
 
--- Hapus UI Lama jika ada
-if CoreGui:FindFirstChild("RakaBoostV") then
-    CoreGui.RakaBoostV:Destroy()
-end
+-- IDs
+local ECLIPSE_ID = "0a9aabbe-986f-498f-9899-fc0cbfb06b02"
+local SUNDIAL_ID = "a1101e2f-a9b0-46dd-8cc2-567b37f9a879"
 
--- UI Creation
+-- Hapus UI Lama
+if CoreGui:FindFirstChild("RakaBoostV") then CoreGui.RakaBoostV:Destroy() end
+
+-- UI Creation (WIDE)
 local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "RakaBoostV"
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 160, 0, 240) -- Sedikit diperpanjang untuk tombol baru
-MainFrame.Position = UDim2.new(0.5, -80, 0.3, 0)
+MainFrame.Size = UDim2.new(0, 350, 0, 240) -- UKURAN WIDE
+MainFrame.Position = UDim2.new(0.5, -175, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
 -- Header
 local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 25)
-Header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 6)
+Header.Size = UDim2.new(1, 0, 0, 30)
+Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.7, 0, 1, 0)
+Title.Size = UDim2.new(0.5, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SeraphinHelper"
+Title.Text = "SERAPHIN HELPER V5.6 (WIDE)"
 Title.TextColor3 = Color3.fromRGB(0, 255, 150)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 10
+Title.TextSize = 12
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 35, 0, 15)
-MinBtn.Position = UDim2.new(0.75, 0, 0.2, 0)
+MinBtn.Size = UDim2.new(0, 50, 0, 20)
+MinBtn.Position = UDim2.new(1, -60, 0.2, 0)
 MinBtn.Text = "HIDE"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+MinBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 8
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 3)
+MinBtn.TextSize = 10
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
--- Scrolling Content (Agar UI tidak terlalu panjang)
-local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
-ScrollFrame.Size = UDim2.new(1, 0, 1, -65)
-ScrollFrame.Position = UDim2.new(0, 0, 0, 30)
-ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 1.3, 0) -- Ditambah sedikit untuk tombol baru
-ScrollFrame.ScrollBarThickness = 2
+-- Container Grid (Kiri & Kanan)
+local ContentFrame = Instance.new("Frame", MainFrame)
+ContentFrame.Size = UDim2.new(1, -20, 1, -80)
+ContentFrame.Position = UDim2.new(0, 10, 0, 40)
+ContentFrame.BackgroundTransparency = 1
 
-local Layout = Instance.new("UIListLayout", ScrollFrame)
-Layout.Padding = UDim.new(0, 4)
-Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local Layout = Instance.new("UIGridLayout", ContentFrame)
+Layout.CellSize = UDim2.new(0, 160, 0, 30)
+Layout.CellPadding = UDim2.new(0, 10, 0, 8)
 
-local function CreateButton(text)
-    local btn = Instance.new("TextButton", ScrollFrame)
-    btn.Size = UDim2.new(0.9, 0, 0, 25)
+local function CreateButton(text, color)
+    local btn = Instance.new("TextButton", ContentFrame)
+    btn.Size = UDim2.new(0, 160, 0, 30)
     btn.Text = text
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 9
     btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    btn.BackgroundColor3 = color or Color3.fromRGB(35, 35, 35)
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     return btn
 end
@@ -90,115 +91,91 @@ end
 -- ================= TOMBOL FITUR =================
 
 local WowBtn = CreateButton("WALK ON WATER: OFF")
-local BoostBtn = CreateButton("BOOSTER (LOW GRAPHIC)")
-local RenderBtn = CreateButton("3D RENDERING: OFF")
-local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
-local TotemBtn = CreateButton("SPAWN TOTEM (SLOT 5)") -- Tombol Baru
+local BoostBtn = CreateButton("BOOSTER: OFF")
+local RenderBtn = CreateButton("3D RENDERING: ON")
+local AutoBtn = CreateButton("AUTO SPAWN (1H): OFF", Color3.fromRGB(150, 0, 0))
+local PrepareBtn = CreateButton("1. SETUP TOTEM", Color3.fromRGB(50, 50, 70))
+local SpawnEclipse = CreateButton("SPAWN: ECLIPSE", Color3.fromRGB(70, 30, 100))
+local SpawnSundial = CreateButton("SPAWN: SUNDIAL", Color3.fromRGB(100, 70, 30))
 
--- ================= FUNGSIONALITAS =================
+-- ================= LOGIC REMOTE =================
 
--- FPS Display (Paling Bawah)
-local FpsDisplay = Instance.new("TextLabel", MainFrame)
-FpsDisplay.Size = UDim2.new(0.9, 0, 0, 25)
-FpsDisplay.Position = UDim2.new(0.05, 0, 1, -30)
-FpsDisplay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-FpsDisplay.TextColor3 = Color3.fromRGB(0, 255, 255)
-FpsDisplay.Text = "FPS: --"
-FpsDisplay.Font = Enum.Font.Code
-FpsDisplay.TextSize = 14
-Instance.new("UICorner", FpsDisplay).CornerRadius = UDim.new(0, 4)
+local function GetNet()
+    local p = ReplicatedStorage:FindFirstChild("Packages")
+    local i = p and p:FindFirstChild("_Index")
+    return i and i:FindFirstChild("sleitnick_net@0.2.0") and i["sleitnick_net@0.2.0"]:FindFirstChild("net")
+end
 
--- Logika Totem (Fitur Baru)
-TotemBtn.MouseButton1Click:Connect(function()
-    TotemBtn.Text = "SPAWNING..."
-    TotemBtn.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
-    
-    -- Menggunakan pcall agar script tidak error jika Remote berubah path-nya
-    local success, err = pcall(function()
-        local Packages = ReplicatedStorage:WaitForChild("Packages", 5)
-        local Index = Packages and Packages:FindFirstChild("_Index")
-        local Net = Index and Index:FindFirstChild("sleitnick_net@0.2.0") and Index["sleitnick_net@0.2.0"].net
-        
-        if Net then
-            -- 1. Equip Tool Hotbar 5
-            local EquipRemote = Net:FindFirstChild("RE/EquipToolFromHotbar")
-            if EquipRemote then EquipRemote:FireServer(5) end
-            
-            task.wait(0.05) -- Jeda kecil untuk menghindari lag server
-            
-            -- 2. Spawn Totem
-            local TotemRemote = Net:FindFirstChild("RE/SpawnTotem")
-            if TotemRemote then TotemRemote:FireServer("7ca299eb-25f2-4914-b68c-0e190a399d44") end
-
-            task.wait(0.05)
-            
-            -- 3. Equip Tool Hotbar 5 (Lagi)
-            if EquipRemote then EquipRemote:FireServer(5) end
-        end
-    end)
-
-    task.wait(0.5)
-    if success then
-        TotemBtn.Text = "TOTEM SPAWNED!"
-        TotemBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
-    else
-        TotemBtn.Text = "FAILED (CHECK CONSOLE)"
-        TotemBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-        warn("Totem Error:", err)
+local function FullSpawnSequence()
+    local Net = GetNet()
+    if Net then
+        Net:FindFirstChild("RE/EquipItem"):FireServer(ECLIPSE_ID, "Totems")
+        task.wait(0.1)
+        Net:FindFirstChild("RE/ClaimNotification"):FireServer("Fish")
+        task.wait(0.1)
+        Net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(2)
+        task.wait(0.5)
+        Net:FindFirstChild("RE/SpawnTotem"):FireServer(ECLIPSE_ID)
+        task.wait(0.2)
+        Net:FindFirstChild("RE/SpawnTotem"):FireServer(SUNDIAL_ID)
     end
-    
+end
+
+PrepareBtn.MouseButton1Click:Connect(function()
+    FullSpawnSequence()
+    PrepareBtn.Text = "DONE!"
     task.wait(1)
-    TotemBtn.Text = "SPAWN TOTEM (SLOT 5)"
-    TotemBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    PrepareBtn.Text = "1. SETUP TOTEM"
 end)
 
--- Logika Booster CPU/GPU
+SpawnEclipse.MouseButton1Click:Connect(function()
+    local Net = GetNet()
+    if Net then Net:FindFirstChild("RE/SpawnTotem"):FireServer(ECLIPSE_ID) end
+end)
+
+SpawnSundial.MouseButton1Click:Connect(function()
+    local Net = GetNet()
+    if Net then Net:FindFirstChild("RE/SpawnTotem"):FireServer(SUNDIAL_ID) end
+end)
+
+-- AUTO SPAWN LOOP
+task.spawn(function()
+    while true do
+        if AutoTotem then
+            FullSpawnSequence()
+            task.wait(3600)
+        end
+        task.wait(1)
+    end
+end)
+
+AutoBtn.MouseButton1Click:Connect(function()
+    AutoTotem = not AutoTotem
+    AutoBtn.Text = AutoTotem and "AUTO SPAWN: ON" or "AUTO SPAWN: OFF"
+    AutoBtn.BackgroundColor3 = AutoTotem and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+end)
+
+-- ================= OTHER FEATURES =================
+
 BoostBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     BoostBtn.Text = Optimized and "BOOSTER: ACTIVE" or "BOOSTER: OFF"
-    BoostBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 35)
-    
     settings().Rendering.QualityLevel = Optimized and 1 or 0
     Lighting.GlobalShadows = not Optimized
-    
     for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("Part") or v:IsA("MeshPart") or v:IsA("UnionOperation") then
-            if Optimized then
-                if v.Material ~= Enum.Material.SmoothPlastic then v.Material = Enum.Material.SmoothPlastic end
-                v.CastShadow = false
-            end
-        elseif v:IsA("Decal") or v:IsA("Texture") or v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("PostProcessEffect") then
-            v.Enabled = not Optimized
-            if v:IsA("Decal") or v:IsA("Texture") then
-                v.Transparency = Optimized and 1 or 0
-            end
-        end
+        if v:IsA("Part") or v:IsA("MeshPart") then v.CastShadow = not Optimized end
     end
 end)
 
--- Tombol Rendering
 RenderBtn.MouseButton1Click:Connect(function()
     RenderEnabled = not RenderEnabled
     RunService:Set3dRenderingEnabled(RenderEnabled)
     RenderBtn.Text = RenderEnabled and "3D RENDERING: ON" or "3D RENDERING: OFF"
-    RenderBtn.BackgroundColor3 = RenderEnabled and Color3.fromRGB(35, 35, 35) or Color3.fromRGB(150, 0, 0)
 end)
 
--- FPS Limiter
-local caps = {30, 60, 144, 999}
-local capIdx = 4
-FpsCapBtn.MouseButton1Click:Connect(function()
-    capIdx = capIdx >= #caps and 1 or capIdx + 1
-    local cap = caps[capIdx]
-    setfpscap(cap)
-    FpsCapBtn.Text = "FPS CAP: " .. (cap > 900 and "UNLIMITED" or cap)
-end)
-
--- Walk on Water
 WowBtn.MouseButton1Click:Connect(function()
     Enabled = not Enabled
     WowBtn.Text = Enabled and "WOW: ON" or "WOW: OFF"
-    WowBtn.BackgroundColor3 = Enabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 35)
     if Enabled then
         BV = Instance.new("BodyVelocity", HRP)
         BV.MaxForce = Vector3.new(0, 1e6, 0)
@@ -212,23 +189,33 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Status Display (Bottom)
+local FpsDisplay = Instance.new("TextLabel", MainFrame)
+FpsDisplay.Size = UDim2.new(1, -20, 0, 30)
+FpsDisplay.Position = UDim2.new(0, 10, 1, -40)
+FpsDisplay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+FpsDisplay.TextColor3 = Color3.fromRGB(0, 255, 255)
+FpsDisplay.Text = "FPS: -- | AUTO-TOTEM: STANDBY"
+FpsDisplay.Font = Enum.Font.Code
+FpsDisplay.TextSize = 12
+Instance.new("UICorner", FpsDisplay).CornerRadius = UDim.new(0, 4)
+
 -- Minimize Function
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    MainFrame:TweenSize(Minimized and UDim2.new(0, 160, 0, 25) or UDim2.new(0, 160, 0, 240), "Out", "Quad", 0.3, true)
-    ScrollFrame.Visible = not Minimized
+    MainFrame:TweenSize(Minimized and UDim2.new(0, 350, 0, 30) or UDim2.new(0, 350, 0, 240), "Out", "Quad", 0.3, true)
+    ContentFrame.Visible = not Minimized
     FpsDisplay.Visible = not Minimized
     MinBtn.Text = Minimized and "SHOW" or "HIDE"
 end)
 
 -- FPS Counter
-local lastT = os.clock()
-local frames = 0
+local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
-        FpsDisplay.Text = "FPS: " .. frames
-        frames = 0
-        lastT = os.clock()
+        local status = AutoTotem and "ACTIVE" or "OFF"
+        FpsDisplay.Text = "FPS: " .. frames .. " | AUTO-TOTEM: " .. status
+        frames, lastT = 0, os.clock()
     end
 end)
