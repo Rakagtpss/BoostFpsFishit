@@ -35,19 +35,19 @@ Header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Header.BorderSizePixel = 0
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.6, 0, 1, 0)
-Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "RakaGanteng😎"
+Title.Size = UDim2.new(0.5, 0, 1, 0)
+Title.Position = UDim2.new(0.04, 0, 0, 0)
+Title.Text = "RakaHensem"
 Title.TextColor3 = Color3.fromRGB(0, 170, 255)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 12
+Title.TextSize = 13
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Tombol Minimize yang Lebih Jelas
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 25, 0, 25)
-MinBtn.Position = UDim2.new(0.83, 0, 0.1, 0)
+MinBtn.Size = UDim2.new(0, 30, 0, 30)
+MinBtn.Position = UDim2.new(0.85, 0, 0.1, 0)
 MinBtn.Text = "-"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
 MinBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -200,7 +200,7 @@ end)
 RenderBtn.MouseButton1Click:Connect(function()
     RenderDisabled = not RenderDisabled
     RunService:Set3dRenderingEnabled(not RenderDisabled)
-    RenderBtn.Text = RenderDisabled and "3D RENDER: OFF" or "3D RENDER: ON"
+    RenderBtn.Text = RenderDisabled and "3D RENDER: ON" or "3D RENDER: OFF"
     RenderBtn.BackgroundColor3 = RenderDisabled and Color3.fromRGB(60, 60, 60) or Color3.fromRGB(0, 100, 200)
 end)
 
