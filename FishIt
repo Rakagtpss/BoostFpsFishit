@@ -1,5 +1,5 @@
 --[[ 
- RakaHensem Utility V6.0 - Dynamic "Totems" Keyword Scanner
+ RakaHensem Utility V6.1 - Backpack Controller Optimized
 ]]
 
 local Players = game:GetService("Players")
@@ -20,14 +20,14 @@ local Enabled = false
 local AutoTotem = false
 local BV, Conn
 
--- Dynamic Storage
+-- Dynamic ID Storage
 local LuckID = nil
 local MutationID = nil
 
 -- Hapus UI Lama
 if CoreGui:FindFirstChild("RakaBoostV") then CoreGui.RakaBoostV:Destroy() end
 
--- UI Creation
+-- UI Creation (WIDE)
 local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "RakaBoostV"
 
@@ -49,7 +49,7 @@ Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.5, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN HELPER V6.0"
+Title.Text = "SERAPHIN HELPER V6.1"
 Title.TextColor3 = Color3.fromRGB(0, 255, 150)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 11
@@ -87,57 +87,58 @@ local function CreateButton(text, color)
     return btn
 end
 
--- ================= BUTTONS =================
+-- ================= TOMBOL UTAMA =================
 local BoostBtn = CreateButton("BOOSTER: OFF")
 local RenderBtn = CreateButton("3D RENDER: ON")
 local WowBtn = CreateButton("WALK ON WATER: OFF")
-local ScanBtn = CreateButton("🔍 SCAN TOTEMS", Color3.fromRGB(0, 120, 255))
+local ScanBtn = CreateButton("🔍 SCAN BACKPACK", Color3.fromRGB(0, 120, 255))
 
 local SpawnMutation = CreateButton("MUTATION: ???", Color3.fromRGB(40, 40, 40))
 local SpawnLuck = CreateButton("LUCK: ???", Color3.fromRGB(40, 40, 40))
 local AutoBtn = CreateButton("AUTO SPAWN: OFF", Color3.fromRGB(150, 0, 0))
 
--- ================= SCANNER LOGIC =================
+-- ================= LOGIC SCANNER (Controller Based) =================
 
-local function ScanTotems()
+local function ScanItems()
     LuckID = nil
     MutationID = nil
     
-    -- Mencari di berbagai folder kemungkinan penyimpanan (Backpack atau Data Player)
-    local foldersToScan = {
-        Player:FindFirstChild("Backpack"),
-        Player:FindFirstChild("Data") and Player.Data:FindFirstChild("Inventory")
-    }
-
-    for _, folder in pairs(foldersToScan) do
-        if folder then
-            for _, item in pairs(folder:GetChildren()) do
-                -- Gunakan Keyword "Totems" sesuai permintaan
-                local itemName = item.Name:lower()
-                if itemName:find("totem") then
-                    if itemName:find("luck") then
-                        LuckID = item:GetAttribute("ID") or item.Name
-                    elseif itemName:find("mutation") then
-                        MutationID = item:GetAttribute("ID") or item.Name
-                    end
+    -- Mencari item yang mengandung "Totem" baik di Backpack atau Data
+    local function FindIn(folder)
+        if not folder then return end
+        for _, item in pairs(folder:GetChildren()) do
+            local itemName = item.Name:lower()
+            if itemName:find("totem") then
+                -- Mengambil ID dari Attribute sesuai BackpackController
+                local id = item:GetAttribute("EquippedId") or item:GetAttribute("ID") or item.Name
+                
+                if itemName:find("luck") then
+                    LuckID = id
+                elseif itemName:find("mutation") then
+                    MutationID = id
                 end
             end
         end
     end
 
+    FindIn(Player.Backpack)
+    if Player:FindFirstChild("Data") and Player.Data:FindFirstChild("Inventory") then
+        FindIn(Player.Data.Inventory)
+    end
+
     -- Update UI
-    SpawnLuck.Text = LuckID and "SPAWN: LUCK" or "LUCK: MISSING"
+    SpawnLuck.Text = LuckID and "SPAWN: LUCK" or "LUCK: NOT FOUND"
     SpawnLuck.BackgroundColor3 = LuckID and Color3.fromRGB(120, 100, 0) or Color3.fromRGB(40, 40, 40)
     
-    SpawnMutation.Text = MutationID and "SPAWN: MUTATION" or "MUTATION: MISSING"
+    SpawnMutation.Text = MutationID and "SPAWN: MUTATION" or "MUTATION: NOT FOUND"
     SpawnMutation.BackgroundColor3 = MutationID and Color3.fromRGB(0, 100, 70) or Color3.fromRGB(40, 40, 40)
     
-    ScanBtn.Text = "SCAN SUCCESS!"
+    ScanBtn.Text = "SCAN COMPLETE!"
     task.wait(1)
-    ScanBtn.Text = "🔍 SCAN TOTEMS"
+    ScanBtn.Text = "🔍 SCAN BACKPACK"
 end
 
-ScanBtn.MouseButton1Click:Connect(ScanTotems)
+ScanBtn.MouseButton1Click:Connect(ScanItems)
 
 -- ================= REMOTE LOGIC =================
 
@@ -147,30 +148,30 @@ local function GetNet()
     return i and i:FindFirstChild("sleitnick_net@0.2.0") and i["sleitnick_net@0.2.0"]:FindFirstChild("net")
 end
 
-local function FireTotem(id)
+local function SmartFire(id)
     if not id then return end
     local Net = GetNet()
     if Net then
-        -- Urutan sesuai script asli SimpleSpy kamu
-        Net:FindFirstChild("RE/EquipItem"):FireServer(id, "Totems") -- Keyword "Totems" di sini
+        -- Argumen berdasarkan urutan SimpleSpy sebelumnya
+        Net:FindFirstChild("RE/EquipItem"):FireServer(id, "Totems")
         task.wait(0.1)
         Net:FindFirstChild("RE/ClaimNotification"):FireServer("Fish")
         task.wait(0.1)
         Net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(2)
-        task.wait(0.3)
+        task.wait(0.4)
         Net:FindFirstChild("RE/SpawnTotem"):FireServer(id)
     end
 end
 
-SpawnMutation.MouseButton1Click:Connect(function() FireTotem(MutationID) end)
-SpawnLuck.MouseButton1Click:Connect(function() FireTotem(LuckID) end)
+SpawnMutation.MouseButton1Click:Connect(function() SmartFire(MutationID) end)
+SpawnLuck.MouseButton1Click:Connect(function() SmartFire(LuckID) end)
 
--- Auto Loop (60 Menit)
+-- Auto Loop (Setiap 60 Menit)
 task.spawn(function()
     while true do
         if AutoTotem then
-            if MutationID then FireTotem(MutationID) task.wait(1) end
-            if LuckID then FireTotem(LuckID) end
+            if MutationID then SmartFire(MutationID) task.wait(1) end
+            if LuckID then SmartFire(LuckID) end
             task.wait(3600)
         end
         task.wait(1)
@@ -214,13 +215,13 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Footer Info
+-- Footer
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
 FpsDisplay.Size = UDim2.new(1, -20, 0, 30)
 FpsDisplay.Position = UDim2.new(0, 10, 1, -40)
 FpsDisplay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 FpsDisplay.TextColor3 = Color3.fromRGB(0, 255, 255)
-FpsDisplay.Text = "FPS: -- | READY"
+FpsDisplay.Text = "FPS: -- | BACKPACK SYNC READY"
 FpsDisplay.Font = Enum.Font.Code
 FpsDisplay.TextSize = 11
 Instance.new("UICorner", FpsDisplay).CornerRadius = UDim.new(0, 4)
@@ -237,7 +238,7 @@ local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
-        FpsDisplay.Text = "FPS: " .. frames .. " | TOTEMS SCANNER ACTIVE"
+        FpsDisplay.Text = "FPS: " .. frames .. " | CONTROLLER SYNC: OK"
         frames, lastT = 0, os.clock()
     end
 end)
