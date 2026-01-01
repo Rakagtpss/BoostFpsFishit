@@ -1,7 +1,6 @@
 --[[ 
- RakaHensem Utility V12 - Totem Selector
- Update: Added Smart Scan & Single Select for Totems
- Fix: Button cycles through available Totems in Backpack
+ RakaHensem Utility V13 - REAL-TIME TOTEM SCANNER
+ Update: Fixed Scanning Logic & Selection Cycle
 ]]
 
 local Players = game:GetService("Players")
@@ -10,29 +9,18 @@ local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 
 local Player = Players.LocalPlayer
-local function GetChar()
-    return Player.Character or Player.CharacterAdded:Wait()
-end
 
--- // State
+-- // State Management
+local TargetTotemName = nil 
+local TotemIndex = 0
 local AfkModeActive = false 
 local Optimized = false
 local Minimized = false
 local WowEnabled = false
 local BV, Conn
 
--- // Totem State
-local TargetTotemName = nil -- Menyimpan nama Totem yang dipilih
-local TotemList = {} -- Daftar nama totem yang ditemukan
-local TotemIndex = 0 -- Index pemilihan saat ini
-
--- // FPS Settings
-local fpsLimits = {30, 60, 144, 999} 
-local currentLimitIndex = 4 
-
 -- // UI Config
-local UI_WIDTH = 210
-local UI_HEIGHT = 245
+local UI_WIDTH, UI_HEIGHT = 210, 245
 local ACCENT = Color3.fromRGB(0, 255, 170)
 
 -- // Cleanup
@@ -51,7 +39,7 @@ MainFrame.Active = true
 MainFrame.Draggable = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
--- Header
+-- Header & Title
 local Header = Instance.new("Frame", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 35)
 Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
@@ -78,21 +66,18 @@ MinBtn.Font = Enum.Font.GothamBold
 MinBtn.TextSize = 9
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
--- Scrolling Content
 local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
 ScrollFrame.Size = UDim2.new(1, -10, 1, -65)
 ScrollFrame.Position = UDim2.new(0, 5, 0, 40)
 ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.ScrollBarThickness = 2
 ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 
 local Layout = Instance.new("UIListLayout", ScrollFrame)
 Layout.Padding = UDim.new(0, 6)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
-local function CreateButton(text, layoutOrder)
+local function CreateButton(text)
     local btn = Instance.new("TextButton", ScrollFrame)
     btn.Size = UDim2.new(0.95, 0, 0, 35)
     btn.Text = text
@@ -100,19 +85,17 @@ local function CreateButton(text, layoutOrder)
     btn.TextSize = 10
     btn.TextColor3 = Color3.fromRGB(220, 220, 220)
     btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-    btn.LayoutOrder = layoutOrder or 0
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     return btn
 end
 
--- // TOMBOL FITUR
-local PotatoBtn = CreateButton("POTATO MODE: OFF", 1)
-local WowBtn = CreateButton("WALK ON WATER: OFF", 2)
-local RenderBtn = CreateButton("AFK MODE (BLACK): OFF", 3)
-local TotemBtn = CreateButton("AUTO TOTEM: OFF", 4) -- Tombol Selector
-local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED", 5)
+-- // Fitur Buttons
+local PotatoBtn = CreateButton("POTATO MODE: OFF")
+local WowBtn = CreateButton("WALK ON WATER: OFF")
+local RenderBtn = CreateButton("AFK MODE (BLACK): OFF")
+local TotemBtn = CreateButton("SCANNING FOR TOTEMS...") -- Tombol Scan
+local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
 
--- Footer FPS
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
 FpsDisplay.Size = UDim2.new(1, 0, 0, 20)
 FpsDisplay.Position = UDim2.new(0, 0, 1, -20)
@@ -122,17 +105,16 @@ FpsDisplay.Text = "FPS: --"
 FpsDisplay.Font = Enum.Font.Code
 FpsDisplay.TextSize = 10
 
--- // HELPER: SCAN TOTEM UNIK
-local function ScanBackpackForTotems()
+-- // --- LOGIC SCANNER --- //
+
+local function GetAvailableTotems()
     local found = {}
-    local uniqueCheck = {}
-    local Backpack = Player:FindFirstChild("Backpack")
-    
-    if Backpack then
-        for _, item in pairs(Backpack:GetChildren()) do
+    local backpack = Player:FindFirstChild("Backpack")
+    if backpack then
+        for _, item in pairs(backpack:GetChildren()) do
+            -- Mencari item yang mengandung nama "Totem"
             if item:IsA("Tool") and string.find(string.lower(item.Name), "totem") then
-                if not uniqueCheck[item.Name] then
-                    uniqueCheck[item.Name] = true
+                if not table.find(found, item.Name) then
                     table.insert(found, item.Name)
                 end
             end
@@ -141,108 +123,89 @@ local function ScanBackpackForTotems()
     return found
 end
 
--- // LOGIC: AUTO PLACE SELECTED TOTEM
-local function PlaceSelectedTotem()
-    if not TargetTotemName then return end
-    
-    local Char = GetChar()
-    local Humanoid = Char:FindFirstChild("Humanoid")
-    local Backpack = Player:FindFirstChild("Backpack")
-    
-    if not Humanoid or not Backpack then return end
-
-    local specificTotem = nil
-
-    -- Cari item dengan nama PERSIS sama dengan yang dipilih
-    if Backpack:FindFirstChild(TargetTotemName) then
-        specificTotem = Backpack[TargetTotemName]
-    else
-        -- Cek jika sedang dipegang
-        local held = Char:FindFirstChild(TargetTotemName)
-        if held then specificTotem = held end
-    end
-
-    if specificTotem then
-        Humanoid:EquipTool(specificTotem)
-        task.wait(0.5) 
-        if specificTotem.Parent == Char then
-            specificTotem:Activate()
-            
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "Seraphin Helper";
-                Text = "Placed: " .. TargetTotemName;
-                Duration = 3;
-            })
+-- Update tampilan tombol setiap saat
+task.spawn(function()
+    while task.wait(0.5) do
+        local totems = GetAvailableTotems()
+        if not TargetTotemName then
+            if #totems > 0 then
+                TotemBtn.Text = "FOUND ("..#totems..") TOTEMS. CLICK TO SELECT"
+            else
+                TotemBtn.Text = "NO TOTEM IN BACKPACK"
+            end
         end
-    else
-        -- Jika Totem yang dipilih habis/hilang
-        print("Totem " .. TargetTotemName .. " tidak ditemukan di tas.")
+    end
+end)
+
+-- // --- LOGIC AUTO PLACE --- //
+
+local function UseTotem()
+    if not TargetTotemName then return end
+    local char = Player.Character
+    local bp = Player:FindFirstChild("Backpack")
+    if char and bp then
+        local tool = bp:FindFirstChild(TargetTotemName) or char:FindFirstChild(TargetTotemName)
+        if tool then
+            char.Humanoid:EquipTool(tool)
+            task.wait(0.3)
+            tool:Activate()
+            print("Successfully placed: " .. TargetTotemName)
+        end
     end
 end
 
--- Loop Eksekusi (Tetap 60 Menit)
+-- Loop 60 Menit
 task.spawn(function()
     while true do
         if TargetTotemName then
-            pcall(PlaceSelectedTotem)
-            -- Tunggu 60 menit
-            for i = 1, 3600 do 
-                if not TargetTotemName then break end -- Putus loop jika dimatikan
-                task.wait(1)
-            end
-        else
-            task.wait(1)
+            pcall(UseTotem)
+            task.wait(3600) -- Tunggu 60 menit
         end
+        task.wait(1)
     end
 end)
 
--- // LOGIC TOMBOL TOTEM (CYCLE/SELECTOR)
+-- // --- INTERACTION --- //
+
 TotemBtn.MouseButton1Click:Connect(function()
-    -- 1. Scan dulu isi tas
-    TotemList = ScanBackpackForTotems()
+    local totems = GetAvailableTotems()
     
-    if #TotemList == 0 then
-        TotemBtn.Text = "NO TOTEM FOUND!"
-        task.wait(1)
-        TotemBtn.Text = "AUTO TOTEM: OFF"
+    if #totems == 0 then
         TargetTotemName = nil
+        TotemBtn.Text = "NO TOTEM FOUND"
+        TotemBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
         return
     end
 
-    -- 2. Pindah ke pilihan berikutnya
     TotemIndex = TotemIndex + 1
-
-    -- 3. Cek batas pilihan
-    if TotemIndex > #TotemList then
-        -- Jika sudah lewat batas list, matikan (OFF)
+    
+    if TotemIndex > #totems then
+        -- Reset / Turn Off
+        TotemIndex = 0
         TargetTotemName = nil
         TotemBtn.Text = "AUTO TOTEM: OFF"
         TotemBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-        TotemIndex = 0 -- Reset ke 0
     else
-        -- Pilih Totem sesuai urutan
-        TargetTotemName = TotemList[TotemIndex]
-        TotemBtn.Text = "AUTO: " .. string.upper(TargetTotemName)
+        -- Select next totem
+        TargetTotemName = totems[TotemIndex]
+        TotemBtn.Text = "ACTIVE: " .. string.upper(TargetTotemName)
         TotemBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
-        
-        -- Notifikasi pilihan
-        print("Selected Totem: " .. TargetTotemName)
-        
-        -- Jalankan langsung saat dipilih
-        task.spawn(function() pcall(PlaceSelectedTotem) end)
+        -- Langsung gunakan sekali saat dipilih
+        pcall(UseTotem)
     end
 end)
 
--- // LOGIC FPS CAP (Sama seperti V10)
+-- // --- FITUR LAINNYA (FPS, POTATO, DLL) --- //
+
+local fpsLimits = {30, 60, 144, 999}; local curFpsIdx = 4
 FpsCapBtn.MouseButton1Click:Connect(function()
-    currentLimitIndex = currentLimitIndex + 1
-    if currentLimitIndex > #fpsLimits then currentLimitIndex = 1 end
-    local newLimit = fpsLimits[currentLimitIndex]
-    if setfpscap then setfpscap(newLimit) end
-    FpsCapBtn.Text = (newLimit > 900) and "FPS CAP: UNLIMITED" or "FPS CAP: " .. newLimit
+    curFpsIdx = curFpsIdx + 1
+    if curFpsIdx > #fpsLimits then curFpsIdx = 1 end
+    local limit = fpsLimits[curFpsIdx]
+    if setfpscap then setfpscap(limit) end
+    FpsCapBtn.Text = (limit > 900) and "FPS CAP: UNLIMITED" or "FPS CAP: "..limit
 end)
 
--- // LOGIC FITUR LAIN (Potato, Render, WoW, Minimize)
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "POTATO MODE: ON" or "POTATO MODE: OFF"
@@ -251,8 +214,7 @@ PotatoBtn.MouseButton1Click:Connect(function()
     if Optimized then
         for _, v in pairs(game:GetDescendants()) do
             if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic; v.CastShadow = false
-            elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = false end
+            elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1 end
         end
     end
 end)
@@ -269,12 +231,12 @@ WowBtn.MouseButton1Click:Connect(function()
     WowBtn.Text = WowEnabled and "WOW: ON" or "WOW: OFF"
     WowBtn.BackgroundColor3 = WowEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
     if WowEnabled then
-        BV = Instance.new("BodyVelocity", GetChar():WaitForChild("HumanoidRootPart"))
-        BV.MaxForce = Vector3.new(0, 1e6, 0)
-        BV.Velocity = Vector3.zero
+        BV = Instance.new("BodyVelocity", Player.Character.HumanoidRootPart)
+        BV.MaxForce = Vector3.new(0, 1e6, 0); BV.Velocity = Vector3.zero
         Conn = RunService.Heartbeat:Connect(function()
-            local hrp = GetChar():FindFirstChild("HumanoidRootPart")
-            if hrp then hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 0, hrp.AssemblyLinearVelocity.Z) end
+            if Player.Character:FindFirstChild("HumanoidRootPart") then
+                Player.Character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(Player.Character.HumanoidRootPart.AssemblyLinearVelocity.X, 0, Player.Character.HumanoidRootPart.AssemblyLinearVelocity.Z)
+            end
         end)
     else
         if Conn then Conn:Disconnect() end
@@ -284,26 +246,16 @@ end)
 
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    if Minimized then
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.3, true)
-        ScrollFrame.Visible = false
-        FpsDisplay.Visible = false
-        MinBtn.Text = "SHOW"
-    else
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
-        task.wait(0.2)
-        ScrollFrame.Visible = true
-        FpsDisplay.Visible = true
-        MinBtn.Text = "HIDE"
-    end
+    MainFrame:TweenSize(Minimized and UDim2.new(0, UI_WIDTH, 0, 35) or UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
+    ScrollFrame.Visible = not Minimized; FpsDisplay.Visible = not Minimized
+    MinBtn.Text = Minimized and "SHOW" or "HIDE"
 end)
 
-local lastT = os.clock(); local frames = 0
+local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
         FpsDisplay.Text = "FPS: " .. frames
-        frames = 0
-        lastT = os.clock()
+        frames, lastT = 0, os.clock()
     end
 end)
