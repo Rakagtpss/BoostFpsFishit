@@ -30,7 +30,7 @@ Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
 -- Header (Tetap terlihat saat di-minimize)
 local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 30)
+Header.Size = UDim2.new(1, 0, 0, 25)
 Header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Header.BorderSizePixel = 0
 
@@ -46,9 +46,9 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Tombol Minimize yang Lebih Jelas
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 20, 0, 20)
+MinBtn.Size = UDim2.new(0, 25, 0, 25)
 MinBtn.Position = UDim2.new(0.75, 0, 0.1, 0)
-MinBtn.Text = "-"
+MinBtn.Text = "Hide"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
 MinBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 MinBtn.Font = Enum.Font.GothamBold
@@ -127,12 +127,12 @@ MinBtn.MouseButton1Click:Connect(function()
         -- Mengecilkan frame hanya sisa Header
         MainFrame:TweenSize(UDim2.new(0, 180, 0, 30), "Out", "Quad", 0.2, true)
         Content.Visible = false
-        MinBtn.Text = "+"
+        MinBtn.Text = "Show"
     else
         -- Mengembalikan ke ukuran semula
         MainFrame:TweenSize(UDim2.new(0, 180, 0, 240), "Out", "Quad", 0.2, true)
         Content.Visible = true
-        MinBtn.Text = "-"
+        MinBtn.Text = "Hide"
     end
 end)
 
