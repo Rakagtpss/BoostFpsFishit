@@ -1,6 +1,6 @@
 --[[ 
- RakaHensem Utility V5 WIDE - CUSTOM INPUT EDITION
- Fitur: Fast Reel (New Args), Custom Delay Input, UI Wide, Anti-Spam
+ RakaHensem Utility V5 WIDE - TURBO EDITION
+ Fitur: Super Instant Fishing, Custom Delay Input, Wide UI, Anti-Spam
 ]]
 
 -- ================= SERVICES =================
@@ -14,32 +14,54 @@ local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
--- ================= STATE =================
+-- ================= STATE & CONFIG =================
+getgenv().fishingStart = false
+local delayBait = 0.56   
+local delayReel = 1.15 
+local delayReset = 0.2 
 local Optimized = false
 local Minimized = false
-getgenv().fishingStart = false
 
--- Delays (Default)
-local delayBait = 0.5
-local delayReel = 0.8
-local delayReset = 0.1
+-- Remote Definitions
+local rs = ReplicatedStorage
+local net = rs.Packages["_Index"]["sleitnick_net@0.2.0"].net
+local ChargeRod    = net["RF/ChargeFishingRod"]
+local RequestGame  = net["RF/RequestFishingMinigameStarted"]
+local CompleteGame = net["RE/FishingCompleted"]
+local CancelInput  = net["RF/CancelFishingInputs"]
 
--- Remotes
-local NetFolder = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
-local ChargeRod = NetFolder:FindFirstChild("RF/ChargeFishingRod")
-local RequestGame = NetFolder:FindFirstChild("RF/RequestFishingMinigameStarted")
-local CompleteGame = NetFolder:FindFirstChild("RE/FishingCompleted")
-local CancelInput = NetFolder:FindFirstChild("RF/CancelFishingInputs")
+-- Fishing Blocker (Hook Namecall)
+local FishingBlocker = { Enabled = true }
+local BLOCKED_REMOTES = { [ChargeRod] = true, [RequestGame] = true, [CompleteGame] = true, [CancelInput] = true }
 
--- ================= CLEAR UI =================
-if CoreGui:FindFirstChild("RakaBoostV") then CoreGui.RakaBoostV:Destroy() end
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    if FishingBlocker.Enabled and (method == "InvokeServer" or method == "FireServer") and BLOCKED_REMOTES[self] and not checkcaller() then
+        return nil
+    end
+    return oldNamecall(self, ...)
+end)
+
+-- Lightweight Spawn Limiter
+local MAX_PARALLEL = 4
+local active = 0
+local function lightSpawn(fn)
+    if active >= MAX_PARALLEL then return end
+    active = active + 1
+    task.spawn(function()
+        pcall(fn)
+        active = active - 1
+    end)
+end
 
 -- ================= UI DESIGN =================
+if CoreGui:FindFirstChild("RakaBoostV") then CoreGui.RakaBoostV:Destroy() end
 local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "RakaBoostV"
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 440, 0, 280) 
+MainFrame.Size = UDim2.new(0, 440, 0, 300) 
 MainFrame.Position = UDim2.new(0.5, -220, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.Active = true
@@ -55,27 +77,27 @@ Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.7, 0, 1, 0)
 Title.Position = UDim2.new(0.03, 0, 0, 0)
-Title.Text = "RAKA UTILITY V5 | CUSTOM DELAY"
+Title.Text = "RAKA UTILITY V5 | TURBO MODE"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 11
 Title.TextColor3 = Color3.fromRGB(0, 255, 150)
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Scrolling Content
+-- Content
 local Content = Instance.new("ScrollingFrame", MainFrame)
 Content.Size = UDim2.new(1, -10, 1, -85)
 Content.Position = UDim2.new(0, 5, 0, 35)
 Content.ScrollBarThickness = 2
 Content.BackgroundTransparency = 1
-Content.CanvasSize = UDim2.new(0, 0, 0, 320)
+Content.CanvasSize = UDim2.new(0, 0, 0, 350)
 
 local Grid = Instance.new("UIGridLayout", Content)
 Grid.CellSize = UDim2.new(0, 205, 0, 35)
 Grid.CellPadding = UDim2.new(0, 8, 0, 8)
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- ================= HELPER: UI COMPONENTS =================
+-- UI Helpers
 local function CreateButton(txt)
     local b = Instance.new("TextButton", Content)
     b.Text = txt
@@ -91,7 +113,6 @@ local function CreateInput(label, default)
     local f = Instance.new("Frame", Content)
     f.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     Instance.new("UICorner", f).CornerRadius = UDim.new(0, 5)
-    
     local tl = Instance.new("TextLabel", f)
     tl.Size = UDim2.new(0.6, 0, 1, 0)
     tl.Text = label
@@ -99,7 +120,6 @@ local function CreateInput(label, default)
     tl.TextSize = 9
     tl.TextColor3 = Color3.fromRGB(200, 200, 200)
     tl.BackgroundTransparency = 1
-    
     local ti = Instance.new("TextBox", f)
     ti.Size = UDim2.new(0.35, 0, 0.7, 0)
     ti.Position = UDim2.new(0.6, 0, 0.15, 0)
@@ -109,60 +129,61 @@ local function CreateInput(label, default)
     ti.Font = Enum.Font.Code
     ti.TextSize = 10
     Instance.new("UICorner", ti).CornerRadius = UDim.new(0, 4)
-    
     return ti
 end
 
--- ================= CREATE ELEMENTS =================
-local FastBtn   = CreateButton("AUTO FISH: OFF")
+-- Elements
+local FastBtn   = CreateButton("TURBO FISH: OFF")
 local BoostBtn  = CreateButton("BOOSTER: OFF")
-local InputBait = CreateInput("SET BAIT DELAY:", delayBait)
-local InputReel = CreateInput("SET REEL DELAY:", delayReel)
-local InputRst  = CreateInput("SET RESET DELAY:", delayReset)
+local InpBait   = CreateInput("BAIT DELAY:", delayBait)
+local InpReel   = CreateInput("REEL DELAY:", delayReel)
+local InpRst    = CreateInput("RESET DELAY:", delayReset)
 local FpsBtn    = CreateButton("FPS CAP: UNLIMITED")
 
--- ================= LOGIC: AUTO FISH (NEW ARGS) =================
+-- ================= LOGIC: SUPER INSTANT FISH =================
+local function startFishingSuperInstantLoop()
+    pcall(function() CancelInput:InvokeServer() end)
+    task.wait(0.05)
+    while getgenv().fishingStart do
+        lightSpawn(function()
+            ChargeRod:InvokeServer({[4] = os.clock()})
+        end)
+        task.wait(delayBait)
+        
+        lightSpawn(function()
+            RequestGame:InvokeServer(-0.571874737739563, 1, os.clock())
+        end)
+        task.wait(delayReel) 
+        
+        pcall(function() CompleteGame:FireServer() end)
+        task.wait(delayReset) 
+        pcall(function() CancelInput:InvokeServer() end)
+        task.wait(0.05)
+    end
+end
+
 FastBtn.MouseButton1Click:Connect(function()
     getgenv().fishingStart = not getgenv().fishingStart
-    FastBtn.Text = getgenv().fishingStart and "AUTO FISH: ON" or "AUTO FISH: OFF"
+    FastBtn.Text = getgenv().fishingStart and "TURBO FISH: ON" or "TURBO FISH: OFF"
     FastBtn.BackgroundColor3 = getgenv().fishingStart and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(30, 30, 30)
     
-    -- Update delay dari input box saat tombol ditekan
-    delayBait = tonumber(InputBait.Text) or 0.5
-    delayReel = tonumber(InputReel.Text) or 0.8
-    delayReset = tonumber(InputRst.Text) or 0.1
+    -- Sync Input Delays
+    delayBait = tonumber(InpBait.Text) or 0.56
+    delayReel = tonumber(InpReel.Text) or 1.15
+    delayReset = tonumber(InpRst.Text) or 0.2
 
     if getgenv().fishingStart then
-        task.spawn(function()
-            while getgenv().fishingStart do
-                pcall(function()
-                    -- Perintah 1: Charge
-                    ChargeRod:InvokeServer({[4] = os.clock()})
-                    task.wait(delayBait)
-                    
-                    -- Perintah 2: Request (Args sesuai permintaanmu)
-                    RequestGame:InvokeServer(-0.571874737739563, 1, os.clock())
-                    task.wait(delayReel)
-                    
-                    -- Perintah 3 & 4: Cancel & Complete (Instant Catch)
-                    CancelInput:InvokeServer()
-                    CompleteGame:FireServer()
-                end)
-                task.wait(delayReset) -- Jeda antar lemparan
-            end
-        end)
+        task.spawn(startFishingSuperInstantLoop)
     end
 end)
 
--- ================= LOGIC: BOOSTER =================
+-- ================= OTHERS =================
 BoostBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     BoostBtn.Text = Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
     settings().Rendering.QualityLevel = Optimized and 1 or 10
-    Lighting.GlobalShadows = not Optimized
 end)
 
--- ================= FPS & HIDE =================
 local FPS = Instance.new("TextLabel", MainFrame)
 FPS.Size = UDim2.new(0.95, 0, 0, 30)
 FPS.Position = UDim2.new(0.025, 0, 1, -40)
@@ -177,7 +198,7 @@ local f, t = 0, os.clock()
 RunService.RenderStepped:Connect(function()
     f += 1
     if os.clock() - t >= 1 then
-        FPS.Text = "FPS: "..f.." | NEW ARGS ACTIVE"
+        FPS.Text = "FPS: "..f.." | TURBO ACTIVE"
         f, t = 0, os.clock()
     end
 end)
@@ -194,6 +215,6 @@ MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     Content.Visible = not Minimized
     FPS.Visible = not Minimized
-    MainFrame:TweenSize(Minimized and UDim2.new(0, 440, 0, 30) or UDim2.new(0, 440, 0, 280), "Out", "Quad", 0.3, true)
+    MainFrame:TweenSize(Minimized and UDim2.new(0, 440, 0, 30) or UDim2.new(0, 440, 0, 300), "Out", "Quad", 0.3, true)
     MinBtn.Text = Minimized and "SHOW" or "HIDE"
 end)
