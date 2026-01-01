@@ -1,252 +1,252 @@
---[[ 
- RakaHensem Utility V5 - TURBO WIDE EDITION (INTEGRATED)
- Fitur: Instant/Blatan Mode, Custom Input Delay, Fishing Blocker, Booster
-]]
-
--- ================= SERVICES =================
+Berikut adalah script lengkap yang sudah digabungkan dengan fitur Auto Totem (setiap 60 menit) yang kamu minta.
+Saya telah menambahkan tombol baru di menu UI dan mengatur logikanya agar berjalan di thread terpisah (menggunakan task.spawn) sehingga tidak membuat game lag saat menunggu 60 menit.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage") -- Ditambahkan
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
--- ================= BAGIAN 2: VARIABEL & REMOTE =================
-getgenv().fishingStart = false
-local instant = true
-local superInstant = false 
+-- // State
+local AfkModeActive = false 
+local Optimized = false
+local Minimized = false
+local WowEnabled = false
+local AutoTotemEnabled = false -- State baru untuk Totem
+local BV, Conn
+local TotemThread = nil -- Variable untuk menyimpan loop Totem
 
-local fishingArgs = { -1.115296483039856, 0, 1763651451.636425 }
-local delayTime = 0.56   -- Delay Catch
-local delayCharge = 1.15 -- Delay Fishing
-local delayReset = 0.2   -- Reset Delay
+-- // FPS Settings
+local fpsLimits = {30, 60, 144, 999} 
+local currentLimitIndex = 4 
 
-local rs = ReplicatedStorage
-local net = rs.Packages["_Index"]["sleitnick_net@0.2.0"].net
+-- // UI Config
+local UI_WIDTH = 210
+local UI_HEIGHT = 250 -- Sedikit diperbesar agar muat tombol baru
+local ACCENT = Color3.fromRGB(0, 255, 170)
 
-local ChargeRod    = net["RF/ChargeFishingRod"]
-local RequestGame  = net["RF/RequestFishingMinigameStarted"]
-local CompleteGame = net["RE/FishingCompleted"]
-local CancelInput  = net["RF/CancelFishingInputs"]
-local UpdateAuto   = net:FindFirstChild("RF/UpdateAutoFishingState")
+-- // Cleanup
+if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
--- ================= FISHING BLOCKER & UTILS =================
-local FishingBlocker = { Enabled = false, AutoGreat = false }
-local BLOCKED_REMOTES = { [ChargeRod] = true, [RequestGame] = true, [CompleteGame] = true, [CancelInput] = true }
-
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local method = getnamecallmethod()
-    if FishingBlocker.Enabled and (method == "InvokeServer" or method == "FireServer") and BLOCKED_REMOTES[self] and not checkcaller() then
-        return nil
-    end
-    return oldNamecall(self, ...)
-end)
-
-local MAX_PARALLEL, active = 4, 0
-local function lightSpawn(fn)
-    if active >= MAX_PARALLEL then return end
-    active = active + 1
-    task.spawn(function() pcall(fn) active = active - 1 end)
-end
-
--- ================= LOGIKA FISHING =================
-local function startFishingLoop()
-    if FishingBlocker.AutoGreat and UpdateAuto then UpdateAuto:InvokeServer(true) end
-    while getgenv().fishingStart do
-        pcall(function() ChargeRod:InvokeServer({[4] = os.clock()}) end) 
-        task.wait(0.055)
-        if not getgenv().fishingStart then break end
-        RequestGame:InvokeServer(unpack(fishingArgs))
-        task.wait(delayTime)
-        if not getgenv().fishingStart then break end 
-        pcall(function() CompleteGame:FireServer() end)
-        task.wait(0.05)
-        pcall(function() CancelInput:InvokeServer() end)
-    end
-end
-
-local function startFishingSuperInstantLoop()
-    if FishingBlocker.AutoGreat and UpdateAuto then UpdateAuto:InvokeServer(true) end
-    pcall(function() CancelInput:InvokeServer() end)
-    task.wait(0.055)
-    while getgenv().fishingStart do
-        lightSpawn(function() ChargeRod:InvokeServer({[4] = os.clock()}) end)
-        task.wait(0.055)
-        lightSpawn(function() RequestGame:InvokeServer(unpack(fishingArgs)) end)
-        task.wait(delayCharge) 
-        pcall(function() CompleteGame:FireServer() end)
-        task.wait(delayReset) 
-        pcall(function() CancelInput:InvokeServer() end)
-        task.wait(0.055)
-    end
-end
-
--- ================= UI DESIGN (WIDE) =================
-if CoreGui:FindFirstChild("RakaBoostV") then CoreGui.RakaBoostV:Destroy() end
+-- // UI Creation
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "RakaBoostV"
+Gui.Name = "SeraphinHelper"
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 440, 0, 320)
-MainFrame.Position = UDim2.new(0.5, -220, 0.3, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
+MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
+-- Header
 local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 30)
-Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Header.Size = UDim2.new(1, 0, 0, 35)
+Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.7, 0, 1, 0)
-Title.Position = UDim2.new(0.03, 0, 0, 0)
-Title.Text = "RAKA UTILITY V5 | INTEGRATED TURBO"
-Title.TextColor3 = Color3.fromRGB(0, 255, 150)
+Title.Size = UDim2.new(0.6, 0, 1, 0)
+Title.Position = UDim2.new(0.05, 0, 0, 0)
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
+Title.RichText = true
+Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 11
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local Content = Instance.new("ScrollingFrame", MainFrame)
-Content.Size = UDim2.new(1, -10, 1, -85)
-Content.Position = UDim2.new(0, 5, 0, 35)
-Content.BackgroundTransparency = 1
-Content.ScrollBarThickness = 2
-Content.CanvasSize = UDim2.new(0, 0, 0, 400)
-
-local Grid = Instance.new("UIGridLayout", Content)
-Grid.CellSize = UDim2.new(0, 205, 0, 35)
-Grid.CellPadding = UDim2.new(0, 8, 0, 8)
-Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
--- Helpers
-local function CreateButton(txt)
-    local b = Instance.new("TextButton", Content)
-    b.Text = txt
-    b.Font = Enum.Font.GothamBold
-    b.TextSize = 10
-    b.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    b.TextColor3 = Color3.new(1, 1, 1)
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 5)
-    return b
-end
-
-local function CreateInput(label, default)
-    local f = Instance.new("Frame", Content)
-    f.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 5)
-    local tl = Instance.new("TextLabel", f)
-    tl.Size = UDim2.new(0.6, 0, 1, 0)
-    tl.Text = label
-    tl.Font = Enum.Font.GothamBold
-    tl.TextSize = 8
-    tl.TextColor3 = Color3.fromRGB(200, 200, 200)
-    tl.BackgroundTransparency = 1
-    local ti = Instance.new("TextBox", f)
-    ti.Size = UDim2.new(0.3, 0, 0.7, 0)
-    ti.Position = UDim2.new(0.65, 0, 0.15, 0)
-    ti.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    ti.Text = tostring(default)
-    ti.TextColor3 = Color3.new(1, 1, 1)
-    ti.Font = Enum.Font.Code
-    ti.TextSize = 10
-    Instance.new("UICorner", ti).CornerRadius = UDim.new(0, 4)
-    return ti
-end
-
--- ================= ELEMENTS =================
-local ModeBtn    = CreateButton("MODE: INSTANT")
-local AutoGBtn   = CreateButton("AUTO GREAT: OFF")
-local StartBtn   = CreateButton("ACTIVATE FISHING: OFF")
-local InpCatch   = CreateInput("DELAY CATCH:", delayTime)
-local InpFish    = CreateInput("DELAY FISHING:", delayCharge)
-local InpRst     = CreateInput("RESET DELAY:", delayReset)
-local UnstuckBtn = CreateButton("UNSTUCK")
-local BoostBtn   = CreateButton("BOOSTER: OFF")
-
--- ================= LOGIC UI =================
-ModeBtn.MouseButton1Click:Connect(function()
-    instant = not instant
-    superInstant = not instant
-    ModeBtn.Text = instant and "MODE: INSTANT" or "MODE: BLATAN"
-end)
-
-AutoGBtn.MouseButton1Click:Connect(function()
-    FishingBlocker.AutoGreat = not FishingBlocker.AutoGreat
-    AutoGBtn.Text = FishingBlocker.AutoGreat and "AUTO GREAT: ON" or "AUTO GREAT: OFF"
-    AutoGBtn.BackgroundColor3 = FishingBlocker.AutoGreat and Color3.fromRGB(0, 120, 200) or Color3.fromRGB(30, 30, 30)
-end)
-
-StartBtn.MouseButton1Click:Connect(function()
-    getgenv().fishingStart = not getgenv().fishingStart
-    FishingBlocker.Enabled = getgenv().fishingStart
-    StartBtn.Text = getgenv().fishingStart and "ACTIVATE: ON" or "ACTIVATE: OFF"
-    StartBtn.BackgroundColor3 = getgenv().fishingStart and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(30, 30, 30)
-
-    -- Update Values from Inputs
-    delayTime = tonumber(InpCatch.Text) or 1.05
-    delayCharge = tonumber(InpFish.Text) or 1.30
-    delayReset = tonumber(InpRst.Text) or 0.35
-
-    if getgenv().fishingStart then
-        if superInstant then task.spawn(startFishingSuperInstantLoop) else task.spawn(startFishingLoop) end
-    else
-        if FishingBlocker.AutoGreat and UpdateAuto then UpdateAuto:InvokeServer(false) end
-        pcall(function() CompleteGame:FireServer() end)
-        pcall(function() CancelInput:InvokeServer() end)
-    end
-end)
-
-UnstuckBtn.MouseButton1Click:Connect(function()
-    pcall(function() CompleteGame:FireServer() end)
-    task.wait(0.05)
-    pcall(function() CancelInput:InvokeServer() end)
-end)
-
-BoostBtn.MouseButton1Click:Connect(function()
-    Optimized = not Optimized
-    BoostBtn.Text = Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
-    settings().Rendering.QualityLevel = Optimized and 1 or 10
-end)
-
--- FPS Display & Hide
-local FPS = Instance.new("TextLabel", MainFrame)
-FPS.Size = UDim2.new(0.95, 0, 0, 30)
-FPS.Position = UDim2.new(0.025, 0, 1, -40)
-FPS.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-FPS.TextColor3 = Color3.fromRGB(0, 255, 255)
-FPS.Text = "FPS: -- | RAKA UTILITY"
-FPS.Font = Enum.Font.Code
-FPS.TextSize = 11
-Instance.new("UICorner", FPS)
-
-local f, t = 0, os.clock()
-RunService.RenderStepped:Connect(function()
-    f += 1
-    if os.clock() - t >= 1 then
-        FPS.Text = "FPS: "..f.." | MODE: "..(instant and "INSTANT" or "BLATAN")
-        f, t = 0, os.clock()
-    end
-end)
-
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 50, 0, 20)
-MinBtn.Position = UDim2.new(1, -60, 0.2, 0)
+MinBtn.Size = UDim2.new(0, 45, 0, 22)
+MinBtn.Position = UDim2.new(0.75, 0, 0.5, -11)
 MinBtn.Text = "HIDE"
-MinBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", MinBtn)
+MinBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 9
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
+-- Scrolling Content
+local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
+ScrollFrame.Size = UDim2.new(1, -10, 1, -70)
+ScrollFrame.Position = UDim2.new(0, 5, 0, 40)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.ScrollBarThickness = 2
+ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local Layout = Instance.new("UIListLayout", ScrollFrame)
+Layout.Padding = UDim.new(0, 6)
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local function CreateButton(text)
+    local btn = Instance.new("TextButton", ScrollFrame)
+    btn.Size = UDim2.new(0.95, 0, 0, 35)
+    btn.Text = text
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 10
+    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    return btn
+end
+
+-- // TOMBOL FITUR
+local PotatoBtn = CreateButton("Booster Mode: OFF")
+local WowBtn = CreateButton("WALK ON WATER: OFF")
+local RenderBtn = CreateButton("No Render 3D: OFF")
+local TotemBtn = CreateButton("Auto Totem (60m): OFF") -- Tombol Baru
+local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
+
+-- Footer FPS
+local FpsDisplay = Instance.new("TextLabel", MainFrame)
+FpsDisplay.Size = UDim2.new(1, 0, 0, 25)
+FpsDisplay.Position = UDim2.new(0, 0, 1, -25)
+FpsDisplay.BackgroundTransparency = 1
+FpsDisplay.TextColor3 = ACCENT
+FpsDisplay.Text = "FPS: --"
+FpsDisplay.Font = Enum.Font.Code
+FpsDisplay.TextSize = 12
+
+-- // LOGIC PERBAIKAN FPS CAP
+FpsCapBtn.MouseButton1Click:Connect(function()
+    currentLimitIndex = currentLimitIndex + 1
+    if currentLimitIndex > #fpsLimits then
+        currentLimitIndex = 1
+    end
+    
+    local newLimit = fpsLimits[currentLimitIndex]
+    
+    if setfpscap then
+        setfpscap(newLimit)
+    end
+    
+    if newLimit > 900 then
+        FpsCapBtn.Text = "FPS CAP: UNLIMITED"
+    else
+        FpsCapBtn.Text = "FPS CAP: " .. newLimit
+    end
+end)
+
+-- 1. Potato Mode
+PotatoBtn.MouseButton1Click:Connect(function()
+    Optimized = not Optimized
+    PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
+    PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+    
+    Lighting.GlobalShadows = not Optimized
+    if Optimized then
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.CastShadow = false
+            elseif v:IsA("Texture") or v:IsA("Decal") then
+                v.Transparency = 1
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Enabled = false
+            end
+        end
+    end
+end)
+
+-- 2. AFK Render Mode
+RenderBtn.MouseButton1Click:Connect(function()
+    AfkModeActive = not AfkModeActive
+    RunService:Set3dRenderingEnabled(not AfkModeActive)
+    RenderBtn.Text = AfkModeActive and "No Render 3D: ON" or "No Render 3D: OFF"
+    RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 35, 40)
+end)
+
+-- 3. Walk on Water
+WowBtn.MouseButton1Click:Connect(function()
+    WowEnabled = not WowEnabled
+    WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
+    WowBtn.BackgroundColor3 = WowEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+    if WowEnabled then
+        BV = Instance.new("BodyVelocity", HRP)
+        BV.MaxForce = Vector3.new(0, 1e6, 0)
+        BV.Velocity = Vector3.zero
+        Conn = RunService.Heartbeat:Connect(function()
+            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z) end
+        end)
+    else
+        if Conn then Conn:Disconnect() end
+        if BV then BV:Destroy() end
+    end
+end)
+
+-- 4. Auto Totem (NEW FEATURE)
+TotemBtn.MouseButton1Click:Connect(function()
+    AutoTotemEnabled = not AutoTotemEnabled
+    TotemBtn.Text = AutoTotemEnabled and "Auto Totem: ON" or "Auto Totem: OFF"
+    TotemBtn.BackgroundColor3 = AutoTotemEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+
+    if AutoTotemEnabled then
+        -- Start Loop di thread baru
+        TotemThread = task.spawn(function()
+            while AutoTotemEnabled do
+                -- Menggunakan pcall agar script tidak error jika game update/lag
+                pcall(function()
+                    local netFolder = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
+                    
+                    -- Spawn Totem
+                    local spawnEvent = netFolder:FindFirstChild("RE/SpawnTotem")
+                    if spawnEvent then
+                        spawnEvent:FireServer("Totems")
+                    end
+                    
+                    task.wait(1) -- Delay kecil sebelum equip
+
+                    -- Equip Item
+                    local equipEvent = netFolder:FindFirstChild("RE/EquipItem")
+                    if equipEvent then
+                        equipEvent:FireServer("Totems")
+                    end
+                end)
+
+                -- Tunggu 60 menit (3600 detik)
+                task.wait(3600)
+            end
+        end)
+    else
+        -- Matikan loop jika tombol dimatikan
+        if TotemThread then
+            task.cancel(TotemThread)
+            TotemThread = nil
+        end
+    end
+end)
+
+-- 5. Minimize Function
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    Content.Visible = not Minimized
-    FPS.Visible = not Minimized
-    MainFrame:TweenSize(Minimized and UDim2.new(0, 440, 0, 30) or UDim2.new(0, 440, 0, 320), "Out", "Quad", 0.3, true)
-    MinBtn.Text = Minimized and "SHOW" or "HIDE"
+    if Minimized then
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.3, true)
+        ScrollFrame.Visible = false
+        FpsDisplay.Visible = false
+        MinBtn.Text = "SHOW"
+    else
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
+        task.wait(0.2)
+        ScrollFrame.Visible = true
+        FpsDisplay.Visible = true
+        MinBtn.Text = "HIDE"
+    end
 end)
+
+-- FPS Counter
+local lastT = os.clock()
+local frames = 0
+RunService.RenderStepped:Connect(function()
+    frames = frames + 1
+    if os.clock() - lastT >= 1 then
+        FpsDisplay.Text = "FPS: " .. frames
+        frames = 0
+        lastT = os.clock()
+    end
+end)
+
