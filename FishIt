@@ -19,7 +19,7 @@ Gui.Name = "FishItBetaBoost"
 Gui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 180, 0, 240)
+MainFrame.Size = UDim2.new(0, 150, 0, 240)
 MainFrame.Position = UDim2.new(0.5, -90, 0.4, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.BorderSizePixel = 0
@@ -37,17 +37,17 @@ Header.BorderSizePixel = 0
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.5, 0, 1, 0)
 Title.Position = UDim2.new(0.04, 0, 0, 0)
-Title.Text = "RakaHensem"
+Title.Text = "rakaganteng"
 Title.TextColor3 = Color3.fromRGB(0, 170, 255)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 13
+Title.TextSize = 14
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Tombol Minimize yang Lebih Jelas
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 30, 0, 30)
-MinBtn.Position = UDim2.new(0.85, 0, 0.1, 0)
+MinBtn.Size = UDim2.new(0, 20, 0, 20)
+MinBtn.Position = UDim2.new(0.75, 0, 0.1, 0)
 MinBtn.Text = "-"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
 MinBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -81,7 +81,7 @@ local RenderBtn = CreateButton("RenderBtn", "3D RENDER: OFF", UDim2.new(0.05, 0,
 
 -- FPS Display
 local FpsDisplay = Instance.new("TextLabel", Content)
-FpsDisplay.Size = UDim2.new(0.9, 0, 0, 25)
+FpsDisplay.Size = UDim2.new(0.10, 0, 0, 30)
 FpsDisplay.Position = UDim2.new(0.05, 0, 0.35, 0)
 FpsDisplay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 FpsDisplay.TextColor3 = Color3.fromRGB(0, 255, 120)
