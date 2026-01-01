@@ -1,9 +1,10 @@
 --[[ 
- Walk On Water + Optimizer + Real-time FPS - Fish It FINAL
+ Walk On Water + Optimizer + Real-time FPS - Fish It FINAL (Sempurna)
 ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
@@ -17,11 +18,12 @@ local Minimized = false
 local BV, Conn
 
 -- UI Creation
-local Gui = Instance.new("ScreenGui", game.CoreGui)
+local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "FishIt_Ultimate_V3"
+Gui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 180, 0, 240) -- Ukuran sedikit ditambah untuk FPS
+MainFrame.Size = UDim2.new(0, 180, 0, 240)
 MainFrame.Position = UDim2.new(0.5, -90, 0.4, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.BorderSizePixel = 0
@@ -30,33 +32,33 @@ MainFrame.Draggable = true
 MainFrame.ClipsDescendants = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
--- Header
+-- Header (Tetap terlihat saat di-minimize)
 local Header = Instance.new("Frame", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 30)
 Header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Header.BorderSizePixel = 0
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.7, 0, 1, 0)
+Title.Size = UDim2.new(0.6, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "RakaHensem"
+Title.Text = "FISH IT UTILITY"
 Title.TextColor3 = Color3.fromRGB(0, 170, 255)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 11
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
+-- Tombol Minimize yang Lebih Jelas
 local MinBtn = Instance.new("TextButton", Header)
 MinBtn.Size = UDim2.new(0, 25, 0, 25)
 MinBtn.Position = UDim2.new(0.83, 0, 0.1, 0)
-MinBtn.Text = "_"
+MinBtn.Text = "-"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
 MinBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 MinBtn.Font = Enum.Font.GothamBold
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
 
--- Content Frame
+-- Content Frame (Akan disembunyikan saat minimize)
 local Content = Instance.new("Frame", MainFrame)
 Content.Size = UDim2.new(1, 0, 1, -30)
 Content.Position = UDim2.new(0, 0, 0, 30)
@@ -81,20 +83,20 @@ end
 local WowBtn = CreateButton("WowBtn", "WOW: OFF", UDim2.new(0.05, 0, 0.05, 0), Color3.fromRGB(150, 0, 0))
 local RenderBtn = CreateButton("RenderBtn", "3D RENDER: ON", UDim2.new(0.05, 0, 0.2, 0), Color3.fromRGB(0, 100, 200))
 
--- FPS Counter Real-time
+-- FPS Display
 local FpsDisplay = Instance.new("TextLabel", Content)
 FpsDisplay.Size = UDim2.new(0.9, 0, 0, 25)
 FpsDisplay.Position = UDim2.new(0.05, 0, 0.35, 0)
 FpsDisplay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 FpsDisplay.TextColor3 = Color3.fromRGB(0, 255, 120)
-FpsDisplay.Text = "FPS: ..."
+FpsDisplay.Text = "FPS: CALC..."
 FpsDisplay.Font = Enum.Font.Code
 FpsDisplay.TextSize = 12
 Instance.new("UICorner", FpsDisplay).CornerRadius = UDim.new(0, 6)
 
--- FPS Limiter Section
+-- FPS Limiter Label
 local FpsLabel = Instance.new("TextLabel", Content)
-FpsLabel.Text = "LIMIT FPS"
+FpsLabel.Text = "SET FPS LIMIT"
 FpsLabel.Size = UDim2.new(1,0,0,20)
 FpsLabel.Position = UDim2.new(0,0,0.5,0)
 FpsLabel.BackgroundTransparency = 1
@@ -107,43 +109,54 @@ FpsFrame.Size = UDim2.new(0.9, 0, 0, 35)
 FpsFrame.Position = UDim2.new(0.05, 0, 0.6, 0)
 FpsFrame.BackgroundTransparency = 1
 
--- FPS Update Logic
-local lastTime = tick()
-local frameCount = 0
-RunService.RenderStepped:Connect(function()
-    frameCount = frameCount + 1
-    if tick() - lastTime >= 1 then
-        FpsDisplay.Text = "FPS: " .. tostring(frameCount)
-        frameCount = 0
-        lastTime = tick()
+--- FITUR BARU ---
+
+-- 1. Real-time FPS Logic (Akurat & Smooth)
+local TimeCounter = 0
+local FrameCounter = 0
+RunService.RenderStepped:Connect(function(dt)
+    FrameCounter = FrameCounter + 1
+    TimeCounter = TimeCounter + dt
+    if TimeCounter >= 1 then
+        FpsDisplay.Text = "FPS: " .. FrameCounter
+        FrameCounter = 0
+        TimeCounter = 0
     end
 end)
 
--- Minimize Logic
+-- 2. Minimize Logic (Animasi halus)
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
-        MainFrame:TweenSize(UDim2.new(0, 180, 0, 30), "Out", "Quad", 0.3, true)
+        -- Mengecilkan frame hanya sisa Header
+        MainFrame:TweenSize(UDim2.new(0, 180, 0, 30), "Out", "Quad", 0.2, true)
         Content.Visible = false
         MinBtn.Text = "+"
     else
-        MainFrame:TweenSize(UDim2.new(0, 180, 0, 240), "Out", "Quad", 0.3, true)
+        -- Mengembalikan ke ukuran semula
+        MainFrame:TweenSize(UDim2.new(0, 180, 0, 240), "Out", "Quad", 0.2, true)
         Content.Visible = true
-        MinBtn.Text = "_"
+        MinBtn.Text = "-"
     end
 end)
 
--- Core Functionalities
+------------------
+
+-- FPS Limit Buttons
 local function SetFPS(cap)
-    if setfpscap then setfpscap(cap) end
+    if setfpscap then 
+        setfpscap(cap) 
+    else
+        print("Executor anda tidak mendukung setfpscap")
+    end
 end
 
-local fpsOptions = {60, 90, 120, 999}
+local fpsOptions = {30, 60, 144, 999}
 for i, v in ipairs(fpsOptions) do
     local fbtn = Instance.new("TextButton", FpsFrame)
     fbtn.Size = UDim2.new(0.22, 0, 0.8, 0)
     fbtn.Position = UDim2.new((i-1)*0.26, 0, 0, 0)
-    fbtn.Text = tostring(v)
+    fbtn.Text = v == 999 and "MAX" or tostring(v)
     fbtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     fbtn.TextColor3 = Color3.new(1,1,1)
     fbtn.Font = Enum.Font.GothamBold
@@ -159,15 +172,20 @@ for i, v in ipairs(fpsOptions) do
     end)
 end
 
+-- Core Script Logic (Walk on Water)
 local function EnableWow()
+    if BV then BV:Destroy() end
     BV = Instance.new("BodyVelocity")
     BV.MaxForce = Vector3.new(0, 1e6, 0)
     BV.Velocity = Vector3.zero
     BV.Parent = HRP
     Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+    
+    if Conn then Conn:Disconnect() end
     Conn = RunService.Heartbeat:Connect(function()
-        if not Enabled or not HRP then return end
-        HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
+        if Enabled and HRP then
+            HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
+        end
     end)
 end
 
@@ -190,7 +208,10 @@ RenderBtn.MouseButton1Click:Connect(function()
     RenderBtn.BackgroundColor3 = RenderDisabled and Color3.fromRGB(60, 60, 60) or Color3.fromRGB(0, 100, 200)
 end)
 
+-- Character Reset Handler
 Player.CharacterAdded:Connect(function(c)
-    Char, HRP, Humanoid = c, c:WaitForChild("HumanoidRootPart"), c:WaitForChild("Humanoid")
-    if Enabled then EnableWow() end
+    Char = c
+    HRP = c:WaitForChild("HumanoidRootPart")
+    Humanoid = c:WaitForChild("Humanoid")
+    if Enabled then task.wait(0.5) EnableWow() end
 end)
