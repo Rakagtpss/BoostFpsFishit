@@ -1,6 +1,7 @@
 --[[ 
- RakaHensem Utility V13 - REAL-TIME TOTEM SCANNER
- Update: Fixed Scanning Logic & Selection Cycle
+ RakaHensem Utility V15 - FISH IT EDITION
+ Khusus untuk game FISH IT
+ Fitur: Ultra Recursive Scan untuk mendeteksi Totem di folder mana pun.
 ]]
 
 local Players = game:GetService("Players")
@@ -10,12 +11,12 @@ local Lighting = game:GetService("Lighting")
 
 local Player = Players.LocalPlayer
 
--- // State Management
+-- // State
 local TargetTotemName = nil 
 local TotemIndex = 0
-local AfkModeActive = false 
 local Optimized = false
 local Minimized = false
+local AfkModeActive = false
 local WowEnabled = false
 local BV, Conn
 
@@ -39,7 +40,7 @@ MainFrame.Active = true
 MainFrame.Draggable = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
--- Header & Title
+-- Header
 local Header = Instance.new("Frame", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 35)
 Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
@@ -48,7 +49,7 @@ Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.6, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">FISH IT</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
@@ -89,11 +90,11 @@ local function CreateButton(text)
     return btn
 end
 
--- // Fitur Buttons
+-- Buttons
 local PotatoBtn = CreateButton("POTATO MODE: OFF")
 local WowBtn = CreateButton("WALK ON WATER: OFF")
 local RenderBtn = CreateButton("AFK MODE (BLACK): OFF")
-local TotemBtn = CreateButton("SCANNING FOR TOTEMS...") -- Tombol Scan
+local TotemBtn = CreateButton("SEARCHING FISH IT TOTEMS...") 
 local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
 
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
@@ -105,17 +106,24 @@ FpsDisplay.Text = "FPS: --"
 FpsDisplay.Font = Enum.Font.Code
 FpsDisplay.TextSize = 10
 
--- // --- LOGIC SCANNER --- //
+-- // --- FISH IT ULTRA SCANNER --- //
 
-local function GetAvailableTotems()
+local function FindTotemsInFishIt()
     local found = {}
-    local backpack = Player:FindFirstChild("Backpack")
-    if backpack then
-        for _, item in pairs(backpack:GetChildren()) do
-            -- Mencari item yang mengandung nama "Totem"
-            if item:IsA("Tool") and string.find(string.lower(item.Name), "totem") then
-                if not table.find(found, item.Name) then
-                    table.insert(found, item.Name)
+    -- Scan secara mendalam di semua folder pemain
+    for _, obj in pairs(Player:GetDescendants()) do
+        if obj:IsA("Tool") and string.find(string.lower(obj.Name), "totem") then
+            if not table.find(found, obj.Name) then
+                table.insert(found, obj.Name)
+            end
+        end
+    end
+    -- Scan juga di karakter
+    if Player.Character then
+        for _, obj in pairs(Player.Character:GetChildren()) do
+            if obj:IsA("Tool") and string.find(string.lower(obj.Name), "totem") then
+                if not table.find(found, obj.Name) then
+                    table.insert(found, obj.Name)
                 end
             end
         end
@@ -123,80 +131,78 @@ local function GetAvailableTotems()
     return found
 end
 
--- Update tampilan tombol setiap saat
 task.spawn(function()
-    while task.wait(0.5) do
-        local totems = GetAvailableTotems()
+    while task.wait(2) do
         if not TargetTotemName then
-            if #totems > 0 then
-                TotemBtn.Text = "FOUND ("..#totems..") TOTEMS. CLICK TO SELECT"
+            local list = FindTotemsInFishIt()
+            if #list > 0 then
+                TotemBtn.Text = "FISH IT: " .. #list .. " TOTEMS READY"
+                TotemBtn.TextColor3 = ACCENT
             else
-                TotemBtn.Text = "NO TOTEM IN BACKPACK"
+                TotemBtn.Text = "NO TOTEMS (RE-SCANNING)"
+                TotemBtn.TextColor3 = Color3.new(1,1,1)
             end
         end
     end
 end)
 
--- // --- LOGIC AUTO PLACE --- //
+-- // --- EXECUTION --- //
 
-local function UseTotem()
+local function DeployTotem()
     if not TargetTotemName then return end
     local char = Player.Character
-    local bp = Player:FindFirstChild("Backpack")
-    if char and bp then
-        local tool = bp:FindFirstChild(TargetTotemName) or char:FindFirstChild(TargetTotemName)
-        if tool then
-            char.Humanoid:EquipTool(tool)
-            task.wait(0.3)
-            tool:Activate()
-            print("Successfully placed: " .. TargetTotemName)
+    if not char or not char:FindFirstChild("Humanoid") then return end
+
+    -- Cari item di seluruh area pemain
+    local tool = nil
+    for _, obj in pairs(Player:GetDescendants()) do
+        if obj.Name == TargetTotemName and obj:IsA("Tool") then
+            tool = obj
+            break
         end
+    end
+    
+    if not tool and char then
+        tool = char:FindFirstChild(TargetTotemName)
+    end
+
+    if tool then
+        char.Humanoid:EquipTool(tool)
+        task.wait(0.5)
+        tool:Activate()
     end
 end
 
--- Loop 60 Menit
+-- Auto Loop 60m
 task.spawn(function()
     while true do
         if TargetTotemName then
-            pcall(UseTotem)
-            task.wait(3600) -- Tunggu 60 menit
+            DeployTotem()
+            task.wait(3600)
         end
         task.wait(1)
     end
 end)
 
--- // --- INTERACTION --- //
-
 TotemBtn.MouseButton1Click:Connect(function()
-    local totems = GetAvailableTotems()
-    
-    if #totems == 0 then
-        TargetTotemName = nil
-        TotemBtn.Text = "NO TOTEM FOUND"
-        TotemBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-        return
-    end
+    local list = FindTotemsInFishIt()
+    if #list == 0 then return end
 
     TotemIndex = TotemIndex + 1
-    
-    if TotemIndex > #totems then
-        -- Reset / Turn Off
+    if TotemIndex > #list then
         TotemIndex = 0
         TargetTotemName = nil
         TotemBtn.Text = "AUTO TOTEM: OFF"
         TotemBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
     else
-        -- Select next totem
-        TargetTotemName = totems[TotemIndex]
-        TotemBtn.Text = "ACTIVE: " .. string.upper(TargetTotemName)
+        TargetTotemName = list[TotemIndex]
+        TotemBtn.Text = "USE: " .. TargetTotemName:upper()
         TotemBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
-        -- Langsung gunakan sekali saat dipilih
-        pcall(UseTotem)
+        DeployTotem()
     end
 end)
 
--- // --- FITUR LAINNYA (FPS, POTATO, DLL) --- //
-
+-- // --- OTHERS --- //
 local fpsLimits = {30, 60, 144, 999}; local curFpsIdx = 4
 FpsCapBtn.MouseButton1Click:Connect(function()
     curFpsIdx = curFpsIdx + 1
@@ -208,7 +214,7 @@ end)
 
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
-    PotatoBtn.Text = Optimized and "POTATO MODE: ON" or "POTATO MODE: OFF"
+    PotatoBtn.Text = Optimized and "POTATO: ON" or "POTATO: OFF"
     PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
     Lighting.GlobalShadows = not Optimized
     if Optimized then
@@ -222,7 +228,7 @@ end)
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
-    RenderBtn.Text = AfkModeActive and "AFK MODE (BLACK): ON" or "AFK MODE (BLACK): OFF"
+    RenderBtn.Text = AfkModeActive and "AFK BLACK: ON" or "AFK BLACK: OFF"
     RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 35, 40)
 end)
 
