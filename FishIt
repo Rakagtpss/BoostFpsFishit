@@ -1,160 +1,158 @@
 --[[ 
- FISH IT BOOST - UI LITE (FIXED)
- - Fix No Render (Menu tetap terlihat)
- - Tambah Fitur Minimize
- - Full Screen No Render
+ Walk On Water + Optimizer - Fish It FINAL
+ Fitur: WOW, Disable 3D Render, FPS Limiter
 ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
 local Player = Players.LocalPlayer
+local Char = Player.Character or Player.CharacterAdded:Wait()
+local HRP = Char:WaitForChild("HumanoidRootPart")
+local Humanoid = Char:WaitForChild("Humanoid")
 
 -- State
-local WOW_Enabled = false
-local NR_Enabled = false
-local IsMinimized = false
-local FPSList = {60, 90, 120, 999}
-local FPSIndex = 1
-local BlackGui
-
--- ================= UI CREATION =================
-local MainGui = Instance.new("ScreenGui", game.CoreGui)
-MainGui.Name = "FishIt_Lite"
-MainGui.DisplayOrder = 999 -- Memastikan UI ini di atas No Render
-
-local Frame = Instance.new("Frame", MainGui)
-Frame.Size = UDim2.new(0, 160, 0, 160)
-Frame.Position = UDim2.new(0.5, -80, 0.4, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Frame.BorderSizePixel = 0
-Frame.Active = true
-Frame.Draggable = true
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
-
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, -30, 0, 30)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "FISH IT LITE"
-Title.TextColor3 = Color3.fromRGB(0, 170, 255)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 12
-Title.TextXAlignment = Enum.TextXAlignment.Left
-
--- Tombol Minimize
-local MinBtn = Instance.new("TextButton", Frame)
-MinBtn.Size = UDim2.new(0, 25, 0, 25)
-MinBtn.Position = UDim2.new(1, -30, 0, 3)
-MinBtn.Text = "-"
-MinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-MinBtn.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", MinBtn)
-
--- Container Tombol (Bisa disembunyikan)
-local Content = Instance.new("Frame", Frame)
-Content.Size = UDim2.new(1, 0, 1, -30)
-Content.Position = UDim2.new(0, 0, 0, 30)
-Content.BackgroundTransparency = 1
-
-local function MakeBtn(text, y, parent)
-    local b = Instance.new("TextButton", parent)
-    b.Size = UDim2.new(0.9, 0, 0, 30)
-    b.Position = UDim2.new(0.05, 0, 0, y)
-    b.Text = text
-    b.Font = Enum.Font.SourceSansBold
-    b.TextSize = 14
-    b.TextColor3 = Color3.new(1, 1, 1)
-    b.BackgroundColor3 = Color3.fromRGB(130, 20, 20)
-    b.BorderSizePixel = 0
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 5)
-    return b
-end
-
-local WOWBtn = MakeBtn("Walk On Water: OFF", 10, Content)
-local NRBtn  = MakeBtn("No Render: OFF", 50, Content)
-local FPSBtn = MakeBtn("FPS Lock: 60", 90, Content)
-
--- ================= LOGIC MINIMIZE =================
-MinBtn.MouseButton1Click:Connect(function()
-    IsMinimized = not IsMinimized
-    if IsMinimized then
-        Content.Visible = false
-        Frame:TweenSize(UDim2.new(0, 160, 0, 30), "Out", "Quad", 0.2, true)
-        MinBtn.Text = "+"
-    else
-        Frame:TweenSize(UDim2.new(0, 160, 0, 160), "Out", "Quad", 0.2, true)
-        task.wait(0.2)
-        Content.Visible = true
-        MinBtn.Text = "-"
-    end
-end)
-
--- ================= LOGIC NO RENDER =================
-local function ToggleNoRender()
-    if NR_Enabled then
-        if not BlackGui then
-            BlackGui = Instance.new("ScreenGui", game.CoreGui)
-            BlackGui.Name = "LayarHitam"
-            BlackGui.DisplayOrder = 998 -- Di bawah MainGui
-            
-            local f = Instance.new("Frame", BlackGui)
-            f.Size = UDim2.new(1, 0, 1, 0)
-            f.BackgroundColor3 = Color3.new(0, 0, 0)
-            f.BorderSizePixel = 0
-        end
-    else
-        if BlackGui then BlackGui:Destroy() BlackGui = nil end
-    end
-end
-
--- ================= LOGIC FPS & WOW =================
-local function SetFPS(v)
-    if setfpscap then setfpscap(v) end
-end
-
+local Enabled = false
+local RenderDisabled = false
 local BV, Conn
-local function HandleWOW()
-    local Char = Player.Character or Player.CharacterAdded:Wait()
-    local HRP = Char:WaitForChild("HumanoidRootPart")
-    if WOW_Enabled then
-        BV = Instance.new("BodyVelocity", HRP)
-        BV.MaxForce = Vector3.new(0, 1e6, 0)
-        BV.Velocity = Vector3.zero
-        Conn = RunService.Heartbeat:Connect(function()
-            HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
-        end)
+
+-- UI Creation
+local Gui = Instance.new("ScreenGui", game.CoreGui)
+Gui.Name = "FishIt_Ultimate_Optimizer"
+
+local MainFrame = Instance.new("Frame", Gui)
+MainFrame.Size = UDim2.new(0, 180, 0, 210)
+MainFrame.Position = UDim2.new(0.5, -90, 0.4, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "FISH IT - UTILITY"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 14
+Title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 8)
+
+-- Helper Function for Buttons
+local function CreateButton(name, text, pos, color)
+    local btn = Instance.new("TextButton", MainFrame)
+    btn.Name = name
+    btn.Size = UDim2.new(0.9, 0, 0, 30)
+    btn.Position = pos
+    btn.Text = text
+    btn.Font = Enum.Font.GothamSemibold
+    btn.TextSize = 12
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.BackgroundColor3 = color
+    btn.BorderSizePixel = 0
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    return btn
+end
+
+-- Buttons
+local WowBtn = CreateButton("WowBtn", "WOW: OFF", UDim2.new(0.05, 0, 0.2, 0), Color3.fromRGB(170, 0, 0))
+local RenderBtn = CreateButton("RenderBtn", "3D RENDER: ON", UDim2.new(0.05, 0, 0.38, 0), Color3.fromRGB(0, 120, 215))
+local FpsLabel = Instance.new("TextLabel", MainFrame)
+FpsLabel.Text = "SET FPS LIMIT:"
+FpsLabel.Size = UDim2.new(1,0,0,20)
+FpsLabel.Position = UDim2.new(0,0,0.55,0)
+FpsLabel.BackgroundTransparency = 1
+FpsLabel.TextColor3 = Color3.fromRGB(200,200,200)
+FpsLabel.Font = Enum.Font.Gotham
+FpsLabel.TextSize = 10
+
+-- FPS Selector Container
+local FpsFrame = Instance.new("Frame", MainFrame)
+FpsFrame.Size = UDim2.new(0.9, 0, 0, 50)
+FpsFrame.Position = UDim2.new(0.05, 0, 0.68, 0)
+FpsFrame.BackgroundTransparency = 1
+
+local function SetFPS(cap)
+    if setfpscap then
+        setfpscap(cap)
     else
-        if BV then BV:Destroy() end
-        if Conn then Conn:Disconnect() end
+        print("Executor anda tidak mendukung setfpscap")
     end
 end
 
--- ================= BUTTON ACTIONS =================
-WOWBtn.MouseButton1Click:Connect(function()
-    WOW_Enabled = not WOW_Enabled
-    WOWBtn.Text = WOW_Enabled and "Walk On Water: ON" or "Walk On Water: OFF"
-    WOWBtn.BackgroundColor3 = WOW_Enabled and Color3.fromRGB(20, 130, 20) or Color3.fromRGB(130, 20, 20)
-    HandleWOW()
+local fpsOptions = {60, 90, 120, 999}
+for i, v in ipairs(fpsOptions) do
+    local fbtn = Instance.new("TextButton", FpsFrame)
+    fbtn.Size = UDim2.new(0.22, 0, 0.6, 0)
+    fbtn.Position = UDim2.new((i-1)*0.26, 0, 0, 0)
+    fbtn.Text = tostring(v)
+    fbtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    fbtn.TextColor3 = Color3.new(1,1,1)
+    fbtn.Font = Enum.Font.GothamBold
+    fbtn.TextSize = 10
+    Instance.new("UICorner", fbtn).CornerRadius = UDim.new(0, 4)
+    
+    fbtn.MouseButton1Click:Connect(function()
+        SetFPS(v)
+        for _, b in pairs(FpsFrame:GetChildren()) do
+            if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(45, 45, 45) end
+        end
+        fbtn.BackgroundColor3 = Color3.fromRGB(0, 170, 120)
+    end)
+end
+
+--- Core Logic ---
+
+-- Walk On Water Logic
+local function EnableWow()
+    BV = Instance.new("BodyVelocity")
+    BV.MaxForce = Vector3.new(0, 1e6, 0)
+    BV.Velocity = Vector3.zero
+    BV.Parent = HRP
+    Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+    Conn = RunService.Heartbeat:Connect(function()
+        if not Enabled or not HRP then return end
+        HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
+    end)
+end
+
+local function DisableWow()
+    if Conn then Conn:Disconnect() Conn = nil end
+    if BV then BV:Destroy() BV = nil end
+end
+
+WowBtn.MouseButton1Click:Connect(function()
+    Enabled = not Enabled
+    if Enabled then
+        WowBtn.Text = "WOW: ON"
+        WowBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        EnableWow()
+    else
+        WowBtn.Text = "WOW: OFF"
+        WowBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        DisableWow()
+    end
 end)
 
-NRBtn.MouseButton1Click:Connect(function()
-    NR_Enabled = not NR_Enabled
-    NRBtn.Text = NR_Enabled and "No Render: ON" or "No Render: OFF"
-    NRBtn.BackgroundColor3 = NR_Enabled and Color3.fromRGB(20, 130, 20) or Color3.fromRGB(130, 20, 20)
-    ToggleNoRender()
+-- 3D Render Toggle (GPU/CPU Saver)
+RenderBtn.MouseButton1Click:Connect(function()
+    RenderDisabled = not RenderDisabled
+    if RenderDisabled then
+        RunService:Set3dRenderingEnabled(false)
+        RenderBtn.Text = "3D RENDER: OFF"
+        RenderBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    else
+        RunService:Set3dRenderingEnabled(true)
+        RenderBtn.Text = "3D RENDER: ON"
+        RenderBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    end
 end)
 
-FPSBtn.MouseButton1Click:Connect(function()
-    FPSIndex = FPSIndex % #FPSList + 1
-    local v = FPSList[FPSIndex]
-    FPSBtn.Text = "FPS Lock: " .. v
-    SetFPS(v)
+-- Reset Char Support
+Player.CharacterAdded:Connect(function(c)
+    Char = c
+    HRP = c:WaitForChild("HumanoidRootPart")
+    Humanoid = c:WaitForChild("Humanoid")
+    if Enabled then EnableWow() end
 end)
-
--- Reset on Respawn
-Player.CharacterAdded:Connect(function()
-    task.wait(1)
-    if WOW_Enabled then HandleWOW() end
-end)
-
-SetFPS(60)
