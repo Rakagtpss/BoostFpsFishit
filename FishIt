@@ -1,5 +1,5 @@
 --[[ 
- RakaHensem Utility V5.6 - Wide Edition (Modular Optimized)
+ RakaHensem Utility V5.8 - Scanner Edition (Luck & Mutation)
 ]]
 
 local Players = game:GetService("Players")
@@ -18,11 +18,13 @@ local Optimized = false
 local Minimized = false
 local Enabled = false
 local AutoTotem = false
+local HasLuck = false
+local HasMutation = false
 local BV, Conn
 
--- IDs
-local ECLIPSE_ID = "0a9aabbe-986f-498f-9899-fc0cbfb06b02"
-local SUNDIAL_ID = "a1101e2f-a9b0-46dd-8cc2-567b37f9a879"
+-- IDs DATA
+local MUTATION_ID = "a1101e2f-a9b0-46dd-8cc2-567b37f9a879"
+local LUCK_ID     = "dc6044db-3667-43dc-ad3d-064e8f21f2cc"
 
 -- Hapus UI Lama
 if CoreGui:FindFirstChild("RakaBoostV") then CoreGui.RakaBoostV:Destroy() end
@@ -32,8 +34,8 @@ local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "RakaBoostV"
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 350, 0, 240) -- UKURAN WIDE
-MainFrame.Position = UDim2.new(0.5, -175, 0.3, 0)
+MainFrame.Size = UDim2.new(0, 360, 0, 280)
+MainFrame.Position = UDim2.new(0.5, -180, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -49,7 +51,7 @@ Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.5, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN HELPER V5.6 (WIDE)"
+Title.Text = "SERAPHIN HELPER V5.8 (SCANNER)"
 Title.TextColor3 = Color3.fromRGB(0, 255, 150)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 12
@@ -66,19 +68,18 @@ MinBtn.Font = Enum.Font.GothamBold
 MinBtn.TextSize = 10
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
--- Container Grid (Kiri & Kanan)
+-- Content Frame
 local ContentFrame = Instance.new("Frame", MainFrame)
 ContentFrame.Size = UDim2.new(1, -20, 1, -80)
 ContentFrame.Position = UDim2.new(0, 10, 0, 40)
 ContentFrame.BackgroundTransparency = 1
 
 local Layout = Instance.new("UIGridLayout", ContentFrame)
-Layout.CellSize = UDim2.new(0, 160, 0, 30)
+Layout.CellSize = UDim2.new(0, 165, 0, 32)
 Layout.CellPadding = UDim2.new(0, 10, 0, 8)
 
 local function CreateButton(text, color)
     local btn = Instance.new("TextButton", ContentFrame)
-    btn.Size = UDim2.new(0, 160, 0, 30)
     btn.Text = text
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 9
@@ -90,13 +91,47 @@ end
 
 -- ================= TOMBOL FITUR =================
 
-local WowBtn = CreateButton("WALK ON WATER: OFF")
 local BoostBtn = CreateButton("BOOSTER: OFF")
-local RenderBtn = CreateButton("3D RENDERING: ON")
-local AutoBtn = CreateButton("AUTO SPAWN (1H): OFF", Color3.fromRGB(150, 0, 0))
-local PrepareBtn = CreateButton("1. SETUP TOTEM", Color3.fromRGB(50, 50, 70))
-local SpawnEclipse = CreateButton("SPAWN: ECLIPSE", Color3.fromRGB(70, 30, 100))
-local SpawnSundial = CreateButton("SPAWN: SUNDIAL", Color3.fromRGB(100, 70, 30))
+local RenderBtn = CreateButton("3D RENDER: ON")
+local WowBtn = CreateButton("WALK ON WATER: OFF")
+local ScanBtn = CreateButton("🔍 SCAN BACKPACK", Color3.fromRGB(0, 100, 200))
+
+-- Totem Section
+local SpawnMutation = CreateButton("MUTATION: LOCKED", Color3.fromRGB(60, 20, 20))
+local SpawnLuck = CreateButton("LUCK: LOCKED", Color3.fromRGB(60, 20, 20))
+local PrepareBtn = CreateButton("FORCE RE-EQUIP (SLOT 2)", Color3.fromRGB(45, 45, 45))
+local AutoBtn = CreateButton("AUTO SPAWN: OFF", Color3.fromRGB(150, 0, 0))
+
+-- ================= LOGIC SCANNER =================
+
+local function ScanInventory()
+    HasLuck = false
+    HasMutation = false
+    
+    local items = Player.Backpack:GetChildren()
+    local equipped = Player.Character:GetChildren()
+    
+    for _, item in pairs(items) do
+        if item.Name:lower():find("totem") or item:IsA("Tool") then
+             -- Cek berdasarkan ID jika memungkinkan, namun biasanya tool name lebih akurat di backpack
+             if item.Name:lower():find("luck") then HasLuck = true end
+             if item.Name:lower():find("mutation") then HasMutation = true end
+        end
+    end
+
+    -- Update UI
+    SpawnLuck.Text = HasLuck and "SPAWN: LUCK (READY)" or "LUCK: NOT FOUND"
+    SpawnLuck.BackgroundColor3 = HasLuck and Color3.fromRGB(120, 100, 0) or Color3.fromRGB(60, 20, 20)
+    
+    SpawnMutation.Text = HasMutation and "SPAWN: MUTATION (READY)" or "MUTATION: NOT FOUND"
+    SpawnMutation.BackgroundColor3 = HasMutation and Color3.fromRGB(0, 100, 70) or Color3.fromRGB(60, 20, 20)
+    
+    ScanBtn.Text = "SCAN COMPLETE!"
+    task.wait(1)
+    ScanBtn.Text = "🔍 RE-SCAN BACKPACK"
+end
+
+ScanBtn.MouseButton1Click:Connect(ScanInventory)
 
 -- ================= LOGIC REMOTE =================
 
@@ -106,43 +141,32 @@ local function GetNet()
     return i and i:FindFirstChild("sleitnick_net@0.2.0") and i["sleitnick_net@0.2.0"]:FindFirstChild("net")
 end
 
-local function FullSpawnSequence()
+local function SmartSpawn(id)
     local Net = GetNet()
     if Net then
-        Net:FindFirstChild("RE/EquipItem"):FireServer(ECLIPSE_ID, "Totems")
+        Net:FindFirstChild("RE/EquipItem"):FireServer(id, "Totems")
         task.wait(0.1)
         Net:FindFirstChild("RE/ClaimNotification"):FireServer("Fish")
         task.wait(0.1)
         Net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(2)
-        task.wait(0.5)
-        Net:FindFirstChild("RE/SpawnTotem"):FireServer(ECLIPSE_ID)
-        task.wait(0.2)
-        Net:FindFirstChild("RE/SpawnTotem"):FireServer(SUNDIAL_ID)
+        task.wait(0.3)
+        Net:FindFirstChild("RE/SpawnTotem"):FireServer(id)
     end
 end
 
-PrepareBtn.MouseButton1Click:Connect(function()
-    FullSpawnSequence()
-    PrepareBtn.Text = "DONE!"
-    task.wait(1)
-    PrepareBtn.Text = "1. SETUP TOTEM"
-end)
-
-SpawnEclipse.MouseButton1Click:Connect(function()
-    local Net = GetNet()
-    if Net then Net:FindFirstChild("RE/SpawnTotem"):FireServer(ECLIPSE_ID) end
-end)
-
-SpawnSundial.MouseButton1Click:Connect(function()
-    local Net = GetNet()
-    if Net then Net:FindFirstChild("RE/SpawnTotem"):FireServer(SUNDIAL_ID) end
+SpawnMutation.MouseButton1Click:Connect(function() if HasMutation then SmartSpawn(MUTATION_ID) end end)
+SpawnLuck.MouseButton1Click:Connect(function() if HasLuck then SmartSpawn(LUCK_ID) end end)
+PrepareBtn.MouseButton1Click:Connect(function() 
+    local Net = GetNet() 
+    if Net then Net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(2) end 
 end)
 
 -- AUTO SPAWN LOOP
 task.spawn(function()
     while true do
         if AutoTotem then
-            FullSpawnSequence()
+            if HasMutation then SmartSpawn(MUTATION_ID) task.wait(1) end
+            if HasLuck then SmartSpawn(LUCK_ID) end
             task.wait(3600)
         end
         task.wait(1)
@@ -155,22 +179,19 @@ AutoBtn.MouseButton1Click:Connect(function()
     AutoBtn.BackgroundColor3 = AutoTotem and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
 end)
 
--- ================= OTHER FEATURES =================
+-- ================= UTILITY LOGIC =================
 
 BoostBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     BoostBtn.Text = Optimized and "BOOSTER: ACTIVE" or "BOOSTER: OFF"
     settings().Rendering.QualityLevel = Optimized and 1 or 0
     Lighting.GlobalShadows = not Optimized
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("Part") or v:IsA("MeshPart") then v.CastShadow = not Optimized end
-    end
 end)
 
 RenderBtn.MouseButton1Click:Connect(function()
     RenderEnabled = not RenderEnabled
     RunService:Set3dRenderingEnabled(RenderEnabled)
-    RenderBtn.Text = RenderEnabled and "3D RENDERING: ON" or "3D RENDERING: OFF"
+    RenderBtn.Text = RenderEnabled and "3D RENDER: ON" or "3D RENDER: OFF"
 end)
 
 WowBtn.MouseButton1Click:Connect(function()
@@ -189,33 +210,29 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Status Display (Bottom)
+-- Status Bar
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
 FpsDisplay.Size = UDim2.new(1, -20, 0, 30)
 FpsDisplay.Position = UDim2.new(0, 10, 1, -40)
 FpsDisplay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 FpsDisplay.TextColor3 = Color3.fromRGB(0, 255, 255)
-FpsDisplay.Text = "FPS: -- | AUTO-TOTEM: STANDBY"
+FpsDisplay.Text = "FPS: -- | READY"
 FpsDisplay.Font = Enum.Font.Code
-FpsDisplay.TextSize = 12
+FpsDisplay.TextSize = 11
 Instance.new("UICorner", FpsDisplay).CornerRadius = UDim.new(0, 4)
 
--- Minimize Function
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    MainFrame:TweenSize(Minimized and UDim2.new(0, 350, 0, 30) or UDim2.new(0, 350, 0, 240), "Out", "Quad", 0.3, true)
+    MainFrame:TweenSize(Minimized and UDim2.new(0, 360, 0, 30) or UDim2.new(0, 360, 0, 280), "Out", "Quad", 0.3, true)
     ContentFrame.Visible = not Minimized
     FpsDisplay.Visible = not Minimized
-    MinBtn.Text = Minimized and "SHOW" or "HIDE"
 end)
 
--- FPS Counter
 local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
-        local status = AutoTotem and "ACTIVE" or "OFF"
-        FpsDisplay.Text = "FPS: " .. frames .. " | AUTO-TOTEM: " .. status
+        FpsDisplay.Text = "FPS: " .. frames .. " | L:" .. (HasLuck and "✔" or "✘") .. " M:" .. (HasMutation and "✔" or "✘")
         frames, lastT = 0, os.clock()
     end
 end)
