@@ -1,18 +1,25 @@
 --[[ 
- RakaGanteng UI - Final V8 (FIXED LAYOUT)
- Tema: Classic Navy Light
+ RakaGanteng UI - Final V10 (WIDE & ULTRA REDUCE)
+ Fitur:
+ 1. Walk On Water (Y-Lock System)
+ 2. No Render (AFK Mode - Low GPU)
+ 3. Reduce All Map (Aggressive Particle & Deco Remover)
+ 4. FPS Lock (30, 60, 90, 120, 220)
+ 5. Anti-AFK (Internal Anti-Disconnect)
+ 6. Minimize Toggle (Classic Navy Style)
 ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
+local VU = game:GetService("VirtualUser")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 local Humanoid = Char:WaitForChild("Humanoid")
 
--- State
+-- State Variables
 local WOW_Enabled = false
 local NoRender_Enabled = false
 local ReduceMap_Enabled = false
@@ -22,11 +29,17 @@ local BV
 local Conn
 local OldShadows = Lighting.GlobalShadows
 
--- UI Core
-local Gui = Instance.new("ScreenGui", game.CoreGui)
-Gui.Name = "RakaGanteng_V8"
+-- Anti-AFK Logic (Internal)
+Player.Idled:Connect(function()
+    VU:CaptureController()
+    VU:ClickButton2(Vector2.new())
+end)
 
--- Tombol Minimize
+-- UI Core Setup
+local Gui = Instance.new("ScreenGui", game.CoreGui)
+Gui.Name = "RakaGanteng_V10_Final"
+
+-- Minimize Button (Floating)
 local MinBtn = Instance.new("TextButton", Gui)
 MinBtn.Size = UDim2.new(0, 35, 0, 35)
 MinBtn.Position = UDim2.new(0, 15, 0.5, -17)
@@ -39,97 +52,97 @@ MinBtn.Draggable = true
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 8)
 Instance.new("UIStroke", MinBtn).Color = Color3.fromRGB(0, 80, 150)
 
--- Main Frame
+-- Main Frame (Wide Mode)
 local Frame = Instance.new("Frame", Gui)
-Frame.Size = UDim2.new(0, 170, 0, 0) -- Tinggi otomatis
-Frame.Position = UDim2.new(0.5, -85, 0.4, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(0, 20, 40)
+Frame.Size = UDim2.new(0, 380, 0, 150)
+Frame.Position = UDim2.new(0.5, -190, 0.4, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(0, 15, 30)
 Frame.Active = true
 Frame.Draggable = true
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 5)
-Instance.new("UIStroke", Frame).Color = Color3.fromRGB(0, 50, 100)
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
+Instance.new("UIStroke", Frame).Color = Color3.fromRGB(0, 60, 120)
 
--- SISTEM LAYOUT TERATUR
-local Padding = Instance.new("UIPadding", Frame)
-Padding.PaddingTop = UDim.new(0, 10)
-Padding.PaddingBottom = UDim.new(0, 10)
+-- Header (FPS & Title)
+local Header = Instance.new("Frame", Frame)
+Header.Size = UDim2.new(1, 0, 0, 35)
+Header.BackgroundTransparency = 1
 
-local List = Instance.new("UIListLayout", Frame)
-List.HorizontalAlignment = Enum.HorizontalAlignment.Center
-List.SortOrder = Enum.SortOrder.LayoutOrder
-List.Padding = UDim.new(0, 8)
+local Title = Instance.new("TextLabel", Header)
+Title.Size = UDim2.new(0.5, 0, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.Text = "RAKA GANTENG V10"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Menyesuaikan tinggi frame dengan isi secara otomatis
-Frame.AutomaticSize = Enum.AutomaticSize.Y 
-
--- FPS Display
-local FPSDisplay = Instance.new("TextLabel", Frame)
-FPSDisplay.Size = UDim2.new(1, 0, 0, 15)
-FPSDisplay.BackgroundTransparency = 1
+local FPSDisplay = Instance.new("TextLabel", Header)
+FPSDisplay.Size = UDim2.new(0.5, 0, 1, 0)
+FPSDisplay.Position = UDim2.new(0.5, -15, 0, 0)
 FPSDisplay.Text = "FPS: ..."
 FPSDisplay.TextColor3 = Color3.fromRGB(150, 200, 255)
 FPSDisplay.Font = Enum.Font.Code
-FPSDisplay.TextSize = 15
-FPSDisplay.LayoutOrder = 1
+FPSDisplay.TextSize = 14
+FPSDisplay.TextXAlignment = Enum.TextXAlignment.Right
 
--- Title
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0, 25)
-Title.BackgroundTransparency = 1
-Title.Text = "RAKA GANTENG V8"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 15
-Title.LayoutOrder = 2
+-- Container for Buttons (Horizontal List)
+local BtnContainer = Instance.new("Frame", Frame)
+BtnContainer.Size = UDim2.new(1, -20, 0, 35)
+BtnContainer.Position = UDim2.new(0, 10, 0, 45)
+BtnContainer.BackgroundTransparency = 1
 
--- Function: Create Button
-local function CreateButton(text, order)
-    local Btn = Instance.new("TextButton", Frame)
-    Btn.Size = UDim2.new(0, 150, 0, 32)
+local BtnLayout = Instance.new("UIListLayout", BtnContainer)
+BtnLayout.FillDirection = Enum.FillDirection.Horizontal
+BtnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+BtnLayout.Padding = UDim.new(0, 10)
+
+-- Helper: Create Navy Buttons
+local function CreateButton(text)
+    local Btn = Instance.new("TextButton", BtnContainer)
+    Btn.Size = UDim2.new(0, 110, 1, 0)
     Btn.Text = text
     Btn.Font = Enum.Font.SourceSansBold
     Btn.TextColor3 = Color3.new(1, 1, 1)
-    Btn.BackgroundColor3 = Color3.fromRGB(0, 45, 90)
-    Btn.LayoutOrder = order
+    Btn.BackgroundColor3 = Color3.fromRGB(0, 40, 80)
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
     return Btn
 end
 
-local BtnWOW = CreateButton("Water Walk: OFF", 3)
-local BtnRender = CreateButton("No Render: OFF", 4)
-local BtnReduce = CreateButton("Reduce Map: OFF", 5)
+local BtnWOW = CreateButton("Water Walk: OFF")
+local BtnRender = CreateButton("No Render: OFF")
+local BtnReduce = CreateButton("Reduce Map: OFF")
 
--- FPS Lock Section
-local LabelFPS = Instance.new("TextLabel", Frame)
-LabelFPS.Size = UDim2.new(1, 0, 0, 20)
-LabelFPS.Text = "[ SELECT FPS CAP ]"
+-- FPS CAP Section
+local FPSFrame = Instance.new("Frame", Frame)
+FPSFrame.Size = UDim2.new(1, -20, 0, 40)
+FPSFrame.Position = UDim2.new(0, 10, 0, 95)
+FPSFrame.BackgroundTransparency = 1
+
+local FPSLayout = Instance.new("UIListLayout", FPSFrame)
+FPSLayout.FillDirection = Enum.FillDirection.Horizontal
+FPSLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+FPSLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+FPSLayout.Padding = UDim.new(0, 8)
+
+local LabelFPS = Instance.new("TextLabel", FPSFrame)
+LabelFPS.Size = UDim2.new(0, 70, 1, 0)
+LabelFPS.Text = "LOCK FPS:"
 LabelFPS.TextColor3 = Color3.fromRGB(100, 150, 200)
 LabelFPS.Font = Enum.Font.SourceSansBold
-LabelFPS.TextSize = 10
+LabelFPS.TextSize = 12
 LabelFPS.BackgroundTransparency = 1
-LabelFPS.LayoutOrder = 6
 
-local FPSContainer = Instance.new("Frame", Frame)
-FPSContainer.Size = UDim2.new(0, 150, 0, 60)
-FPSContainer.BackgroundTransparency = 1
-FPSContainer.LayoutOrder = 7
-
-local Grid = Instance.new("UIGridLayout", FPSContainer)
-Grid.CellSize = UDim2.new(0, 45, 0, 25)
-Grid.CellPadding = UDim2.new(0, 7, 0, 7)
-Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
--- FPS Buttons Logic
 local function CreateFPSBtn(val)
-    local Btn = Instance.new("TextButton", FPSContainer)
+    local Btn = Instance.new("TextButton", FPSFrame)
+    Btn.Size = UDim2.new(0, 45, 0, 25)
     Btn.Text = tostring(val)
     Btn.Font = Enum.Font.SourceSansBold
     Btn.BackgroundColor3 = Color3.fromRGB(0, 30, 60)
     Btn.TextColor3 = Color3.new(1,1,1)
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 2)
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
     
     Btn.MouseButton1Click:Connect(function()
-        for _, v in pairs(FPSContainer:GetChildren()) do
+        for _, v in pairs(FPSFrame:GetChildren()) do
             if v:IsA("TextButton") then v.BackgroundColor3 = Color3.fromRGB(0, 30, 60) end
         end
         Btn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
@@ -139,14 +152,14 @@ end
 
 for _, v in ipairs({30, 60, 90, 120, 220}) do CreateFPSBtn(v) end
 
--- Logic Minimize
+-- Toggle UI Logic
 MinBtn.MouseButton1Click:Connect(function()
     IsMinimized = not IsMinimized
     Frame.Visible = not IsMinimized
-    MinBtn.Text = IsMinimized and "+" or "-"
+    MinBtn.Text = IsMinimized and "+" or "R"
 end)
 
--- FPS Counter
+-- FPS Counter logic
 local LastTick = tick()
 local Frames = 0
 RunService.Heartbeat:Connect(function()
@@ -158,11 +171,15 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Feature Logics (WOW, Render, Reduce Map)
+------------------------------------------------------
+-- FUNCTIONALITIES
+------------------------------------------------------
+
+-- Water Walk
 BtnWOW.MouseButton1Click:Connect(function()
     WOW_Enabled = not WOW_Enabled
     BtnWOW.Text = WOW_Enabled and "Water Walk: ON" or "Water Walk: OFF"
-    BtnWOW.BackgroundColor3 = WOW_Enabled and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(0, 45, 90)
+    BtnWOW.BackgroundColor3 = WOW_Enabled and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(0, 40, 80)
     if WOW_Enabled then
         BV = Instance.new("BodyVelocity", HRP)
         BV.MaxForce = Vector3.new(0, 1e6, 0)
@@ -179,25 +196,33 @@ BtnWOW.MouseButton1Click:Connect(function()
     end
 end)
 
+-- No Render
 BtnRender.MouseButton1Click:Connect(function()
     NoRender_Enabled = not NoRender_Enabled
     RunService:Set3dRenderingEnabled(not NoRender_Enabled)
     BtnRender.Text = NoRender_Enabled and "No Render: ON" or "No Render: OFF"
-    BtnRender.BackgroundColor3 = NoRender_Enabled and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(0, 45, 90)
+    BtnRender.BackgroundColor3 = NoRender_Enabled and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(0, 40, 80)
 end)
 
+-- Ultra Reduce Map
 BtnReduce.MouseButton1Click:Connect(function()
     ReduceMap_Enabled = not ReduceMap_Enabled
     BtnReduce.Text = ReduceMap_Enabled and "Reduce Map: ON" or "Reduce Map: OFF"
-    BtnReduce.BackgroundColor3 = ReduceMap_Enabled and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(0, 45, 90)
+    BtnReduce.BackgroundColor3 = ReduceMap_Enabled and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(0, 40, 80)
+    
     if ReduceMap_Enabled then
         settings().Rendering.QualityLevel = 1
         Lighting.GlobalShadows = false
         for _, v in pairs(workspace:GetDescendants()) do
-            if v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Sparkles") or v:IsA("Fire") or v:IsA("Smoke") then
+                v.Enabled = false
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 1
+            elseif v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then
                 v.Material = Enum.Material.SmoothPlastic
-            elseif v:IsA("Texture") or v:IsA("Decal") or v:IsA("ParticleEmitter") then
-                pcall(function() v.Enabled = false v.Transparency = 1 end)
+                v.Reflectance = 0
+            elseif v:IsA("Beam") or v:IsA("Explosion") then
+                pcall(function() v.Enabled = false end)
             end
         end
     else
