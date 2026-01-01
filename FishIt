@@ -1,7 +1,7 @@
 --[[ 
- Walk On Water - Fish It FINAL V2
+ Walk On Water - Fish It FINAL V3
  + NO RENDER
- + CPU BOOSTER
+ + FPS UNLOCKER (UNLI) & LOW GRAPHICS
 ]]
 
 -- Services
@@ -17,23 +17,23 @@ local Humanoid = Char:WaitForChild("Humanoid")
 -- State Variables
 local WOW_Enabled = false
 local NoRender_Enabled = false
-local CPU_Enabled = false
+local FPS_Unlock_Enabled = false
 
 local BV
 local Conn
 
--- Settings Backup (untuk mengembalikan setting CPU Boost)
+-- Settings Backup
 local OldShadows = Lighting.GlobalShadows
 local OldTech = Lighting.Technology
 
 -- UI Creation
 local Gui = Instance.new("ScreenGui", game.CoreGui)
-Gui.Name = "FishIt_WOW_Ultra"
+Gui.Name = "RakaGanteng"
 
 local Frame = Instance.new("Frame", Gui)
-Frame.Size = UDim2.new(0, 140, 0, 135) -- Ukuran diperbesar
+Frame.Size = UDim2.new(0, 140, 0, 135)
 Frame.Position = UDim2.new(0.5, -70, 0.7, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 Frame.BorderSizePixel = 0
 Frame.Active = true
 Frame.Draggable = true
@@ -43,8 +43,8 @@ Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1, 0, 0, 25)
 Title.BackgroundTransparency = 1
-Title.Text = "Walk On Water +"
-Title.TextColor3 = Color3.fromRGB(0, 170, 255)
+Title.Text = "RakaGanteng"
+Title.TextColor3 = Color3.fromRGB(255, 170, 0) -- Warna Judul Orange
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 13
 
@@ -54,13 +54,13 @@ Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 Layout.Padding = UDim.new(0, 5)
 
--- Spacer agar title tidak tertutup layout
+-- Spacer
 local Spacer = Instance.new("Frame", Frame)
 Spacer.BackgroundTransparency = 1
 Spacer.Size = UDim2.new(1, 0, 0, 20)
 Spacer.LayoutOrder = 0
 
--- Function create Button biar rapi
+-- Function Create Button
 local function CreateButton(text, order)
     local Btn = Instance.new("TextButton", Frame)
     Btn.Size = UDim2.new(0.9, 0, 0, 28)
@@ -68,7 +68,7 @@ local function CreateButton(text, order)
     Btn.Font = Enum.Font.GothamBold
     Btn.TextSize = 11
     Btn.TextColor3 = Color3.new(1, 1, 1)
-    Btn.BackgroundColor3 = Color3.fromRGB(170, 0, 0) -- Merah
+    Btn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
     Btn.BorderSizePixel = 0
     Btn.LayoutOrder = order
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
@@ -77,7 +77,7 @@ end
 
 local BtnWOW = CreateButton("Water Walk", 1)
 local BtnRender = CreateButton("No Render", 2)
-local BtnCPU = CreateButton("CPU Boost", 3)
+local BtnFPS = CreateButton("Unli FPS", 3)
 
 ------------------------------------------------------
 -- FITUR 1: WALK ON WATER
@@ -93,7 +93,6 @@ local function EnableWOW()
 
     Conn = RunService.Heartbeat:Connect(function()
         if not WOW_Enabled or not HRP then return end
-        -- Lock Y Position Velocity
         HRP.AssemblyLinearVelocity = Vector3.new(
             HRP.AssemblyLinearVelocity.X,
             0,
@@ -121,12 +120,10 @@ BtnWOW.MouseButton1Click:Connect(function()
 end)
 
 ------------------------------------------------------
--- FITUR 2: NO RENDER (3D Disable)
+-- FITUR 2: NO RENDER (AFK MODE)
 ------------------------------------------------------
 BtnRender.MouseButton1Click:Connect(function()
     NoRender_Enabled = not NoRender_Enabled
-    
-    -- Mematikan rendering 3D
     RunService:Set3dRenderingEnabled(not NoRender_Enabled)
     
     if NoRender_Enabled then
@@ -139,27 +136,31 @@ BtnRender.MouseButton1Click:Connect(function()
 end)
 
 ------------------------------------------------------
--- FITUR 3: CPU BOOSTER (FPS Saver)
+-- FITUR 3: FPS UNLOCKER (UNLI) & BOOST
 ------------------------------------------------------
-local function SetBoost(bool)
+local function SetUnliFPS(bool)
     if bool then
-        -- Simpan FPS rendah & Kualitas rendah
+        -- 1. Unlock FPS ke Max (9999)
         if setfpscap then 
-            pcall(function() setfpscap(15) end) 
+            pcall(function() setfpscap(9999) end) 
         end
+        
+        -- 2. Turunkan Grafik biar enteng (Low Poly)
         settings().Rendering.QualityLevel = 1
         Lighting.GlobalShadows = false
         Lighting.Technology = Enum.Technology.Compatibility
         
-        -- Matikan texture berat (optional, simple version)
+        -- Hapus Texture (Optional: Biar makin kenceng)
         for _, v in pairs(workspace:GetDescendants()) do
             if v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then
                 v.Material = Enum.Material.SmoothPlastic
                 v.Reflectance = 0
+            elseif v:IsA("Texture") or v:IsA("Decal") then
+                v.Transparency = 1
             end
         end
     else
-        -- Balikin setting
+        -- Balikin Normal (Cap 60)
         if setfpscap then 
             pcall(function() setfpscap(60) end) 
         end
@@ -169,16 +170,16 @@ local function SetBoost(bool)
     end
 end
 
-BtnCPU.MouseButton1Click:Connect(function()
-    CPU_Enabled = not CPU_Enabled
-    SetBoost(CPU_Enabled)
+BtnFPS.MouseButton1Click:Connect(function()
+    FPS_Unlock_Enabled = not FPS_Unlock_Enabled
+    SetUnliFPS(FPS_Unlock_Enabled)
     
-    if CPU_Enabled then
-        BtnCPU.Text = "CPU Boost: ON"
-        BtnCPU.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+    if FPS_Unlock_Enabled then
+        BtnFPS.Text = "Unli FPS: ON"
+        BtnFPS.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
     else
-        BtnCPU.Text = "CPU Boost: OFF"
-        BtnCPU.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        BtnFPS.Text = "Unli FPS: OFF"
+        BtnFPS.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
     end
 end)
 
@@ -190,7 +191,6 @@ Player.CharacterAdded:Connect(function(c)
     HRP = c:WaitForChild("HumanoidRootPart")
     Humanoid = c:WaitForChild("Humanoid")
     
-    -- Auto enable WOW jika mati saat ON
     if WOW_Enabled then
         task.wait(0.5)
         EnableWOW()
