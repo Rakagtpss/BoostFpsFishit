@@ -1,5 +1,5 @@
 --[[ 
- RakaHensem Utility V6.1 - Backpack Controller Optimized
+ RakaHensem Utility V5 - Modular Optimized (Auto Fish Integrated)
 ]]
 
 local Players = game:GetService("Players")
@@ -17,191 +17,188 @@ local RenderEnabled = true
 local Optimized = false
 local Minimized = false
 local Enabled = false
-local AutoTotem = false
 local BV, Conn
 
--- Dynamic ID Storage
-local LuckID = nil
-local MutationID = nil
+-- Fishing Config & State
+getgenv().fishingStart = false
+local delayReel = 0.56   -- Default DelayTime
+local delayBait = 1.15   -- Default DelayCharge
+local delayReset = 0.15 
+local args = { -1.115296483039856, 0, 1763651451.636425 }
+
+-- Remote References (Adjust paths if necessary for your specific game version)
+local NetPath = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+local ChargeRod = NetPath:WaitForChild("RF/ChargeFishingRod") -- Example path
+local RequestGame = NetPath:WaitForChild("RF/RequestFishingMinigameStarted")
+local CompleteGame = NetPath:WaitForChild("RE/CompleteFishingMinigame")
+local CancelInput = NetPath:WaitForChild("RF/CancelFishingInput")
 
 -- Hapus UI Lama
 if CoreGui:FindFirstChild("RakaBoostV") then CoreGui.RakaBoostV:Destroy() end
 
--- UI Creation (WIDE)
+-- UI Creation
 local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "RakaBoostV"
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 360, 0, 280)
-MainFrame.Position = UDim2.new(0.5, -180, 0.3, 0)
+MainFrame.Size = UDim2.new(0, 160, 0, 320) -- Increased height for fishing controls
+MainFrame.Position = UDim2.new(0.5, -80, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
 
 -- Header
 local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 30)
-Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
+Header.Size = UDim2.new(1, 0, 0, 25)
+Header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 6)
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.5, 0, 1, 0)
+Title.Size = UDim2.new(0.7, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN HELPER V6.1"
+Title.Text = "SeraphinHelper V5"
 Title.TextColor3 = Color3.fromRGB(0, 255, 150)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 11
+Title.TextSize = 10
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 50, 0, 20)
-MinBtn.Position = UDim2.new(1, -60, 0.2, 0)
+MinBtn.Size = UDim2.new(0, 35, 0, 15)
+MinBtn.Position = UDim2.new(0.75, 0, 0.2, 0)
 MinBtn.Text = "HIDE"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+MinBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 10
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
+MinBtn.TextSize = 8
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 3)
 
--- Content
-local ContentFrame = Instance.new("Frame", MainFrame)
-ContentFrame.Size = UDim2.new(1, -20, 1, -80)
-ContentFrame.Position = UDim2.new(0, 10, 0, 45)
-ContentFrame.BackgroundTransparency = 1
+-- Scrolling Content
+local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
+ScrollFrame.Size = UDim2.new(1, 0, 1, -65)
+ScrollFrame.Position = UDim2.new(0, 0, 0, 30)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 1.5, 0)
+ScrollFrame.ScrollBarThickness = 2
 
-local Layout = Instance.new("UIGridLayout", ContentFrame)
-Layout.CellSize = UDim2.new(0, 165, 0, 32)
-Layout.CellPadding = UDim2.new(0, 10, 0, 8)
+local Layout = Instance.new("UIListLayout", ScrollFrame)
+Layout.Padding = UDim.new(0, 4)
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-local function CreateButton(text, color)
-    local btn = Instance.new("TextButton", ContentFrame)
+local function CreateButton(text)
+    local btn = Instance.new("TextButton", ScrollFrame)
+    btn.Size = UDim2.new(0.9, 0, 0, 25)
     btn.Text = text
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 9
     btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.BackgroundColor3 = color or Color3.fromRGB(35, 35, 35)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     return btn
 end
 
--- ================= TOMBOL UTAMA =================
-local BoostBtn = CreateButton("BOOSTER: OFF")
-local RenderBtn = CreateButton("3D RENDER: ON")
+local function CreateInput(placeholder)
+    local input = Instance.new("TextBox", ScrollFrame)
+    input.Size = UDim2.new(0.9, 0, 0, 25)
+    input.PlaceholderText = placeholder
+    input.Text = ""
+    input.Font = Enum.Font.Gotham
+    input.TextSize = 9
+    input.TextColor3 = Color3.new(1, 1, 1)
+    input.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    Instance.new("UICorner", input).CornerRadius = UDim.new(0, 4)
+    return input
+end
+
+--- --- UI ELEMENTS --- ---
+local BoostBtn = CreateButton("BOOSTER (LOW GRAPHIC)")
+local RenderBtn = CreateButton("3D RENDERING: ON")
 local WowBtn = CreateButton("WALK ON WATER: OFF")
-local ScanBtn = CreateButton("🔍 SCAN BACKPACK", Color3.fromRGB(0, 120, 255))
 
-local SpawnMutation = CreateButton("MUTATION: ???", Color3.fromRGB(40, 40, 40))
-local SpawnLuck = CreateButton("LUCK: ???", Color3.fromRGB(40, 40, 40))
-local AutoBtn = CreateButton("AUTO SPAWN: OFF", Color3.fromRGB(150, 0, 0))
+-- Fishing Section
+local FishLabel = Instance.new("TextLabel", ScrollFrame)
+FishLabel.Size = UDim2.new(0.9, 0, 0, 20)
+FishLabel.Text = "--- AUTO FISHING ---"
+FishLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
+FishLabel.BackgroundTransparency = 1
+FishLabel.Font = Enum.Font.GothamBold
+FishLabel.TextSize = 9
 
--- ================= LOGIC SCANNER (Controller Based) =================
+local ReelInput = CreateInput("Delay Reel (Default 0.56)")
+local BaitInput = CreateInput("Delay Bait (Default 1.15)")
+local FishToggle = CreateButton("AUTO FISH: OFF")
 
-local function ScanItems()
-    LuckID = nil
-    MutationID = nil
-    
-    -- Mencari item yang mengandung "Totem" baik di Backpack atau Data
-    local function FindIn(folder)
-        if not folder then return end
-        for _, item in pairs(folder:GetChildren()) do
-            local itemName = item.Name:lower()
-            if itemName:find("totem") then
-                -- Mengambil ID dari Attribute sesuai BackpackController
-                local id = item:GetAttribute("EquippedId") or item:GetAttribute("ID") or item.Name
-                
-                if itemName:find("luck") then
-                    LuckID = id
-                elseif itemName:find("mutation") then
-                    MutationID = id
-                end
-            end
-        end
-    end
+-- FPS Display
+local FpsDisplay = Instance.new("TextLabel", MainFrame)
+FpsDisplay.Size = UDim2.new(0.9, 0, 0, 25)
+FpsDisplay.Position = UDim2.new(0.05, 0, 1, -30)
+FpsDisplay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+FpsDisplay.TextColor3 = Color3.fromRGB(0, 255, 255)
+FpsDisplay.Text = "FPS: --"
+FpsDisplay.Font = Enum.Font.Code
+FpsDisplay.TextSize = 14
+Instance.new("UICorner", FpsDisplay).CornerRadius = UDim.new(0, 4)
 
-    FindIn(Player.Backpack)
-    if Player:FindFirstChild("Data") and Player.Data:FindFirstChild("Inventory") then
-        FindIn(Player.Data.Inventory)
-    end
-
-    -- Update UI
-    SpawnLuck.Text = LuckID and "SPAWN: LUCK" or "LUCK: NOT FOUND"
-    SpawnLuck.BackgroundColor3 = LuckID and Color3.fromRGB(120, 100, 0) or Color3.fromRGB(40, 40, 40)
-    
-    SpawnMutation.Text = MutationID and "SPAWN: MUTATION" or "MUTATION: NOT FOUND"
-    SpawnMutation.BackgroundColor3 = MutationID and Color3.fromRGB(0, 100, 70) or Color3.fromRGB(40, 40, 40)
-    
-    ScanBtn.Text = "SCAN COMPLETE!"
-    task.wait(1)
-    ScanBtn.Text = "🔍 SCAN BACKPACK"
-end
-
-ScanBtn.MouseButton1Click:Connect(ScanItems)
-
--- ================= REMOTE LOGIC =================
-
-local function GetNet()
-    local p = ReplicatedStorage:FindFirstChild("Packages")
-    local i = p and p:FindFirstChild("_Index")
-    return i and i:FindFirstChild("sleitnick_net@0.2.0") and i["sleitnick_net@0.2.0"]:FindFirstChild("net")
-end
-
-local function SmartFire(id)
-    if not id then return end
-    local Net = GetNet()
-    if Net then
-        -- Argumen berdasarkan urutan SimpleSpy sebelumnya
-        Net:FindFirstChild("RE/EquipItem"):FireServer(id, "Totems")
-        task.wait(0.1)
-        Net:FindFirstChild("RE/ClaimNotification"):FireServer("Fish")
-        task.wait(0.1)
-        Net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(2)
-        task.wait(0.4)
-        Net:FindFirstChild("RE/SpawnTotem"):FireServer(id)
+--- --- FISHING LOGIC --- ---
+local function startFishingSuperInstantLoop()
+    while getgenv().fishingStart do
+        pcall(function() 
+            ChargeRod:InvokeServer()
+            task.wait(0.055)
+            RequestGame:InvokeServer(unpack(args))
+            task.wait(delayBait) 
+            CompleteGame:FireServer()
+            task.wait(delayReset) 
+            CancelInput:InvokeServer()
+            task.wait(delayReel)
+        end)
     end
 end
 
-SpawnMutation.MouseButton1Click:Connect(function() SmartFire(MutationID) end)
-SpawnLuck.MouseButton1Click:Connect(function() SmartFire(LuckID) end)
-
--- Auto Loop (Setiap 60 Menit)
-task.spawn(function()
-    while true do
-        if AutoTotem then
-            if MutationID then SmartFire(MutationID) task.wait(1) end
-            if LuckID then SmartFire(LuckID) end
-            task.wait(3600)
-        end
-        task.wait(1)
+FishToggle.MouseButton1Click:Connect(function()
+    getgenv().fishingStart = not getgenv().fishingStart
+    
+    -- Update delays from Inputs
+    delayReel = tonumber(ReelInput.Text) or 0.56
+    delayBait = tonumber(BaitInput.Text) or 1.15
+    
+    FishToggle.Text = getgenv().fishingStart and "AUTO FISH: ON" or "AUTO FISH: OFF"
+    FishToggle.BackgroundColor3 = getgenv().fishingStart and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 35)
+    
+    if getgenv().fishingStart then
+        task.spawn(startFishingSuperInstantLoop)
     end
 end)
 
-AutoBtn.MouseButton1Click:Connect(function()
-    AutoTotem = not AutoTotem
-    AutoBtn.Text = AutoTotem and "AUTO SPAWN: ON" or "AUTO SPAWN: OFF"
-    AutoBtn.BackgroundColor3 = AutoTotem and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
-end)
-
--- ================= UTILITY =================
-
+--- --- UTILITY LOGIC --- ---
 BoostBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     BoostBtn.Text = Optimized and "BOOSTER: ACTIVE" or "BOOSTER: OFF"
+    BoostBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 35)
     settings().Rendering.QualityLevel = Optimized and 1 or 0
     Lighting.GlobalShadows = not Optimized
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("Part") or v:IsA("MeshPart") or v:IsA("UnionOperation") then
+            if Optimized then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
+        elseif v:IsA("Decal") or v:IsA("Texture") or v:IsA("ParticleEmitter") then
+            v.Enabled = not Optimized
+        end
+    end
 end)
 
 RenderBtn.MouseButton1Click:Connect(function()
     RenderEnabled = not RenderEnabled
     RunService:Set3dRenderingEnabled(RenderEnabled)
-    RenderBtn.Text = RenderEnabled and "3D RENDER: ON" or "3D RENDER: OFF"
+    RenderBtn.Text = RenderEnabled and "3D RENDERING: ON" or "3D RENDERING: OFF"
+    RenderBtn.BackgroundColor3 = RenderEnabled and Color3.fromRGB(35, 35, 35) or Color3.fromRGB(150, 0, 0)
 end)
 
 WowBtn.MouseButton1Click:Connect(function()
     Enabled = not Enabled
     WowBtn.Text = Enabled and "WOW: ON" or "WOW: OFF"
+    WowBtn.BackgroundColor3 = Enabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 35)
     if Enabled then
         BV = Instance.new("BodyVelocity", HRP)
         BV.MaxForce = Vector3.new(0, 1e6, 0)
@@ -215,30 +212,21 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Footer
-local FpsDisplay = Instance.new("TextLabel", MainFrame)
-FpsDisplay.Size = UDim2.new(1, -20, 0, 30)
-FpsDisplay.Position = UDim2.new(0, 10, 1, -40)
-FpsDisplay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-FpsDisplay.TextColor3 = Color3.fromRGB(0, 255, 255)
-FpsDisplay.Text = "FPS: -- | BACKPACK SYNC READY"
-FpsDisplay.Font = Enum.Font.Code
-FpsDisplay.TextSize = 11
-Instance.new("UICorner", FpsDisplay).CornerRadius = UDim.new(0, 4)
-
+-- Minimize
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    MainFrame:TweenSize(Minimized and UDim2.new(0, 360, 0, 30) or UDim2.new(0, 360, 0, 280), "Out", "Quad", 0.3, true)
-    ContentFrame.Visible = not Minimized
+    MainFrame:TweenSize(Minimized and UDim2.new(0, 160, 0, 25) or UDim2.new(0, 160, 0, 320), "Out", "Quad", 0.3, true)
+    ScrollFrame.Visible = not Minimized
     FpsDisplay.Visible = not Minimized
     MinBtn.Text = Minimized and "SHOW" or "HIDE"
 end)
 
+-- FPS Counter
 local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
-        FpsDisplay.Text = "FPS: " .. frames .. " | CONTROLLER SYNC: OK"
+        FpsDisplay.Text = "FPS: " .. frames
         frames, lastT = 0, os.clock()
     end
 end)
