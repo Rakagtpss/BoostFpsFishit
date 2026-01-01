@@ -1,5 +1,5 @@
 --[[ 
- RakaHensem Utility V5.8 - Scanner Edition (Luck & Mutation)
+ RakaHensem Utility V5.9 - Dynamic ID Scanner (Luck & Mutation)
 ]]
 
 local Players = game:GetService("Players")
@@ -18,13 +18,11 @@ local Optimized = false
 local Minimized = false
 local Enabled = false
 local AutoTotem = false
-local HasLuck = false
-local HasMutation = false
 local BV, Conn
 
--- IDs DATA
-local MUTATION_ID = "a1101e2f-a9b0-46dd-8cc2-567b37f9a879"
-local LUCK_ID     = "dc6044db-3667-43dc-ad3d-064e8f21f2cc"
+-- Dynamic IDs Storage
+local DetectedLuckID = nil
+local DetectedMutationID = nil
 
 -- Hapus UI Lama
 if CoreGui:FindFirstChild("RakaBoostV") then CoreGui.RakaBoostV:Destroy() end
@@ -51,7 +49,7 @@ Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.5, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN HELPER V5.8 (SCANNER)"
+Title.Text = "SERAPHIN HELPER V5.9"
 Title.TextColor3 = Color3.fromRGB(0, 255, 150)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 12
@@ -94,44 +92,52 @@ end
 local BoostBtn = CreateButton("BOOSTER: OFF")
 local RenderBtn = CreateButton("3D RENDER: ON")
 local WowBtn = CreateButton("WALK ON WATER: OFF")
-local ScanBtn = CreateButton("🔍 SCAN BACKPACK", Color3.fromRGB(0, 100, 200))
+local ScanBtn = CreateButton("🔍 SCAN DYNAMIC ID", Color3.fromRGB(0, 120, 255))
 
 -- Totem Section
-local SpawnMutation = CreateButton("MUTATION: LOCKED", Color3.fromRGB(60, 20, 20))
-local SpawnLuck = CreateButton("LUCK: LOCKED", Color3.fromRGB(60, 20, 20))
-local PrepareBtn = CreateButton("FORCE RE-EQUIP (SLOT 2)", Color3.fromRGB(45, 45, 45))
+local SpawnMutation = CreateButton("MUTATION: ???", Color3.fromRGB(40, 40, 40))
+local SpawnLuck = CreateButton("LUCK: ???", Color3.fromRGB(40, 40, 40))
+local PrepareBtn = CreateButton("FORCE RE-EQUIP (SLOT 2)", Color3.fromRGB(60, 60, 60))
 local AutoBtn = CreateButton("AUTO SPAWN: OFF", Color3.fromRGB(150, 0, 0))
 
--- ================= LOGIC SCANNER =================
+-- ================= SCANNER LOGIC =================
 
-local function ScanInventory()
-    HasLuck = false
-    HasMutation = false
+local function ScanForIDs()
+    DetectedLuckID = nil
+    DetectedMutationID = nil
     
-    local items = Player.Backpack:GetChildren()
-    local equipped = Player.Character:GetChildren()
-    
-    for _, item in pairs(items) do
-        if item.Name:lower():find("totem") or item:IsA("Tool") then
-             -- Cek berdasarkan ID jika memungkinkan, namun biasanya tool name lebih akurat di backpack
-             if item.Name:lower():find("luck") then HasLuck = true end
-             if item.Name:lower():find("mutation") then HasMutation = true end
+    -- Mencari di folder Data pemain (Fisch biasanya menyimpan item di folder khusus di Player)
+    -- Kita scan Backpack sebagai fallback
+    local function CheckItems(folder)
+        for _, item in pairs(folder:GetChildren()) do
+            local name = item.Name:lower()
+            -- Jika ID ada di Name atau di dalam Attribute
+            if name:find("luck") and name:find("totem") then
+                DetectedLuckID = item:GetAttribute("ID") or item.Name
+            elseif name:find("mutation") and name:find("totem") then
+                DetectedMutationID = item:GetAttribute("ID") or item.Name
+            end
         end
     end
 
+    CheckItems(Player.Backpack)
+    if Player:FindFirstChild("Data") and Player.Data:FindFirstChild("Inventory") then
+        CheckItems(Player.Data.Inventory)
+    end
+
     -- Update UI
-    SpawnLuck.Text = HasLuck and "SPAWN: LUCK (READY)" or "LUCK: NOT FOUND"
-    SpawnLuck.BackgroundColor3 = HasLuck and Color3.fromRGB(120, 100, 0) or Color3.fromRGB(60, 20, 20)
+    SpawnLuck.Text = DetectedLuckID and "LUCK: READY" or "LUCK: NOT FOUND"
+    SpawnLuck.BackgroundColor3 = DetectedLuckID and Color3.fromRGB(120, 100, 0) or Color3.fromRGB(40, 40, 40)
     
-    SpawnMutation.Text = HasMutation and "SPAWN: MUTATION (READY)" or "MUTATION: NOT FOUND"
-    SpawnMutation.BackgroundColor3 = HasMutation and Color3.fromRGB(0, 100, 70) or Color3.fromRGB(60, 20, 20)
+    SpawnMutation.Text = DetectedMutationID and "MUTATION: READY" or "MUTATION: NOT FOUND"
+    SpawnMutation.BackgroundColor3 = DetectedMutationID and Color3.fromRGB(0, 100, 70) or Color3.fromRGB(40, 40, 40)
     
-    ScanBtn.Text = "SCAN COMPLETE!"
+    ScanBtn.Text = "SCAN FINISHED"
     task.wait(1)
-    ScanBtn.Text = "🔍 RE-SCAN BACKPACK"
+    ScanBtn.Text = "🔍 RE-SCAN DYNAMIC ID"
 end
 
-ScanBtn.MouseButton1Click:Connect(ScanInventory)
+ScanBtn.MouseButton1Click:Connect(ScanForIDs)
 
 -- ================= LOGIC REMOTE =================
 
@@ -142,6 +148,7 @@ local function GetNet()
 end
 
 local function SmartSpawn(id)
+    if not id then return end
     local Net = GetNet()
     if Net then
         Net:FindFirstChild("RE/EquipItem"):FireServer(id, "Totems")
@@ -154,19 +161,15 @@ local function SmartSpawn(id)
     end
 end
 
-SpawnMutation.MouseButton1Click:Connect(function() if HasMutation then SmartSpawn(MUTATION_ID) end end)
-SpawnLuck.MouseButton1Click:Connect(function() if HasLuck then SmartSpawn(LUCK_ID) end end)
-PrepareBtn.MouseButton1Click:Connect(function() 
-    local Net = GetNet() 
-    if Net then Net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(2) end 
-end)
+SpawnMutation.MouseButton1Click:Connect(function() SmartSpawn(DetectedMutationID) end)
+SpawnLuck.MouseButton1Click:Connect(function() SmartSpawn(DetectedLuckID) end)
 
 -- AUTO SPAWN LOOP
 task.spawn(function()
     while true do
         if AutoTotem then
-            if HasMutation then SmartSpawn(MUTATION_ID) task.wait(1) end
-            if HasLuck then SmartSpawn(LUCK_ID) end
+            if DetectedMutationID then SmartSpawn(DetectedMutationID) task.wait(1) end
+            if DetectedLuckID then SmartSpawn(DetectedLuckID) end
             task.wait(3600)
         end
         task.wait(1)
@@ -232,7 +235,7 @@ local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
-        FpsDisplay.Text = "FPS: " .. frames .. " | L:" .. (HasLuck and "✔" or "✘") .. " M:" .. (HasMutation and "✔" or "✘")
+        FpsDisplay.Text = "FPS: " .. frames .. " | AUTO: " .. (AutoTotem and "ON" or "OFF")
         frames, lastT = 0, os.clock()
     end
 end)
