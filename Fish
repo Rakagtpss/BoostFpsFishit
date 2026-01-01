@@ -1,97 +1,205 @@
---[[ 
- Walk On Water - Fish It FINAL
- NO PLATFORM / NO MELAYANG
- Mini UI + Toggle
-]]
-
--- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
-local Humanoid = Char:WaitForChild("Humanoid")
 
--- State
-local Enabled = false
-local BV
-local Conn
+-- // State
+local AfkModeActive = false 
+local Optimized = false
+local Minimized = false
+local WowEnabled = false
+local BV, Conn
 
--- UI
-local Gui = Instance.new("ScreenGui", game.CoreGui)
-Gui.Name = "FishIt_WOW_FINAL"
+-- // FPS Settings
+local fpsLimits = {30, 60, 144, 999} -- Daftar pilihan limit
+local currentLimitIndex = 4 -- Mulai dari Unlimited (999)
 
-local Frame = Instance.new("Frame", Gui)
-Frame.Size = UDim2.new(0,130,0,55)
-Frame.Position = UDim2.new(0.5,-65,0.75,0)
-Frame.BackgroundColor3 = Color3.fromRGB(18,18,18)
-Frame.BorderSizePixel = 0
-Frame.Active = true
-Frame.Draggable = true
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,12)
+-- // UI Config
+local UI_WIDTH = 210
+local UI_HEIGHT = 210
+local ACCENT = Color3.fromRGB(0, 255, 170)
 
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1,0,0,22)
-Title.BackgroundTransparency = 1
-Title.Text = "Walk On Water"
-Title.TextColor3 = Color3.fromRGB(0,170,255)
+-- // Cleanup
+if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
+
+-- // UI Creation
+local Gui = Instance.new("ScreenGui", CoreGui)
+Gui.Name = "SeraphinHelper"
+
+local MainFrame = Instance.new("Frame", Gui)
+MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
+MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+-- Header
+local Header = Instance.new("Frame", MainFrame)
+Header.Size = UDim2.new(1, 0, 0, 35)
+Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
+
+local Title = Instance.new("TextLabel", Header)
+Title.Size = UDim2.new(0.6, 0, 1, 0)
+Title.Position = UDim2.new(0.05, 0, 0, 0)
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
+Title.RichText = true
+Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 12
+Title.TextSize = 11
+Title.BackgroundTransparency = 1
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local Btn = Instance.new("TextButton", Frame)
-Btn.Size = UDim2.new(0.8,0,0,24)
-Btn.Position = UDim2.new(0.1,0,0.45,0)
-Btn.Text = "OFF"
-Btn.Font = Enum.Font.GothamBold
-Btn.TextSize = 12
-Btn.TextColor3 = Color3.new(1,1,1)
-Btn.BackgroundColor3 = Color3.fromRGB(170,0,0)
-Btn.BorderSizePixel = 0
-Instance.new("UICorner", Btn).CornerRadius = UDim.new(0,10)
+local MinBtn = Instance.new("TextButton", Header)
+MinBtn.Size = UDim2.new(0, 45, 0, 22)
+MinBtn.Position = UDim2.new(0.75, 0, 0.5, -11)
+MinBtn.Text = "HIDE"
+MinBtn.TextColor3 = Color3.new(1, 1, 1)
+MinBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 9
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
--- Core
-local function Enable()
-    BV = Instance.new("BodyVelocity")
-    BV.MaxForce = Vector3.new(0, 1e6, 0) -- HANYA Y
-    BV.Velocity = Vector3.zero
-    BV.Parent = HRP
+-- Scrolling Content
+local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
+ScrollFrame.Size = UDim2.new(1, -10, 1, -70)
+ScrollFrame.Position = UDim2.new(0, 5, 0, 40)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.ScrollBarThickness = 2
+ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-    -- Paksa humanoid tidak masuk swim loop
-    Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+local Layout = Instance.new("UIListLayout", ScrollFrame)
+Layout.Padding = UDim.new(0, 6)
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-    Conn = RunService.Heartbeat:Connect(function()
-        if not Enabled or not HRP then return end
-
-        -- KUNCI Y (ini kuncinya)
-        HRP.AssemblyLinearVelocity = Vector3.new(
-            HRP.AssemblyLinearVelocity.X,
-            0,
-            HRP.AssemblyLinearVelocity.Z
-        )
-    end)
+local function CreateButton(text)
+    local btn = Instance.new("TextButton", ScrollFrame)
+    btn.Size = UDim2.new(0.95, 0, 0, 35)
+    btn.Text = text
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 10
+    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    return btn
 end
 
-local function Disable()
-    if Conn then Conn:Disconnect() Conn = nil end
-    if BV then BV:Destroy() BV = nil end
-end
+-- // TOMBOL FITUR
+local PotatoBtn = CreateButton("Booster Mode: OFF")
+local WowBtn = CreateButton("WALK ON WATER: OFF")
+local RenderBtn = CreateButton("No Render 3D: OFF")
+local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
 
-Btn.MouseButton1Click:Connect(function()
-    Enabled = not Enabled
-    if Enabled then
-        Btn.Text = "ON"
-        Btn.BackgroundColor3 = Color3.fromRGB(0,170,0)
-        Enable()
+-- Footer FPS
+local FpsDisplay = Instance.new("TextLabel", MainFrame)
+FpsDisplay.Size = UDim2.new(1, 0, 0, 25)
+FpsDisplay.Position = UDim2.new(0, 0, 1, -25)
+FpsDisplay.BackgroundTransparency = 1
+FpsDisplay.TextColor3 = ACCENT
+FpsDisplay.Text = "FPS: --"
+FpsDisplay.Font = Enum.Font.Code
+FpsDisplay.TextSize = 12
+
+-- // LOGIC PERBAIKAN FPS CAP
+FpsCapBtn.MouseButton1Click:Connect(function()
+    currentLimitIndex = currentLimitIndex + 1
+    if currentLimitIndex > #fpsLimits then
+        currentLimitIndex = 1
+    end
+    
+    local newLimit = fpsLimits[currentLimitIndex]
+    
+    -- Mengatur Cap FPS (Hanya bekerja jika executor mendukung setfpscap)
+    if setfpscap then
+        setfpscap(newLimit)
+    end
+    
+    -- Update Teks Tombol
+    if newLimit > 900 then
+        FpsCapBtn.Text = "FPS CAP: UNLIMITED"
     else
-        Btn.Text = "OFF"
-        Btn.BackgroundColor3 = Color3.fromRGB(170,0,0)
-        Disable()
+        FpsCapBtn.Text = "FPS CAP: " .. newLimit
     end
 end)
 
-Player.CharacterAdded:Connect(function(c)
-    Char = c
-    HRP = c:WaitForChild("HumanoidRootPart")
-    Humanoid = c:WaitForChild("Humanoid")
+-- 1. Potato Mode
+PotatoBtn.MouseButton1Click:Connect(function()
+    Optimized = not Optimized
+    PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
+    PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+    
+    Lighting.GlobalShadows = not Optimized
+    if Optimized then
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.CastShadow = false
+            elseif v:IsA("Texture") or v:IsA("Decal") then
+                v.Transparency = 1
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Enabled = false
+            end
+        end
+    end
+end)
+
+-- 2. AFK Render Mode
+RenderBtn.MouseButton1Click:Connect(function()
+    AfkModeActive = not AfkModeActive
+    RunService:Set3dRenderingEnabled(not AfkModeActive)
+    RenderBtn.Text = AfkModeActive and "No Render 3D: ON" or "No Render 3D: OFF"
+    RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 35, 40)
+end)
+
+-- 3. Walk on Water
+WowBtn.MouseButton1Click:Connect(function()
+    WowEnabled = not WowEnabled
+    WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
+    WowBtn.BackgroundColor3 = WowEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+    if WowEnabled then
+        BV = Instance.new("BodyVelocity", HRP)
+        BV.MaxForce = Vector3.new(0, 1e6, 0)
+        BV.Velocity = Vector3.zero
+        Conn = RunService.Heartbeat:Connect(function()
+            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z) end
+        end)
+    else
+        if Conn then Conn:Disconnect() end
+        if BV then BV:Destroy() end
+    end
+end)
+
+-- 4. Minimize Function
+MinBtn.MouseButton1Click:Connect(function()
+    Minimized = not Minimized
+    if Minimized then
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.3, true)
+        ScrollFrame.Visible = false
+        FpsDisplay.Visible = false
+        MinBtn.Text = "SHOW"
+    else
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
+        task.wait(0.2)
+        ScrollFrame.Visible = true
+        FpsDisplay.Visible = true
+        MinBtn.Text = "HIDE"
+    end
+end)
+
+-- FPS Counter
+local lastT = os.clock()
+local frames = 0
+RunService.RenderStepped:Connect(function()
+    frames = frames + 1
+    if os.clock() - lastT >= 1 then
+        FpsDisplay.Text = "FPS: " .. frames
+        frames = 0
+        lastT = os.clock()
+    end
 end)
