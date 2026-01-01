@@ -1,132 +1,198 @@
+--[[ 
+ Walk On Water - Fish It FINAL V2
+ + NO RENDER
+ + CPU BOOSTER
+]]
+
 -- Services
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local VirtualUser = game:GetService("VirtualUser")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
 
-local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-LocalPlayer.CharacterAdded:Connect(function(char) Character = char end)
+local Player = Players.LocalPlayer
+local Char = Player.Character or Player.CharacterAdded:Wait()
+local HRP = Char:WaitForChild("HumanoidRootPart")
+local Humanoid = Char:WaitForChild("Humanoid")
 
--- UI Configuration
-local GUI = Instance.new("ScreenGui")
-GUI.Name = "ModernNavyHub"
-GUI.ResetOnSpawn = false
-GUI.Parent = LocalPlayer:WaitForChild("PlayerGui")
+-- State Variables
+local WOW_Enabled = false
+local NoRender_Enabled = false
+local CPU_Enabled = false
 
--- Main Frame
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 450, 0, 400) -- Ukuran diperbesar untuk Teleport
-MainFrame.Position = UDim2.new(0.5, -225, 0.5, -200)
-MainFrame.BackgroundColor3 = Color3.fromRGB(10, 25, 47)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Parent = GUI
+local BV
+local Conn
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 10)
-UICorner.Parent = MainFrame
+-- Settings Backup (untuk mengembalikan setting CPU Boost)
+local OldShadows = Lighting.GlobalShadows
+local OldTech = Lighting.Technology
 
--- Judul
-local Title = Instance.new("TextLabel")
-Title.Text = "NAVY MODERN HUB | v1.1"
-Title.Size = UDim2.new(1, 0, 0, 50)
-Title.TextColor3 = Color3.fromRGB(100, 200, 255)
+-- UI Creation
+local Gui = Instance.new("ScreenGui", game.CoreGui)
+Gui.Name = "FishIt_WOW_Ultra"
+
+local Frame = Instance.new("Frame", Gui)
+Frame.Size = UDim2.new(0, 140, 0, 135) -- Ukuran diperbesar
+Frame.Position = UDim2.new(0.5, -70, 0.7, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
+
+-- Title
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 25)
 Title.BackgroundTransparency = 1
+Title.Text = "Walk On Water +"
+Title.TextColor3 = Color3.fromRGB(0, 170, 255)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
-Title.Parent = MainFrame
+Title.TextSize = 13
 
--- Tempat Tombol (Scrolling Frame)
-local ButtonContainer = Instance.new("ScrollingFrame")
-ButtonContainer.Size = UDim2.new(1, -20, 1, -70)
-ButtonContainer.Position = UDim2.new(0, 10, 0, 60)
-ButtonContainer.BackgroundTransparency = 1
-ButtonContainer.CanvasSize = UDim2.new(0, 0, 1.5, 0)
-ButtonContainer.ScrollBarThickness = 4
-ButtonContainer.Parent = MainFrame
+-- Layout Helper
+local Layout = Instance.new("UIListLayout", Frame)
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+Layout.Padding = UDim.new(0, 5)
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Parent = ButtonContainer
-UIListLayout.Padding = UDim.new(0, 8)
-UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+-- Spacer agar title tidak tertutup layout
+local Spacer = Instance.new("Frame", Frame)
+Spacer.BackgroundTransparency = 1
+Spacer.Size = UDim2.new(1, 0, 0, 20)
+Spacer.LayoutOrder = 0
 
---- FUNGSI PEMBANTU ---
-local function CreateButton(text, color, callback)
-    local Btn = Instance.new("TextButton")
-    Btn.Text = text
-    Btn.Size = UDim2.new(0.9, 0, 0, 40)
-    Btn.BackgroundColor3 = color
-    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Btn.Font = Enum.Font.GothamSemibold
-    Btn.TextSize = 14
-    Btn.Parent = ButtonContainer
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 6)
-    Corner.Parent = Btn
-    Btn.MouseButton1Click:Connect(callback)
+-- Function create Button biar rapi
+local function CreateButton(text, order)
+    local Btn = Instance.new("TextButton", Frame)
+    Btn.Size = UDim2.new(0.9, 0, 0, 28)
+    Btn.Text = text .. ": OFF"
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 11
+    Btn.TextColor3 = Color3.new(1, 1, 1)
+    Btn.BackgroundColor3 = Color3.fromRGB(170, 0, 0) -- Merah
+    Btn.BorderSizePixel = 0
+    Btn.LayoutOrder = order
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
     return Btn
 end
 
---- FITUR TELEPORT ---
-local TeleportBox = Instance.new("TextBox")
-TeleportBox.Name = "TPBox"
-TeleportBox.PlaceholderText = "Ketik Nama Player Disini..."
-TeleportBox.Size = UDim2.new(0.9, 0, 0, 40)
-TeleportBox.BackgroundColor3 = Color3.fromRGB(20, 40, 70)
-TeleportBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-TeleportBox.Font = Enum.Font.Gotham
-TeleportBox.TextSize = 14
-TeleportBox.Parent = ButtonContainer
+local BtnWOW = CreateButton("Water Walk", 1)
+local BtnRender = CreateButton("No Render", 2)
+local BtnCPU = CreateButton("CPU Boost", 3)
 
-local TPBtn = CreateButton("TELEPORT KE PLAYER", Color3.fromRGB(0, 150, 255), function()
-    local targetName = TeleportBox.Text:lower()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player.Name:lower():sub(1, #targetName) == targetName then
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame
-                print("Berhasil teleport ke: " .. player.Name)
-            end
-            break
+------------------------------------------------------
+-- FITUR 1: WALK ON WATER
+------------------------------------------------------
+local function EnableWOW()
+    if not HRP then return end
+    BV = Instance.new("BodyVelocity")
+    BV.MaxForce = Vector3.new(0, 1e6, 0) 
+    BV.Velocity = Vector3.zero
+    BV.Parent = HRP
+
+    Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+
+    Conn = RunService.Heartbeat:Connect(function()
+        if not WOW_Enabled or not HRP then return end
+        -- Lock Y Position Velocity
+        HRP.AssemblyLinearVelocity = Vector3.new(
+            HRP.AssemblyLinearVelocity.X,
+            0,
+            HRP.AssemblyLinearVelocity.Z
+        )
+    end)
+end
+
+local function DisableWOW()
+    if Conn then Conn:Disconnect() Conn = nil end
+    if BV then BV:Destroy() BV = nil end
+end
+
+BtnWOW.MouseButton1Click:Connect(function()
+    WOW_Enabled = not WOW_Enabled
+    if WOW_Enabled then
+        BtnWOW.Text = "Water Walk: ON"
+        BtnWOW.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        EnableWOW()
+    else
+        BtnWOW.Text = "Water Walk: OFF"
+        BtnWOW.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        DisableWOW()
+    end
+end)
+
+------------------------------------------------------
+-- FITUR 2: NO RENDER (3D Disable)
+------------------------------------------------------
+BtnRender.MouseButton1Click:Connect(function()
+    NoRender_Enabled = not NoRender_Enabled
+    
+    -- Mematikan rendering 3D
+    RunService:Set3dRenderingEnabled(not NoRender_Enabled)
+    
+    if NoRender_Enabled then
+        BtnRender.Text = "No Render: ON"
+        BtnRender.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+    else
+        BtnRender.Text = "No Render: OFF"
+        BtnRender.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+    end
+end)
+
+------------------------------------------------------
+-- FITUR 3: CPU BOOSTER (FPS Saver)
+------------------------------------------------------
+local function SetBoost(bool)
+    if bool then
+        -- Simpan FPS rendah & Kualitas rendah
+        if setfpscap then 
+            pcall(function() setfpscap(15) end) 
         end
+        settings().Rendering.QualityLevel = 1
+        Lighting.GlobalShadows = false
+        Lighting.Technology = Enum.Technology.Compatibility
+        
+        -- Matikan texture berat (optional, simple version)
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.Reflectance = 0
+            end
+        end
+    else
+        -- Balikin setting
+        if setfpscap then 
+            pcall(function() setfpscap(60) end) 
+        end
+        settings().Rendering.QualityLevel = "Automatic"
+        Lighting.GlobalShadows = OldShadows
+        Lighting.Technology = OldTech
+    end
+end
+
+BtnCPU.MouseButton1Click:Connect(function()
+    CPU_Enabled = not CPU_Enabled
+    SetBoost(CPU_Enabled)
+    
+    if CPU_Enabled then
+        BtnCPU.Text = "CPU Boost: ON"
+        BtnCPU.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+    else
+        BtnCPU.Text = "CPU Boost: OFF"
+        BtnCPU.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
     end
 end)
 
---- FITUR LAINNYA ---
-
-local wowActive = false
-CreateButton("Toggle Walk on Water", Color3.fromRGB(20, 50, 100), function()
-    wowActive = not wowActive
-    local terrain = workspace:FindFirstChildOfClass("Terrain")
-    if terrain then terrain.CanCollide = wowActive end
-end)
-
-CreateButton("Set Boat Speed (200)", Color3.fromRGB(20, 50, 100), function()
-    local hum = Character:FindFirstChildOfClass("Humanoid")
-    if hum and hum.SeatPart then hum.SeatPart.MaxSpeed = 200 end
-end)
-
-CreateButton("Optimize FPS", Color3.fromRGB(40, 100, 80), function()
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
-    end
-end)
-
--- Tombol Close
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Text = "X"
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Position = UDim2.new(1, -35, 0, 10)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Parent = MainFrame
-CloseBtn.MouseButton1Click:Connect(function() GUI:Destroy() end)
-
---- LOGIC DASAR (Anti-AFK & Jump) ---
-LocalPlayer.Idled:Connect(function() VirtualUser:CaptureController() VirtualUser:ClickButton2(Vector2.new()) end)
-UserInputService.JumpRequest:Connect(function()
-    if Character and Character:FindFirstChildOfClass("Humanoid") then
-        Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+------------------------------------------------------
+-- CHARACTER HANDLING
+------------------------------------------------------
+Player.CharacterAdded:Connect(function(c)
+    Char = c
+    HRP = c:WaitForChild("HumanoidRootPart")
+    Humanoid = c:WaitForChild("Humanoid")
+    
+    -- Auto enable WOW jika mati saat ON
+    if WOW_Enabled then
+        task.wait(0.5)
+        EnableWOW()
     end
 end)
