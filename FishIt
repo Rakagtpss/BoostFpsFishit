@@ -1,6 +1,6 @@
 --[[ 
- RakaGanteng UI - FINAL V7
- UI FIX + Feature FIX
+ RakaGanteng UI - FINAL V7.1 (FIXED)
+ Optimized for CPU Performance
 ]]
 
 -- SERVICES
@@ -21,7 +21,7 @@ local SavedMaterials = {}
 
 -- GUI
 local Gui = Instance.new("ScreenGui", game.CoreGui)
-Gui.Name = "RakaGanteng_V7"
+Gui.Name = "RakaGanteng_V7_Fixed"
 
 -- FLOAT BUTTON
 local Float = Instance.new("TextButton", Gui)
@@ -33,11 +33,12 @@ Float.TextSize = 18
 Float.BackgroundColor3 = Color3.fromRGB(0,170,255)
 Float.TextColor3 = Color3.new(1,1,1)
 Float.Draggable = true
-Instance.new("UICorner", Float).CornerRadius = UDim.new(1,0)
+local FloatCorner = Instance.new("UICorner", Float)
+FloatCorner.CornerRadius = UDim.new(1,0)
 
 -- MAIN FRAME
 local Frame = Instance.new("Frame", Gui)
-Frame.Size = UDim2.new(0,190,0,300)
+Frame.Size = UDim2.new(0,190,0,320)
 Frame.Position = UDim2.new(0.5,-95,0.4,0)
 Frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
 Frame.BorderSizePixel = 0
@@ -47,19 +48,19 @@ Frame.Draggable = true
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,14)
 
 Float.MouseButton1Click:Connect(function()
- Frame.Visible = not Frame.Visible
+    Frame.Visible = not Frame.Visible
 end)
 
 -- TITLE
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1,0,0,35)
-Title.Text = "RakaGanteng"
+Title.Text = "RakaGanteng V7"
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 18
 Title.TextColor3 = Color3.fromRGB(0,255,255)
 Title.BackgroundTransparency = 1
 
--- FPS
+-- FPS COUNTER LABEL
 local FPS = Instance.new("TextLabel", Frame)
 FPS.Position = UDim2.new(0,0,0,35)
 FPS.Size = UDim2.new(1,0,0,20)
@@ -68,106 +69,142 @@ FPS.Font = Enum.Font.Code
 FPS.TextColor3 = Color3.fromRGB(0,255,0)
 FPS.BackgroundTransparency = 1
 
--- BUTTON CREATOR
-local function Button(text,y,color)
- local b = Instance.new("TextButton", Frame)
- b.Size = UDim2.new(0,160,0,32)
- b.Position = UDim2.new(0.5,-80,0,y)
- b.Text = text
- b.Font = Enum.Font.GothamBold
- b.TextSize = 14
- b.BackgroundColor3 = color
- b.TextColor3 = Color3.new(1,1,1)
- Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
- return b
+-- BUTTON CREATOR UTILITY
+local function Button(text, y, color)
+    local b = Instance.new("TextButton", Frame)
+    b.Size = UDim2.new(0,160,0,32)
+    b.Position = UDim2.new(0.5,-80,0,y)
+    b.Text = text
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 14
+    b.BackgroundColor3 = color
+    b.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
+    return b
 end
 
 -- MAIN BUTTONS
-local BtnWater = Button("Water Walk : OFF",70,Color3.fromRGB(170,0,0))
-local BtnRender = Button("No Render : OFF",110,Color3.fromRGB(170,0,0))
-local BtnGFX = Button("Low GFX : OFF",150,Color3.fromRGB(170,0,0))
+local BtnWater = Button("Water Walk : OFF", 70, Color3.fromRGB(170,0,0))
+local BtnRender = Button("No Render : OFF", 110, Color3.fromRGB(170,0,0))
+local BtnGFX = Button("Potato Mode : OFF", 150, Color3.fromRGB(170,0,0))
 
--- FPS LOCK
-local fpsVals = {30,60,90,120,220}
-for i,v in ipairs(fpsVals) do
- local b = Instance.new("TextButton", Frame)
- b.Size = UDim2.new(0,45,0,26)
- b.Position = UDim2.new(0.1 + ((i-1)%3)*0.3,0,0,200 + math.floor((i-1)/3)*32)
- b.Text = v
- b.Font = Enum.Font.GothamBold
- b.TextSize = 13
- b.BackgroundColor3 = Color3.fromRGB(40,40,40)
- b.TextColor3 = Color3.new(1,1,1)
- Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
+-- FPS CAP SELECTOR
+local fpsVals = {30, 60, 90, 120, 240}
+for i, v in ipairs(fpsVals) do
+    local b = Instance.new("TextButton", Frame)
+    b.Size = UDim2.new(0,45,0,26)
+    b.Position = UDim2.new(0.08 + ((i-1)%3)*0.3, 0, 0, 200 + math.floor((i-1)/3)*32)
+    b.Text = v
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 13
+    b.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    b.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
 
- b.MouseButton1Click:Connect(function()
-  for _,x in pairs(Frame:GetChildren()) do
-   if x:IsA("TextButton") and tonumber(x.Text) then
-    x.BackgroundColor3 = Color3.fromRGB(40,40,40)
-   end
-  end
-  b.BackgroundColor3 = Color3.fromRGB(0,170,255)
-  if setfpscap then setfpscap(v) end
- end)
+    b.MouseButton1Click:Connect(function()
+        if setfpscap then 
+            setfpscap(v) 
+            -- Reset button colors
+            for _, child in pairs(Frame:GetChildren()) do
+                if child:IsA("TextButton") and tonumber(child.Text) then
+                    child.BackgroundColor3 = Color3.fromRGB(40,40,40)
+                end
+            end
+            b.BackgroundColor3 = Color3.fromRGB(0,170,255)
+        end
+    end)
 end
 
--- FPS COUNTER
-local frames = 0
-local t = tick()
+-- FPS LOGIC
+local lastUpdate = tick()
+local frameCount = 0
 RunService.RenderStepped:Connect(function()
- frames += 1
- if tick()-t >= 1 then
-  FPS.Text = "FPS: "..frames
-  frames = 0
-  t = tick()
- end
+    frameCount += 1
+    if tick() - lastUpdate >= 1 then
+        FPS.Text = "FPS: " .. frameCount
+        frameCount = 0
+        lastUpdate = tick()
+    end
 end)
 
--- WALK ON WATER (RAYCAST)
+-- WATER WALK LOGIC
 BtnWater.MouseButton1Click:Connect(function()
- WalkOnWater = not WalkOnWater
- BtnWater.Text = WalkOnWater and "Water Walk : ON" or "Water Walk : OFF"
- BtnWater.BackgroundColor3 = WalkOnWater and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
+    WalkOnWater = not WalkOnWater
+    BtnWater.Text = WalkOnWater and "Water Walk : ON" or "Water Walk : OFF"
+    BtnWater.BackgroundColor3 = WalkOnWater and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
 end)
 
 RunService.Heartbeat:Connect(function()
- if WalkOnWater then
-  local ray = RaycastParams.new()
-  ray.FilterDescendantsInstances = {Char}
-  ray.FilterType = Enum.RaycastFilterType.Blacklist
-  local r = Workspace:Raycast(HRP.Position,Vector3.new(0,-6,0),ray)
-  if r and r.Instance.Material == Enum.Material.Water then
-   HRP.Velocity = Vector3.new(HRP.Velocity.X,0,HRP.Velocity.Z)
-  end
- end
+    if WalkOnWater and Char:FindFirstChild("HumanoidRootPart") then
+        local rayParam = RaycastParams.new()
+        rayParam.FilterType = Enum.RaycastFilterType.Exclude
+        rayParam.FilterDescendantsInstances = {Char}
+        
+        local result = Workspace:Raycast(HRP.Position, Vector3.new(0, -6, 0), rayParam)
+        if result and result.Material == Enum.Material.Water then
+            HRP.Velocity = Vector3.new(HRP.Velocity.X, 0, HRP.Velocity.Z)
+            -- Menjaga agar tidak tenggelam
+            HRP.CFrame = HRP.CFrame + Vector3.new(0, (result.Position.Y + 3.2) - HRP.Position.Y, 0)
+        end
+    end
 end)
 
--- NO RENDER
+-- NO RENDER (Saves huge CPU/GPU by not drawing 3D world)
 BtnRender.MouseButton1Click:Connect(function()
- NoRender = not NoRender
- RunService:Set3dRenderingEnabled(not NoRender)
- BtnRender.Text = NoRender and "No Render : ON" or "No Render : OFF"
- BtnRender.BackgroundColor3 = NoRender and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
+    NoRender = not NoRender
+    RunService:Set3dRenderingEnabled(not NoRender)
+    BtnRender.Text = NoRender and "No Render : ON" or "No Render : OFF"
+    BtnRender.BackgroundColor3 = NoRender and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
 end)
 
--- LOW GFX
+-- LOW GFX / POTATO MODE (Full CPU/GPU Optimization)
 BtnGFX.MouseButton1Click:Connect(function()
- LowGFX = not LowGFX
- BtnGFX.Text = LowGFX and "Low GFX : ON" or "Low GFX : OFF"
- BtnGFX.BackgroundColor3 = LowGFX and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
+    LowGFX = not LowGFX
+    BtnGFX.Text = LowGFX and "Potato Mode : ON" or "Potato Mode : OFF"
+    BtnGFX.BackgroundColor3 = LowGFX and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
 
- if LowGFX then
-  Lighting.GlobalShadows = false
-  for _,v in pairs(workspace:GetDescendants()) do
-   if v:IsA("BasePart") then
-    SavedMaterials[v] = v.Material
-    v.Material = Enum.Material.SmoothPlastic
-   end
-  end
- else
-  Lighting.GlobalShadows = true
-  for v,m in pairs(SavedMaterials) do
-   if v then v.Material = m end
-  end
- end
+    if LowGFX then
+        -- Lighting Optimization
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        settings().Rendering.QualityLevel = 1
+        
+        for _, v in pairs(Lighting:GetChildren()) do
+            if v:IsA("PostEffect") or v:IsA("BloomEffect") or v:IsA("BlurEffect") then
+                v.Enabled = false
+            end
+        end
+
+        -- World Material Optimization
+        for _, v in pairs(Workspace:GetDescendants()) do
+            if v:IsA("BasePart") and not v:IsA("MeshPart") then
+                SavedMaterials[v] = v.Material
+                v.Material = Enum.Material.SmoothPlastic
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 1
+            end
+        end
+    else
+        -- Restore Lighting
+        Lighting.GlobalShadows = true
+        for _, v in pairs(Lighting:GetChildren()) do
+            if v:IsA("PostEffect") or v:IsA("BloomEffect") or v:IsA("BlurEffect") then
+                v.Enabled = true
+            end
+        end
+
+        -- Restore Materials
+        for part, mat in pairs(SavedMaterials) do
+            if part and part.Parent then
+                part.Material = mat
+            end
+        end
+        
+        for _, v in pairs(Workspace:GetDescendants()) do
+            if v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 0
+            end
+        end
+        SavedMaterials = {}
+    end
 end)
