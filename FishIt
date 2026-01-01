@@ -1,41 +1,45 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
-local ReplicatedStorage = game:GetService("ReplicatedStorage") -- Ditambahkan
-
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Player = Players.LocalPlayer
-local Char = Player.Character or Player.CharacterAdded:Wait()
-local HRP = Char:WaitForChild("HumanoidRootPart")
 
--- // State
-local AfkModeActive = false 
-local Optimized = false
-local Minimized = false
-local WowEnabled = false
-local AutoTotemEnabled = false -- State baru untuk Totem
-local BV, Conn
-local TotemThread = nil -- Variable untuk menyimpan loop Totem
+-- // UI SETUP (Diprioritaskan agar muncul duluan)
+local function getUiParent()
+    -- Coba cari PlayerGui (Paling aman dan pasti muncul)
+    local playerGui = Player:FindFirstChild("PlayerGui")
+    if playerGui then return playerGui end
+    
+    -- Fallback ke CoreGui jika PlayerGui tidak ada (jarang terjadi)
+    local success, core = pcall(function() return game:GetService("CoreGui") end)
+    if success then return core end
+    
+    return nil
+end
 
--- // FPS Settings
-local fpsLimits = {30, 60, 144, 999} 
-local currentLimitIndex = 4 
+local ParentTarget = getUiParent()
+if not ParentTarget then warn("Gagal menemukan tempat untuk UI!") return end
+
+-- // Cleanup UI Lama
+for _, child in pairs(ParentTarget:GetChildren()) do
+    if child.Name == "SeraphinHelper" then child:Destroy() end
+end
+
+-- // UI Creation
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "SeraphinHelper"
+Gui.Parent = ParentTarget
+Gui.ResetOnSpawn = false -- PENTING: Agar UI tidak hilang saat mati
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- // UI Config
 local UI_WIDTH = 210
-local UI_HEIGHT = 250 -- Sedikit diperbesar agar muat tombol baru
+local UI_HEIGHT = 250
 local ACCENT = Color3.fromRGB(0, 255, 170)
-
--- // Cleanup
-if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
-
--- // UI Creation
-local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "SeraphinHelper"
 
 local MainFrame = Instance.new("Frame", Gui)
 MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
-MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.3, 0)
+MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.3, 0) -- Posisi tengah
 MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -93,11 +97,11 @@ local function CreateButton(text)
     return btn
 end
 
--- // TOMBOL FITUR
+-- // TOMBOL
 local PotatoBtn = CreateButton("Booster Mode: OFF")
 local WowBtn = CreateButton("WALK ON WATER: OFF")
 local RenderBtn = CreateButton("No Render 3D: OFF")
-local TotemBtn = CreateButton("Auto Totem (60m): OFF") -- Tombol Baru
+local TotemBtn = CreateButton("Auto Totem (60m): OFF")
 local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
 
 -- Footer FPS
@@ -110,27 +114,38 @@ FpsDisplay.Text = "FPS: --"
 FpsDisplay.Font = Enum.Font.Code
 FpsDisplay.TextSize = 12
 
--- // LOGIC PERBAIKAN FPS CAP
+-- // GAME LOGIC STATE
+local AfkModeActive = false 
+local Optimized = false
+local Minimized = false
+local WowEnabled = false
+local AutoTotemEnabled = false
+local BV, Conn
+local TotemThread = nil
+local fpsLimits = {30, 60, 144, 999}
+local currentLimitIndex = 4
+
+-- // FUNGSI BANTUAN (CHARACTER)
+-- Fungsi ini memastikan kita selalu mendapatkan karakter terbaru (meskipun baru respawn)
+local function getRootPart()
+    local char = Player.Character or Player.CharacterAdded:Wait()
+    return char:WaitForChild("HumanoidRootPart", 5) -- Timeout 5 detik agar tidak macet total
+end
+
+-- // LOGIK BUTTON
+
+-- 1. FPS Cap
 FpsCapBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex + 1
-    if currentLimitIndex > #fpsLimits then
-        currentLimitIndex = 1
-    end
-    
+    if currentLimitIndex > #fpsLimits then currentLimitIndex = 1 end
     local newLimit = fpsLimits[currentLimitIndex]
     
-    if setfpscap then
-        setfpscap(newLimit)
-    end
+    if setfpscap then setfpscap(newLimit) end
     
-    if newLimit > 900 then
-        FpsCapBtn.Text = "FPS CAP: UNLIMITED"
-    else
-        FpsCapBtn.Text = "FPS CAP: " .. newLimit
-    end
+    FpsCapBtn.Text = (newLimit > 900) and "FPS CAP: UNLIMITED" or "FPS CAP: " .. newLimit
 end)
 
--- 1. Potato Mode
+-- 2. Potato Mode
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
@@ -144,14 +159,14 @@ PotatoBtn.MouseButton1Click:Connect(function()
                 v.CastShadow = false
             elseif v:IsA("Texture") or v:IsA("Decal") then
                 v.Transparency = 1
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            elseif v:IsA("ParticleEmitter") then
                 v.Enabled = false
             end
         end
     end
 end)
 
--- 2. AFK Render Mode
+-- 3. No Render
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
@@ -159,67 +174,79 @@ RenderBtn.MouseButton1Click:Connect(function()
     RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 35, 40)
 end)
 
--- 3. Walk on Water
+-- 4. Walk on Water
 WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
     WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
     WowBtn.BackgroundColor3 = WowEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+    
     if WowEnabled then
-        BV = Instance.new("BodyVelocity", HRP)
-        BV.MaxForce = Vector3.new(0, 1e6, 0)
-        BV.Velocity = Vector3.zero
-        Conn = RunService.Heartbeat:Connect(function()
-            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z) end
-        end)
+        local HRP = getRootPart()
+        if HRP then
+            BV = Instance.new("BodyVelocity", HRP)
+            BV.Name = "SeraphinFloat"
+            BV.MaxForce = Vector3.new(0, 1e6, 0)
+            BV.Velocity = Vector3.zero
+            
+            Conn = RunService.Heartbeat:Connect(function()
+                if HRP and HRP.Parent then -- Cek jika karakter masih ada
+                    HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
+                else
+                    -- Auto refresh jika mati/respawn
+                    if WowEnabled then
+                        HRP = getRootPart()
+                        if HRP and not HRP:FindFirstChild("SeraphinFloat") then
+                            BV = Instance.new("BodyVelocity", HRP)
+                            BV.Name = "SeraphinFloat"
+                            BV.MaxForce = Vector3.new(0, 1e6, 0)
+                            BV.Velocity = Vector3.zero
+                        end
+                    end
+                end
+            end)
+        end
     else
         if Conn then Conn:Disconnect() end
-        if BV then BV:Destroy() end
+        -- Hapus semua BodyVelocity bekas script ini
+        if Player.Character then
+            for _, v in pairs(Player.Character:GetDescendants()) do
+                if v:IsA("BodyVelocity") and v.Name == "SeraphinFloat" then v:Destroy() end
+            end
+        end
     end
 end)
 
--- 4. Auto Totem (NEW FEATURE)
+-- 5. Auto Totem
 TotemBtn.MouseButton1Click:Connect(function()
     AutoTotemEnabled = not AutoTotemEnabled
     TotemBtn.Text = AutoTotemEnabled and "Auto Totem: ON" or "Auto Totem: OFF"
     TotemBtn.BackgroundColor3 = AutoTotemEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
 
     if AutoTotemEnabled then
-        -- Start Loop di thread baru
         TotemThread = task.spawn(function()
             while AutoTotemEnabled do
-                -- Menggunakan pcall agar script tidak error jika game update/lag
                 pcall(function()
                     local netFolder = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
                     
-                    -- Spawn Totem
-                    local spawnEvent = netFolder:FindFirstChild("RE/SpawnTotem")
-                    if spawnEvent then
-                        spawnEvent:FireServer("Totems")
-                    end
-                    
-                    task.wait(1) -- Delay kecil sebelum equip
-
-                    -- Equip Item
-                    local equipEvent = netFolder:FindFirstChild("RE/EquipItem")
-                    if equipEvent then
-                        equipEvent:FireServer("Totems")
+                    if netFolder then
+                        local spawnEvent = netFolder:FindFirstChild("RE/SpawnTotem")
+                        if spawnEvent then spawnEvent:FireServer("Totems") end
+                        
+                        task.wait(1) 
+                        
+                        local equipEvent = netFolder:FindFirstChild("RE/EquipItem")
+                        if equipEvent then equipEvent:FireServer("Totems") end
                     end
                 end)
-
-                -- Tunggu 60 menit (3600 detik)
-                task.wait(3600)
+                task.wait(3600) -- 60 Menit
             end
         end)
     else
-        -- Matikan loop jika tombol dimatikan
-        if TotemThread then
-            task.cancel(TotemThread)
-            TotemThread = nil
-        end
+        if TotemThread then task.cancel(TotemThread) end
     end
 end)
 
--- 5. Minimize Function
+-- 6. Minimize
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
@@ -236,7 +263,7 @@ MinBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- FPS Counter
+-- FPS Counter loop
 local lastT = os.clock()
 local frames = 0
 RunService.RenderStepped:Connect(function()
@@ -248,3 +275,9 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- Notifikasi bahwa script berhasil dimuat
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "Seraphin Helper";
+    Text = "UI Berhasil Dimuat!";
+    Duration = 5;
+})
