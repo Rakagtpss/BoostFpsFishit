@@ -1,132 +1,147 @@
 --[[ 
- Walk On Water - Fish It FIXED UI
- - Perbaikan ukuran Frame agar tombol No Render & FPS muncul
- - UI bisa di-drag (geser)
+ FISH IT BOOST - UI LITE (FIXED)
+ - Fix No Render (Menu tetap terlihat)
+ - Tambah Fitur Minimize
+ - Full Screen No Render
 ]]
 
--- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 
--- Character 
-local Char = Player.Character or Player.CharacterAdded:Wait()
-local HRP = Char:WaitForChild("HumanoidRootPart")
-local Humanoid = Char:WaitForChild("Humanoid")
-
 -- State
 local WOW_Enabled = false
 local NR_Enabled = false
-local BlackGui
-local FPSConn
+local IsMinimized = false
 local FPSList = {60, 90, 120, 999}
 local FPSIndex = 1
+local BlackGui
 
--- ================= UI SETTINGS =================
-local Gui = Instance.new("ScreenGui", game.CoreGui)
-Gui.Name = "FishIt_FIXED_UI"
+-- ================= UI CREATION =================
+local MainGui = Instance.new("ScreenGui", game.CoreGui)
+MainGui.Name = "FishIt_Lite"
+MainGui.DisplayOrder = 999 -- Memastikan UI ini di atas No Render
 
-local Frame = Instance.new("Frame", Gui)
--- Ukuran ditambah menjadi 160 agar semua tombol muat
-Frame.Size = UDim2.new(0, 170, 0, 160) 
-Frame.Position = UDim2.new(0.5, -85, 0.5, -80)
-Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+local Frame = Instance.new("Frame", MainGui)
+Frame.Size = UDim2.new(0, 160, 0, 160)
+Frame.Position = UDim2.new(0.5, -80, 0.4, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 Frame.BorderSizePixel = 0
 Frame.Active = true
-Frame.Draggable = true -- Agar bisa digeser
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
+Frame.Draggable = true
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
 
--- Title
 local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Size = UDim2.new(1, -30, 0, 30)
+Title.Position = UDim2.new(0, 10, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "FISH IT BOOST"
+Title.Text = "FISH IT LITE"
 Title.TextColor3 = Color3.fromRGB(0, 170, 255)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
+Title.TextSize = 12
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local function MakeBtn(text, y)
-    local b = Instance.new("TextButton", Frame)
+-- Tombol Minimize
+local MinBtn = Instance.new("TextButton", Frame)
+MinBtn.Size = UDim2.new(0, 25, 0, 25)
+MinBtn.Position = UDim2.new(1, -30, 0, 3)
+MinBtn.Text = "-"
+MinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MinBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", MinBtn)
+
+-- Container Tombol (Bisa disembunyikan)
+local Content = Instance.new("Frame", Frame)
+Content.Size = UDim2.new(1, 0, 1, -30)
+Content.Position = UDim2.new(0, 0, 0, 30)
+Content.BackgroundTransparency = 1
+
+local function MakeBtn(text, y, parent)
+    local b = Instance.new("TextButton", parent)
     b.Size = UDim2.new(0.9, 0, 0, 30)
     b.Position = UDim2.new(0.05, 0, 0, y)
     b.Text = text
-    b.Font = Enum.Font.GothamBold
-    b.TextSize = 12
+    b.Font = Enum.Font.SourceSansBold
+    b.TextSize = 14
     b.TextColor3 = Color3.new(1, 1, 1)
-    b.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    b.BackgroundColor3 = Color3.fromRGB(130, 20, 20)
     b.BorderSizePixel = 0
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 5)
     return b
 end
 
--- Tombol-tombol dengan posisi Y yang sudah diatur
-local WOWBtn = MakeBtn("Walk On Water: OFF", 40)
-local NRBtn  = MakeBtn("No Render: OFF", 80)
-local FPSBtn = MakeBtn("FPS Lock: 60", 120)
+local WOWBtn = MakeBtn("Walk On Water: OFF", 10, Content)
+local NRBtn  = MakeBtn("No Render: OFF", 50, Content)
+local FPSBtn = MakeBtn("FPS Lock: 60", 90, Content)
 
--- ================= FUNGSI NO RENDER =================
-local function EnableNoRender()
-    if BlackGui then return end
-    BlackGui = Instance.new("ScreenGui", game.CoreGui)
-    local f = Instance.new("Frame", BlackGui)
-    f.Size = UDim2.new(1, 0, 1, 0)
-    f.BackgroundColor3 = Color3.new(0, 0, 0)
-    f.ZIndex = 999 -- Menutupi semua kecuali UI Cheat
-end
-
-local function DisableNoRender()
-    if BlackGui then BlackGui:Destroy() BlackGui = nil end
-end
-
--- ================= FUNGSI FPS LOCK =================
-local function SetFPS(value)
-    if FPSConn then FPSConn:Disconnect() end
-    -- Menggunakan setfpscap jika executor mendukung (lebih ringan)
-    if setfpscap then
-        setfpscap(value)
+-- ================= LOGIC MINIMIZE =================
+MinBtn.MouseButton1Click:Connect(function()
+    IsMinimized = not IsMinimized
+    if IsMinimized then
+        Content.Visible = false
+        Frame:TweenSize(UDim2.new(0, 160, 0, 30), "Out", "Quad", 0.2, true)
+        MinBtn.Text = "+"
     else
-        -- Fallback ke manual lock
-        FPSConn = RunService.RenderStepped:Connect(function()
-            local dt = 1 / value
-            local t = tick()
-            while tick() - t < dt do end
-        end)
+        Frame:TweenSize(UDim2.new(0, 160, 0, 160), "Out", "Quad", 0.2, true)
+        task.wait(0.2)
+        Content.Visible = true
+        MinBtn.Text = "-"
+    end
+end)
+
+-- ================= LOGIC NO RENDER =================
+local function ToggleNoRender()
+    if NR_Enabled then
+        if not BlackGui then
+            BlackGui = Instance.new("ScreenGui", game.CoreGui)
+            BlackGui.Name = "LayarHitam"
+            BlackGui.DisplayOrder = 998 -- Di bawah MainGui
+            
+            local f = Instance.new("Frame", BlackGui)
+            f.Size = UDim2.new(1, 0, 1, 0)
+            f.BackgroundColor3 = Color3.new(0, 0, 0)
+            f.BorderSizePixel = 0
+        end
+    else
+        if BlackGui then BlackGui:Destroy() BlackGui = nil end
     end
 end
 
--- ================= FUNGSI WALK ON WATER =================
+-- ================= LOGIC FPS & WOW =================
+local function SetFPS(v)
+    if setfpscap then setfpscap(v) end
+end
+
 local BV, Conn
-local function EnableWOW()
-    BV = Instance.new("BodyVelocity")
-    BV.MaxForce = Vector3.new(0, 1e6, 0)
-    BV.Velocity = Vector3.new(0, 0, 0)
-    BV.Parent = HRP
-    
-    Conn = RunService.Heartbeat:Connect(function()
-        if WOW_Enabled and HRP then
+local function HandleWOW()
+    local Char = Player.Character or Player.CharacterAdded:Wait()
+    local HRP = Char:WaitForChild("HumanoidRootPart")
+    if WOW_Enabled then
+        BV = Instance.new("BodyVelocity", HRP)
+        BV.MaxForce = Vector3.new(0, 1e6, 0)
+        BV.Velocity = Vector3.zero
+        Conn = RunService.Heartbeat:Connect(function()
             HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
-        end
-    end)
+        end)
+    else
+        if BV then BV:Destroy() end
+        if Conn then Conn:Disconnect() end
+    end
 end
 
-local function DisableWOW()
-    if Conn then Conn:Disconnect() end
-    if BV then BV:Destroy() end
-end
-
--- ================= BUTTON LOGIC =================
+-- ================= BUTTON ACTIONS =================
 WOWBtn.MouseButton1Click:Connect(function()
     WOW_Enabled = not WOW_Enabled
     WOWBtn.Text = WOW_Enabled and "Walk On Water: ON" or "Walk On Water: OFF"
-    WOWBtn.BackgroundColor3 = WOW_Enabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
-    if WOW_Enabled then EnableWOW() else DisableWOW() end
+    WOWBtn.BackgroundColor3 = WOW_Enabled and Color3.fromRGB(20, 130, 20) or Color3.fromRGB(130, 20, 20)
+    HandleWOW()
 end)
 
 NRBtn.MouseButton1Click:Connect(function()
     NR_Enabled = not NR_Enabled
     NRBtn.Text = NR_Enabled and "No Render: ON" or "No Render: OFF"
-    NRBtn.BackgroundColor3 = NR_Enabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
-    if NR_Enabled then EnableNoRender() else DisableNoRender() end
+    NRBtn.BackgroundColor3 = NR_Enabled and Color3.fromRGB(20, 130, 20) or Color3.fromRGB(130, 20, 20)
+    ToggleNoRender()
 end)
 
 FPSBtn.MouseButton1Click:Connect(function()
@@ -136,13 +151,10 @@ FPSBtn.MouseButton1Click:Connect(function()
     SetFPS(v)
 end)
 
--- Default awal
-SetFPS(60)
-
--- Fix saat respawn
-Player.CharacterAdded:Connect(function(c)
-    Char = c
-    HRP = c:WaitForChild("HumanoidRootPart")
-    Humanoid = c:WaitForChild("Humanoid")
-    if WOW_Enabled then EnableWOW() end
+-- Reset on Respawn
+Player.CharacterAdded:Connect(function()
+    task.wait(1)
+    if WOW_Enabled then HandleWOW() end
 end)
+
+SetFPS(60)
