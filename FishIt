@@ -19,22 +19,28 @@ local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 local SelectedItem = ""
-local BV, Conn
 
 -- // Toggles State
 local Toggles = {
-    AutoPrompt = false, AutoYes = false, Booster = false, 
-    Instant = false, WoW = false, NoRender = false, Minimized = false
+    AutoPrompt = false, 
+    AutoYes = false, 
+    AutoEquip = false,
+    Booster = false, 
+    WoW = false, 
+    NoRender = false, 
+    Minimized = false
 }
 
+local BV, Conn
+
 -- // UI Cleanup
-if CoreGui:FindFirstChild("SeraphinWide") then CoreGui.SeraphinWide:Destroy() end
+if CoreGui:FindFirstChild("SeraphinWideV13") then CoreGui.SeraphinWideV13:Destroy() end
 
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "SeraphinWide"
+Gui.Name = "SeraphinWideV13"
 
 local Main = Instance.new("Frame", Gui)
-Main.Size = UDim2.new(0, 450, 0, 400) -- Dibuat WIDE (Lebar)
+Main.Size = UDim2.new(0, 450, 0, 400) -- Ukuran Wide
 Main.Position = UDim2.new(0.5, -225, 0.3, 0)
 Main.BackgroundColor3 = Color3.fromRGB(12, 12, 14)
 Main.BorderSizePixel = 0
@@ -51,7 +57,7 @@ Instance.new("UICorner", Header)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">MANAGER</font> (WIDE EDITION)"
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">MANAGER</font> V13"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1, 1, 1)
 Title.Font = Enum.Font.GothamBold
@@ -65,8 +71,6 @@ MinBtn.Position = UDim2.new(1, -55, 0.5, -11)
 MinBtn.Text = "HIDE"
 MinBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 38)
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 10
 Instance.new("UICorner", MinBtn)
 
 local Scroll = Instance.new("ScrollingFrame", Main)
@@ -75,7 +79,7 @@ Scroll.Position = UDim2.new(0, 10, 0, 45)
 Scroll.BackgroundTransparency = 1
 Scroll.ScrollBarThickness = 3
 Scroll.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 170)
-Scroll.CanvasSize = UDim2.new(0, 0, 0, 750)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 550)
 
 local Layout = Instance.new("UIListLayout", Scroll)
 Layout.Padding = UDim.new(0, 8)
@@ -95,53 +99,54 @@ local function AddBtn(text, callback)
     return b
 end
 
--- --- 1. SCANNER SECTION (WIDE) ---
-local ScanContainer = Instance.new("Frame", Scroll)
-ScanContainer.Size = UDim2.new(0.95, 0, 0, 120)
-ScanContainer.BackgroundTransparency = 1
-
-local ListFrame = Instance.new("ScrollingFrame", ScanContainer)
-ListFrame.Size = UDim2.new(1, 0, 1, -25)
-ListFrame.Position = UDim2.new(0, 0, 0, 25)
+-- --- 1. SCANNER & SELECTION ---
+local ListFrame = Instance.new("ScrollingFrame", Scroll)
+ListFrame.Size = UDim2.new(0.95, 0, 0, 80)
 ListFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
-ListFrame.BorderSizePixel = 0
 Instance.new("UIListLayout", ListFrame)
-Instance.new("UICorner", ListFrame)
 
-local SelDisp = Instance.new("TextLabel", ScanContainer)
-SelDisp.Size = UDim2.new(1, 0, 0, 20)
-SelDisp.Text = "Selected: None"; SelDisp.TextColor3 = Color3.fromRGB(0, 255, 170); SelDisp.BackgroundTransparency = 1; SelDisp.TextSize = 11; SelDisp.Font = Enum.Font.Gotham
+local SelDisp = Instance.new("TextLabel", Scroll)
+SelDisp.Size = UDim2.new(0.95, 0, 0, 20)
+SelDisp.Text = "Pilih item untuk Auto Equip/Sell"; SelDisp.TextColor3 = Color3.fromRGB(0, 255, 170); SelDisp.BackgroundTransparency = 1; SelDisp.TextSize = 11
 
-AddBtn("SCAN EVERYTHING (Backpack & Gears)", function()
+AddBtn("SCAN GEARS COLLECTION", function()
     for _, c in pairs(ListFrame:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
-    
-    local function CreateItemBtn(name)
-        local g = Instance.new("TextButton", ListFrame)
-        g.Size = UDim2.new(1, 0, 0, 25); g.Text = "  "..name; g.BackgroundColor3 = Color3.fromRGB(30,30,35); g.TextColor3 = Color3.new(1,1,1); g.TextSize = 11; g.TextXAlignment = "Left"
-        g.MouseButton1Click:Connect(function() SelectedItem = name; SelDisp.Text = "Selected: "..name end)
-    end
-
-    -- Scan Backpack
-    for _, tool in pairs(Player.Backpack:GetChildren()) do CreateItemBtn(tool.Name) end
-    -- Scan Gears Collection
     local p = ReplicatedStorage:FindFirstChild("Modules")
     p = p and p:FindFirstChild("ModelDownloader")
     p = p and p:FindFirstChild("Collection")
     p = p and p:FindFirstChild("Gears")
-    if p then for _, gear in pairs(p:GetChildren()) do CreateItemBtn(gear.Name) end end
-end)
-
-AddBtn("SELL SELECTED ITEM (Remote)", function()
-    if SelectedItem ~= "" then
-        pcall(function() ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RF/SellItem"]:InvokeServer(SelectedItem) end)
+    if p then
+        for _, gear in pairs(p:GetChildren()) do
+            local g = Instance.new("TextButton", ListFrame)
+            g.Size = UDim2.new(1, 0, 0, 20); g.Text = "  "..gear.Name; g.BackgroundColor3 = Color3.fromRGB(30,30,35); g.TextColor3 = Color3.new(1,1,1); g.TextSize = 10; g.TextXAlignment = "Left"
+            g.MouseButton1Click:Connect(function() SelectedItem = gear.Name; SelDisp.Text = "Target: "..gear.Name end)
+        end
     end
 end)
 
--- --- 2. AUTOMATION ---
+-- --- 2. MAIN AUTOMATION ---
+
+AddBtn("AUTO EQUIP ITEM: OFF", function(b)
+    Toggles.AutoEquip = not Toggles.AutoEquip
+    b.Text = Toggles.AutoEquip and "AUTO EQUIP: ON" or "AUTO EQUIP ITEM: OFF"
+    b.TextColor3 = Toggles.AutoEquip and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(220, 220, 220)
+    task.spawn(function()
+        while Toggles.AutoEquip do
+            if SelectedItem ~= "" then
+                pcall(function()
+                    local remote = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RE/EquipItem"]
+                    remote:FireServer(SelectedItem)
+                end)
+            end
+            task.wait(0.5)
+        end
+    end)
+end)
+
 AddBtn("AUTO SELL PROMPT: OFF", function(b)
     Toggles.AutoPrompt = not Toggles.AutoPrompt
     b.Text = Toggles.AutoPrompt and "AUTO SELL PROMPT: ON" or "AUTO SELL PROMPT: OFF"
-    b.TextColor3 = Toggles.AutoPrompt and Color3.new(0,1,0.5) or Color3.new(0.8,0.8,0.8)
+    b.TextColor3 = Toggles.AutoPrompt and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(220, 220, 220)
     task.spawn(function()
         while Toggles.AutoPrompt do
             pcall(function()
@@ -155,7 +160,7 @@ end)
 AddBtn("AUTO YES CLICKER: OFF", function(b)
     Toggles.AutoYes = not Toggles.AutoYes
     b.Text = Toggles.AutoYes and "AUTO YES CLICKER: ON" or "AUTO YES CLICKER: OFF"
-    b.TextColor3 = Toggles.AutoYes and Color3.new(0,1,0.5) or Color3.new(0.8,0.8,0.8)
+    b.TextColor3 = Toggles.AutoYes and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(220, 220, 220)
     task.spawn(function()
         while Toggles.AutoYes do
             pcall(function()
@@ -180,39 +185,25 @@ AddBtn("WALK ON WATER: OFF", function(b)
     end
 end)
 
+AddBtn("BOOSTER MODE (Plastic)", function()
+    Lighting.GlobalShadows = false
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("BasePart") then v.Material = "SmoothPlastic" elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1 end
+    end
+end)
+
 AddBtn("NO RENDER 3D: OFF", function(b)
     Toggles.NoRender = not Toggles.NoRender
     RunService:Set3dRenderingEnabled(not Toggles.NoRender)
     b.Text = Toggles.NoRender and "NO RENDER 3D: ON" or "NO RENDER 3D: OFF"
 end)
 
-AddBtn("BOOSTER MODE (Plastic)", function(b)
-    Toggles.Booster = not Toggles.Booster
-    Lighting.GlobalShadows = not Toggles.Booster
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("BasePart") then v.Material = "SmoothPlastic" elseif v:IsA("Texture") then v.Transparency = 1 end
-    end
-end)
-
-AddBtn("INSTANT PROMPT: OFF", function(b)
-    Toggles.Instant = not Toggles.Instant
-    b.Text = Toggles.Instant and "INSTANT PROMPT: ON" or "INSTANT PROMPT: OFF"
-    task.spawn(function()
-        while Toggles.Instant do
-            for _, p in pairs(workspace:GetDescendants()) do if p:IsA("ProximityPrompt") then p.HoldDuration = 0 end end
-            task.wait(2)
-        end
-    end)
-end)
-
--- Footer FPS & Anti-AFK
+-- Footer & Anti-AFK
 local Footer = Instance.new("TextLabel", Main)
-Footer.Size = UDim2.new(1, 0, 0, 25); Footer.Position = UDim2.new(0, 0, 1, -25); Footer.BackgroundTransparency = 1; Footer.TextColor3 = Color3.new(0.4,0.4,0.4); Footer.Text = "FPS: -- | Anti-AFK Active"; Footer.Font = Enum.Font.Code; Footer.TextSize = 10
+Footer.Size = UDim2.new(1, 0, 0, 25); Footer.Position = UDim2.new(0, 0, 1, -25); Footer.BackgroundTransparency = 1; Footer.TextColor3 = Color3.new(0.4,0.4,0.4); Footer.Text = "FPS: -- | Anti-AFK Ready"; Footer.Font = Enum.Font.Code; Footer.TextSize = 10
 
-local frames = 0; local lastT = os.clock()
 RunService.RenderStepped:Connect(function()
-    frames = frames + 1
-    if os.clock() - lastT >= 1 then Footer.Text = "FPS: "..frames.." | Anti-AFK Active"; frames = 0; lastT = os.clock() end
+    Footer.Text = "FPS: "..math.floor(1/RunService.RenderStepped:Wait()).." | Anti-AFK Ready"
 end)
 
 Player.Idled:Connect(function() VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(1); VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end)
