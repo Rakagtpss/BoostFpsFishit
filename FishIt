@@ -7,30 +7,32 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
+local Humanoid = Char:WaitForChild("Humanoid")
 
 -- // --- CONFIGURATION ---
 local UI_WIDTH = 300 
-local UI_HEIGHT = 250
+local UI_HEIGHT = 280 -- Sedikit lebih tinggi untuk opsi baru
 local THEME = {
     Background = Color3.fromRGB(25, 25, 30),
     Header = Color3.fromRGB(35, 35, 40),
     Button = Color3.fromRGB(45, 45, 50),
-    Accent = Color3.fromRGB(0, 255, 170), -- Greenish
+    Accent = Color3.fromRGB(0, 255, 170),
     Text = Color3.fromRGB(230, 230, 230),
-    Red = Color3.fromRGB(255, 80, 80)
+    Red = Color3.fromRGB(255, 80, 80),
+    Yellow = Color3.fromRGB(255, 200, 50)
 }
 
 -- // State
 local AutoTotemActive = false
-local SelectedTotemName = "" -- Default kosong
-local Optimized = false
+local AutoEquipActive = true -- Default ON agar aman
+local SelectedTotemName = "" 
 
--- // Cleanup
-if CoreGui:FindFirstChild("SeraphinV6") then CoreGui.SeraphinV6:Destroy() end
+-- // Cleanup Old UI
+if CoreGui:FindFirstChild("SeraphinV7") then CoreGui.SeraphinV7:Destroy() end
 
 -- // --- UI CREATION ---
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "SeraphinV6"
+Gui.Name = "SeraphinV7"
 Gui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", Gui)
@@ -40,18 +42,18 @@ MainFrame.BackgroundColor3 = THEME.Background
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
 -- Header
 local Header = Instance.new("Frame", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 40)
 Header.BackgroundColor3 = THEME.Header
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.8, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <b>TOTEM MANAGER</b>"
+Title.Text = "SERAPHIN <b>v7</b> (AUTO EQUIP)"
 Title.RichText = true
 Title.TextColor3 = THEME.Text
 Title.Font = Enum.Font.GothamBold
@@ -59,7 +61,6 @@ Title.TextSize = 14
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Close/Min Button
 local MinBtn = Instance.new("TextButton", Header)
 MinBtn.Size = UDim2.new(0, 25, 0, 25)
 MinBtn.Position = UDim2.new(1, -30, 0.5, -12.5)
@@ -68,20 +69,20 @@ MinBtn.BackgroundColor3 = THEME.Red
 MinBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
 
--- // --- CONTENT ---
+-- // --- CONTENT CONTAINER ---
 local Container = Instance.new("Frame", MainFrame)
 Container.Size = UDim2.new(1, -20, 1, -50)
 Container.Position = UDim2.new(0, 10, 0, 45)
 Container.BackgroundTransparency = 1
 
 local UIList = Instance.new("UIListLayout", Container)
-UIList.Padding = UDim.new(0, 8)
+UIList.Padding = UDim.new(0, 6)
 UIList.SortOrder = Enum.SortOrder.LayoutOrder
 
--- 1. MANUAL INPUT (JAGA-JAGA JIKA SCAN GAGAL)
+-- 1. INPUT MANUAL
 local InputBox = Instance.new("TextBox", Container)
-InputBox.Size = UDim2.new(1, 0, 0, 35)
-InputBox.PlaceholderText = "Type Totem Name Here (e.g. Sundial Totem)"
+InputBox.Size = UDim2.new(1, 0, 0, 30)
+InputBox.PlaceholderText = "Select or Type Totem Name..."
 InputBox.Text = ""
 InputBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 InputBox.TextColor3 = THEME.Accent
@@ -94,9 +95,9 @@ InputBox:GetPropertyChangedSignal("Text"):Connect(function()
     SelectedTotemName = InputBox.Text
 end)
 
--- 2. SCROLL LIST (HASIL SCAN)
+-- 2. LIST HASIL SCAN
 local ScrollList = Instance.new("ScrollingFrame", Container)
-ScrollList.Size = UDim2.new(1, 0, 0, 80) -- Area List
+ScrollList.Size = UDim2.new(1, 0, 0, 80)
 ScrollList.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 ScrollList.ScrollBarThickness = 2
 ScrollList.LayoutOrder = 2
@@ -105,25 +106,36 @@ Instance.new("UICorner", ScrollList).CornerRadius = UDim.new(0, 6)
 local ScrollLayout = Instance.new("UIListLayout", ScrollList)
 ScrollLayout.Padding = UDim.new(0, 2)
 
--- 3. TOMBOL ACTION
+-- 3. OPTIONS TOGGLE
+local EquipToggleBtn = Instance.new("TextButton", Container)
+EquipToggleBtn.Size = UDim2.new(1, 0, 0, 25)
+EquipToggleBtn.Text = "AUTO EQUIP BEFORE SPAWN: ON"
+EquipToggleBtn.BackgroundColor3 = THEME.Accent
+EquipToggleBtn.TextColor3 = Color3.fromRGB(20, 20, 20)
+EquipToggleBtn.Font = Enum.Font.GothamBold
+EquipToggleBtn.TextSize = 10
+EquipToggleBtn.LayoutOrder = 3
+Instance.new("UICorner", EquipToggleBtn).CornerRadius = UDim.new(0, 6)
+
+-- 4. ACTION BUTTONS
 local SpawnOnceBtn = Instance.new("TextButton", Container)
 SpawnOnceBtn.Size = UDim2.new(1, 0, 0, 30)
-SpawnOnceBtn.Text = "SPAWN ONCE (TEST)"
+SpawnOnceBtn.Text = "SPAWN ONCE"
 SpawnOnceBtn.BackgroundColor3 = THEME.Button
 SpawnOnceBtn.TextColor3 = THEME.Text
 SpawnOnceBtn.Font = Enum.Font.GothamBold
 SpawnOnceBtn.TextSize = 11
-SpawnOnceBtn.LayoutOrder = 3
+SpawnOnceBtn.LayoutOrder = 4
 Instance.new("UICorner", SpawnOnceBtn).CornerRadius = UDim.new(0, 6)
 
 local AutoToggleBtn = Instance.new("TextButton", Container)
 AutoToggleBtn.Size = UDim2.new(1, 0, 0, 30)
-AutoToggleBtn.Text = "AUTO EVERY 60M: OFF"
+AutoToggleBtn.Text = "AUTO SPAWN LOOP (60m): OFF"
 AutoToggleBtn.BackgroundColor3 = THEME.Button
 AutoToggleBtn.TextColor3 = THEME.Red
 AutoToggleBtn.Font = Enum.Font.GothamBold
 AutoToggleBtn.TextSize = 11
-AutoToggleBtn.LayoutOrder = 4
+AutoToggleBtn.LayoutOrder = 5
 Instance.new("UICorner", AutoToggleBtn).CornerRadius = UDim.new(0, 6)
 
 local StatusLbl = Instance.new("TextLabel", Container)
@@ -133,33 +145,24 @@ StatusLbl.TextColor3 = Color3.fromRGB(150, 150, 150)
 StatusLbl.BackgroundTransparency = 1
 StatusLbl.Font = Enum.Font.Code
 StatusLbl.TextSize = 10
-StatusLbl.LayoutOrder = 5
+StatusLbl.LayoutOrder = 6
 
--- // --- LOGIC ---
+-- // --- LOGIC FUNCTIONS ---
 
--- Fungsi Scan Path yang kamu minta
+-- Fungsi Scan Totem
 local function ScanTotems()
-    -- Debugging Print (Cek console F9)
-    print("Mencoba scan folder...")
-    
     local targetFolder = nil
-    local success, err = pcall(function()
-        -- Path yang kamu minta:
+    pcall(function()
         targetFolder = game:GetService("ReplicatedStorage").Modules.ModelDownloader.Collection.Totems
     end)
     
-    if success and targetFolder then
-        print("Folder ditemukan: " .. targetFolder:GetFullName())
-        
-        -- Bersihkan list lama
-        for _, v in pairs(ScrollList:GetChildren()) do 
-            if v:IsA("TextButton") then v:Destroy() end 
-        end
-        
-        -- Buat tombol untuk setiap item di folder
-        local count = 0
+    -- Bersihkan list
+    for _, v in pairs(ScrollList:GetChildren()) do 
+        if v:IsA("TextButton") then v:Destroy() end 
+    end
+    
+    if targetFolder then
         for _, item in pairs(targetFolder:GetChildren()) do
-            count = count + 1
             local btn = Instance.new("TextButton", ScrollList)
             btn.Size = UDim2.new(1, 0, 0, 25)
             btn.Text = item.Name
@@ -170,53 +173,93 @@ local function ScanTotems()
             
             btn.MouseButton1Click:Connect(function()
                 SelectedTotemName = item.Name
-                InputBox.Text = item.Name -- Isi otomatis kotak teks
+                InputBox.Text = item.Name
                 StatusLbl.Text = "Selected: " .. item.Name
+                
+                -- Efek Visual
+                for _, b in pairs(ScrollList:GetChildren()) do
+                     if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(40, 40, 45) end
+                end
+                btn.BackgroundColor3 = THEME.Accent
+                btn.TextColor3 = Color3.fromRGB(20, 20, 20)
             end)
         end
-        
-        if count == 0 then
-            local lbl = Instance.new("TextLabel", ScrollList)
-            lbl.Size = UDim2.new(1,0,0,30)
-            lbl.Text = "Folder ditemukan tapi KOSONG."
-            lbl.TextColor3 = THEME.Red
-            lbl.BackgroundTransparency = 1
-        end
     else
-        print("Folder GAGAL ditemukan. Cek nama path.")
-        local lbl = Instance.new("TextLabel", ScrollList)
-        lbl.Size = UDim2.new(1,0,0,30)
-        lbl.Text = "Path Error / Folder Not Found"
-        lbl.TextColor3 = THEME.Red
-        lbl.BackgroundTransparency = 1
+        StatusLbl.Text = "Error: Folder Totems not found!"
     end
 end
 
--- Fungsi Spawn (Fire Remote)
+-- Fungsi Equip Item
+local function EquipItem(itemName)
+    if not AutoEquipActive then return true end -- Skip jika dimatikan
+    
+    local Backpack = Player.Backpack
+    local Char = Player.Character or Player.CharacterAdded:Wait()
+    local Hum = Char:FindFirstChild("Humanoid")
+    
+    -- Cek apakah sudah dipegang
+    local HeldItem = Char:FindFirstChild(itemName)
+    if HeldItem then 
+        return true 
+    end
+    
+    -- Cek di tas
+    local ToolInBag = Backpack:FindFirstChild(itemName)
+    if ToolInBag and Hum then
+        Hum:EquipTool(ToolInBag)
+        StatusLbl.Text = "Equipping " .. itemName .. "..."
+        task.wait(0.5) -- Beri waktu animasi equip
+        return true
+    end
+    
+    StatusLbl.Text = "Error: " .. itemName .. " not in Backpack!"
+    return false
+end
+
+-- Fungsi Utama Spawn
 local function TriggerSpawn()
     if SelectedTotemName == "" then 
-        StatusLbl.Text = "ERROR: Masukkan nama Totem dulu!"
+        StatusLbl.Text = "Please select a totem first!"
         return 
     end
 
-    local args = {
-        [1] = SelectedTotemName
-    }
+    -- 1. Lakukan Equip Otomatis
+    local equipped = EquipItem(SelectedTotemName)
+    if not equipped then return end -- Batal jika item tidak ada
 
-    -- Mencoba Fire Remote
+    -- 2. Fire Remote Spawn
+    local args = { [1] = SelectedTotemName }
     local success, err = pcall(function()
         game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RE/SpawnTotem"):FireServer(unpack(args))
     end)
     
     if success then
         StatusLbl.Text = "Spawned: " .. SelectedTotemName
+        -- Opsional: Matikan input fishing jika perlu (sesuai request lama)
+        pcall(function()
+             game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/CancelFishingInputs"):InvokeServer()
+        end)
     else
-        StatusLbl.Text = "Remote Error!"
-        warn("Error firing remote: " .. tostring(err))
+        StatusLbl.Text = "Remote Failed!"
+        warn("Spawn Error: " .. tostring(err))
     end
 end
 
--- Logic Tombol
+-- // --- BUTTON EVENTS ---
+
+EquipToggleBtn.MouseButton1Click:Connect(function()
+    AutoEquipActive = not AutoEquipActive
+    if AutoEquipActive then
+        EquipToggleBtn.Text = "AUTO EQUIP BEFORE SPAWN: ON"
+        EquipToggleBtn.BackgroundColor3 = THEME.Accent
+        EquipToggleBtn.TextColor3 = Color3.fromRGB(20, 20, 20)
+    else
+        EquipToggleBtn.Text = "AUTO EQUIP BEFORE SPAWN: OFF"
+        EquipToggleBtn.BackgroundColor3 = THEME.Red
+        EquipToggleBtn.TextColor3 = Color3.new(1,1,1)
+    end
+end)
+
 SpawnOnceBtn.MouseButton1Click:Connect(function()
     TriggerSpawn()
 end)
@@ -224,14 +267,14 @@ end)
 AutoToggleBtn.MouseButton1Click:Connect(function()
     AutoTotemActive = not AutoTotemActive
     if AutoTotemActive then
-        AutoToggleBtn.Text = "AUTO EVERY 60M: ON"
+        AutoToggleBtn.Text = "AUTO SPAWN LOOP (60m): ON"
         AutoToggleBtn.TextColor3 = THEME.Accent
         
-        -- Loop Auto
         task.spawn(function()
             while AutoTotemActive do
                 TriggerSpawn()
-                -- Countdown 60 Menit
+                
+                -- Countdown
                 for i = 3600, 1, -1 do
                     if not AutoTotemActive then break end
                     StatusLbl.Text = "Next Spawn: " .. i .. "s"
@@ -240,9 +283,9 @@ AutoToggleBtn.MouseButton1Click:Connect(function()
             end
         end)
     else
-        AutoToggleBtn.Text = "AUTO EVERY 60M: OFF"
+        AutoToggleBtn.Text = "AUTO SPAWN LOOP (60m): OFF"
         AutoToggleBtn.TextColor3 = THEME.Red
-        StatusLbl.Text = "Auto Stopped."
+        StatusLbl.Text = "Auto Loop Stopped."
     end
 end)
 
@@ -250,5 +293,5 @@ MinBtn.MouseButton1Click:Connect(function()
     Gui:Destroy()
 end)
 
--- Jalankan Scan saat script start
+-- Jalankan Scan Awal
 ScanTotems()
