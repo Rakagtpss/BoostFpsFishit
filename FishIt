@@ -1,9 +1,9 @@
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 
--- // UI SETUP
+-- // UI CLEANUP
 local function getUiParent()
     local playerGui = Player:FindFirstChild("PlayerGui")
     if playerGui then return playerGui end
@@ -13,318 +13,455 @@ local function getUiParent()
 end
 
 local ParentTarget = getUiParent()
-if not ParentTarget then warn("Gagal menemukan tempat untuk UI!") return end
+if not ParentTarget then warn("Gagal UI Parent") return end
 
 for _, child in pairs(ParentTarget:GetChildren()) do
-    if child.Name == "SeraphinHelper" then child:Destroy() end
+    if child.Name == "SeraphinPremium" then child:Destroy() end
 end
 
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "SeraphinHelper"
-Gui.Parent = ParentTarget
-Gui.ResetOnSpawn = false
-Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+-- // UI CONFIGURATION (WIDE MODE)
+local UI_WIDTH = 550
+local UI_HEIGHT = 320
+local SIDEBAR_WIDTH = 130
+local THEME = {
+    Background = Color3.fromRGB(20, 21, 24),    -- Dark Grey/Black
+    Sidebar    = Color3.fromRGB(15, 15, 17),    -- Darker for Sidebar
+    ItemBG     = Color3.fromRGB(30, 31, 35),    -- Lighter for items
+    Text       = Color3.fromRGB(240, 240, 240), -- White
+    Accent     = Color3.fromRGB(255, 255, 255), -- White Toggle
+    Active     = Color3.fromRGB(0, 255, 170),   -- Seraphin Green/Teal
+    Red        = Color3.fromRGB(255, 80, 80)
+}
 
--- // UI Config
-local UI_WIDTH = 240
-local UI_HEIGHT = 450
-local ACCENT = Color3.fromRGB(0, 255, 170)
+-- // GUI CREATION
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SeraphinHelper"
+ScreenGui.Parent = ParentTarget
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-local MainFrame = Instance.new("Frame", Gui)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
-MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.3, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.4, -UI_HEIGHT/2)
+MainFrame.BackgroundColor3 = THEME.Background
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
--- Header
-local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 35)
-Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
-
-local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.6, 0, 1, 0)
-Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
-Title.RichText = true
-Title.TextColor3 = Color3.new(1,1,1)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 11
-Title.BackgroundTransparency = 1
-Title.TextXAlignment = Enum.TextXAlignment.Left
-
-local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 45, 0, 22)
-MinBtn.Position = UDim2.new(0.75, 0, 0.5, -11)
-MinBtn.Text = "HIDE"
-MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+-- Close/Minimize Button (Top Right)
+local MinBtn = Instance.new("TextButton", MainFrame)
+MinBtn.Size = UDim2.new(0, 30, 0, 30)
+MinBtn.Position = UDim2.new(1, -35, 0, 5)
+MinBtn.BackgroundTransparency = 1
+MinBtn.Text = "-"
+MinBtn.TextColor3 = THEME.Text
+MinBtn.TextSize = 24
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 9
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
+MinBtn.ZIndex = 5
 
--- Scrolling Content
-local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
-ScrollFrame.Size = UDim2.new(1, -10, 1, -60)
-ScrollFrame.Position = UDim2.new(0, 5, 0, 40)
-ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.ScrollBarThickness = 2
-ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ScrollFrame.CanvasSize = UDim2.new(0,0,0,0)
+-- // SIDEBAR (LEFT)
+local Sidebar = Instance.new("Frame", MainFrame)
+Sidebar.Size = UDim2.new(0, SIDEBAR_WIDTH, 1, 0)
+Sidebar.BackgroundColor3 = THEME.Sidebar
+Sidebar.BorderSizePixel = 0
+local SidebarCorner = Instance.new("UICorner", Sidebar)
+SidebarCorner.CornerRadius = UDim.new(0, 10)
 
-local Layout = Instance.new("UIListLayout", ScrollFrame)
-Layout.Padding = UDim.new(0, 6)
-Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-Layout.SortOrder = Enum.SortOrder.LayoutOrder
+-- Fix Corner (agar menyatu dengan MainFrame di kanan)
+local FixPatch = Instance.new("Frame", Sidebar)
+FixPatch.Size = UDim2.new(0, 10, 1, 0)
+FixPatch.Position = UDim2.new(1, -10, 0, 0)
+FixPatch.BackgroundColor3 = THEME.Sidebar
+FixPatch.BorderSizePixel = 0
 
-local function CreateButton(text, layoutOrder)
-    local btn = Instance.new("TextButton", ScrollFrame)
-    btn.Size = UDim2.new(0.95, 0, 0, 35)
-    btn.Text = text
+local TitleLabel = Instance.new("TextLabel", Sidebar)
+TitleLabel.Size = UDim2.new(1, 0, 0, 50)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "Seraphin | Premium"
+TitleLabel.TextColor3 = THEME.Text
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 14
+
+local TabContainer = Instance.new("Frame", Sidebar)
+TabContainer.Size = UDim2.new(1, 0, 1, -60)
+TabContainer.Position = UDim2.new(0, 0, 0, 60)
+TabContainer.BackgroundTransparency = 1
+
+local UIListLayout_Sidebar = Instance.new("UIListLayout", TabContainer)
+UIListLayout_Sidebar.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout_Sidebar.Padding = UDim.new(0, 5)
+
+-- // CONTENT AREA (RIGHT)
+local ContentArea = Instance.new("Frame", MainFrame)
+ContentArea.Size = UDim2.new(1, -SIDEBAR_WIDTH, 1, 0)
+ContentArea.Position = UDim2.new(0, SIDEBAR_WIDTH, 0, 0)
+ContentArea.BackgroundTransparency = 1
+
+local Pages = {} -- Table to store page frames
+
+-- Function to create pages
+local function CreatePage(name)
+    local page = Instance.new("ScrollingFrame", ContentArea)
+    page.Name = name
+    page.Size = UDim2.new(1, -20, 1, -20)
+    page.Position = UDim2.new(0, 10, 0, 10)
+    page.BackgroundTransparency = 1
+    page.ScrollBarThickness = 2
+    page.ScrollBarImageColor3 = THEME.Active
+    page.Visible = false
+    
+    local layout = Instance.new("UIListLayout", page)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 8)
+    
+    Pages[name] = page
+    return page
+end
+
+-- Function to create Sidebar Tab
+local currentTab = nil
+local function CreateTab(name, iconId)
+    local btn = Instance.new("TextButton", TabContainer)
+    btn.Size = UDim2.new(0.9, 0, 0, 35)
+    btn.BackgroundColor3 = THEME.Sidebar
+    btn.Text = "  " .. name
+    btn.TextColor3 = Color3.fromRGB(150, 150, 150)
     btn.Font = Enum.Font.GothamMedium
-    btn.TextSize = 10
-    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
-    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-    btn.LayoutOrder = layoutOrder or 0
+    btn.TextSize = 12
+    btn.TextXAlignment = Enum.TextXAlignment.Left
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    
+    -- Indicator
+    local ind = Instance.new("Frame", btn)
+    ind.Size = UDim2.new(0, 3, 0.6, 0)
+    ind.Position = UDim2.new(0, 0, 0.2, 0)
+    ind.BackgroundColor3 = THEME.Active
+    ind.Visible = false
+    
+    btn.MouseButton1Click:Connect(function()
+        -- Reset all tabs
+        for _, child in pairs(TabContainer:GetChildren()) do
+            if child:IsA("TextButton") then
+                child.TextColor3 = Color3.fromRGB(150, 150, 150)
+                child.BackgroundTransparency = 1
+                child:FindFirstChild("Frame").Visible = false
+            end
+        end
+        -- Activate current
+        btn.TextColor3 = THEME.Text
+        btn.BackgroundTransparency = 0.5 -- slight highlight
+        btn.BackgroundColor3 = Color3.fromRGB(40,40,45)
+        ind.Visible = true
+        
+        -- Switch Page
+        for pname, pframe in pairs(Pages) do
+            pframe.Visible = (pname == name)
+        end
+    end)
+    
+    if currentTab == nil then -- Select first tab automatically
+        currentTab = btn
+        btn.TextColor3 = THEME.Text
+        ind.Visible = true
+    end
     return btn
 end
 
--- // VARIABEL STATE
-local SelectedTotemName = nil
-local SelectedSellItem = nil
-local TotemThread = nil
-local SellThread = nil
-local AutoTotemEnabled = false
-local AutoSellEnabled = false
-local Optimized = false
-local Minimized = false
-
--- // [SYSTEM 1] TOTEM SCANNER
-local TotemDropdownOpen = false
-local TotemSelectorBtn = CreateButton("Pilih Totem: [None]", 1)
-TotemSelectorBtn.TextColor3 = ACCENT
-
-local TotemDropdownFrame = Instance.new("ScrollingFrame", ScrollFrame)
-TotemDropdownFrame.Name = "TotemDropdownFrame"
-TotemDropdownFrame.Size = UDim2.new(0.9, 0, 0, 0)
-TotemDropdownFrame.BackgroundTransparency = 1
-TotemDropdownFrame.ScrollBarThickness = 2
-TotemDropdownFrame.LayoutOrder = 2
-TotemDropdownFrame.Visible = false
-Instance.new("UIListLayout", TotemDropdownFrame).Padding = UDim.new(0, 2)
-
-local function RefreshTotemList()
-    for _, child in pairs(TotemDropdownFrame:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
-    
-    -- Mencoba mencari path Totems (sesuaikan jika game update pathnya)
-    local path = ReplicatedStorage:FindFirstChild("Modules")
-    if path then path = path:FindFirstChild("ModelDownloader") end
-    if path then path = path:FindFirstChild("Collection") end
-    if path then path = path:FindFirstChild("Totems") end
-    
-    if not path then return 0 end
-
-    local items = path:GetChildren()
-    for _, totem in pairs(items) do
-        local choiceBtn = Instance.new("TextButton", TotemDropdownFrame)
-        choiceBtn.Size = UDim2.new(1, 0, 0, 25)
-        choiceBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-        choiceBtn.TextColor3 = Color3.new(0.8, 0.8, 0.8)
-        choiceBtn.Text = totem.Name
-        choiceBtn.Font = Enum.Font.Gotham
-        choiceBtn.TextSize = 10
-        Instance.new("UICorner", choiceBtn).CornerRadius = UDim.new(0, 4)
-        
-        choiceBtn.MouseButton1Click:Connect(function()
-            SelectedTotemName = totem.Name
-            TotemSelectorBtn.Text = "Totem: " .. totem.Name
-            TotemDropdownOpen = false
-            TotemDropdownFrame.Visible = false
-            TotemDropdownFrame.Size = UDim2.new(0.9, 0, 0, 0)
-        end)
-    end
-    
-    local contentHeight = #items * 27
-    if contentHeight > 120 then contentHeight = 120 end
-    TotemDropdownFrame.CanvasSize = UDim2.new(0, 0, 0, #items * 27)
-    return contentHeight
+-- // COMPONENT CREATOR (TOGGLES & DROPDOWNS)
+local function CreateSection(parent, title)
+    local label = Instance.new("TextLabel", parent)
+    label.Size = UDim2.new(1, 0, 0, 25)
+    label.BackgroundTransparency = 1
+    label.Text = title
+    label.TextColor3 = Color3.fromRGB(120, 120, 120)
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 11
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.LayoutOrder = #parent:GetChildren()
+    return label
 end
 
-TotemSelectorBtn.MouseButton1Click:Connect(function()
-    TotemDropdownOpen = not TotemDropdownOpen
-    if TotemDropdownOpen then
-        local height = RefreshTotemList() or 100
-        TotemDropdownFrame.Visible = true
-        TotemDropdownFrame:TweenSize(UDim2.new(0.9, 0, 0, height), "Out", "Quad", 0.3, true)
-    else
-        TotemDropdownFrame:TweenSize(UDim2.new(0.9, 0, 0, 0), "Out", "Quad", 0.3, true)
-        task.wait(0.3)
-        TotemDropdownFrame.Visible = false
-    end
-end)
-
--- // [SYSTEM 2] SELL SCANNER & KEEP CONFIG
-local SellDropdownOpen = false
-local SellSelectorBtn = CreateButton("Pilih Item Jual: [None]", 3)
-SellSelectorBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-
-local SellDropdownFrame = Instance.new("ScrollingFrame", ScrollFrame)
-SellDropdownFrame.Name = "SellDropdownFrame"
-SellDropdownFrame.Size = UDim2.new(0.9, 0, 0, 0)
-SellDropdownFrame.BackgroundTransparency = 1
-SellDropdownFrame.ScrollBarThickness = 2
-SellDropdownFrame.LayoutOrder = 4
-SellDropdownFrame.Visible = false
-Instance.new("UIListLayout", SellDropdownFrame).Padding = UDim.new(0, 2)
-
-local KeepFrame = Instance.new("Frame", ScrollFrame)
-KeepFrame.Size = UDim2.new(0.95, 0, 0, 30)
-KeepFrame.BackgroundTransparency = 1
-KeepFrame.LayoutOrder = 5
-
-local KeepLabel = Instance.new("TextLabel", KeepFrame)
-KeepLabel.Size = UDim2.new(0.6, 0, 1, 0)
-KeepLabel.Text = "Sisakan (Keep):"
-KeepLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-KeepLabel.Font = Enum.Font.GothamMedium
-KeepLabel.TextSize = 11
-KeepLabel.BackgroundTransparency = 1
-KeepLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local KeepBox = Instance.new("TextBox", KeepFrame)
-KeepBox.Size = UDim2.new(0.35, 0, 1, 0)
-KeepBox.Position = UDim2.new(0.65, 0, 0, 0)
-KeepBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-KeepBox.TextColor3 = Color3.fromRGB(255, 200, 50)
-KeepBox.Text = "1"
-KeepBox.PlaceholderText = "0"
-KeepBox.Font = Enum.Font.GothamBold
-KeepBox.TextSize = 12
-Instance.new("UICorner", KeepBox).CornerRadius = UDim.new(0, 6)
-
-KeepBox:GetPropertyChangedSignal("Text"):Connect(function()
-    KeepBox.Text = KeepBox.Text:gsub("%D+", "")
-end)
-
-local function AddSellButton(name)
-    local choiceBtn = Instance.new("TextButton", SellDropdownFrame)
-    choiceBtn.Size = UDim2.new(1, 0, 0, 25)
-    choiceBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-    choiceBtn.TextColor3 = Color3.new(0.8, 0.8, 0.8)
-    choiceBtn.Text = name
-    choiceBtn.Font = Enum.Font.Gotham
-    choiceBtn.TextSize = 10
-    Instance.new("UICorner", choiceBtn).CornerRadius = UDim.new(0, 4)
-    choiceBtn.MouseButton1Click:Connect(function()
-        SelectedSellItem = name
-        SellSelectorBtn.Text = "Jual: " .. name
-        SellDropdownOpen = false
-        SellDropdownFrame.Visible = false
-        SellDropdownFrame.Size = UDim2.new(0.9, 0, 0, 0)
+local function CreateToggleCard(parent, text, callback)
+    local card = Instance.new("Frame", parent)
+    card.Size = UDim2.new(1, 0, 0, 40)
+    card.BackgroundColor3 = THEME.ItemBG
+    card.LayoutOrder = #parent:GetChildren()
+    Instance.new("UICorner", card).CornerRadius = UDim.new(0, 6)
+    
+    local label = Instance.new("TextLabel", card)
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Position = UDim2.new(0.05, 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = THEME.Text
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 12
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local toggleBtn = Instance.new("TextButton", card)
+    toggleBtn.Size = UDim2.new(0, 40, 0, 20)
+    toggleBtn.Position = UDim2.new(0.85, 0, 0.5, -10)
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+    toggleBtn.Text = ""
+    Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
+    
+    local circle = Instance.new("Frame", toggleBtn)
+    circle.Size = UDim2.new(0, 16, 0, 16)
+    circle.Position = UDim2.new(0, 2, 0.5, -8)
+    circle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
+    
+    local toggled = false
+    toggleBtn.MouseButton1Click:Connect(function()
+        toggled = not toggled
+        if toggled then
+            toggleBtn.BackgroundColor3 = THEME.Active
+            circle:TweenPosition(UDim2.new(1, -18, 0.5, -8), "Out", "Quad", 0.2, true)
+            circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+            circle:TweenPosition(UDim2.new(0, 2, 0.5, -8), "Out", "Quad", 0.2, true)
+            circle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+        end
+        pcall(callback, toggled)
     end)
+    return card, toggleBtn
 end
+
+local function CreateInputCard(parent, text, placeholder, defaultValue)
+    local card = Instance.new("Frame", parent)
+    card.Size = UDim2.new(1, 0, 0, 40)
+    card.BackgroundColor3 = THEME.ItemBG
+    card.LayoutOrder = #parent:GetChildren()
+    Instance.new("UICorner", card).CornerRadius = UDim.new(0, 6)
+    
+    local label = Instance.new("TextLabel", card)
+    label.Size = UDim2.new(0.5, 0, 1, 0)
+    label.Position = UDim2.new(0.05, 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = THEME.Text
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 12
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local box = Instance.new("TextBox", card)
+    box.Size = UDim2.new(0.4, 0, 0.7, 0)
+    box.Position = UDim2.new(0.55, 0, 0.15, 0)
+    box.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+    box.Text = defaultValue or ""
+    box.PlaceholderText = placeholder
+    box.TextColor3 = THEME.Active
+    box.Font = Enum.Font.GothamBold
+    box.TextSize = 12
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
+    
+    return box
+end
+
+local function CreateDropdown(parent, defaultText)
+    local card = Instance.new("Frame", parent)
+    card.Size = UDim2.new(1, 0, 0, 35) -- Start small
+    card.BackgroundColor3 = THEME.ItemBG
+    card.LayoutOrder = #parent:GetChildren()
+    card.ClipsDescendants = true
+    Instance.new("UICorner", card).CornerRadius = UDim.new(0, 6)
+    
+    local btn = Instance.new("TextButton", card)
+    btn.Size = UDim2.new(1, 0, 0, 35)
+    btn.BackgroundTransparency = 1
+    btn.Text = "  " .. defaultText
+    btn.TextColor3 = THEME.Text
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 11
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local arrow = Instance.new("TextLabel", btn)
+    arrow.Size = UDim2.new(0, 30, 1, 0)
+    arrow.Position = UDim2.new(1, -30, 0, 0)
+    arrow.BackgroundTransparency = 1
+    arrow.Text = "v"
+    arrow.TextColor3 = Color3.fromRGB(150, 150, 150)
+    arrow.Font = Enum.Font.GothamBold
+    
+    local scroll = Instance.new("ScrollingFrame", card)
+    scroll.Size = UDim2.new(1, 0, 0, 150)
+    scroll.Position = UDim2.new(0, 0, 0, 35)
+    scroll.BackgroundTransparency = 1
+    scroll.ScrollBarThickness = 2
+    
+    local layout = Instance.new("UIListLayout", scroll)
+    layout.Padding = UDim.new(0, 2)
+    
+    local isOpen = false
+    btn.MouseButton1Click:Connect(function()
+        isOpen = not isOpen
+        if isOpen then
+            card:TweenSize(UDim2.new(1, 0, 0, 185), "Out", "Quad", 0.3, true)
+            arrow.Text = "^"
+        else
+            card:TweenSize(UDim2.new(1, 0, 0, 35), "Out", "Quad", 0.3, true)
+            arrow.Text = "v"
+        end
+    end)
+    
+    return {
+        Frame = card,
+        Button = btn,
+        Container = scroll,
+        Close = function() 
+            isOpen = false 
+            card:TweenSize(UDim2.new(1, 0, 0, 35), "Out", "Quad", 0.3, true)
+            arrow.Text = "v"
+        end
+    }
+end
+
+-- // PAGES SETUP
+local MainPage = CreatePage("Main")
+local SettingsPage = CreatePage("Settings")
+
+CreateTab("Main", "")
+CreateTab("Settings", "")
+
+Pages["Main"].Visible = true
+
+-- // ---------------- LOGIC VARIABLES ---------------- //
+local SelectedSellItem = nil
+local SelectedTotemName = nil
+local KeepAmountVal = 1
+
+local Threads = {
+    Sell = nil,
+    Totem = nil
+}
+local States = {
+    Sell = false,
+    Totem = false
+}
+
+-- // ---------------- PAGE: MAIN ---------------- //
+
+-- SECTION: AUTO SELL
+CreateSection(MainPage, "AUTO SELL SYSTEM")
+
+-- 1. Scan Dropdown
+local SellDropdown = CreateDropdown(MainPage, "Select Item to Sell...")
 
 local function RefreshSellList()
-    for _, child in pairs(SellDropdownFrame:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
+    -- Clear Old
+    for _, v in pairs(SellDropdown.Container:GetChildren()) do
+        if v:IsA("TextButton") then v:Destroy() end
     end
     
     local foundItems = {}
     local itemCount = 0
 
+    local function AddBtn(name)
+        if foundItems[name] then return end
+        foundItems[name] = true
+        itemCount = itemCount + 1
+        
+        local b = Instance.new("TextButton", SellDropdown.Container)
+        b.Size = UDim2.new(1, -10, 0, 25)
+        b.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        b.Text = name
+        b.TextColor3 = Color3.fromRGB(200, 200, 200)
+        b.Font = Enum.Font.Gotham
+        b.TextSize = 11
+        Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
+        
+        b.MouseButton1Click:Connect(function()
+            SelectedSellItem = name
+            SellDropdown.Button.Text = "  Selected: " .. name
+            SellDropdown.Close()
+        end)
+    end
+
+    -- SCAN: From ReplicatedStorage Gears (Sesuai Request)
     pcall(function()
-        local backpack = game:GetService("Players").LocalPlayer:FindFirstChild("Backpack")
-        if backpack then
-            for _, item in pairs(backpack:GetChildren()) do
-                if item:IsA("Tool") and not foundItems[item.Name] then
-                    AddSellButton(item.Name)
-                    foundItems[item.Name] = true
-                    itemCount = itemCount + 1
-                end
+        local gearsPath = ReplicatedStorage:FindFirstChild("Modules")
+        if gearsPath then gearsPath = gearsPath:FindFirstChild("ModelDownloader") end
+        if gearsPath then gearsPath = gearsPath:FindFirstChild("Collection") end
+        if gearsPath then gearsPath = gearsPath:FindFirstChild("Gears") end
+        
+        if gearsPath then
+            for _, item in pairs(gearsPath:GetChildren()) do
+                AddBtn(item.Name)
             end
         end
     end)
     
-    if not foundItems["Enchant Stone"] then AddSellButton("Enchant Stone"); itemCount=itemCount+1 end
-    if not foundItems["Train Wheel"] then AddSellButton("Train Wheel"); itemCount=itemCount+1 end
+    -- Manual Fallback
+    AddBtn("Enchant Stone")
+    AddBtn("Train Wheel")
     
-    local contentHeight = itemCount * 27
-    if contentHeight > 150 then contentHeight = 150 end
-    SellDropdownFrame.CanvasSize = UDim2.new(0, 0, 0, itemCount * 27)
-    return contentHeight
+    SellDropdown.Container.CanvasSize = UDim2.new(0, 0, 0, itemCount * 28)
 end
+RefreshSellList() -- Init Load
 
-SellSelectorBtn.MouseButton1Click:Connect(function()
-    SellDropdownOpen = not SellDropdownOpen
-    if SellDropdownOpen then
-        local height = RefreshSellList() or 100
-        SellDropdownFrame.Visible = true
-        SellDropdownFrame:TweenSize(UDim2.new(0.9, 0, 0, height), "Out", "Quad", 0.3, true)
-    else
-        SellDropdownFrame:TweenSize(UDim2.new(0.9, 0, 0, 0), "Out", "Quad", 0.3, true)
-        task.wait(0.3)
-        SellDropdownFrame.Visible = false
-    end
+-- 2. Keep Amount Input
+local KeepInput = CreateInputCard(MainPage, "Keep Amount (Sisa)", "1", "1")
+KeepInput:GetPropertyChangedSignal("Text"):Connect(function()
+    KeepInput.Text = KeepInput.Text:gsub("%D+", "")
+    KeepAmountVal = tonumber(KeepInput.Text) or 1
 end)
 
--- // BUTTONS UTAMA
-local TotemBtn = CreateButton("Auto Totem (60m): OFF", 6)
-local SellBtn = CreateButton("Auto Sell (Selective): OFF", 7)
-local PotatoBtn = CreateButton("Booster Mode: OFF", 8)
-
--- // LOGIKA AUTO SELL
-SellBtn.MouseButton1Click:Connect(function()
-    if not SelectedSellItem then
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper"; Text = "Pilih Item Jual dulu (Scan)!"; Duration = 3;})
-        return
-    end
-
-    AutoSellEnabled = not AutoSellEnabled
-    SellBtn.Text = AutoSellEnabled and "Auto Sell: ON" or "Auto Sell (Selective): OFF"
-    SellBtn.BackgroundColor3 = AutoSellEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
-
-    if AutoSellEnabled then
-        SellThread = task.spawn(function()
-            while AutoSellEnabled do
-                task.wait(0.5)
+-- 3. Toggle Auto Sell (UPDATED LOGIC)
+CreateToggleCard(MainPage, "Enable Auto Sell", function(state)
+    States.Sell = state
+    if state then
+        if not SelectedSellItem then 
+            -- Warning visual could be added here
+            print("Pilih Item dulu!") 
+            return 
+        end
+        
+        Threads.Sell = task.spawn(function()
+            while States.Sell do
+                task.wait(0.8) -- Delay agar tidak spam parah
                 pcall(function()
-                    local packagePath = ReplicatedStorage:FindFirstChild("Packages") and ReplicatedStorage.Packages:FindFirstChild("_Index")
-                    local sleitnick = packagePath and packagePath:FindFirstChild("sleitnick_net@0.2.0")
-                    local sellRemote = sleitnick and sleitnick:FindFirstChild("net") and sleitnick.net:FindFirstChild("RF/SellItem")
-
+                    -- TARGET REMOTE BARU (Sesuai Request)
+                    -- game:GetService("ReplicatedStorage").Packages._Index["sleitnick_net@0.2.0"].net["RF/SellItem"]
+                    
+                    local packages = ReplicatedStorage:FindFirstChild("Packages")
+                    local index = packages and packages:FindFirstChild("_Index")
+                    local sleitnick = index and index:FindFirstChild("sleitnick_net@0.2.0")
+                    local net = sleitnick and sleitnick:FindFirstChild("net")
+                    local sellRemote = net and net:FindFirstChild("RF/SellItem")
+                    
                     if not sellRemote then return end
-
-                    local backpack = game:GetService("Players").LocalPlayer:FindFirstChild("Backpack")
-                    if not backpack then return end
-
-                    local itemsToProcess = {}
+                    
+                    -- Scan Backpack REALTIME untuk item yang dimiliki
+                    local backpack = Player.Backpack
+                    local itemsToSell = {}
+                    
                     for _, tool in pairs(backpack:GetChildren()) do
-                        if tool.Name == SelectedSellItem then table.insert(itemsToProcess, tool) end
+                        if tool.Name == SelectedSellItem then
+                            table.insert(itemsToSell, tool)
+                        end
                     end
-
-                    local keepAmount = tonumber(KeepBox.Text) or 0
-                    local totalItems = #itemsToProcess
-                    local amountToSell = totalItems - keepAmount
-
-                    if amountToSell > 0 then
-                        for i = 1, amountToSell do
-                            if not AutoSellEnabled then break end
-                            local targetItem = itemsToProcess[i]
-                            if targetItem then
-                                local uuid = targetItem:GetAttribute("UUID") or targetItem:GetAttribute("uuid") or targetItem:GetAttribute("id")
+                    
+                    local amountTotal = #itemsToSell
+                    local amountSell = amountTotal - KeepAmountVal
+                    
+                    if amountSell > 0 then
+                        for i = 1, amountSell do
+                            if not States.Sell then break end
+                            local item = itemsToSell[i]
+                            if item then
+                                -- Get UUID
+                                local uuid = item:GetAttribute("UUID") or item:GetAttribute("uuid") or item:GetAttribute("id")
                                 if not uuid then
-                                    local val = targetItem:FindFirstChild("UUID") or targetItem:FindFirstChild("ID")
+                                    local val = item:FindFirstChild("UUID") or item:FindFirstChild("ID")
                                     if val then uuid = val.Value end
                                 end
+                                
                                 if uuid then
                                     sellRemote:InvokeServer(uuid)
-                                    print("Menjual: " .. targetItem.Name .. " | UUID: " .. tostring(uuid))
+                                    print("Sold: " .. item.Name)
                                     task.wait(0.1)
                                 end
                             end
@@ -334,105 +471,128 @@ SellBtn.MouseButton1Click:Connect(function()
             end
         end)
     else
-        if SellThread then task.cancel(SellThread) end
+        if Threads.Sell then task.cancel(Threads.Sell) end
     end
 end)
 
--- // LOGIKA AUTO TOTEM (FIXED DENGAN SLEITNICK)
-TotemBtn.MouseButton1Click:Connect(function()
-    if not SelectedTotemName then
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper"; Text = "Pilih Totem dulu!"; Duration = 3;})
-        return
+
+-- SECTION: AUTO TOTEM
+CreateSection(MainPage, "AUTO TOTEM (CAVERN)")
+
+-- 1. Totem Dropdown
+local TotemDropdown = CreateDropdown(MainPage, "Select Totem...")
+
+local function RefreshTotemList()
+    -- Scan Totems Logic
+    local path = ReplicatedStorage:FindFirstChild("Modules")
+    if path then path = path:FindFirstChild("ModelDownloader") end
+    if path then path = path:FindFirstChild("Collection") end
+    if path then path = path:FindFirstChild("Totems") end
+    
+    if not path then return end
+    
+    local c = 0
+    for _, t in pairs(path:GetChildren()) do
+        c = c + 1
+        local b = Instance.new("TextButton", TotemDropdown.Container)
+        b.Size = UDim2.new(1, -10, 0, 25)
+        b.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        b.Text = t.Name
+        b.TextColor3 = Color3.fromRGB(200, 200, 200)
+        b.Font = Enum.Font.Gotham
+        b.TextSize = 11
+        Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
+        
+        b.MouseButton1Click:Connect(function()
+            SelectedTotemName = t.Name
+            TotemDropdown.Button.Text = "  Totem: " .. t.Name
+            TotemDropdown.Close()
+        end)
     end
+    TotemDropdown.Container.CanvasSize = UDim2.new(0,0,0, c*28)
+end
+RefreshTotemList()
 
-    AutoTotemEnabled = not AutoTotemEnabled
-    TotemBtn.Text = AutoTotemEnabled and "Auto Totem: ON" or "Auto Totem: OFF"
-    TotemBtn.BackgroundColor3 = AutoTotemEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
-
-    if AutoTotemEnabled then
-        TotemThread = task.spawn(function()
-            while AutoTotemEnabled do
+-- 2. Toggle Auto Totem
+CreateToggleCard(MainPage, "Enable Auto Totem", function(state)
+    States.Totem = state
+    if state then
+        if not SelectedTotemName then return end
+        Threads.Totem = task.spawn(function()
+            while States.Totem do
                 pcall(function()
-                    -- 1. Setup Remote sesuai request (sleitnick_net)
-                    local packagePath = ReplicatedStorage:FindFirstChild("Packages") and ReplicatedStorage.Packages:FindFirstChild("_Index")
-                    local sleitnick = packagePath and packagePath:FindFirstChild("sleitnick_net@0.2.0")
-                    local net = sleitnick and sleitnick:FindFirstChild("net")
+                    -- Remote Place Cavern
+                    local packages = ReplicatedStorage:WaitForChild("Packages", 5)
+                    local net = packages and packages._Index["sleitnick_net@0.2.0"].net
+                    local placeRemote = net and net:FindFirstChild("RE/PlaceCavernTotemItem")
                     
-                    local spawnRemote = net and net:FindFirstChild("RE/SpawnTotem")
-                    -- Kita tidak menggunakan EquipToolFromHotbar dengan angka statis [2] karena itu berisiko
-                    -- Kita gunakan Humanoid:EquipTool untuk keamanan
-
-                    if not spawnRemote then 
-                        warn("Remote RE/SpawnTotem tidak ditemukan!")
-                        return 
-                    end
-                    
-                    -- 2. Cari Item di Backpack atau Character
-                    local character = Player.Character or Player.CharacterAdded:Wait()
-                    local humanoid = character:FindFirstChild("Humanoid")
-                    
-                    local tool = character:FindFirstChild(SelectedTotemName) -- Cek apakah sudah dipegang
-                    if not tool then
-                        tool = Player.Backpack:FindFirstChild(SelectedTotemName) -- Cek di tas
-                        if tool and humanoid then
-                            humanoid:EquipTool(tool) -- Equip manual (lebih aman daripada hardcode slot hotbar)
-                            task.wait(0.5) -- Tunggu animasi equip
-                        end
-                    end
-                    
-                    -- 3. Jika tool ada dan dipegang, Ambil UUID dan Spawn
-                    if tool then
-                        -- Ambil UUID Dinamis (Bukan hardcode)
-                        local uuid = tool:GetAttribute("UUID") or tool:GetAttribute("uuid") or tool:GetAttribute("id")
-                        if not uuid then
-                            local val = tool:FindFirstChild("UUID") or tool:FindFirstChild("ID")
-                            if val then uuid = val.Value end
+                    if placeRemote then
+                        local tool = Player.Backpack:FindFirstChild(SelectedTotemName)
+                        if not tool and Player.Character then
+                             tool = Player.Character:FindFirstChild(SelectedTotemName)
                         end
                         
-                        if uuid then
-                            local args = { [1] = uuid }
-                            spawnRemote:FireServer(unpack(args))
-                            print("Spawned Totem: " .. SelectedTotemName)
-                        else
-                            warn("UUID Totem tidak ditemukan!")
+                        if tool then
+                            local uuid = tool:GetAttribute("UUID") or tool:GetAttribute("uuid")
+                             if not uuid then
+                                local val = tool:FindFirstChild("UUID")
+                                if val then uuid = val.Value end
+                            end
+                            
+                            if uuid then
+                                placeRemote:FireServer(uuid)
+                                print("Totem Placed")
+                            end
                         end
-                    else
-                        -- Jika totem habis, coba notif atau diam saja
-                        print("Totem " .. SelectedTotemName .. " tidak ditemukan di inventory!")
                     end
                 end)
-
-                -- Timer 60 Menit
-                for i = 3600, 1, -1 do
-                    if not AutoTotemEnabled then break end
+                
+                -- Wait 1 hour (loop check)
+                for i=1, 3600 do
+                    if not States.Totem then break end
                     task.wait(1)
                 end
             end
         end)
     else
-        if TotemThread then task.cancel(TotemThread) end
+        if Threads.Totem then task.cancel(Threads.Totem) end
     end
 end)
 
--- OPTIMIZATION
-PotatoBtn.MouseButton1Click:Connect(function()
-    Optimized = not Optimized
-    PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
-    PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
-    Lighting.GlobalShadows = not Optimized
-    if Optimized then
-        for _, v in pairs(game:GetDescendants()) do
-            if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic; v.CastShadow = false
-            elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1
-            elseif v:IsA("ParticleEmitter") then v.Enabled = false end
+
+-- // ---------------- PAGE: SETTINGS ---------------- //
+CreateSection(SettingsPage, "PERFORMANCE")
+
+CreateToggleCard(SettingsPage, "Booster Mode (Low GFX)", function(state)
+    Lighting.GlobalShadows = not state
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("BasePart") then
+            if state then v.Material = Enum.Material.SmoothPlastic else v.Material = Enum.Material.Plastic end
         end
     end
 end)
 
+
+-- // MINIMIZE LOGIC
+local isMin = false
 MinBtn.MouseButton1Click:Connect(function()
-    Minimized = not Minimized
-    if Minimized then MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.3, true); ScrollFrame.Visible = false; MinBtn.Text = "SHOW"
-    else MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true); task.wait(0.2); ScrollFrame.Visible = true; MinBtn.Text = "HIDE" end
+    isMin = not isMin
+    if isMin then
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 40), "Out", "Quad", 0.3, true)
+        Sidebar.Visible = false
+        ContentArea.Visible = false
+        MinBtn.Text = "+"
+    else
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
+        task.wait(0.2)
+        Sidebar.Visible = true
+        ContentArea.Visible = true
+        MinBtn.Text = "-"
+    end
 end)
 
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper", Text = "Totem Fix Applied!", Duration = 5})
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "Seraphin Helper",
+    Text = "Updated to Wide Mode!",
+    Duration = 5
+})
