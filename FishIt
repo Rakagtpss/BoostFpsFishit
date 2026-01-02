@@ -1,137 +1,51 @@
+Masalah UI tidak muncul biasanya disebabkan oleh dua hal:
+ * Script Macet di Awal: Script menunggu karakter "loading" (WaitForChild) sebelum sempat membuat UI. Jika karakter belum spawn sepenuhnya, UI tidak akan pernah muncul.
+ * Masalah Executor/CoreGui: Beberapa executor (terutama di HP atau versi gratisan) memblokir akses ke CoreGui.
+Berikut adalah versi FIXED (Perbaikan). Saya telah mengubah urutannya agar UI Muncul Dulu baru kemudian memuat logika karakter, dan saya menambahkan sistem "Safe Parent" agar UI masuk ke PlayerGui jika CoreGui bermasalah.
+Silakan hapus script lama dan pakai yang ini:
 --[[ 
-    SERAPHIN HELPER + FISHING TURBO (CUSTOM DELAY)
-    Added: Custom Input Fields for delays
+    SERAPHIN HELPER + FISHING TURBO (FIXED UI)
+    - Fix: UI muncul duluan sebelum loading karakter
+    - Fix: Support PlayerGui jika CoreGui error
 ]]
 
--- // 1. SERVICES & VARIABLES
+-- // 1. SERVICES & UI PARENTING
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
 
 local Player = Players.LocalPlayer
-local Char = Player.Character or Player.CharacterAdded:Wait()
-local HRP = Char:WaitForChild("HumanoidRootPart")
 
-Player.CharacterAdded:Connect(function(newChar)
-    Char = newChar
-    HRP = newChar:WaitForChild("HumanoidRootPart")
-end)
-
--- // 2. FISHING CONFIGURATION
-getgenv().fishingStart = false
-local FishingMode = "Blatan" 
-
--- Default Values (Akan berubah sesuai Input UI)
-local args = { -1.115296483039856, 0, 1763651451.636425 }
-local delayTime = 0.56   -- Reel Delay (Catch)
-local delayCharge = 1.15 -- Rod Delay (Bait)
-local delayReset = 0.2 
-
--- Remote Path Check
-local net = nil
-local success_net, err_net = pcall(function()
-    return ReplicatedStorage.Packages["_Index"]["sleitnick_net@0.2.0"].net
-end)
-if success_net then net = success_net end
-
-local ChargeRod, RequestGame, CompleteGame, CancelInput
-if net then
-    ChargeRod    = net["RF/ChargeFishingRod"]
-    RequestGame  = net["RF/RequestFishingMinigameStarted"]
-    CompleteGame = net["RE/FishingCompleted"]
-    CancelInput  = net["RF/CancelFishingInputs"]
+-- FUNGSI PENCARI TEMPAT UI (Supaya pasti muncul)
+local function get_ui_parent()
+    -- Coba gunakan gethui() (Executor modern)
+    if gethui then return gethui() end
+    -- Coba CoreGui
+    local s, p = pcall(function() return CoreGui end)
+    if s and p then return p end
+    -- Fallback ke PlayerGui (Paling aman)
+    return Player:WaitForChild("PlayerGui")
 end
 
--- // HOOKING LOGIC
-local FishingBlocker = { Enabled = false, AutoGreat = false }
-local BLOCKED_REMOTES = {}
+local ParentUI = get_ui_parent()
 
-if net then
-    BLOCKED_REMOTES[ChargeRod] = true
-    BLOCKED_REMOTES[RequestGame] = true
-    BLOCKED_REMOTES[CompleteGame] = true
-    BLOCKED_REMOTES[CancelInput] = true
-
-    local oldNamecall
-    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
-        if FishingBlocker.Enabled and BLOCKED_REMOTES[self] and not checkcaller() then
-            if method == "InvokeServer" then return task.wait(9e9) 
-            elseif method == "FireServer" then return nil end
-        end
-        return oldNamecall(self, ...)
-    end)
-end
-
--- // FISHING LOOP FUNCTIONS
-local MAX_PARALLEL = 4
-local active_threads = 0
-
-local function lightSpawn(fn)
-    if active_threads >= MAX_PARALLEL then return end
-    active_threads = active_threads + 1
-    task.spawn(function() pcall(fn); active_threads = active_threads - 1 end)
-end
-
-local function startFishingLoop() -- LEGIT/INSTANT
-    if not net then return end
-    if FishingBlocker.AutoGreat then net["RF/UpdateAutoFishingState"]:InvokeServer({true}) end
-    while getgenv().fishingStart do
-        pcall(function() ChargeRod:InvokeServer() end) 
-        task.wait(0.055)
-        if not getgenv().fishingStart then break end
-        net["RF/RequestFishingMinigameStarted"]:InvokeServer(unpack(args))
-        
-        task.wait(delayTime) -- Menggunakan variabel custom
-        
-        if not getgenv().fishingStart then break end 
-        pcall(function() CompleteGame:FireServer() end)
-        task.wait(0.05)
-        pcall(function() CancelInput:InvokeServer() end)
-    end
-end
-
-local function startFishingSuperInstantLoop() -- BLATAN
-    if not net then return end
-    if FishingBlocker.AutoGreat then net["RF/UpdateAutoFishingState"]:InvokeServer({true}) end
-    pcall(function() CancelInput:InvokeServer() end)
-    task.wait(0.055)
-    while getgenv().fishingStart do
-        lightSpawn(function() ChargeRod:InvokeServer() end)
-        lightSpawn(function() RequestGame:InvokeServer(unpack(args)) end)
-        
-        task.wait(delayCharge) -- Menggunakan variabel custom
-        
-        pcall(function() CompleteGame:FireServer() end)
-        task.wait(delayReset) 
-        pcall(function() CancelInput:InvokeServer() end)
-    end
-end
-
-local function resetFishingCharacter()
-    if not net then return end
-    pcall(function() CompleteGame:FireServer() end)
-    task.wait(0.05) 
-    pcall(function() CancelInput:InvokeServer() end)
-end
-
--- // 3. SERAPHIN UI SETUP
-local AfkModeActive, Optimized, Minimized, WowEnabled, BV, Conn = false, false, false, false, nil, nil
-local fpsLimits = {30, 60, 144, 999} 
-local currentLimitIndex = 4 
-
+-- // 2. CREATE UI TERLEBIH DAHULU (Supaya langsung terlihat)
 local UI_WIDTH = 220
-local UI_HEIGHT = 380 -- Diperpanjang untuk Input Box
+local UI_HEIGHT = 380
 local ACCENT = Color3.fromRGB(0, 255, 170)
 
-if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
+-- Hapus UI lama jika ada
+for _, child in pairs(ParentUI:GetChildren()) do
+    if child.Name == "SeraphinHelper" then child:Destroy() end
+end
 
-local Gui = Instance.new("ScreenGui", CoreGui)
+local Gui = Instance.new("ScreenGui", ParentUI)
 Gui.Name = "SeraphinHelper"
 Gui.ResetOnSpawn = false
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local MainFrame = Instance.new("Frame", Gui)
 MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
@@ -181,7 +95,112 @@ local Layout = Instance.new("UIListLayout", ScrollFrame)
 Layout.Padding = UDim.new(0, 6)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- UI Helper Functions
+-- // 3. CHARACTER & VARIABLES HANDLING
+local Char = Player.Character
+local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
+
+Player.CharacterAdded:Connect(function(newChar)
+    Char = newChar
+    HRP = newChar:WaitForChild("HumanoidRootPart", 5)
+end)
+
+getgenv().fishingStart = false
+local FishingMode = "Blatan" 
+local args = { -1.115296483039856, 0, 1763651451.636425 }
+local delayTime = 0.56   
+local delayCharge = 1.15 
+local delayReset = 0.2 
+
+-- Remote Checks
+local net = nil
+pcall(function()
+    net = ReplicatedStorage.Packages["_Index"]["sleitnick_net@0.2.0"].net
+end)
+
+local ChargeRod, RequestGame, CompleteGame, CancelInput
+if net then
+    ChargeRod    = net:FindFirstChild("RF/ChargeFishingRod")
+    RequestGame  = net:FindFirstChild("RF/RequestFishingMinigameStarted")
+    CompleteGame = net:FindFirstChild("RE/FishingCompleted")
+    CancelInput  = net:FindFirstChild("RF/CancelFishingInputs")
+end
+
+-- // HOOKING LOGIC (Safeguarded)
+local FishingBlocker = { Enabled = false, AutoGreat = false }
+local BLOCKED_REMOTES = {}
+
+task.spawn(function()
+    if net and hookmetamethod then
+        if ChargeRod then BLOCKED_REMOTES[ChargeRod] = true end
+        if RequestGame then BLOCKED_REMOTES[RequestGame] = true end
+        if CompleteGame then BLOCKED_REMOTES[CompleteGame] = true end
+        if CancelInput then BLOCKED_REMOTES[CancelInput] = true end
+
+        local oldNamecall
+        oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+            local method = getnamecallmethod()
+            if FishingBlocker.Enabled and BLOCKED_REMOTES[self] and not checkcaller() then
+                if method == "InvokeServer" then return task.wait(9e9) 
+                elseif method == "FireServer" then return nil end
+            end
+            return oldNamecall(self, ...)
+        end)
+    end
+end)
+
+-- // FUNCTIONS
+local MAX_PARALLEL = 4
+local active_threads = 0
+
+local function lightSpawn(fn)
+    if active_threads >= MAX_PARALLEL then return end
+    active_threads = active_threads + 1
+    task.spawn(function() pcall(fn); active_threads = active_threads - 1 end)
+end
+
+local function startFishingLoop()
+    if not net then return end
+    if FishingBlocker.AutoGreat then 
+        pcall(function() net["RF/UpdateAutoFishingState"]:InvokeServer({true}) end) 
+    end
+    while getgenv().fishingStart do
+        pcall(function() ChargeRod:InvokeServer() end) 
+        task.wait(0.055)
+        if not getgenv().fishingStart then break end
+        pcall(function() net["RF/RequestFishingMinigameStarted"]:InvokeServer(unpack(args)) end)
+        task.wait(delayTime)
+        if not getgenv().fishingStart then break end 
+        pcall(function() CompleteGame:FireServer() end)
+        task.wait(0.05)
+        pcall(function() CancelInput:InvokeServer() end)
+    end
+end
+
+local function startFishingSuperInstantLoop()
+    if not net then return end
+    if FishingBlocker.AutoGreat then 
+        pcall(function() net["RF/UpdateAutoFishingState"]:InvokeServer({true}) end) 
+    end
+    pcall(function() CancelInput:InvokeServer() end)
+    task.wait(0.055)
+    while getgenv().fishingStart do
+        lightSpawn(function() ChargeRod:InvokeServer() end)
+        lightSpawn(function() RequestGame:InvokeServer(unpack(args)) end)
+        task.wait(delayCharge) 
+        pcall(function() CompleteGame:FireServer() end)
+        task.wait(delayReset) 
+        pcall(function() CancelInput:InvokeServer() end)
+    end
+end
+
+local function resetFishingCharacter()
+    if not net then return end
+    pcall(function() CompleteGame:FireServer() end)
+    task.wait(0.05) 
+    pcall(function() CancelInput:InvokeServer() end)
+end
+
+-- // UI HELPERS
 local function CreateButton(text, color)
     local btn = Instance.new("TextButton", ScrollFrame)
     btn.Size = UDim2.new(0.95, 0, 0, 30)
@@ -228,14 +247,11 @@ local function CreateInput(labelText, defaultVal, callback)
     input.TextSize = 11
     Instance.new("UICorner", input).CornerRadius = UDim.new(0, 4)
     
-    input.FocusLost:Connect(function()
-        callback(input.Text)
-    end)
-    
-    return input -- Return instance untuk diupdate otomatis nanti
+    input.FocusLost:Connect(function() callback(input.Text) end)
+    return input
 end
 
--- // UI ELEMENTS
+-- // UI CONTENT
 CreateSection("OPTIMIZATION")
 local PotatoBtn = CreateButton("Booster Mode: OFF")
 local WowBtn = CreateButton("WALK ON WATER: OFF")
@@ -247,15 +263,11 @@ local AutoFishBtn = CreateButton("AUTO FISH: OFF", Color3.fromRGB(50, 40, 40))
 local ModeBtn = CreateButton("MODE: BLATAN (FAST)")
 local AutoGreatBtn = CreateButton("AUTO GREAT: OFF")
 
--- Custom Inputs
 local ReelDelayInput = CreateInput("Reel Delay (Catch)", delayTime, function(text)
-    local num = tonumber(text)
-    if num then delayTime = num end
+    local num = tonumber(text); if num then delayTime = num end
 end)
-
 local RodDelayInput = CreateInput("Rod Delay (Bait)", delayCharge, function(text)
-    local num = tonumber(text)
-    if num then delayCharge = num end
+    local num = tonumber(text); if num then delayCharge = num end
 end)
 
 local UnstuckBtn = CreateButton("UNSTUCK CHAR")
@@ -270,9 +282,11 @@ FpsDisplay.Text = "FPS: --"
 FpsDisplay.Font = Enum.Font.Code
 FpsDisplay.TextSize = 12
 
--- // LOGIC IMPLEMENTATION
+-- // CONNECTIONS
+local Optimized, AfkModeActive, WowEnabled, Minimized = false, false, false, false
+local BV, Conn
+local fpsLimits = {30, 60, 144, 999}; local currentLimitIndex = 4
 
--- FPS CAP
 FpsCapBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex + 1
     if currentLimitIndex > #fpsLimits then currentLimitIndex = 1 end
@@ -281,7 +295,6 @@ FpsCapBtn.MouseButton1Click:Connect(function()
     FpsCapBtn.Text = newLimit > 900 and "FPS CAP: UNLIMITED" or "FPS CAP: " .. newLimit
 end)
 
--- Potato Mode
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
@@ -291,14 +304,12 @@ PotatoBtn.MouseButton1Click:Connect(function()
         for _, v in pairs(Workspace:GetDescendants()) do
             pcall(function()
                 if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic; v.CastShadow = false
-                elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1
-                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = false end
+                elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1 end
             end)
         end
     end
 end)
 
--- AFK Render
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
@@ -306,11 +317,11 @@ RenderBtn.MouseButton1Click:Connect(function()
     RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 35, 40)
 end)
 
--- Walk on Water
 WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
     WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
     WowBtn.BackgroundColor3 = WowEnabled and ACCENT or Color3.fromRGB(35, 35, 40)
+    
     if WowEnabled then
         if HRP then
             if BV then BV:Destroy() end
@@ -332,14 +343,8 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- // FISHING LOGIC CONNECTIONS
-
--- 1. Auto Fish Toggle
 AutoFishBtn.MouseButton1Click:Connect(function()
-    if not net then 
-        AutoFishBtn.Text = "GAME NOT SUPPORTED" 
-        return 
-    end
+    if not net then AutoFishBtn.Text = "GAME UNSUPPORTED"; return end
     getgenv().fishingStart = not getgenv().fishingStart
     FishingBlocker.Enabled = getgenv().fishingStart
     
@@ -354,40 +359,34 @@ AutoFishBtn.MouseButton1Click:Connect(function()
         AutoFishBtn.Text = "AUTO FISH: OFF"
         AutoFishBtn.BackgroundColor3 = Color3.fromRGB(50, 40, 40)
         AutoFishBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-        if FishingBlocker.AutoGreat then net["RF/UpdateAutoFishingState"]:InvokeServer({false}) end
+        if FishingBlocker.AutoGreat then 
+            pcall(function() net["RF/UpdateAutoFishingState"]:InvokeServer({false}) end)
+        end
         pcall(function() CompleteGame:FireServer() end)
         pcall(function() CancelInput:InvokeServer() end)
     end
 end
 
--- 2. Mode Toggle (Updated to Change Inputs)
 ModeBtn.MouseButton1Click:Connect(function()
     if FishingMode == "Blatan" then
         FishingMode = "Instant"
         ModeBtn.Text = "MODE: INSTANT (LEGIT)"
-        -- Update Variables
-        delayTime = 1.05
-        delayCharge = 1.30
+        delayTime = 1.05; delayCharge = 1.30
     else
         FishingMode = "Blatan"
         ModeBtn.Text = "MODE: BLATAN (FAST)"
-        -- Update Variables
-        delayTime = 0.56
-        delayCharge = 1.15
+        delayTime = 0.56; delayCharge = 1.15
     end
-    -- Update Input Box Visuals
     ReelDelayInput.Text = tostring(delayTime)
     RodDelayInput.Text = tostring(delayCharge)
 end)
 
--- 3. Auto Great
 AutoGreatBtn.MouseButton1Click:Connect(function()
     FishingBlocker.AutoGreat = not FishingBlocker.AutoGreat
     AutoGreatBtn.Text = FishingBlocker.AutoGreat and "AUTO GREAT: ON" or "AUTO GREAT: OFF"
     AutoGreatBtn.BackgroundColor3 = FishingBlocker.AutoGreat and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(35, 35, 40)
 end)
 
--- 4. Unstuck
 UnstuckBtn.MouseButton1Click:Connect(function()
     task.spawn(resetFishingCharacter)
     UnstuckBtn.Text = "UNSTUCK: DONE"
@@ -395,7 +394,6 @@ UnstuckBtn.MouseButton1Click:Connect(function()
     UnstuckBtn.Text = "UNSTUCK CHAR"
 end)
 
--- Minimize Function
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
@@ -412,14 +410,14 @@ MinBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- FPS Counter
-local lastT = os.clock()
-local frames = 0
+local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
         FpsDisplay.Text = "FPS: " .. frames
-        frames = 0
-        lastT = os.clock()
+        frames, lastT = 0, os.clock()
     end
 end)
+
+print("Seraphin Loaded!")
+
