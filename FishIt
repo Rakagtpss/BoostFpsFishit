@@ -1,51 +1,36 @@
-Masalah UI tidak muncul biasanya disebabkan oleh dua hal:
- * Script Macet di Awal: Script menunggu karakter "loading" (WaitForChild) sebelum sempat membuat UI. Jika karakter belum spawn sepenuhnya, UI tidak akan pernah muncul.
- * Masalah Executor/CoreGui: Beberapa executor (terutama di HP atau versi gratisan) memblokir akses ke CoreGui.
-Berikut adalah versi FIXED (Perbaikan). Saya telah mengubah urutannya agar UI Muncul Dulu baru kemudian memuat logika karakter, dan saya menambahkan sistem "Safe Parent" agar UI masuk ke PlayerGui jika CoreGui bermasalah.
-Silakan hapus script lama dan pakai yang ini:
---[[ 
-    SERAPHIN HELPER + FISHING TURBO (FIXED UI)
-    - Fix: UI muncul duluan sebelum loading karakter
-    - Fix: Support PlayerGui jika CoreGui error
-]]
-
--- // 1. SERVICES & UI PARENTING
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local CoreGui = game:GetService("CoreGui")
 
 local Player = Players.LocalPlayer
+local Char = Player.Character or Player.CharacterAdded:Wait()
+local HRP = Char:WaitForChild("HumanoidRootPart")
 
--- FUNGSI PENCARI TEMPAT UI (Supaya pasti muncul)
-local function get_ui_parent()
-    -- Coba gunakan gethui() (Executor modern)
-    if gethui then return gethui() end
-    -- Coba CoreGui
-    local s, p = pcall(function() return CoreGui end)
-    if s and p then return p end
-    -- Fallback ke PlayerGui (Paling aman)
-    return Player:WaitForChild("PlayerGui")
-end
+-- // State
+local AfkModeActive = false 
+local Optimized = false
+local Minimized = false
+local WowEnabled = false
+local RodAnimEnabled = false -- State baru untuk Rod Anim
+local BV, Conn
 
-local ParentUI = get_ui_parent()
+-- // FPS Settings
+local fpsLimits = {30, 60, 144, 999}
+local currentLimitIndex = 4
 
--- // 2. CREATE UI TERLEBIH DAHULU (Supaya langsung terlihat)
-local UI_WIDTH = 220
-local UI_HEIGHT = 380
+-- // UI Config
+local UI_WIDTH = 210
+local UI_HEIGHT = 245 -- Sedikit diperbesar agar muat tombol baru
 local ACCENT = Color3.fromRGB(0, 255, 170)
 
--- Hapus UI lama jika ada
-for _, child in pairs(ParentUI:GetChildren()) do
-    if child.Name == "SeraphinHelper" then child:Destroy() end
-end
+-- // Cleanup Lama
+if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
-local Gui = Instance.new("ScreenGui", ParentUI)
+-- // UI Creation
+local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "SeraphinHelper"
-Gui.ResetOnSpawn = false
-Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local MainFrame = Instance.new("Frame", Gui)
 MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
@@ -83,196 +68,39 @@ MinBtn.Font = Enum.Font.GothamBold
 MinBtn.TextSize = 9
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
--- Scroll Frame
+-- Scrolling Content
 local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
 ScrollFrame.Size = UDim2.new(1, -10, 1, -70)
 ScrollFrame.Position = UDim2.new(0, 5, 0, 40)
 ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.ScrollBarThickness = 2
 ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Reset
 
 local Layout = Instance.new("UIListLayout", ScrollFrame)
 Layout.Padding = UDim.new(0, 6)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- // 3. CHARACTER & VARIABLES HANDLING
-local Char = Player.Character
-local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
-
-Player.CharacterAdded:Connect(function(newChar)
-    Char = newChar
-    HRP = newChar:WaitForChild("HumanoidRootPart", 5)
-end)
-
-getgenv().fishingStart = false
-local FishingMode = "Blatan" 
-local args = { -1.115296483039856, 0, 1763651451.636425 }
-local delayTime = 0.56   
-local delayCharge = 1.15 
-local delayReset = 0.2 
-
--- Remote Checks
-local net = nil
-pcall(function()
-    net = ReplicatedStorage.Packages["_Index"]["sleitnick_net@0.2.0"].net
-end)
-
-local ChargeRod, RequestGame, CompleteGame, CancelInput
-if net then
-    ChargeRod    = net:FindFirstChild("RF/ChargeFishingRod")
-    RequestGame  = net:FindFirstChild("RF/RequestFishingMinigameStarted")
-    CompleteGame = net:FindFirstChild("RE/FishingCompleted")
-    CancelInput  = net:FindFirstChild("RF/CancelFishingInputs")
-end
-
--- // HOOKING LOGIC (Safeguarded)
-local FishingBlocker = { Enabled = false, AutoGreat = false }
-local BLOCKED_REMOTES = {}
-
-task.spawn(function()
-    if net and hookmetamethod then
-        if ChargeRod then BLOCKED_REMOTES[ChargeRod] = true end
-        if RequestGame then BLOCKED_REMOTES[RequestGame] = true end
-        if CompleteGame then BLOCKED_REMOTES[CompleteGame] = true end
-        if CancelInput then BLOCKED_REMOTES[CancelInput] = true end
-
-        local oldNamecall
-        oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-            local method = getnamecallmethod()
-            if FishingBlocker.Enabled and BLOCKED_REMOTES[self] and not checkcaller() then
-                if method == "InvokeServer" then return task.wait(9e9) 
-                elseif method == "FireServer" then return nil end
-            end
-            return oldNamecall(self, ...)
-        end)
-    end
-end)
-
--- // FUNCTIONS
-local MAX_PARALLEL = 4
-local active_threads = 0
-
-local function lightSpawn(fn)
-    if active_threads >= MAX_PARALLEL then return end
-    active_threads = active_threads + 1
-    task.spawn(function() pcall(fn); active_threads = active_threads - 1 end)
-end
-
-local function startFishingLoop()
-    if not net then return end
-    if FishingBlocker.AutoGreat then 
-        pcall(function() net["RF/UpdateAutoFishingState"]:InvokeServer({true}) end) 
-    end
-    while getgenv().fishingStart do
-        pcall(function() ChargeRod:InvokeServer() end) 
-        task.wait(0.055)
-        if not getgenv().fishingStart then break end
-        pcall(function() net["RF/RequestFishingMinigameStarted"]:InvokeServer(unpack(args)) end)
-        task.wait(delayTime)
-        if not getgenv().fishingStart then break end 
-        pcall(function() CompleteGame:FireServer() end)
-        task.wait(0.05)
-        pcall(function() CancelInput:InvokeServer() end)
-    end
-end
-
-local function startFishingSuperInstantLoop()
-    if not net then return end
-    if FishingBlocker.AutoGreat then 
-        pcall(function() net["RF/UpdateAutoFishingState"]:InvokeServer({true}) end) 
-    end
-    pcall(function() CancelInput:InvokeServer() end)
-    task.wait(0.055)
-    while getgenv().fishingStart do
-        lightSpawn(function() ChargeRod:InvokeServer() end)
-        lightSpawn(function() RequestGame:InvokeServer(unpack(args)) end)
-        task.wait(delayCharge) 
-        pcall(function() CompleteGame:FireServer() end)
-        task.wait(delayReset) 
-        pcall(function() CancelInput:InvokeServer() end)
-    end
-end
-
-local function resetFishingCharacter()
-    if not net then return end
-    pcall(function() CompleteGame:FireServer() end)
-    task.wait(0.05) 
-    pcall(function() CancelInput:InvokeServer() end)
-end
-
--- // UI HELPERS
-local function CreateButton(text, color)
+local function CreateButton(text)
     local btn = Instance.new("TextButton", ScrollFrame)
-    btn.Size = UDim2.new(0.95, 0, 0, 30)
+    btn.Size = UDim2.new(0.95, 0, 0, 35)
     btn.Text = text
     btn.Font = Enum.Font.GothamMedium
     btn.TextSize = 10
     btn.TextColor3 = Color3.fromRGB(220, 220, 220)
-    btn.BackgroundColor3 = color or Color3.fromRGB(35, 35, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     return btn
 end
 
-local function CreateSection(text)
-    local label = Instance.new("TextLabel", ScrollFrame)
-    label.Size = UDim2.new(0.95, 0, 0, 20)
-    label.Text = "--- " .. text .. " ---"
-    label.Font = Enum.Font.Code
-    label.TextSize = 10
-    label.TextColor3 = Color3.fromRGB(100, 100, 100)
-    label.BackgroundTransparency = 1
-end
-
-local function CreateInput(labelText, defaultVal, callback)
-    local frame = Instance.new("Frame", ScrollFrame)
-    frame.Size = UDim2.new(0.95, 0, 0, 30)
-    frame.BackgroundTransparency = 1
-    
-    local label = Instance.new("TextLabel", frame)
-    label.Size = UDim2.new(0.6, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = labelText
-    label.TextColor3 = Color3.fromRGB(200, 200, 200)
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 10
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local input = Instance.new("TextBox", frame)
-    input.Size = UDim2.new(0.35, 0, 1, 0)
-    input.Position = UDim2.new(0.65, 0, 0, 0)
-    input.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-    input.TextColor3 = ACCENT
-    input.Text = tostring(defaultVal)
-    input.Font = Enum.Font.Code
-    input.TextSize = 11
-    Instance.new("UICorner", input).CornerRadius = UDim.new(0, 4)
-    
-    input.FocusLost:Connect(function() callback(input.Text) end)
-    return input
-end
-
--- // UI CONTENT
-CreateSection("OPTIMIZATION")
+-- // TOMBOL FITUR
 local PotatoBtn = CreateButton("Booster Mode: OFF")
 local WowBtn = CreateButton("WALK ON WATER: OFF")
 local RenderBtn = CreateButton("No Render 3D: OFF")
+local RodAnimBtn = CreateButton("Rod Anim (Trident): OFF") -- Tombol Baru
 local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
 
-CreateSection("FISHING TURBO")
-local AutoFishBtn = CreateButton("AUTO FISH: OFF", Color3.fromRGB(50, 40, 40))
-local ModeBtn = CreateButton("MODE: BLATAN (FAST)")
-local AutoGreatBtn = CreateButton("AUTO GREAT: OFF")
-
-local ReelDelayInput = CreateInput("Reel Delay (Catch)", delayTime, function(text)
-    local num = tonumber(text); if num then delayTime = num end
-end)
-local RodDelayInput = CreateInput("Rod Delay (Bait)", delayCharge, function(text)
-    local num = tonumber(text); if num then delayCharge = num end
-end)
-
-local UnstuckBtn = CreateButton("UNSTUCK CHAR")
-
--- Footer
+-- Footer FPS
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
 FpsDisplay.Size = UDim2.new(1, 0, 0, 25)
 FpsDisplay.Position = UDim2.new(0, 0, 1, -25)
@@ -282,11 +110,11 @@ FpsDisplay.Text = "FPS: --"
 FpsDisplay.Font = Enum.Font.Code
 FpsDisplay.TextSize = 12
 
--- // CONNECTIONS
-local Optimized, AfkModeActive, WowEnabled, Minimized = false, false, false, false
-local BV, Conn
-local fpsLimits = {30, 60, 144, 999}; local currentLimitIndex = 4
+-- // ==========================================
+-- // LOGIC FEATURES
+-- // ==========================================
 
+-- FPS CAP
 FpsCapBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex + 1
     if currentLimitIndex > #fpsLimits then currentLimitIndex = 1 end
@@ -295,21 +123,27 @@ FpsCapBtn.MouseButton1Click:Connect(function()
     FpsCapBtn.Text = newLimit > 900 and "FPS CAP: UNLIMITED" or "FPS CAP: " .. newLimit
 end)
 
+-- Potato Mode
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
-    PotatoBtn.BackgroundColor3 = Optimized and ACCENT or Color3.fromRGB(35, 35, 40)
+    PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
     Lighting.GlobalShadows = not Optimized
     if Optimized then
-        for _, v in pairs(Workspace:GetDescendants()) do
-            pcall(function()
-                if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic; v.CastShadow = false
-                elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1 end
-            end)
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.CastShadow = false
+            elseif v:IsA("Texture") or v:IsA("Decal") then
+                v.Transparency = 1
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Enabled = false
+            end
         end
     end
 end)
 
+-- Render Mode
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
@@ -317,82 +151,121 @@ RenderBtn.MouseButton1Click:Connect(function()
     RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 35, 40)
 end)
 
+-- Walk on Water
 WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
     WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
-    WowBtn.BackgroundColor3 = WowEnabled and ACCENT or Color3.fromRGB(35, 35, 40)
+    WowBtn.BackgroundColor3 = WowEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
     
     if WowEnabled then
-        if HRP then
-            if BV then BV:Destroy() end
-            BV = Instance.new("BodyVelocity", HRP)
-            BV.MaxForce = Vector3.new(0, 1e6, 0)
-            BV.Velocity = Vector3.zero
-            if Conn then Conn:Disconnect() end
-            Conn = RunService.Heartbeat:Connect(function()
-                if HRP and HRP.Parent then
-                    HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
-                else
-                    if Conn then Conn:Disconnect() end
-                end
-            end)
-        end
+        BV = Instance.new("BodyVelocity", HRP)
+        BV.MaxForce = Vector3.new(0, 1e6, 0)
+        BV.Velocity = Vector3.zero
+        Conn = RunService.Heartbeat:Connect(function()
+            if HRP then 
+                local vel = HRP.AssemblyLinearVelocity
+                HRP.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z) 
+            end
+        end)
     else
         if Conn then Conn:Disconnect() end
         if BV then BV:Destroy() end
     end
 end)
 
-AutoFishBtn.MouseButton1Click:Connect(function()
-    if not net then AutoFishBtn.Text = "GAME UNSUPPORTED"; return end
-    getgenv().fishingStart = not getgenv().fishingStart
-    FishingBlocker.Enabled = getgenv().fishingStart
+-- // ==========================================
+-- // ROD ANIMATION LOGIC (HOLY TRIDENT)
+-- // ==========================================
+
+-- Fungsi untuk mengambil ID Animasi dari ReplicatedStorage dengan aman
+local function GetAnimId(pathName)
+    local animsFolder = ReplicatedStorage:FindFirstChild("Modules") 
+        and ReplicatedStorage.Modules:FindFirstChild("Animations")
     
-    if getgenv().fishingStart then
-        AutoFishBtn.Text = "AUTO FISH: ON"
-        AutoFishBtn.BackgroundColor3 = ACCENT
-        AutoFishBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-        pcall(function() CancelInput:InvokeServer() end)
-        if FishingMode == "Blatan" then task.spawn(startFishingSuperInstantLoop)
-        else task.spawn(startFishingLoop) end
-    else
-        AutoFishBtn.Text = "AUTO FISH: OFF"
-        AutoFishBtn.BackgroundColor3 = Color3.fromRGB(50, 40, 40)
-        AutoFishBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-        if FishingBlocker.AutoGreat then 
-            pcall(function() net["RF/UpdateAutoFishingState"]:InvokeServer({false}) end)
+    if animsFolder and animsFolder:FindFirstChild(pathName) then
+        return animsFolder[pathName].AnimationId
+    end
+    return nil
+end
+
+-- Dictionary mapping nama animasi umum ke ID Holy Trident
+local tridentMap = {
+    ["idle"] = GetAnimId("Holy Trident - EquipIdle"),
+    ["cast"] = GetAnimId("Holy Trident - RodThrow"),
+    ["throw"] = GetAnimId("Holy Trident - RodThrow"),
+    ["reel"] = GetAnimId("Holy Trident - ReelStart"),
+    ["charge"] = GetAnimId("Holy Trident - StartRodCharge"),
+    ["caught"] = GetAnimId("Holy Trident - FishCaught"),
+    ["fishcaught"] = GetAnimId("Holy Trident - FishCaught")
+}
+
+local function ApplyRodAnimations(tool)
+    if not RodAnimEnabled then return end
+    
+    -- Tunggu sebentar untuk memastikan animasi tool termuat
+    task.wait(0.1)
+    
+    -- Cari animasi di dalam Tool (bisa di root tool atau di folder 'animations')
+    local targets = tool:GetDescendants()
+    
+    for _, item in pairs(targets) do
+        if item:IsA("Animation") then
+            local lowerName = item.Name:lower()
+            
+            -- Cek pencocokan nama dan ganti ID
+            for key, newId in pairs(tridentMap) do
+                if string.find(lowerName, key) and newId then
+                    item.AnimationId = newId
+                    -- print("Swapped " .. item.Name .. " to Trident Anim")
+                end
+            end
         end
-        pcall(function() CompleteGame:FireServer() end)
-        pcall(function() CancelInput:InvokeServer() end)
     end
 end
 
-ModeBtn.MouseButton1Click:Connect(function()
-    if FishingMode == "Blatan" then
-        FishingMode = "Instant"
-        ModeBtn.Text = "MODE: INSTANT (LEGIT)"
-        delayTime = 1.05; delayCharge = 1.30
-    else
-        FishingMode = "Blatan"
-        ModeBtn.Text = "MODE: BLATAN (FAST)"
-        delayTime = 0.56; delayCharge = 1.15
+-- Tombol Trigger
+RodAnimBtn.MouseButton1Click:Connect(function()
+    RodAnimEnabled = not RodAnimEnabled
+    RodAnimBtn.Text = RodAnimEnabled and "Rod Anim (Trident): ON" or "Rod Anim (Trident): OFF"
+    RodAnimBtn.BackgroundColor3 = RodAnimEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+    
+    if RodAnimEnabled then
+        -- Apply ke tool yang sedang dipegang
+        local currentTool = Char:FindFirstChildOfClass("Tool")
+        if currentTool then
+            ApplyRodAnimations(currentTool)
+            -- Unequip & Equip paksa untuk refresh animasi (opsional, tapi disarankan)
+            local hum = Char:FindFirstChild("Humanoid")
+            if hum then
+                hum:UnequipTools()
+                task.wait(0.1)
+                hum:EquipTool(currentTool)
+            end
+        end
     end
-    ReelDelayInput.Text = tostring(delayTime)
-    RodDelayInput.Text = tostring(delayCharge)
 end)
 
-AutoGreatBtn.MouseButton1Click:Connect(function()
-    FishingBlocker.AutoGreat = not FishingBlocker.AutoGreat
-    AutoGreatBtn.Text = FishingBlocker.AutoGreat and "AUTO GREAT: ON" or "AUTO GREAT: OFF"
-    AutoGreatBtn.BackgroundColor3 = FishingBlocker.AutoGreat and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(35, 35, 40)
+-- Listener saat ganti pancingan
+Player.CharacterAdded:Connect(function(newChar)
+    Char = newChar
+    HRP = newChar:WaitForChild("HumanoidRootPart")
+    newChar.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") and RodAnimEnabled then
+            ApplyRodAnimations(child)
+        end
+    end)
 end)
 
-UnstuckBtn.MouseButton1Click:Connect(function()
-    task.spawn(resetFishingCharacter)
-    UnstuckBtn.Text = "UNSTUCK: DONE"
-    task.wait(1)
-    UnstuckBtn.Text = "UNSTUCK CHAR"
+-- Listener awal untuk karakter yang sudah ada
+Char.ChildAdded:Connect(function(child)
+    if child:IsA("Tool") and RodAnimEnabled then
+        ApplyRodAnimations(child)
+    end
 end)
+
+-- // ==========================================
+-- // UI HANDLING
+-- // ==========================================
 
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
@@ -410,14 +283,14 @@ MinBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local lastT, frames = os.clock(), 0
+-- FPS Counter
+local lastT = os.clock()
+local frames = 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
         FpsDisplay.Text = "FPS: " .. frames
-        frames, lastT = 0, os.clock()
+        frames = 0
+        lastT = os.clock()
     end
 end)
-
-print("Seraphin Loaded!")
-
