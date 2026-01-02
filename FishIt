@@ -6,7 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local VirtualUser = game:GetService("VirtualUser")
 
--- // Compatibility Helper
+-- // Function Helper
 local fireproximityprompt = fireproximityprompt or function(Obj)
     if Obj:IsA("ProximityPrompt") then
         Obj:InputHoldBegin()
@@ -16,193 +16,210 @@ local fireproximityprompt = fireproximityprompt or function(Obj)
 end
 
 local Player = Players.LocalPlayer
+local Char = Player.Character or Player.CharacterAdded:Wait()
+local HRP = Char:WaitForChild("HumanoidRootPart")
 local SelectedItem = ""
+local BV, Conn
 
--- // Toggles
+-- // Toggles State
 local Toggles = {
-    AutoPrompt = false,
-    AutoYes = false,
-    Booster = false,
-    Instant = false,
-    Minimized = false
+    AutoPrompt = false, AutoYes = false, Booster = false, 
+    Instant = false, WoW = false, NoRender = false, Minimized = false
 }
 
--- // UI Setup (Lightweight)
-if CoreGui:FindFirstChild("SeraphinV10") then CoreGui.SeraphinV10:Destroy() end
+-- // UI Cleanup
+if CoreGui:FindFirstChild("SeraphinWide") then CoreGui.SeraphinWide:Destroy() end
 
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "SeraphinV10"
+Gui.Name = "SeraphinWide"
 
 local Main = Instance.new("Frame", Gui)
-Main.Size = UDim2.new(0, 260, 0, 420)
-Main.Position = UDim2.new(0.5, -130, 0.2, 0)
-Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Main.Size = UDim2.new(0, 450, 0, 400) -- Dibuat WIDE (Lebar)
+Main.Position = UDim2.new(0.5, -225, 0.3, 0)
+Main.BackgroundColor3 = Color3.fromRGB(12, 12, 14)
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
 -- Header
 local Header = Instance.new("Frame", Main)
-Header.Size = UDim2.new(1, 0, 0, 30)
-Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Header.Size = UDim2.new(1, 0, 0, 35)
+Header.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
 Instance.new("UICorner", Header)
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1, -50, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.Text = "SERAPHIN LIGHT V10"
-Title.TextColor3 = Color3.new(0, 1, 0.7)
+Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">MANAGER</font> (WIDE EDITION)"
+Title.RichText = true
+Title.TextColor3 = Color3.new(1, 1, 1)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 12
+Title.TextSize = 14
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 40, 0, 20)
-MinBtn.Position = UDim2.new(1, -45, 0.5, -10)
-MinBtn.Text = "_"
-MinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MinBtn.Size = UDim2.new(0, 50, 0, 22)
+MinBtn.Position = UDim2.new(1, -55, 0.5, -11)
+MinBtn.Text = "HIDE"
+MinBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 38)
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 10
 Instance.new("UICorner", MinBtn)
 
 local Scroll = Instance.new("ScrollingFrame", Main)
-Scroll.Size = UDim2.new(1, -10, 1, -40)
-Scroll.Position = UDim2.new(0, 5, 0, 35)
+Scroll.Size = UDim2.new(1, -20, 1, -75)
+Scroll.Position = UDim2.new(0, 10, 0, 45)
 Scroll.BackgroundTransparency = 1
-Scroll.ScrollBarThickness = 0
-Scroll.CanvasSize = UDim2.new(0, 0, 0, 550)
+Scroll.ScrollBarThickness = 3
+Scroll.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 170)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 750)
 
 local Layout = Instance.new("UIListLayout", Scroll)
-Layout.Padding = UDim.new(0, 5)
+Layout.Padding = UDim.new(0, 8)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Helper: Lightweight Button
+-- Helper: Button Creator
 local function AddBtn(text, callback)
     local b = Instance.new("TextButton", Scroll)
-    b.Size = UDim2.new(0.95, 0, 0, 32)
+    b.Size = UDim2.new(0.95, 0, 0, 35)
     b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    b.TextColor3 = Color3.fromRGB(200, 200, 200)
-    b.Font = Enum.Font.Gotham
-    b.TextSize = 11
-    Instance.new("UICorner", b)
-    
-    b.MouseButton1Click:Connect(function()
-        callback(b)
-    end)
+    b.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
+    b.TextColor3 = Color3.fromRGB(220, 220, 220)
+    b.Font = Enum.Font.GothamSemibold
+    b.TextSize = 12
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    b.MouseButton1Click:Connect(function() callback(b) end)
     return b
 end
 
--- --- 1. SCAN GEARS SECTION ---
-local ListFrame = Instance.new("ScrollingFrame", Scroll)
-ListFrame.Size = UDim2.new(0.95, 0, 0, 100)
-ListFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-ListFrame.ScrollBarThickness = 2
+-- --- 1. SCANNER SECTION (WIDE) ---
+local ScanContainer = Instance.new("Frame", Scroll)
+ScanContainer.Size = UDim2.new(0.95, 0, 0, 120)
+ScanContainer.BackgroundTransparency = 1
+
+local ListFrame = Instance.new("ScrollingFrame", ScanContainer)
+ListFrame.Size = UDim2.new(1, 0, 1, -25)
+ListFrame.Position = UDim2.new(0, 0, 0, 25)
+ListFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+ListFrame.BorderSizePixel = 0
 Instance.new("UIListLayout", ListFrame)
+Instance.new("UICorner", ListFrame)
 
-local SelDisplay = Instance.new("TextLabel", Scroll)
-SelDisplay.Size = UDim2.new(0.95, 0, 0, 20)
-SelDisplay.Text = "Selected: None"
-SelDisplay.TextColor3 = Color3.new(0.7, 0.7, 0.7)
-SelDisplay.BackgroundTransparency = 1
-SelDisplay.TextSize = 10
+local SelDisp = Instance.new("TextLabel", ScanContainer)
+SelDisp.Size = UDim2.new(1, 0, 0, 20)
+SelDisp.Text = "Selected: None"; SelDisp.TextColor3 = Color3.fromRGB(0, 255, 170); SelDisp.BackgroundTransparency = 1; SelDisp.TextSize = 11; SelDisp.Font = Enum.Font.Gotham
 
-AddBtn("SCAN GEARS (Collection)", function(b)
+AddBtn("SCAN EVERYTHING (Backpack & Gears)", function()
     for _, c in pairs(ListFrame:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
-    local path = ReplicatedStorage:FindFirstChild("Modules")
-    if path then path = path:FindFirstChild("ModelDownloader") end
-    if path then path = path:FindFirstChild("Collection") end
-    if path then path = path:FindFirstChild("Gears") end
     
-    if path then
-        for _, gear in pairs(path:GetChildren()) do
-            local gBtn = Instance.new("TextButton", ListFrame)
-            gBtn.Size = UDim2.new(1, 0, 0, 20)
-            gBtn.Text = gear.Name
-            gBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-            gBtn.TextColor3 = Color3.new(1,1,1)
-            gBtn.TextSize = 10
-            gBtn.MouseButton1Click:Connect(function()
-                SelectedItem = gear.Name
-                SelDisplay.Text = "Selected: " .. gear.Name
-            end)
-        end
+    local function CreateItemBtn(name)
+        local g = Instance.new("TextButton", ListFrame)
+        g.Size = UDim2.new(1, 0, 0, 25); g.Text = "  "..name; g.BackgroundColor3 = Color3.fromRGB(30,30,35); g.TextColor3 = Color3.new(1,1,1); g.TextSize = 11; g.TextXAlignment = "Left"
+        g.MouseButton1Click:Connect(function() SelectedItem = name; SelDisp.Text = "Selected: "..name end)
     end
+
+    -- Scan Backpack
+    for _, tool in pairs(Player.Backpack:GetChildren()) do CreateItemBtn(tool.Name) end
+    -- Scan Gears Collection
+    local p = ReplicatedStorage:FindFirstChild("Modules")
+    p = p and p:FindFirstChild("ModelDownloader")
+    p = p and p:FindFirstChild("Collection")
+    p = p and p:FindFirstChild("Gears")
+    if p then for _, gear in pairs(p:GetChildren()) do CreateItemBtn(gear.Name) end end
 end)
 
-AddBtn("SELL SELECTED (Remote)", function()
+AddBtn("SELL SELECTED ITEM (Remote)", function()
     if SelectedItem ~= "" then
-        pcall(function()
-            ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RF/SellItem"]:InvokeServer(SelectedItem)
-        end)
+        pcall(function() ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RF/SellItem"]:InvokeServer(SelectedItem) end)
     end
 end)
 
--- --- 2. AUTO SELL PROMPT ---
-AddBtn("AUTO PROMPT: OFF", function(b)
+-- --- 2. AUTOMATION ---
+AddBtn("AUTO SELL PROMPT: OFF", function(b)
     Toggles.AutoPrompt = not Toggles.AutoPrompt
-    b.Text = Toggles.AutoPrompt and "AUTO PROMPT: ON" or "AUTO PROMPT: OFF"
+    b.Text = Toggles.AutoPrompt and "AUTO SELL PROMPT: ON" or "AUTO SELL PROMPT: OFF"
     b.TextColor3 = Toggles.AutoPrompt and Color3.new(0,1,0.5) or Color3.new(0.8,0.8,0.8)
     task.spawn(function()
         while Toggles.AutoPrompt do
             pcall(function()
-                local p = workspace["!!! DEPENDENCIES"]:GetChildren()[4].SellPrompt.SellPrompt
-                fireproximityprompt(p)
+                fireproximityprompt(workspace["!!! DEPENDENCIES"]:GetChildren()[4].SellPrompt.SellPrompt)
             end)
             task.wait(0.3)
         end
     end)
 end)
 
--- --- 3. AUTO YES CLICKER ---
-AddBtn("AUTO YES: OFF", function(b)
+AddBtn("AUTO YES CLICKER: OFF", function(b)
     Toggles.AutoYes = not Toggles.AutoYes
-    b.Text = Toggles.AutoYes and "AUTO YES: ON" or "AUTO YES: OFF"
+    b.Text = Toggles.AutoYes and "AUTO YES CLICKER: ON" or "AUTO YES CLICKER: OFF"
     b.TextColor3 = Toggles.AutoYes and Color3.new(0,1,0.5) or Color3.new(0.8,0.8,0.8)
     task.spawn(function()
         while Toggles.AutoYes do
             pcall(function()
                 for _, v in pairs(Player.PlayerGui:GetDescendants()) do
-                    if v:IsA("TextButton") and v.Text:lower() == "yes" and v.Visible then
-                        VirtualUser:ClickButton1(Vector2.new(0,0)) -- Basic click trigger
-                        v:Activate() -- Direct trigger
-                    end
+                    if v:IsA("TextButton") and v.Text:lower() == "yes" and v.Visible then v:Activate() end
                 end
             end)
-            task.wait(0.4)
+            task.wait(0.3)
         end
     end)
 end)
 
--- --- 4. UTILITIES (Old Features) ---
-AddBtn("BOOSTER MODE: OFF", function(b)
+-- --- 3. UTILITIES ---
+AddBtn("WALK ON WATER: OFF", function(b)
+    Toggles.WoW = not Toggles.WoW
+    b.Text = Toggles.WoW and "WALK ON WATER: ON" or "WALK ON WATER: OFF"
+    if Toggles.WoW then
+        BV = Instance.new("BodyVelocity", HRP); BV.MaxForce = Vector3.new(0, 1e6, 0); BV.Velocity = Vector3.zero
+        Conn = RunService.Heartbeat:Connect(function() HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z) end)
+    else
+        if Conn then Conn:Disconnect() end if BV then BV:Destroy() end
+    end
+end)
+
+AddBtn("NO RENDER 3D: OFF", function(b)
+    Toggles.NoRender = not Toggles.NoRender
+    RunService:Set3dRenderingEnabled(not Toggles.NoRender)
+    b.Text = Toggles.NoRender and "NO RENDER 3D: ON" or "NO RENDER 3D: OFF"
+end)
+
+AddBtn("BOOSTER MODE (Plastic)", function(b)
     Toggles.Booster = not Toggles.Booster
-    b.Text = Toggles.Booster and "BOOSTER: ON" or "BOOSTER: OFF"
     Lighting.GlobalShadows = not Toggles.Booster
-    if Toggles.Booster then
-        for _, v in pairs(game:GetDescendants()) do
-            if v:IsA("BasePart") then v.Material = "SmoothPlastic" elseif v:IsA("Texture") then v.Transparency = 1 end
-        end
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("BasePart") then v.Material = "SmoothPlastic" elseif v:IsA("Texture") then v.Transparency = 1 end
     end
 end)
 
 AddBtn("INSTANT PROMPT: OFF", function(b)
     Toggles.Instant = not Toggles.Instant
-    b.Text = Toggles.Instant and "INSTANT: ON" or "INSTANT: OFF"
+    b.Text = Toggles.Instant and "INSTANT PROMPT: ON" or "INSTANT PROMPT: OFF"
     task.spawn(function()
         while Toggles.Instant do
-            for _, p in pairs(workspace:GetDescendants()) do
-                if p:IsA("ProximityPrompt") then p.HoldDuration = 0 end
-            end
+            for _, p in pairs(workspace:GetDescendants()) do if p:IsA("ProximityPrompt") then p.HoldDuration = 0 end end
             task.wait(2)
         end
     end)
 end)
 
--- --- MINIMIZE ---
+-- Footer FPS & Anti-AFK
+local Footer = Instance.new("TextLabel", Main)
+Footer.Size = UDim2.new(1, 0, 0, 25); Footer.Position = UDim2.new(0, 0, 1, -25); Footer.BackgroundTransparency = 1; Footer.TextColor3 = Color3.new(0.4,0.4,0.4); Footer.Text = "FPS: -- | Anti-AFK Active"; Footer.Font = Enum.Font.Code; Footer.TextSize = 10
+
+local frames = 0; local lastT = os.clock()
+RunService.RenderStepped:Connect(function()
+    frames = frames + 1
+    if os.clock() - lastT >= 1 then Footer.Text = "FPS: "..frames.." | Anti-AFK Active"; frames = 0; lastT = os.clock() end
+end)
+
+Player.Idled:Connect(function() VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(1); VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end)
+
 MinBtn.MouseButton1Click:Connect(function()
     Toggles.Minimized = not Toggles.Minimized
-    Main:TweenSize(Toggles.Minimized and UDim2.new(0, 260, 0, 30) or UDim2.new(0, 260, 0, 420), "Out", "Quart", 0.2, true)
-    Scroll.Visible = not Toggles.Minimized
+    Main:TweenSize(Toggles.Minimized and UDim2.new(0, 450, 0, 35) or UDim2.new(0, 450, 0, 400), "Out", "Quart", 0.3, true)
+    Scroll.Visible = not Toggles.Minimized; Footer.Visible = not Toggles.Minimized
+    MinBtn.Text = Toggles.Minimized and "SHOW" or "HIDE"
 end)
