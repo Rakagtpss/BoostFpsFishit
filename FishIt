@@ -2,26 +2,25 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
 -- // --- CONFIGURATION ---
-local UI_WIDTH = 260 
-local UI_HEIGHT = 220 
-local SELL_MENU_WIDTH = 240 -- Lebar menu sell agar teks muat
-
+local UI_WIDTH = 280 
+local UI_HEIGHT = 240 
 local THEME = {
-    Background = Color3.fromRGB(20, 20, 24), -- Dark Matte
+    Background = Color3.fromRGB(20, 20, 24),
     Header = Color3.fromRGB(28, 28, 32),
     Button = Color3.fromRGB(35, 35, 40),
     ButtonActive = Color3.fromRGB(45, 55, 65),
     Text = Color3.fromRGB(220, 220, 220),
-    Accent = Color3.fromRGB(80, 140, 255), -- Soft Blue
-    SellText = Color3.fromRGB(255, 100, 100) -- Merah pudar untuk teks [SELL]
+    Accent = Color3.fromRGB(80, 140, 255),
+    Success = Color3.fromRGB(100, 255, 100),
+    Warning = Color3.fromRGB(255, 200, 50)
 }
 
 -- // State
@@ -33,12 +32,17 @@ local BV, Conn
 local fpsLimits = {30, 60, 144, 999}
 local currentLimitIndex = 4
 
--- // Cleanup
-if CoreGui:FindFirstChild("SeraphinUnique") then CoreGui.SeraphinUnique:Destroy() end
+-- // Auto Totem State
+local AutoTotemActive = false
+local SelectedTotemName = nil
+local TotemTimer = 0
+
+-- // Cleanup Old GUI
+if CoreGui:FindFirstChild("SeraphinTotem") then CoreGui.SeraphinTotem:Destroy() end
 
 -- // --- UI CREATION ---
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "SeraphinUnique"
+Gui.Name = "SeraphinTotem"
 Gui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", Gui)
@@ -56,7 +60,6 @@ Header.Size = UDim2.new(1, 0, 0, 40)
 Header.BackgroundColor3 = THEME.Header
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 
--- Filler untuk meratakan bawah header
 local HeaderFiller = Instance.new("Frame", Header)
 HeaderFiller.Size = UDim2.new(1, 0, 0, 10)
 HeaderFiller.Position = UDim2.new(0, 0, 1, -10)
@@ -64,9 +67,9 @@ HeaderFiller.BackgroundColor3 = THEME.Header
 HeaderFiller.BorderSizePixel = 0
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.6, 0, 1, 0)
+Title.Size = UDim2.new(0.7, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <b>v3</b>"
+Title.Text = "SERAPHIN <b>TOTEM</b>"
 Title.RichText = true
 Title.TextColor3 = THEME.Text
 Title.Font = Enum.Font.GothamBold
@@ -96,7 +99,7 @@ local Layout = Instance.new("UIListLayout", ScrollFrame)
 Layout.Padding = UDim.new(0, 8)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Helper Button Creator
+-- Helper: Create Button
 local function CreateButton(text)
     local btn = Instance.new("TextButton", ScrollFrame)
     btn.Size = UDim2.new(1, 0, 0, 32)
@@ -108,156 +111,223 @@ local function CreateButton(text)
     btn.AutoButtonColor = false
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     
-    btn.MouseEnter:Connect(function() 
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = THEME.ButtonActive}):Play() 
-    end)
-    btn.MouseLeave:Connect(function() 
-        if not (text:find("ON") or text:find("Unl")) then
-             TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = THEME.Button}):Play() 
-        end
-    end)
+    btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = THEME.ButtonActive}):Play() end)
+    btn.MouseLeave:Connect(function() if not (text:find("ON") or text:find("Unl")) then TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = THEME.Button}):Play() end end)
     return btn
 end
 
--- // --- TOMBOL MENU UTAMA ---
-local SellMenuBtn = CreateButton("Open Sell Menu >")
+-- // --- UI ELEMENTS ---
+
+-- Tombol Biasa
 local PotatoBtn = CreateButton("Booster Mode: OFF")
 local WowBtn = CreateButton("Walk On Water: OFF")
-local RenderBtn = CreateButton("No Render 3D: OFF")
 local FpsCapBtn = CreateButton("FPS Cap: Unlimited")
 
--- // --- SELL MENU POPUP ---
-local SellFrame = Instance.new("Frame", MainFrame)
-SellFrame.Size = UDim2.new(0, SELL_MENU_WIDTH, 0, 250) -- Lebih panjang agar enak dilihat
-SellFrame.Position = UDim2.new(1, 10, 0, 0) -- Muncul di sebelah kanan UI utama
-SellFrame.BackgroundColor3 = THEME.Background
-SellFrame.Visible = false
-SellFrame.ZIndex = 5
-SellFrame.ClipsDescendants = true
-Instance.new("UICorner", SellFrame).CornerRadius = UDim.new(0, 10)
+-- Tombol Menu Totem
+local TotemMenuBtn = CreateButton("Configure Auto Totem >")
+TotemMenuBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 
-local SellTitle = Instance.new("TextLabel", SellFrame)
-SellTitle.Size = UDim2.new(1, -10, 0, 30)
-SellTitle.Position = UDim2.new(0, 5, 0, 0)
-SellTitle.Text = "AVAILABLE ITEMS (SCROLL)"
-SellTitle.TextColor3 = Color3.fromRGB(150, 150, 150)
-SellTitle.Font = Enum.Font.GothamBold
-SellTitle.TextSize = 10
-SellTitle.BackgroundTransparency = 1
+-- Status Totem Display
+local StatusLabel = Instance.new("TextLabel", MainFrame)
+StatusLabel.Size = UDim2.new(1, 0, 0, 20)
+StatusLabel.Position = UDim2.new(0, 0, 1, -25)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Status: Idle"
+StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+StatusLabel.Font = Enum.Font.Code
+StatusLabel.TextSize = 10
 
-local SellScroll = Instance.new("ScrollingFrame", SellFrame)
-SellScroll.Size = UDim2.new(1, -10, 1, -35)
-SellScroll.Position = UDim2.new(0, 5, 0, 30)
-SellScroll.BackgroundTransparency = 1
-SellScroll.ScrollBarThickness = 3
-SellScroll.ScrollBarImageColor3 = THEME.Accent
-SellScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y -- PENTING: Agar bisa digulir
-Instance.new("UIListLayout", SellScroll).Padding = UDim.new(0, 5)
+-- // --- TOTEM POPUP FRAME ---
+local TotemFrame = Instance.new("Frame", MainFrame)
+TotemFrame.Size = UDim2.new(0, 220, 0, 240)
+TotemFrame.Position = UDim2.new(1, 10, 0, 0)
+TotemFrame.BackgroundColor3 = THEME.Background
+TotemFrame.Visible = false
+TotemFrame.ZIndex = 5
+Instance.new("UICorner", TotemFrame).CornerRadius = UDim.new(0, 10)
 
--- // --- LOGIC ---
+local TTitle = Instance.new("TextLabel", TotemFrame)
+TTitle.Size = UDim2.new(1, 0, 0, 30)
+TTitle.Text = "SELECT TOTEM TO AUTO USE"
+TTitle.TextColor3 = THEME.Accent
+TTitle.BackgroundTransparency = 1
+TTitle.Font = Enum.Font.GothamBold
+TTitle.TextSize = 10
 
-local function TriggerSell()
-    pcall(function()
-        local PlayerGui = Player:FindFirstChild("PlayerGui")
-        -- Sesuaikan path ini dengan game kamu jika berbeda
-        local SellBtn = PlayerGui["Exclusive Store"].Main.Content.Items["Sell VIP"]
-        if SellBtn then SellBtn.MouseButton1Click:Fire() end
+-- Toggle Button Inside Popup
+local ToggleAutoBtn = Instance.new("TextButton", TotemFrame)
+ToggleAutoBtn.Size = UDim2.new(0.9, 0, 0, 30)
+ToggleAutoBtn.Position = UDim2.new(0.05, 0, 0, 35)
+ToggleAutoBtn.Text = "ENABLE AUTO: OFF"
+ToggleAutoBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+ToggleAutoBtn.TextColor3 = Color3.new(1,1,1)
+ToggleAutoBtn.Font = Enum.Font.GothamBold
+ToggleAutoBtn.TextSize = 11
+Instance.new("UICorner", ToggleAutoBtn).CornerRadius = UDim.new(0, 6)
+
+local RefreshBtn = Instance.new("TextButton", TotemFrame)
+RefreshBtn.Size = UDim2.new(0.9, 0, 0, 20)
+RefreshBtn.Position = UDim2.new(0.05, 0, 0, 70)
+RefreshBtn.Text = "[ REFRESH BACKPACK ]"
+RefreshBtn.BackgroundColor3 = THEME.Button
+RefreshBtn.TextColor3 = THEME.Text
+RefreshBtn.Font = Enum.Font.Code
+RefreshBtn.TextSize = 10
+Instance.new("UICorner", RefreshBtn).CornerRadius = UDim.new(0, 4)
+
+local TotemScroll = Instance.new("ScrollingFrame", TotemFrame)
+TotemScroll.Size = UDim2.new(1, -10, 1, -100)
+TotemScroll.Position = UDim2.new(0, 5, 0, 95)
+TotemScroll.BackgroundTransparency = 1
+TotemScroll.ScrollBarThickness = 3
+TotemScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Instance.new("UIListLayout", TotemScroll).Padding = UDim.new(0, 5)
+
+-- // --- LOGIC AUTO TOTEM ---
+
+local function GetNetRemote(name)
+    -- Helper function to safely get remote based on user provided path
+    local success, result = pcall(function()
+        return ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild(name)
     end)
+    if success and result then return result else return nil end
 end
 
-local function ScanReplicatedAndList()
-    -- Bersihkan list lama
-    for _, child in pairs(SellScroll:GetChildren()) do 
-        if child:IsA("TextButton") or child:IsA("TextLabel") then child:Destroy() end 
-    end
-
-    -- Mencari folder Items di ReplicatedStorage
-    local TargetFolder = nil
-    if ReplicatedStorage:FindFirstChild("Resources") and ReplicatedStorage.Resources:FindFirstChild("Items") then
-        TargetFolder = ReplicatedStorage.Resources.Items
-    elseif ReplicatedStorage:FindFirstChild("Items") then
-        TargetFolder = ReplicatedStorage.Items
-    end
-
-    if TargetFolder then
-        for _, item in pairs(TargetFolder:GetChildren()) do
-            -- Kita ambil item langsung atau jika ada dalam folder kategori
-            local itemsToDisplay = {}
-            if item:IsA("Folder") then
-                for _, subItem in pairs(item:GetChildren()) do table.insert(itemsToDisplay, subItem) end
-            else
-                table.insert(itemsToDisplay, item)
-            end
-
-            for _, realItem in pairs(itemsToDisplay) do
-                local btn = Instance.new("TextButton", SellScroll)
-                btn.Size = UDim2.new(1, -4, 0, 25) -- Sedikit padding kanan
-                btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-                btn.AutoButtonColor = false
-                btn.Font = Enum.Font.Code -- Font Code agar terlihat teknis
-                btn.TextSize = 10
-                btn.TextColor3 = THEME.Text
-                btn.TextXAlignment = Enum.TextXAlignment.Left
-                -- FORMAT TEKS SESUAI PERMINTAAN
-                btn.Text = "  [ SELL ITEM : ] [ " .. realItem.Name .. " ]"
-                btn.RichText = true -- Opsional jika ingin mewarnai sebagian teks
-                Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-
-                -- Event Klik
-                btn.MouseButton1Click:Connect(function()
-                    local backpackItem = Player.Backpack:FindFirstChild(realItem.Name)
-                    
-                    if backpackItem then
-                        -- Animasi Feedback
-                        btn.BackgroundColor3 = Color3.fromRGB(50, 150, 100) -- Hijau
-                        btn.Text = "  [ PROCESSING... ]"
-                        
-                        -- Equip & Sell
-                        Char.Humanoid:EquipTool(backpackItem)
-                        task.wait(0.1)
-                        TriggerSell()
-                        
-                        task.wait(0.5)
-                        btn.Text = "  [ SOLD SUCCESS ]"
-                        task.wait(0.5)
-                        
-                        -- Reset Teks
-                        btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-                        btn.Text = "  [ SELL ITEM : ] [ " .. realItem.Name .. " ]"
-                    else
-                        -- Item tidak ada di tas
-                        btn.BackgroundColor3 = Color3.fromRGB(150, 50, 50) -- Merah
-                        btn.Text = "  [ ITEM NOT OWNED ]"
-                        task.wait(1)
-                        btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-                        btn.Text = "  [ SELL ITEM : ] [ " .. realItem.Name .. " ]"
-                    end
-                end)
-            end
+local function ActivateTotem()
+    if not SelectedTotemName then return end
+    
+    local Backpack = Player.Backpack
+    local Character = Player.Character or Player.CharacterAdded:Wait()
+    local Humanoid = Character:WaitForChild("Humanoid", 5)
+    
+    -- Cari Item di Backpack atau Character
+    local TotemTool = Backpack:FindFirstChild(SelectedTotemName) or Character:FindFirstChild(SelectedTotemName)
+    
+    if TotemTool and Humanoid then
+        -- 1. Equip Tool
+        Humanoid:EquipTool(TotemTool)
+        
+        -- 2. Fire Remote (Sesuai path user)
+        local SpawnRemote = GetNetRemote("RE/SpawnTotem")
+        if SpawnRemote then
+             -- User provided: args = {[1] = "Totems"}. 
+             -- Note: Usually game expects Totem Name here, but if "Totems" is a category, we try passing the Item Name first.
+            SpawnRemote:FireServer(SelectedTotemName) 
+            
+            -- Feedback
+            StatusLabel.Text = "Status: Used " .. SelectedTotemName
+            print("Auto Totem: Used " .. SelectedTotemName)
         end
     else
-        local errLabel = Instance.new("TextLabel", SellScroll)
-        errLabel.Size = UDim2.new(1,0,0,30)
-        errLabel.Text = "Folder 'Items' not found in ReplicatedStorage"
-        errLabel.TextColor3 = Color3.fromRGB(200,50,50)
-        errLabel.BackgroundTransparency = 1
+        StatusLabel.Text = "Status: Totem Not Found in Inv"
+        -- Matikan auto jika item habis
+        AutoTotemActive = false
+        ToggleAutoBtn.Text = "ENABLE AUTO: OFF"
+        ToggleAutoBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
     end
 end
 
--- Toggle Sell Menu
-SellMenuBtn.MouseButton1Click:Connect(function()
-    SellFrame.Visible = not SellFrame.Visible
-    if SellFrame.Visible then
-        SellMenuBtn.Text = "Close Sell Menu <"
-        SellMenuBtn.BackgroundColor3 = THEME.Accent
-        ScanReplicatedAndList() -- Refresh list saat dibuka
-    else
-        SellMenuBtn.Text = "Open Sell Menu >"
-        SellMenuBtn.BackgroundColor3 = THEME.Button
+-- Loop Auto Spawn (Setiap 60 Menit)
+task.spawn(function()
+    while true do
+        if AutoTotemActive and SelectedTotemName then
+            ActivateTotem()
+            
+            -- Countdown 60 Menit (3600 Detik)
+            for i = 3600, 1, -1 do
+                if not AutoTotemActive then break end
+                StatusLabel.Text = "Next Totem: " .. i .. "s"
+                task.wait(1)
+            end
+        else
+            task.wait(1)
+        end
     end
 end)
 
--- Standard Features Logic
+local function ScanTotems()
+    for _, v in pairs(TotemScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+    
+    local found = false
+    local itemsToCheck = {}
+    
+    -- Ambil dari Backpack & Character (siapa tau lagi dipegang)
+    for _, item in pairs(Player.Backpack:GetChildren()) do table.insert(itemsToCheck, item) end
+    if Player.Character then
+        for _, item in pairs(Player.Character:GetChildren()) do 
+            if item:IsA("Tool") then table.insert(itemsToCheck, item) end 
+        end
+    end
+    
+    for _, item in pairs(itemsToCheck) do
+        -- Cek jika nama item mengandung kata "Totem"
+        if item:IsA("Tool") and string.find(item.Name, "Totem") then
+            found = true
+            local btn = Instance.new("TextButton", TotemScroll)
+            btn.Size = UDim2.new(1, -5, 0, 25)
+            btn.BackgroundColor3 = THEME.Button
+            btn.TextColor3 = THEME.Text
+            btn.Text = "  " .. item.Name
+            btn.Font = Enum.Font.Gotham
+            btn.TextSize = 10
+            btn.TextXAlignment = Enum.TextXAlignment.Left
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+            
+            btn.MouseButton1Click:Connect(function()
+                SelectedTotemName = item.Name
+                TotemMenuBtn.Text = "Auto: " .. item.Name
+                
+                -- Visual Selection
+                for _, b in pairs(TotemScroll:GetChildren()) do
+                    if b:IsA("TextButton") then b.BackgroundColor3 = THEME.Button end
+                end
+                btn.BackgroundColor3 = THEME.Accent
+            end)
+        end
+    end
+    
+    if not found then
+        local lbl = Instance.new("TextLabel", TotemScroll)
+        lbl.Size = UDim2.new(1,0,0,30)
+        lbl.Text = "No Totems Found in Backpack"
+        lbl.TextColor3 = Color3.fromRGB(255, 100, 100)
+        lbl.BackgroundTransparency = 1
+        lbl.TextSize = 9
+    end
+end
+
+-- // --- UI EVENTS ---
+
+TotemMenuBtn.MouseButton1Click:Connect(function()
+    TotemFrame.Visible = not TotemFrame.Visible
+    if TotemFrame.Visible then ScanTotems() end
+end)
+
+RefreshBtn.MouseButton1Click:Connect(function()
+    ScanTotems()
+end)
+
+ToggleAutoBtn.MouseButton1Click:Connect(function()
+    if not SelectedTotemName then 
+        ToggleAutoBtn.Text = "SELECT A TOTEM FIRST!"
+        task.wait(1)
+        ToggleAutoBtn.Text = "ENABLE AUTO: OFF"
+        return 
+    end
+    
+    AutoTotemActive = not AutoTotemActive
+    if AutoTotemActive then
+        ToggleAutoBtn.Text = "ENABLE AUTO: ON"
+        ToggleAutoBtn.BackgroundColor3 = THEME.Success
+        StatusLabel.Text = "Status: Starting Auto..."
+    else
+        ToggleAutoBtn.Text = "ENABLE AUTO: OFF"
+        ToggleAutoBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+        StatusLabel.Text = "Status: Idle"
+    end
+end)
+
+-- Basic Buttons Logic
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
@@ -268,13 +338,6 @@ PotatoBtn.MouseButton1Click:Connect(function()
             if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
         end
     end
-end)
-
-RenderBtn.MouseButton1Click:Connect(function()
-    AfkModeActive = not AfkModeActive
-    RunService:Set3dRenderingEnabled(not AfkModeActive)
-    RenderBtn.Text = AfkModeActive and "No Render 3D: ON" or "No Render 3D: OFF"
-    RenderBtn.TextColor3 = AfkModeActive and Color3.fromRGB(255, 80, 80) or THEME.Text
 end)
 
 WowBtn.MouseButton1Click:Connect(function()
@@ -307,7 +370,7 @@ MinBtn.MouseButton1Click:Connect(function()
     if Minimized then
         MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 40), "Out", "Quad", 0.3, true)
         ScrollFrame.Visible = false
-        SellFrame.Visible = false
+        TotemFrame.Visible = false
         MinBtn.Text = "+"
     else
         MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
