@@ -15,19 +15,19 @@ local Frozen = false
 local BV, Conn
 
 -- // FPS Settings
-local fpsLimits = {30, 60, 144, 999}
-local currentLimitIndex = 4
+local fpsLimits = {15, 30, 60, 90, 180, 999}
+local currentLimitIndex = 6
 
 -- // UI Config
 local UI_WIDTH = 340
-local UI_HEIGHT = 200 -- Tinggi disesuaikan
+local UI_HEIGHT = 200
 local ACCENT = Color3.fromRGB(0, 255, 170)
 local BG_MAIN = Color3.fromRGB(10, 10, 12)
 
--- // Cleanup
+-- // Cleanup Old UI
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
--- // NOTIFIKASI
+-- // NOTIFIKASI POJOK KANAN BAWAH
 local function ShowSeraphinNotif()
     local NotifGui = Instance.new("ScreenGui", CoreGui)
     local NotifLabel = Instance.new("TextLabel", NotifGui)
@@ -43,8 +43,10 @@ local function ShowSeraphinNotif()
     
     TweenService:Create(NotifLabel, TweenInfo.new(0.6), {TextTransparency = 0, Position = UDim2.new(1, -210, 1, -50)}):Play()
     task.delay(3, function()
-        TweenService:Create(NotifLabel, TweenInfo.new(0.6), {TextTransparency = 1, Position = UDim2.new(1, -210, 1, 0)}):Play()
-        task.wait(0.6) NotifGui:Destroy()
+        if NotifLabel then
+            TweenService:Create(NotifLabel, TweenInfo.new(0.6), {TextTransparency = 1, Position = UDim2.new(1, -210, 1, 0)}):Play()
+            task.wait(0.6) NotifGui:Destroy()
+        end
     end)
 end
 ShowSeraphinNotif()
@@ -57,11 +59,11 @@ local MainFrame = Instance.new("Frame", Gui)
 MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
 MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.4, 0)
 MainFrame.BackgroundColor3 = BG_MAIN
-MainFrame.BackgroundTransparency = 0.2
+MainFrame.BackgroundTransparency = 0.25
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
 
 local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1, -100, 0, 35)
@@ -84,7 +86,6 @@ MinBtn.Font = Enum.Font.GothamBold
 MinBtn.TextSize = 10
 Instance.new("UICorner", MinBtn)
 
--- CONTAINER BOX (Agar Tombol Rapi)
 local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
 ScrollFrame.Size = UDim2.new(1, -20, 1, -75)
 ScrollFrame.Position = UDim2.new(0, 10, 0, 45)
@@ -94,7 +95,7 @@ ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 ScrollFrame.ScrollBarThickness = 0
 
 local Layout = Instance.new("UIGridLayout", ScrollFrame)
-Layout.CellSize = UDim2.new(0.5, -7, 0, 38) -- Ukuran tombol presisi
+Layout.CellSize = UDim2.new(0.5, -7, 0, 38)
 Layout.CellPadding = UDim2.new(0, 10, 0, 8)
 
 local function CreateButton(text)
@@ -104,7 +105,8 @@ local function CreateButton(text)
     btn.TextSize = 10
     btn.TextColor3 = Color3.new(0.9, 0.9, 0.9)
     btn.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.BackgroundTransparency = 0.3
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
     return btn
 end
 
@@ -125,19 +127,15 @@ FpsDisplay.TextSize = 10
 FpsDisplay.TextXAlignment = Enum.TextXAlignment.Right
 
 -- // LOGIC FUNCTIONS
-FreezeBtn.MouseButton1Click:Connect(function()
-    Frozen = not Frozen
-    FreezeBtn.Text = Frozen and "FREEZE: ON" or "FREEZE: OFF"
-    FreezeBtn.BackgroundColor3 = Frozen and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(25, 25, 30)
-    if HRP then HRP.Anchored = Frozen end
-end)
 
+-- 1. ULTRA DEEP BOOSTER 2026 (CPU & GPU)
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
     PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 30)
     
     settings().Rendering.QualityLevel = Optimized and 1 or 10
+    workspace.InterpolationThrottling = Optimized and Enum.InterpolationThrottlingMode.Enabled or Enum.InterpolationThrottlingMode.Disabled
     Lighting.GlobalShadows = not Optimized
     
     task.spawn(function()
@@ -147,10 +145,12 @@ PotatoBtn.MouseButton1Click:Connect(function()
                 if v:IsA("BasePart") then
                     v.Material = Enum.Material.SmoothPlastic
                     v.CastShadow = false
-                elseif v:IsA("MeshPart") then
-                    v.RenderFidelity = Enum.RenderFidelity.Performance
                     v.CollisionFidelity = Enum.CollisionFidelity.Box
-                elseif v:IsA("Texture") or v:IsA("Decal") then
+                elseif v:IsA("Decal") or v:IsA("Texture") then
+                    v.Transparency = 1
+                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                    v.Enabled = false
+                elseif v:IsA("Clothing") or v:IsA("ShirtGraphic") then
                     v.Transparency = 1
                 end
             else
@@ -162,13 +162,15 @@ PotatoBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
+-- 2. FPS CAP (15/30/60/90/180/Unli)
 FpsCapBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex % #fpsLimits + 1
     local newLimit = fpsLimits[currentLimitIndex]
     if setfpscap then setfpscap(newLimit) end
-    FpsCapBtn.Text = (newLimit > 900) and "FPS: UNLIMITED" or "FPS: " .. newLimit
+    FpsCapBtn.Text = newLimit > 900 and "FPS: UNLIMITED" or "FPS: " .. newLimit
 end)
 
+-- 3. No Render
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
@@ -176,6 +178,7 @@ RenderBtn.MouseButton1Click:Connect(function()
     RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(120, 30, 30) or Color3.fromRGB(25, 25, 30)
 end)
 
+-- 4. Water Walk
 WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
     WowBtn.Text = WowEnabled and "WATER WALK: ON" or "WATER WALK: OFF"
@@ -193,6 +196,15 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- 5. Freeze
+FreezeBtn.MouseButton1Click:Connect(function()
+    Frozen = not Frozen
+    FreezeBtn.Text = Frozen and "FREEZE: ON" or "FREEZE: OFF"
+    FreezeBtn.BackgroundColor3 = Frozen and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(25, 25, 30)
+    if HRP then HRP.Anchored = Frozen end
+end)
+
+-- 6. Hide/Show
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
@@ -207,6 +219,7 @@ MinBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- FPS Loop
 local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
