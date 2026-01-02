@@ -1,0 +1,205 @@
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+-- Local Player
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+-- Variables untuk Status
+local flying = false
+local speedEnabled = false
+local godMode = false
+
+-- 1. SETUP UI UTAMA
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "DevAdminPanel"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Frame Utama
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 220, 0, 350)
+mainFrame.Position = UDim2.new(0.05, 0, 0.4, 0) -- Posisi di kiri tengah
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+-- Sudut Melengkung Frame
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 10)
+uiCorner.Parent = mainFrame
+
+-- Judul
+local title = Instance.new("TextLabel")
+title.Text = "DEV TOOLKIT"
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(200, 200, 200)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.Parent = mainFrame
+
+-- Tombol Tutup/Buka (Toggle UI)
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0, 40, 0, 40)
+toggleBtn.Position = UDim2.new(0, 230, 0, 0) -- Di sebelah kanan panel
+toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
+toggleBtn.Text = "X"
+toggleBtn.TextColor3 = Color3.new(1,1,1)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.Parent = mainFrame
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(1, 0) -- Bulat penuh
+toggleCorner.Parent = toggleBtn
+
+-- Container untuk List Tombol (Scrolling)
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(1, -20, 1, -60)
+scrollFrame.Position = UDim2.new(0, 10, 0, 50)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.ScrollBarThickness = 4
+scrollFrame.Parent = mainFrame
+
+local uiListLayout = Instance.new("UIListLayout")
+uiListLayout.Padding = UDim.new(0, 8)
+uiListLayout.Parent = scrollFrame
+
+-- FUNGSI PEMBUAT TOMBOL OTOMATIS
+function createButton(text, color, callback)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, 0, 0, 40)
+	btn.BackgroundColor3 = color
+	btn.Text = text
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.Font = Enum.Font.GothamSemibold
+	btn.TextSize = 14
+	btn.Parent = scrollFrame
+	
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 6)
+	c.Parent = btn
+	
+	btn.MouseButton1Click:Connect(function()
+		-- Efek Klik
+		local goal = {Size = UDim2.new(0.95, 0, 0, 38)}
+		local tween = TweenService:Create(btn, TweenInfo.new(0.1), goal)
+		tween:Play()
+		tween.Completed:Connect(function()
+			TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(1, 0, 0, 40)}):Play()
+		end)
+		
+		-- Jalankan Fungsi
+		callback()
+	end)
+	return btn
+end
+
+-- ================= FITUR GAMEPLAY =================
+
+-- 1. MAKAN / HEAL (Full Health)
+createButton("Eat / Full Heal", Color3.fromRGB(46, 204, 113), function()
+	local char = player.Character
+	if char and char:FindFirstChild("Humanoid") then
+		char.Humanoid.Health = char.Humanoid.MaxHealth
+	end
+end)
+
+-- 2. FREE WEAPON (Dev Sword)
+createButton("Get Dev Sword", Color3.fromRGB(241, 196, 15), function()
+	local tool = Instance.new("Tool")
+	tool.Name = "DevSword"
+	tool.RequiresHandle = true
+	
+	local handle = Instance.new("Part")
+	handle.Name = "Handle"
+	handle.Size = Vector3.new(0.5, 3, 0.5)
+	handle.BrickColor = BrickColor.new("Bright red")
+	handle.Material = Enum.Material.Neon
+	handle.Parent = tool
+	
+	tool.Activated:Connect(function()
+		-- Animasi ayun sederhana
+		local anim = Instance.new("Animation")
+		anim.AnimationId = "rbxassetid://12575017688" -- ID animasi contoh (bisa diganti)
+		-- Logika damage dummy (hanya visual di client, butuh server script untuk damage asli)
+		print("Sword Swung! (Client Side)")
+	end)
+	
+	tool.Parent = player.Backpack
+end)
+
+-- 3. SPEED HACK (Toggle Lari Cepat)
+createButton("Toggle Speed (50)", Color3.fromRGB(52, 152, 219), function()
+	local char = player.Character
+	if char and char:FindFirstChild("Humanoid") then
+		speedEnabled = not speedEnabled
+		if speedEnabled then
+			char.Humanoid.WalkSpeed = 50
+		else
+			char.Humanoid.WalkSpeed = 16
+		end
+	end
+end)
+
+-- 4. MOD FLY (Terbang Sederhana)
+createButton("Toggle Fly", Color3.fromRGB(155, 89, 182), function()
+	flying = not flying
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	
+	if flying and root then
+		local bv = Instance.new("BodyVelocity")
+		bv.Name = "FlyVelocity"
+		bv.MaxForce = Vector3.new(400000, 400000, 400000)
+		bv.Velocity = Vector3.new(0,0,0)
+		bv.Parent = root
+		
+		-- Loop terbang
+		task.spawn(function()
+			while flying and char.Parent do
+				local cam = workspace.CurrentCamera
+				bv.Velocity = cam.CFrame.LookVector * 50
+				RunService.RenderStepped:Wait()
+			end
+			bv:Destroy()
+		end)
+	else
+		-- Matikan terbang
+		flying = false 
+		if root:FindFirstChild("FlyVelocity") then
+			root.FlyVelocity:Destroy()
+		end
+	end
+end)
+
+-- 5. GOD MODE (No Damage Client Side)
+createButton("God Mode (Client)", Color3.fromRGB(231, 76, 60), function()
+	godMode = not godMode
+	local char = player.Character
+	if char and char:FindFirstChild("Humanoid") then
+		if godMode then
+			char.Humanoid.MaxHealth = 1000000
+			char.Humanoid.Health = 1000000
+		else
+			char.Humanoid.MaxHealth = 100
+			char.Humanoid.Health = 100
+		end
+	end
+end)
+
+-- LOGIKA UI TOGGLE
+local isOpen = true
+toggleBtn.MouseButton1Click:Connect(function()
+	isOpen = not isOpen
+	if isOpen then
+		mainFrame:TweenPosition(UDim2.new(0.05, 0, 0.4, 0), "Out", "Quad", 0.5)
+		toggleBtn.Text = "X"
+	else
+		mainFrame:TweenPosition(UDim2.new(-0.5, 0, 0.4, 0), "Out", "Quad", 0.5) -- Sembunyi ke kiri
+		toggleBtn.Text = "MENU"
+	end
+end)
