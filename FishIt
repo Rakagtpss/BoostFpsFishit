@@ -3,7 +3,6 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local SoundService = game:GetService("SoundService")
 local Debris = game:GetService("Debris")
 
 local Player = Players.LocalPlayer
@@ -19,14 +18,14 @@ local AfkModeActive = false
 local BV, Conn
 
 -- // Config Wide UI
-local UI_WIDTH = 350 -- Ukuran Wide
-local UI_HEIGHT = 160 -- Lebih pendek karena tombol menyamping
+local UI_WIDTH = 350
+local UI_HEIGHT = 160
 local ACCENT = Color3.fromRGB(0, 255, 170)
 local BG_COLOR = Color3.fromRGB(15, 15, 17)
 
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
--- // Notif
+-- // Notif System
 local function Notify(title, msg)
     local NotifGui = Instance.new("ScreenGui", CoreGui)
     local Frame = Instance.new("Frame", NotifGui)
@@ -61,7 +60,7 @@ local function Notify(title, msg)
     end)
 end
 
--- // UI Creation
+-- // UI Setup
 local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "SeraphinHelper"
 
@@ -74,7 +73,7 @@ MainFrame.Active = true
 MainFrame.Draggable = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
--- Header Wide
+-- Header
 local Header = Instance.new("Frame", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 40)
 Header.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -112,14 +111,14 @@ MinBtn.Font = Enum.Font.GothamBold
 MinBtn.TextSize = 9
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 5)
 
--- Content Area (Wide Grid)
+-- Content Grid
 local ContentFrame = Instance.new("Frame", MainFrame)
 ContentFrame.Size = UDim2.new(1, -20, 1, -55)
 ContentFrame.Position = UDim2.new(0, 10, 0, 48)
 ContentFrame.BackgroundTransparency = 1
 
 local GridLayout = Instance.new("UIGridLayout", ContentFrame)
-GridLayout.CellSize = UDim2.new(0, 160, 0, 32) -- Tombol menyamping
+GridLayout.CellSize = UDim2.new(0, 160, 0, 32)
 GridLayout.CellPadding = UDim2.new(0, 10, 0, 8)
 GridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
@@ -136,7 +135,7 @@ local function CreateButton(text)
     return btn
 end
 
--- // Buttons
+-- // Feature Buttons
 local FreezeBtn = CreateButton("Freeze Player: OFF")
 local WowBtn = CreateButton("Walk On Water: OFF")
 local PotatoBtn = CreateButton("Booster Mode: OFF")
@@ -149,7 +148,7 @@ local function UpdateBtnVisual(btn, state)
     btn.BackgroundTransparency = state and 0 or 0.3
 end
 
--- // Logic Fitur
+-- // LOGIC IMPLEMENTATION
 FreezeBtn.MouseButton1Click:Connect(function()
     IsFrozen = not IsFrozen
     if HRP then HRP.Anchored = IsFrozen end
@@ -174,12 +173,15 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- // BOOSTER MODE LOGIC (UPDATED)
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = "Booster: " .. (Optimized and "ON" or "OFF")
     UpdateBtnVisual(PotatoBtn, Optimized)
+    
     Lighting.GlobalShadows = not Optimized
     
+    -- 1. General Optimization (All Descendants)
     for _, v in pairs(game:GetDescendants()) do
         if Optimized then
             if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false
@@ -191,6 +193,61 @@ PotatoBtn.MouseButton1Click:Connect(function()
             elseif v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 0
             elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = true
             elseif v:IsA("Sound") then v:Play() end
+        end
+    end
+
+    -- 2. TARGETED FOLDERS COLLECTION
+    -- Mengumpulkan semua target folder/objek ke dalam satu tabel agar mudah diproses
+    local specificTargets = {}
+    
+    -- Target A: Standard Folders
+    if workspace:FindFirstChild("!!! EFFECTS") then table.insert(specificTargets, workspace["!!! EFFECTS"]) end
+    if workspace:FindFirstChild("Machines") then table.insert(specificTargets, workspace.Machines) end
+    
+    -- Target B: Islands & Christmas Decor (Safe Check)
+    if workspace:FindFirstChild("Islands") then
+        local islands = workspace.Islands
+        
+        -- Fisherman Island Decor
+        local fishIsland = islands:FindFirstChild("ChristmasDecor [Fisheman Island]")
+        if fishIsland then
+            if fishIsland:FindFirstChild("SnowBenchs") then table.insert(specificTargets, fishIsland.SnowBenchs) end
+            if fishIsland:FindFirstChild("Snow") then table.insert(specificTargets, fishIsland.Snow) end
+            if fishIsland:FindFirstChild("ChristmasLightRopes") then table.insert(specificTargets, fishIsland.ChristmasLightRopes) end
+        end
+        
+        -- Ancient Jungle Index 25
+        local ancientJungle = islands:FindFirstChild("Ancient Jungle")
+        if ancientJungle then
+            local children = ancientJungle:GetChildren()
+            if children[25] then -- Pastikan index 25 ada
+                table.insert(specificTargets, children[25])
+            end
+        end
+    end
+
+    -- 3. PROCESS SPECIFIC TARGETS
+    for _, obj in pairs(specificTargets) do
+        for _, v in pairs(obj:GetDescendants()) do
+            if Optimized then
+                -- Logika Hapus Berat (Efek, Salju, Tali Lampu)
+                if obj.Name == "!!! EFFECTS" or obj.Name == "Snow" or obj.Name == "ChristmasLightRopes" then
+                    if v:IsA("BasePart") then v.Transparency = 1 v.CanCollide = false end
+                    if v:IsA("ParticleEmitter") or v:IsA("Light") then v.Enabled = false end
+                
+                -- Logika Ringankan Objek (Mesin, Bangku, Jungle)
+                else 
+                    if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
+                end
+            else
+                -- RESTORE
+                if obj.Name == "!!! EFFECTS" or obj.Name == "Snow" or obj.Name == "ChristmasLightRopes" then
+                    if v:IsA("BasePart") then v.Transparency = 0 end
+                    if v:IsA("ParticleEmitter") or v:IsA("Light") then v.Enabled = true end
+                else
+                    if v:IsA("BasePart") then v.CastShadow = true end
+                end
+            end
         end
     end
 end)
@@ -210,13 +267,12 @@ FpsCapBtn.MouseButton1Click:Connect(function()
     FpsCapBtn.Text = "FPS: " .. (newLimit > 900 and "UNLIMITED" or newLimit)
 end)
 
--- // Logic Hide (Tetap Minimalis)
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, Minimized and 40 or UI_HEIGHT), "Out", "Quad", 0.3, true)
     ContentFrame.Visible = not Minimized
-    MainFrame.BackgroundTransparency = Minimized and 1 or 0.1
-    Header.BackgroundTransparency = Minimized and 1 or 0.2
+    MainFrame.BackgroundTransparency = 0.1 -- Tetap terlihat
+    Header.BackgroundTransparency = 0.2
     MinBtn.Text = Minimized and "SHOW" or "HIDE"
 end)
 
@@ -229,5 +285,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-Notify("SeraphinXRaka", "Loading !!")
-
+Notify("Seraphin Helper", "Credit By HelperSeraphin")
