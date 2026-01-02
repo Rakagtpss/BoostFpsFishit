@@ -17,11 +17,10 @@ local Minimized = false
 local WowEnabled = false
 local FullbrightEnabled = false
 local InstantPromptEnabled = false
-local AutoSellEnabled = false 
 local BV, Conn
 
 -- // Inventory State
-local SelectedItem = nil
+local SelectedItem = ""
 
 -- // UI Config
 local UI_WIDTH = 280
@@ -29,7 +28,6 @@ local UI_HEIGHT = 450
 local ACCENT = Color3.fromRGB(0, 255, 170)
 local BG_DARK = Color3.fromRGB(15, 15, 17)
 local ITEM_BG = Color3.fromRGB(25, 25, 30)
-local RED_ACCENT = Color3.fromRGB(255, 80, 80)
 
 -- // Cleanup Old UI
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
@@ -63,7 +61,7 @@ Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.6, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">MANAGER</font>"
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">GEARS</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(0.95, 0.95, 0.95)
 Title.Font = Enum.Font.GothamBlack
@@ -108,24 +106,24 @@ local function CreateButton(text)
 end
 
 -- ====================================================
--- SEPARATOR: ITEM LIBRARY
+-- SEPARATOR: GEARS COLLECTION SCANNER
 -- ====================================================
 local InvLabel = Instance.new("TextLabel", ScrollFrame)
 InvLabel.Size = UDim2.new(1, 0, 0, 20)
 InvLabel.BackgroundTransparency = 1
-InvLabel.Text = "--- GAME ITEM LIBRARY ---"
+InvLabel.Text = "--- GEARS COLLECTION ---"
 InvLabel.TextColor3 = ACCENT
 InvLabel.Font = Enum.Font.Code
 InvLabel.TextSize = 10
 
 -- 1. Scan Button
-local ScanBtn = CreateButton("LOAD ITEM LIST (RepStorage)")
+local ScanBtn = CreateButton("SCAN GEARS COLLECTION")
 ScanBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 ScanBtn.TextColor3 = ACCENT
 
--- 2. Inventory List Frame
+-- 2. List Frame
 local InvListFrame = Instance.new("ScrollingFrame", ScrollFrame)
-InvListFrame.Size = UDim2.new(0.98, 0, 0, 120) 
+InvListFrame.Size = UDim2.new(0.98, 0, 0, 130) 
 InvListFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
 InvListFrame.ScrollBarThickness = 2
 InvListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -143,212 +141,117 @@ SelectedDisplay.TextColor3 = Color3.fromRGB(200, 200, 200)
 SelectedDisplay.Font = Enum.Font.GothamBold
 SelectedDisplay.TextSize = 11
 
--- 4. Amount Input
-local AmountBox = Instance.new("TextBox", ScrollFrame)
-AmountBox.Size = UDim2.new(0.5, 0, 0, 30)
-AmountBox.BackgroundColor3 = ITEM_BG
-AmountBox.Text = "1"
-AmountBox.TextColor3 = Color3.new(1,1,1)
-AmountBox.Font = Enum.Font.GothamBold
-AmountBox.TextSize = 12
-AmountBox.PlaceholderText = "Amount"
-Instance.new("UICorner", AmountBox).CornerRadius = UDim.new(0, 6)
-
--- 5. Sell Button
-local SellSelectBtn = CreateButton("SELL SELECTED ITEM")
-SellSelectBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
-SellSelectBtn.TextColor3 = RED_ACCENT
-
--- Separator
-local Sep2 = Instance.new("TextLabel", ScrollFrame)
-Sep2.Size = UDim2.new(1, 0, 0, 10)
-Sep2.Text = "------------------------"
-Sep2.BackgroundTransparency = 1
-Sep2.TextColor3 = Color3.fromRGB(60,60,60)
+-- 4. Sell Button
+local SellSelectBtn = CreateButton("SELL SELECTED GEAR")
+SellSelectBtn.BackgroundColor3 = Color3.fromRGB(80, 40, 40)
+SellSelectBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
 
 -- ====================================================
--- GENERAL FEATURES
--- ====================================================
-local PotatoBtn = CreateButton("Booster Mode: OFF")
-local WowBtn = CreateButton("Walk On Water: OFF")
-local RenderBtn = CreateButton("No Render 3D: OFF")
-local FpsDisplay = Instance.new("TextLabel", MainFrame)
-FpsDisplay.Size = UDim2.new(1, 0, 0, 25)
-FpsDisplay.Position = UDim2.new(0, 0, 1, -25)
-FpsDisplay.BackgroundTransparency = 1
-FpsDisplay.TextColor3 = Color3.fromRGB(120, 120, 120)
-FpsDisplay.Text = "FPS: -- | SERAPHIN"
-FpsDisplay.Font = Enum.Font.Code
-FpsDisplay.TextSize = 10
-
--- ====================================================
--- LOGIC: SCAN REPLICATED STORAGE
+-- LOGIC: GEARS SCANNER
 -- ====================================================
 
-local function UpdateItemList()
-    -- Bersihkan list lama
+local function UpdateGearsList()
     for _, child in pairs(InvListFrame:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
     
-    ScanBtn.Text = "SCANNING..."
-    
-    -- Target Folder: ReplicatedStorage.Items
-    local itemsFolder = ReplicatedStorage:FindFirstChild("Items")
-    
-    if itemsFolder then
-        local foundItems = {}
-        
-        -- Loop isi folder
-        for _, item in pairs(itemsFolder:GetChildren()) do
-            -- Kita masukkan ke tabel biar rapi
-            table.insert(foundItems, item.Name)
+    -- PATH TERBARU DARI USER
+    local gearsFolder = ReplicatedStorage:FindFirstChild("Modules")
+    if gearsFolder then
+        gearsFolder = gearsFolder:FindFirstChild("ModelDownloader")
+        if gearsFolder then
+            gearsFolder = gearsFolder:FindFirstChild("Collection")
+            if gearsFolder then
+                gearsFolder = gearsFolder:FindFirstChild("Gears")
+            end
         end
-        
-        -- Sortir nama item sesuai abjad (A-Z) biar gampang dicari
-        table.sort(foundItems)
-        
-        -- Buat Tombol
-        for _, itemName in pairs(foundItems) do
+    end
+    
+    if gearsFolder then
+        local found = gearsFolder:GetChildren()
+        for _, gear in pairs(found) do
             local btn = Instance.new("TextButton", InvListFrame)
             btn.Size = UDim2.new(1, 0, 0, 25)
             btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            btn.Text = "  " .. itemName
+            btn.Text = "  " .. gear.Name
             btn.TextColor3 = Color3.new(0.9, 0.9, 0.9)
             btn.Font = Enum.Font.Gotham
             btn.TextSize = 11
             btn.TextXAlignment = Enum.TextXAlignment.Left
             btn.BorderSizePixel = 0
             
-            -- Logic Select
             btn.MouseButton1Click:Connect(function()
-                SelectedItem = itemName
-                SelectedDisplay.Text = "Selected: " .. itemName
-                -- Efek Visual Select
+                SelectedItem = gear.Name
+                SelectedDisplay.Text = "Selected: " .. gear.Name
                 for _, b in pairs(InvListFrame:GetChildren()) do
                     if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(30, 30, 35) end
                 end
                 btn.BackgroundColor3 = ACCENT
             end)
         end
-        ScanBtn.Text = "REFRESH LIST (" .. #foundItems .. " Found)"
+        ScanBtn.Text = "REFRESH (" .. #found .. " Gears)"
     else
-        ScanBtn.Text = "ERROR: Folder 'Items' Not Found"
-        warn("Folder game:GetService('ReplicatedStorage').Items tidak ditemukan!")
+        ScanBtn.Text = "ERROR: Gears Path Not Found"
     end
 end
 
-ScanBtn.MouseButton1Click:Connect(UpdateItemList)
+ScanBtn.MouseButton1Click:Connect(UpdateGearsList)
 
--- Logic Tombol Sell (Remote yang kamu berikan)
+-- SELL LOGIC BERDASARKAN SIMPLESPY USER
 SellSelectBtn.MouseButton1Click:Connect(function()
-    if not SelectedItem then
-        SelectedDisplay.Text = "ERROR: Select an item first!"
-        return
-    end
+    if SelectedItem == "" then return end
     
-    local amount = tonumber(AmountBox.Text) or 1
-    
-    -- EKSEKUSI REMOTE
     local success, err = pcall(function()
-        -- PATH REMOTE SPESIFIK KAMU
-        local remote = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RF/SellItem"]
+        -- PATH REMOTE DARI SIMPLESPY USER
+        local remote = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/SellItem")
         
-        -- Format: (NamaItem, Jumlah)
-        remote:InvokeServer(SelectedItem, amount)
+        -- Mengikuti format SimpleSpy: InvokeServer(item_name)
+        remote:InvokeServer(SelectedItem)
     end)
     
     if success then
-        SelectedDisplay.Text = "Sent: " .. SelectedItem .. " (x" .. amount .. ")"
+        SelectedDisplay.Text = "Success Sold: " .. SelectedItem
     else
-        SelectedDisplay.Text = "FAIL (Check Console)"
-        warn("Sell Failed: " .. tostring(err))
+        warn("Sell Error: " .. tostring(err))
+        SelectedDisplay.Text = "Error Selling!"
     end
 end)
 
 -- ====================================================
--- LOGIC: FITUR LAINNYA
+-- EXTRA FEATURES
 -- ====================================================
+local PotatoBtn = CreateButton("Booster Mode: OFF")
+local InstantBtn = CreateButton("Instant Interaction: OFF")
 
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
     PotatoBtn.TextColor3 = Optimized and ACCENT or Color3.fromRGB(220, 220, 220)
     Lighting.GlobalShadows = not Optimized
-    
     if Optimized then
-        -- Cleaner
-        local targetNames = {"VFX", "Assets", "Effects", "Particles", "Debris"}
-        local function clearFolders(parent)
-            for _, name in pairs(targetNames) do
-                if parent:FindFirstChild(name) then parent[name]:ClearAllChildren() end
-            end
-        end
-        clearFolders(ReplicatedStorage)
-        clearFolders(Workspace)
-        
         for _, v in pairs(game:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.Material = Enum.Material.SmoothPlastic
-                v.CastShadow = false
-            elseif v:IsA("Texture") then
-                v.Transparency = 1
-            elseif v:IsA("ParticleEmitter") then
-                v.Enabled = false
-            end
+            if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic elseif v:IsA("Texture") then v.Transparency = 1 end
         end
     end
 end)
 
-WowBtn.MouseButton1Click:Connect(function()
-    WowEnabled = not WowEnabled
-    WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
-    WowBtn.TextColor3 = WowEnabled and ACCENT or Color3.fromRGB(220, 220, 220)
-    
-    if WowEnabled then
-        BV = Instance.new("BodyVelocity", HRP)
-        BV.MaxForce = Vector3.new(0, 1e6, 0)
-        BV.Velocity = Vector3.zero
-        Conn = RunService.Heartbeat:Connect(function()
-            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z) end
-        end)
-    else
-        if Conn then Conn:Disconnect() end
-        if BV then BV:Destroy() end
-    end
-end)
-
-RenderBtn.MouseButton1Click:Connect(function()
-    Minimized = not Minimized
-    RunService:Set3dRenderingEnabled(not Minimized) -- Reuse variable Minimized for render toggle state locally here or make new one
-    RenderBtn.Text = Minimized and "No Render 3D: ON" or "No Render 3D: OFF"
-    RenderBtn.TextColor3 = Minimized and RED_ACCENT or Color3.fromRGB(220, 220, 220)
+InstantBtn.MouseButton1Click:Connect(function()
+    InstantPromptEnabled = not InstantPromptEnabled
+    InstantBtn.Text = InstantPromptEnabled and "Instant Interaction: ON" or "Instant Interaction: OFF"
+    InstantBtn.TextColor3 = InstantPromptEnabled and ACCENT or Color3.fromRGB(220, 220, 220)
+    task.spawn(function()
+        while InstantPromptEnabled do
+            for _, prompt in pairs(Workspace:GetDescendants()) do
+                if prompt:IsA("ProximityPrompt") then prompt.HoldDuration = 0 end
+            end
+            task.wait(1)
+        end
+    end)
 end)
 
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    if Minimized then
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.3, true)
-        ScrollFrame.Visible = false
-        FpsDisplay.Visible = false
-        MinBtn.Text = "SHOW"
-    else
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
-        task.wait(0.2)
-        ScrollFrame.Visible = true
-        FpsDisplay.Visible = true
-        MinBtn.Text = "HIDE"
-    end
-end)
-
--- FPS Counter
-local lastT = os.clock()
-local frames = 0
-RunService.RenderStepped:Connect(function()
-    frames = frames + 1
-    if os.clock() - lastT >= 1 then
-        FpsDisplay.Text = "FPS: " .. frames .. " | SERAPHIN"
-        frames = 0
-        lastT = os.clock()
-    end
+    MainFrame:TweenSize(Minimized and UDim2.new(0, UI_WIDTH, 0, 35) or UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
+    ScrollFrame.Visible = not Minimized
+    MinBtn.Text = Minimized and "SHOW" or "HIDE"
 end)
