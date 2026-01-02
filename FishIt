@@ -3,31 +3,27 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
-local MaterialService = game:GetService("MaterialService")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
 -- // State
-local AfkModeActive, Optimized, Minimized, WowEnabled = false, false, false, false
-local Frozen = false
-local BV, Conn
-
--- // FPS Settings
+local Optimized, Minimized, WowEnabled, Frozen = false, false, false, false
+local WhiteScreenActive, MapDeleted = false, false
 local fpsLimits = {15, 30, 60, 90, 180, 999}
 local currentLimitIndex = 6
+local BV, Conn
 
 -- // UI Config
-local UI_WIDTH = 340
-local UI_HEIGHT = 200
+local UI_WIDTH, UI_HEIGHT = 340, 240 -- Tinggi ditambah untuk tombol baru
 local ACCENT = Color3.fromRGB(0, 255, 170)
 local BG_MAIN = Color3.fromRGB(10, 10, 12)
 
--- // Cleanup Old UI
+-- // Cleanup
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
--- // NOTIFIKASI POJOK KANAN BAWAH
+-- // NOTIFIKASI
 local function ShowSeraphinNotif()
     local NotifGui = Instance.new("ScreenGui", CoreGui)
     local NotifLabel = Instance.new("TextLabel", NotifGui)
@@ -51,7 +47,7 @@ local function ShowSeraphinNotif()
 end
 ShowSeraphinNotif()
 
--- // UI Creation
+-- // UI SETUP
 local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "SeraphinHelper"
 
@@ -110,11 +106,14 @@ local function CreateButton(text)
     return btn
 end
 
-local PotatoBtn = CreateButton("BOOSTER: OFF")
+-- // BUTTONS
+local PotBtn = CreateButton("BOOSTER: OFF")
+local FpsBtn = CreateButton("FPS: UNLIMITED")
+local RedBtn = CreateButton("NO RENDER: OFF")
+local WhiteBtn = CreateButton("WHITE SCREEN: OFF")
+local DelMapBtn = CreateButton("DELETE MAP")
 local WowBtn = CreateButton("WATER WALK: OFF")
-local RenderBtn = CreateButton("NO RENDER: OFF")
-local FpsCapBtn = CreateButton("FPS: UNLIMITED")
-local FreezeBtn = CreateButton("FREEZE: OFF")
+local FrzBtn = CreateButton("FREEZE: OFF")
 
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
 FpsDisplay.Size = UDim2.new(1, -15, 0, 20)
@@ -128,67 +127,86 @@ FpsDisplay.TextXAlignment = Enum.TextXAlignment.Right
 
 -- // LOGIC FUNCTIONS
 
--- 1. ULTRA DEEP BOOSTER 2026 (CPU & GPU)
-PotatoBtn.MouseButton1Click:Connect(function()
+-- 2. WHITE SCREEN (Ultra Saver)
+local WhiteOverlay = Instance.new("Frame", Gui)
+WhiteOverlay.Size = UDim2.new(1, 0, 1, 0)
+WhiteOverlay.BackgroundColor3 = Color3.new(1, 1, 1)
+WhiteOverlay.Visible = false
+WhiteOverlay.ZIndex = 9999
+
+WhiteBtn.MouseButton1Click:Connect(function()
+    WhiteScreenActive = not WhiteScreenActive
+    WhiteOverlay.Visible = WhiteScreenActive
+    WhiteBtn.Text = WhiteScreenActive and "WHITE SCREEN: ON" or "WHITE SCREEN: OFF"
+    WhiteBtn.BackgroundColor3 = WhiteScreenActive and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 30)
+end)
+
+-- 3. DELETE MAP (Extreme CPU Fix)
+DelMapBtn.MouseButton1Click:Connect(function()
+    MapDeleted = true
+    DelMapBtn.Text = "MAP DELETED"
+    DelMapBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    
+    local function Clean(obj)
+        for _, v in pairs(obj:GetChildren()) do
+            if v:IsA("Model") or v:IsA("BasePart") or v:IsA("Folder") then
+                if not v:FindFirstChild("Humanoid") and v.Name ~= Player.Name then
+                    v:Destroy()
+                end
+            end
+        end
+    end
+    
+    Clean(workspace)
+    if workspace:FindFirstChild("Terrain") then workspace.Terrain:Clear() end
+end)
+
+-- BOOSTER 2026
+PotBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
-    PotatoBtn.Text = Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
-    PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 30)
+    PotBtn.Text = Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
+    PotBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 30)
     
     settings().Rendering.QualityLevel = Optimized and 1 or 10
-    workspace.InterpolationThrottling = Optimized and Enum.InterpolationThrottlingMode.Enabled or Enum.InterpolationThrottlingMode.Disabled
     Lighting.GlobalShadows = not Optimized
     
     task.spawn(function()
-        local count = 0
         for _, v in pairs(game:GetDescendants()) do
             if Optimized then
                 if v:IsA("BasePart") then
                     v.Material = Enum.Material.SmoothPlastic
                     v.CastShadow = false
-                    v.CollisionFidelity = Enum.CollisionFidelity.Box
                 elseif v:IsA("Decal") or v:IsA("Texture") then
                     v.Transparency = 1
-                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                    v.Enabled = false
-                elseif v:IsA("Clothing") or v:IsA("ShirtGraphic") then
-                    v.Transparency = 1
                 end
-            else
-                if v:IsA("BasePart") then v.Material = Enum.Material.Plastic end
             end
-            count = count + 1
-            if count >= 800 then count = 0 task.wait() end
         end
     end)
 end)
 
--- 2. FPS CAP (15/30/60/90/180/Unli)
-FpsCapBtn.MouseButton1Click:Connect(function()
+FpsBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex % #fpsLimits + 1
-    local newLimit = fpsLimits[currentLimitIndex]
-    if setfpscap then setfpscap(newLimit) end
-    FpsCapBtn.Text = newLimit > 900 and "FPS: UNLIMITED" or "FPS: " .. newLimit
+    local lim = fpsLimits[currentLimitIndex]
+    if setfpscap then setfpscap(lim) end
+    FpsBtn.Text = lim > 900 and "FPS: UNLIMITED" or "FPS: " .. lim
 end)
 
--- 3. No Render
-RenderBtn.MouseButton1Click:Connect(function()
+RedBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
-    RenderBtn.Text = AfkModeActive and "NO RENDER: ON" or "NO RENDER: OFF"
-    RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(120, 30, 30) or Color3.fromRGB(25, 25, 30)
+    RedBtn.Text = AfkModeActive and "NO RENDER: ON" or "NO RENDER: OFF"
+    RedBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(120, 30, 30) or Color3.fromRGB(25, 25, 30)
 end)
 
--- 4. Water Walk
 WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
     WowBtn.Text = WowEnabled and "WATER WALK: ON" or "WATER WALK: OFF"
-    WowBtn.BackgroundColor3 = WowEnabled and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 30)
     if WowEnabled then
         BV = Instance.new("BodyVelocity", HRP)
         BV.MaxForce = Vector3.new(0, 1e6, 0)
         BV.Velocity = Vector3.zero
         Conn = RunService.Heartbeat:Connect(function()
-            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z) end
+            HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
         end)
     else
         if Conn then Conn:Disconnect() end
@@ -196,30 +214,19 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 5. Freeze
-FreezeBtn.MouseButton1Click:Connect(function()
+FrzBtn.MouseButton1Click:Connect(function()
     Frozen = not Frozen
-    FreezeBtn.Text = Frozen and "FREEZE: ON" or "FREEZE: OFF"
-    FreezeBtn.BackgroundColor3 = Frozen and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(25, 25, 30)
-    if HRP then HRP.Anchored = Frozen end
+    FrzBtn.Text = Frozen and "FREEZE: ON" or "FREEZE: OFF"
+    HRP.Anchored = Frozen
 end)
 
--- 6. Hide/Show
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    if Minimized then
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.2, true)
-        ScrollFrame.Visible, FpsDisplay.Visible = false, false
-        MinBtn.Text = "SHOW"
-    else
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.2, true)
-        task.wait(0.2)
-        ScrollFrame.Visible, FpsDisplay.Visible = true, true
-        MinBtn.Text = "HIDE"
-    end
+    MainFrame:TweenSize(Minimized and UDim2.new(0, UI_WIDTH, 0, 35) or UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.2, true)
+    ScrollFrame.Visible, FpsDisplay.Visible = not Minimized, not Minimized
+    MinBtn.Text = Minimized and "SHOW" or "HIDE"
 end)
 
--- FPS Loop
 local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
