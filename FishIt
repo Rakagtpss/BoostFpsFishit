@@ -1,4 +1,4 @@
--- // SERAPHIN HELPER - HEADER STATS EDITION // --
+-- // SERAPHIN HELPER - HIGH VISIBILITY & FIXED FEATURES // --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -8,15 +8,15 @@ local Stats = game:GetService("Stats")
 
 local Player = Players.LocalPlayer
 
--- // State & Settings
+-- // State
 local Optimized, Minimized = false, false
 local fpsLimits = {15, 30, 60, 90, 180, 999}
 local currentLimitIndex = 6
 local BV, WowConn
 
 -- // UI Config
-local UI_WIDTH, UI_HEIGHT = 360, 180 -- Sedikit diperlebar untuk stats di atas
-local ACCENT = Color3.fromRGB(0, 255, 170)
+local UI_WIDTH, UI_HEIGHT = 380, 180 
+local ACCENT = Color3.fromRGB(0, 255, 170) -- Hijau Neon
 local BG_MAIN = Color3.fromRGB(10, 10, 12)
 
 -- // ANTI-AFK & AUTO RECONNECT
@@ -32,11 +32,11 @@ end)
 -- // NOTIFIKASI LOAD
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "Seraphin Helper",
-    Text = "Script Berhasil Terload! v2026",
-    Duration = 5
+    Text = "Sistem Aktif & Teroptimasi!",
+    Duration = 3
 })
 
--- // Cleanup Old UI
+-- // Cleanup
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
 -- // UI SETUP
@@ -47,35 +47,35 @@ local MainFrame = Instance.new("Frame", Gui)
 MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
 MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.4, 0)
 MainFrame.BackgroundColor3 = BG_MAIN
-MainFrame.BackgroundTransparency = 0.2
+MainFrame.BackgroundTransparency = 0.15
 MainFrame.Active, MainFrame.Draggable = true, true
 Instance.new("UICorner", MainFrame)
 
--- Judul Utama
+-- Judul
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size, Title.Position = UDim2.new(0, 130, 0, 35), UDim2.new(0, 15, 0, 0)
+Title.Size, Title.Position = UDim2.new(0, 120, 0, 35), UDim2.new(0, 12, 0, 0)
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
-Title.RichText, Title.TextColor3, Title.Font, Title.TextSize = true, Color3.new(1,1,1), Enum.Font.GothamBold, 13
+Title.RichText, Title.TextColor3, Title.Font, Title.TextSize = true, Color3.new(1,1,1), Enum.Font.GothamBold, 12
 Title.BackgroundTransparency, Title.TextXAlignment = 1, 0
 
--- Indikator FPS & PING (Samping Judul)
+-- STATS (FPS & PING) - Dibuat Lebih Jelas
 local HeaderStats = Instance.new("TextLabel", MainFrame)
-HeaderStats.Size, HeaderStats.Position = UDim2.new(0, 140, 0, 35), UDim2.new(0, 145, 0, 0)
-HeaderStats.Text = "[ FPS: -- | PING: -- ]"
+HeaderStats.Size, HeaderStats.Position = UDim2.new(0, 180, 0, 35), UDim2.new(0, 135, 0, 0)
+HeaderStats.Text = "FPS: -- | PING: --"
 HeaderStats.TextColor3 = ACCENT
-HeaderStats.Font = Enum.Font.Code
-HeaderStats.TextSize = 10
+HeaderStats.Font = Enum.Font.RobotoMono -- Font lebih tegas
+HeaderStats.TextSize = 13 -- Ukuran diperbesar
 HeaderStats.BackgroundTransparency, HeaderStats.TextXAlignment = 1, 0
 
 -- Tombol Hide
 local MinBtn = Instance.new("TextButton", MainFrame)
-MinBtn.Size = UDim2.new(0, 50, 0, 20)
-MinBtn.Position = UDim2.new(1, -60, 0, 8)
+MinBtn.Size = UDim2.new(0, 50, 0, 22)
+MinBtn.Position = UDim2.new(1, -58, 0, 7)
 MinBtn.Text = "HIDE"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+MinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 9
+MinBtn.TextSize = 10
 Instance.new("UICorner", MinBtn)
 
 local Scroll = Instance.new("ScrollingFrame", MainFrame)
@@ -88,7 +88,7 @@ Layout.CellSize, Layout.CellPadding = UDim2.new(0.5, -7, 0, 35), UDim2.new(0, 10
 local function CreateButton(text)
     local btn = Instance.new("TextButton", Scroll)
     btn.Text, btn.Font, btn.TextSize = text, Enum.Font.GothamBold, 10
-    btn.TextColor3, btn.BackgroundColor3, btn.BackgroundTransparency = Color3.new(0.9,0.9,0.9), Color3.fromRGB(25,25,30), 0.3
+    btn.TextColor3, btn.BackgroundColor3, btn.BackgroundTransparency = Color3.new(0.9,0.9,0.9), Color3.fromRGB(28,28,33), 0.2
     Instance.new("UICorner", btn)
     return btn
 end
@@ -96,28 +96,20 @@ end
 -- // FITUR
 local PotBtn = CreateButton("BOOSTER: OFF")
 local NetBtn = CreateButton("NET BOOST: OFF")
-local FpsBtn = CreateButton("FPS: UNLIMITED")
+local FpsBtn = CreateButton("FPS: UNLI")
 local RedBtn = CreateButton("NO RENDER: OFF")
-local WowBtn = CreateButton("WATER WALK: OFF")
+local WowBtn = CreateButton("W-WALK: OFF")
 local FrzBtn = CreateButton("FREEZE: OFF")
 
 -- // LOGIC FUNCTIONS
 
--- Hide/Show Logic
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    if Minimized then
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.3, true)
-        Scroll.Visible = false
-        MinBtn.Text = "SHOW"
-    else
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
-        Scroll.Visible = true
-        MinBtn.Text = "HIDE"
-    end
+    MainFrame:TweenSize(Minimized and UDim2.new(0, UI_WIDTH, 0, 35) or UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
+    Scroll.Visible = not Minimized
+    MinBtn.Text = Minimized and "SHOW" or "HIDE"
 end)
 
--- Booster
 PotBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotBtn.Text = Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
@@ -128,14 +120,26 @@ PotBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- No Render
-RedBtn.MouseButton1Click:Connect(function()
-    local isEnabled = RunService:Get3dRenderingEnabled()
-    RunService:Set3dRenderingEnabled(not isEnabled)
-    RedBtn.Text = isEnabled and "NO RENDER: ON" or "NO RENDER: OFF"
+-- NET BOOST (Logic Baru)
+NetBtn.MouseButton1Click:Connect(function()
+    _G.NetBoost = not _G.NetBoost
+    NetBtn.Text = _G.NetBoost and "NET BOOST: ON" or "NET BOOST: OFF"
+    if _G.NetBoost then
+        settings().Network.IncomingReplicationLag = 0
+        game:GetService("NetworkClient").ClientReplicatedStorage.DirectPropertyReplication = true
+    end
 end)
 
--- Water Walk
+-- NO RENDER (Logic Baru dengan Proteksi)
+RedBtn.MouseButton1Click:Connect(function()
+    local success, err = pcall(function()
+        local state = not RunService:Get3dRenderingEnabled()
+        RunService:Set3dRenderingEnabled(state)
+        RedBtn.Text = state and "NO RENDER: OFF" or "NO RENDER: ON"
+    end)
+    if not success then RedBtn.Text = "NOT SUPPORTED" end
+end)
+
 WowBtn.MouseButton1Click:Connect(function()
     local Char = Player.Character
     local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
@@ -145,7 +149,7 @@ WowBtn.MouseButton1Click:Connect(function()
     if _G.WowActive then
         BV = Instance.new("BodyVelocity", HRP)
         BV.Name = "SeraphinWow"
-        BV.MaxForce = Vector3.new(0, math.huge, 0)
+        BV.MaxForce = Vector3.new(0, 1e6, 0)
         BV.Velocity = Vector3.zero
         WowConn = RunService.Stepped:Connect(function()
             HRP.Velocity = Vector3.new(HRP.Velocity.X, 0, HRP.Velocity.Z)
@@ -156,17 +160,14 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Freeze
 FrzBtn.MouseButton1Click:Connect(function()
-    local Char = Player.Character
-    local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
+    local HRP = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if HRP then
         HRP.Anchored = not HRP.Anchored
         FrzBtn.Text = HRP.Anchored and "FREEZE: ON" or "FREEZE: OFF"
     end
 end)
 
--- FPS Cap
 FpsBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex % #fpsLimits + 1
     local lim = fpsLimits[currentLimitIndex]
@@ -180,7 +181,7 @@ RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
         local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-        HeaderStats.Text = "[ FPS: "..frames.." | PING: "..ping.."ms ]"
+        HeaderStats.Text = string.format("FPS: %d | PING: %d ms", frames, ping)
         frames, lastT = 0, os.clock()
     end
 end)
