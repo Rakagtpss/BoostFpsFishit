@@ -3,16 +3,14 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
+local MaterialService = game:GetService("MaterialService")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
 -- // State
-local AfkModeActive = false 
-local Optimized = false
-local Minimized = false
-local WowEnabled = false
+local AfkModeActive, Optimized, Minimized, WowEnabled = false, false, false, false
 local BV, Conn
 
 -- // FPS Settings
@@ -20,117 +18,99 @@ local fpsLimits = {30, 60, 144, 999}
 local currentLimitIndex = 4
 
 -- // UI Config
-local UI_WIDTH = 350
-local UI_HEIGHT = 200
+local UI_WIDTH = 340
+local UI_HEIGHT = 210 -- Sedikit ditambah tinggi untuk tombol baru
 local ACCENT = Color3.fromRGB(0, 255, 170)
-local BG_MAIN = Color3.fromRGB(10, 10, 12)
-local TRANSPARENCY = 0.25
+local BG_MAIN = Color3.fromRGB(12, 12, 14)
 
 -- // Cleanup
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
--- // FLOATING TEXT (Pojok Kanan Bawah)
+-- // FLOATING TEXT
 local function ShowFloatingText()
     local FloatingGui = Instance.new("ScreenGui", CoreGui)
     FloatingGui.Name = "SeraphinFloating"
-    
     local TextLabel = Instance.new("TextLabel", FloatingGui)
     TextLabel.Size = UDim2.new(0, 200, 0, 30)
-    TextLabel.Position = UDim2.new(1, -210, 1, 0) 
+    TextLabel.Position = UDim2.new(1, -210, 1, 0)
     TextLabel.BackgroundTransparency = 1
     TextLabel.Text = "SeraphinXRaka Loaded"
     TextLabel.TextColor3 = ACCENT
     TextLabel.Font = Enum.Font.GothamBold
-    TextLabel.TextSize = 16
+    TextLabel.TextSize = 14
     TextLabel.TextXAlignment = Enum.TextXAlignment.Right
     TextLabel.TextTransparency = 1
     
     task.spawn(function()
-        TweenService:Create(TextLabel, TweenInfo.new(0.6), {
-            TextTransparency = 0, 
-            Position = UDim2.new(1, -210, 1, -40)
-        }):Play()
-        task.wait(2.5)
-        TweenService:Create(TextLabel, TweenInfo.new(0.6), {
-            TextTransparency = 1, 
-            Position = UDim2.new(1, -210, 1, -20)
-        }):Play()
-        task.wait(1)
+        TweenService:Create(TextLabel, TweenInfo.new(0.5), {TextTransparency = 0, Position = UDim2.new(1, -210, 1, -40)}):Play()
+        task.wait(2)
+        TweenService:Create(TextLabel, TweenInfo.new(0.5), {TextTransparency = 1, Position = UDim2.new(1, -210, 1, -20)}):Play()
+        task.wait(0.5)
         FloatingGui:Destroy()
     end)
 end
-
 ShowFloatingText()
 
 -- // UI Creation
 local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "SeraphinHelper"
-Gui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", Gui)
 MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
 MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.4, 0)
 MainFrame.BackgroundColor3 = BG_MAIN
-MainFrame.BackgroundTransparency = TRANSPARENCY
+MainFrame.BackgroundTransparency = 0.2
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
 
-local Stroke = Instance.new("UIStroke", MainFrame)
-Stroke.Color = ACCENT
-Stroke.Thickness = 1.2
-Stroke.Transparency = 0.6
+local Line = Instance.new("Frame", MainFrame)
+Line.Size = UDim2.new(1, 0, 0, 1)
+Line.Position = UDim2.new(0, 0, 0, 32)
+Line.BackgroundColor3 = ACCENT
+Line.BackgroundTransparency = 0.5
+Line.BorderSizePixel = 0
 
--- Header
-local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 35)
-Header.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Header.BackgroundTransparency = 0.4
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
-
-local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.6, 0, 1, 0)
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(0.6, 0, 0, 32)
 Title.Position = UDim2.new(0.04, 0, 0, 0)
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
+Title.TextSize = 13
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 60, 0, 24)
-MinBtn.Position = UDim2.new(1, -68, 0.5, -12)
+local MinBtn = Instance.new("TextButton", MainFrame)
+MinBtn.Size = UDim2.new(0, 50, 0, 20)
+MinBtn.Position = UDim2.new(1, -58, 0, 6)
 MinBtn.Text = "HIDE"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+MinBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 10
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 5)
+MinBtn.TextSize = 9
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
--- Button Container
 local Container = Instance.new("Frame", MainFrame)
-Container.Name = "Container"
-Container.Size = UDim2.new(1, -20, 1, -80)
-Container.Position = UDim2.new(0, 10, 0, 45)
+Container.Size = UDim2.new(1, -16, 1, -75)
+Container.Position = UDim2.new(0, 8, 0, 42)
 Container.BackgroundTransparency = 1
 
 local Layout = Instance.new("UIGridLayout", Container)
-Layout.CellSize = UDim2.new(0.5, -8, 0, 45)
-Layout.CellPadding = UDim2.new(0, 16, 0, 12)
-Layout.VerticalAlignment = Enum.VerticalAlignment.Center
+Layout.CellSize = UDim2.new(0.5, -6, 0, 42)
+Layout.CellPadding = UDim2.new(0, 12, 0, 10)
 
 local function CreateButton(text)
     local btn = Instance.new("TextButton", Container)
     btn.Text = text
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 11
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
-    btn.BackgroundTransparency = 0.1
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.TextSize = 10
+    btn.TextColor3 = Color3.new(0.9, 0.9, 0.9)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    btn.BackgroundTransparency = 0.3
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
     return btn
 end
 
@@ -138,40 +118,58 @@ local PotatoBtn = CreateButton("BOOSTER: OFF")
 local WowBtn = CreateButton("WATER WALK: OFF")
 local RenderBtn = CreateButton("NO RENDER: OFF")
 local FpsCapBtn = CreateButton("FPS: UNLIMITED")
+local FreeCamBtn = CreateButton("FREE CAM: OFF") -- Tombol Baru
 
--- Footer
-local Footer = Instance.new("Frame", MainFrame)
-Footer.Size = UDim2.new(1, 0, 0, 30)
-Footer.Position = UDim2.new(0, 0, 1, -30)
-Footer.BackgroundTransparency = 1
-
-local FpsDisplay = Instance.new("TextLabel", Footer)
-FpsDisplay.Size = UDim2.new(1, -15, 1, 0)
+local FpsDisplay = Instance.new("TextLabel", MainFrame)
+FpsDisplay.Size = UDim2.new(1, -12, 0, 25)
+FpsDisplay.Position = UDim2.new(0, 0, 1, -25)
 FpsDisplay.BackgroundTransparency = 1
 FpsDisplay.TextColor3 = ACCENT
 FpsDisplay.Text = "FPS: -- | SeraphinXRaka"
 FpsDisplay.Font = Enum.Font.Code
-FpsDisplay.TextSize = 11
+FpsDisplay.TextSize = 10
 FpsDisplay.TextXAlignment = Enum.TextXAlignment.Right
 
--- // LOGIC SECTION
+-- // LOGIC FUNCTIONS
 
--- 1. Optimized Booster Mode (Super Potato)
+-- 1. Free Camera Logic
+local FreeCamEnabled = false
+FreeCamBtn.MouseButton1Click:Connect(function()
+    FreeCamEnabled = not FreeCamEnabled
+    FreeCamBtn.Text = FreeCamEnabled and "FREE CAM: ON" or "FREE CAM: OFF"
+    FreeCamBtn.BackgroundColor3 = FreeCamEnabled and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 30)
+    
+    -- Memanggil Modul Kamera Bawaan
+    local FreeCamScript = game:GetService("CorePackages") and game:GetService("CorePackages"):FindFirstChild("FreeCamera", true)
+    if FreeCamScript and FreeCamScript:IsA("ModuleScript") then
+        local FreeCam = require(FreeCamScript)
+        if FreeCamEnabled then
+            FreeCam.Start()
+        else
+            FreeCam.Stop()
+        end
+    else
+        -- Jika modul tidak ditemukan (bergantung pada executor)
+        warn("FreeCam module not found in CorePackages.")
+    end
+end)
+
+-- 2. Booster Logic
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
-    PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 28)
-    
+    PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 30)
     Lighting.GlobalShadows = not Optimized
+    pcall(function() MaterialService.Use2022Materials = not Optimized end)
     
-    -- Post Processing Effects
-    for _, effect in pairs(Lighting:GetChildren()) do
-        if effect:IsA("PostEffect") or effect:IsA("BloomEffect") or effect:IsA("BlurEffect") or effect:IsA("SunRaysEffect") then
-            effect.Enabled = not Optimized
+    local RS = game:GetService("ReplicatedStorage")
+    local Auras = RS:FindFirstChild("Assets") and RS.Assets:FindFirstChild("Auras")
+    if Auras then
+        for _, v in pairs(Auras:GetDescendants()) do
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") then v.Enabled = not Optimized end
         end
     end
 
-    -- Objek & Material
     for _, v in pairs(game:GetDescendants()) do
         if v:IsA("BasePart") then
             v.Material = Optimized and Enum.Material.SmoothPlastic or Enum.Material.Plastic
@@ -184,7 +182,7 @@ PotatoBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 2. FPS Cap Logic
+-- 3. FPS Cap
 FpsCapBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex % #fpsLimits + 1
     local newLimit = fpsLimits[currentLimitIndex]
@@ -192,19 +190,19 @@ FpsCapBtn.MouseButton1Click:Connect(function()
     FpsCapBtn.Text = (newLimit > 900) and "FPS: UNLIMITED" or "FPS: " .. newLimit
 end)
 
--- 3. No Render Mode
+-- 4. No Render
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
     RenderBtn.Text = AfkModeActive and "NO RENDER: ON" or "NO RENDER: OFF"
-    RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(120, 30, 30) or Color3.fromRGB(25, 25, 28)
+    RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(120, 30, 30) or Color3.fromRGB(25, 25, 30)
 end)
 
--- 4. Walk on Water
+-- 5. Water Walk
 WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
     WowBtn.Text = WowEnabled and "WATER WALK: ON" or "WATER WALK: OFF"
-    WowBtn.BackgroundColor3 = WowEnabled and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 28)
+    WowBtn.BackgroundColor3 = WowEnabled and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 30)
     if WowEnabled then
         BV = Instance.new("BodyVelocity", HRP)
         BV.MaxForce = Vector3.new(0, 1e6, 0)
@@ -218,31 +216,27 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 5. Hide/Show Function
+-- 6. Minimize
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.2, true)
-        Container.Visible = false
-        Footer.Visible = false
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 32), "Out", "Quad", 0.2, true)
+        Container.Visible, FpsDisplay.Visible = false, false
         MinBtn.Text = "SHOW"
     else
         MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.2, true)
         task.wait(0.1)
-        Container.Visible = true
-        Footer.Visible = true
+        Container.Visible, FpsDisplay.Visible = true, true
         MinBtn.Text = "HIDE"
     end
 end)
 
 -- FPS Loop
-local lastT = os.clock()
-local frames = 0
+local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
         FpsDisplay.Text = "FPS: " .. frames .. " | SeraphinXRaka"
-        frames = 0
-        lastT = os.clock()
+        frames, lastT = 0, os.clock()
     end
 end)
