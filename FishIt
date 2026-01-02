@@ -18,39 +18,48 @@ local BV, Conn
 local fpsLimits = {30, 60, 144, 999}
 local currentLimitIndex = 4
 
--- // UI Config (Ultra Light & Clean)
+-- // UI Config
 local UI_WIDTH = 340
-local UI_HEIGHT = 220 -- Tinggi ditambah sedikit untuk tombol baru
+local UI_HEIGHT = 180 
 local ACCENT = Color3.fromRGB(0, 255, 170)
 local BG_MAIN = Color3.fromRGB(10, 10, 12)
 
 -- // Cleanup Old UI
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
--- // FLOATING TEXT (Pojok Kanan Bawah)
-local function ShowFloatingText()
-    local FloatingGui = Instance.new("ScreenGui", CoreGui)
-    FloatingGui.Name = "SeraphinFloating"
-    local TextLabel = Instance.new("TextLabel", FloatingGui)
-    TextLabel.Size = UDim2.new(0, 200, 0, 30)
-    TextLabel.Position = UDim2.new(1, -210, 1, 0)
-    TextLabel.BackgroundTransparency = 1
-    TextLabel.Text = "SeraphinXRaka Loaded"
-    TextLabel.TextColor3 = ACCENT
-    TextLabel.Font = Enum.Font.GothamBold
-    TextLabel.TextSize = 14
-    TextLabel.TextXAlignment = Enum.TextXAlignment.Right
-    TextLabel.TextTransparency = 1
+-- // NOTIFIKASI POJOK KANAN BAWAH (SeraphinXRaka)
+local function ShowSeraphinNotif()
+    local NotifGui = Instance.new("ScreenGui", CoreGui)
+    NotifGui.Name = "SeraphinNotif"
     
-    task.spawn(function()
-        TweenService:Create(TextLabel, TweenInfo.new(0.5), {TextTransparency = 0, Position = UDim2.new(1, -210, 1, -40)}):Play()
-        task.wait(2)
-        TweenService:Create(TextLabel, TweenInfo.new(0.5), {TextTransparency = 1, Position = UDim2.new(1, -210, 1, -20)}):Play()
-        task.wait(0.5)
-        FloatingGui:Destroy()
+    local NotifLabel = Instance.new("TextLabel", NotifGui)
+    NotifLabel.Size = UDim2.new(0, 200, 0, 40)
+    NotifLabel.Position = UDim2.new(1, -210, 1, 0) -- Mulai dari bawah layar
+    NotifLabel.BackgroundTransparency = 1
+    NotifLabel.Text = "SeraphinXRaka"
+    NotifLabel.TextColor3 = ACCENT
+    NotifLabel.Font = Enum.Font.GothamBold
+    NotifLabel.TextSize = 18
+    NotifLabel.TextXAlignment = Enum.TextXAlignment.Right
+    NotifLabel.TextTransparency = 1
+    
+    -- Efek Muncul (Slide Up & Fade In)
+    TweenService:Create(NotifLabel, TweenInfo.new(0.6, Enum.EasingStyle.Quart), {
+        TextTransparency = 0, 
+        Position = UDim2.new(1, -210, 1, -50)
+    }):Play()
+    
+    -- Menunggu sebentar lalu hilang
+    task.delay(3.5, function()
+        TweenService:Create(NotifLabel, TweenInfo.new(0.6, Enum.EasingStyle.Quart), {
+            TextTransparency = 1, 
+            Position = UDim2.new(1, -210, 1, 0)
+        }):Play()
+        task.wait(0.6)
+        NotifGui:Destroy()
     end)
 end
-ShowFloatingText()
+ShowSeraphinNotif()
 
 -- // UI Creation
 local Gui = Instance.new("ScreenGui", CoreGui)
@@ -133,25 +142,24 @@ FpsDisplay.TextXAlignment = Enum.TextXAlignment.Right
 
 -- // LOGIC FUNCTIONS
 
--- 1. Freeze Player Logic
+-- 1. Freeze Player
 FreezeBtn.MouseButton1Click:Connect(function()
     Frozen = not Frozen
     FreezeBtn.Text = Frozen and "FREEZE: ON" or "FREEZE: OFF"
     FreezeBtn.BackgroundColor3 = Frozen and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(25, 25, 30)
-    
-    if HRP then
-        HRP.Anchored = Frozen
-    end
+    if HRP then HRP.Anchored = Frozen end
 end)
 
--- 2. Smooth Booster (Anti-Lag)
+-- 2. ULTRA DEEP BOOSTER (CPU + GPU OPTIMIZER)
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
     PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 30)
     
+    settings().Rendering.QualityLevel = Optimized and 1 or 10
+    sethiddenproperty(workspace, "PhysicsSteppingMethod", Optimized and Enum.PhysicsSteppingMethod.Fixed or Enum.PhysicsSteppingMethod.Default)
+    workspace.InterpolationThrottling = Optimized and Enum.InterpolationThrottlingMode.Enabled or Enum.InterpolationThrottlingMode.Disabled
     Lighting.GlobalShadows = not Optimized
-    pcall(function() MaterialService.Use2022Materials = not Optimized end)
     
     task.spawn(function()
         local count = 0
@@ -160,6 +168,9 @@ PotatoBtn.MouseButton1Click:Connect(function()
                 if v:IsA("BasePart") then
                     v.Material = Enum.Material.SmoothPlastic
                     v.CastShadow = false
+                elseif v:IsA("MeshPart") then
+                    v.RenderFidelity = Enum.RenderFidelity.Performance
+                    v.CollisionFidelity = Enum.CollisionFidelity.Box
                 elseif v:IsA("Texture") or v:IsA("Decal") then
                     v.Transparency = 1
                 elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
@@ -169,6 +180,8 @@ PotatoBtn.MouseButton1Click:Connect(function()
                 if v:IsA("BasePart") then
                     v.Material = Enum.Material.Plastic
                     v.CastShadow = true
+                elseif v:IsA("MeshPart") then
+                    v.CollisionFidelity = Enum.CollisionFidelity.Default
                 elseif v:IsA("Texture") or v:IsA("Decal") then
                     v.Transparency = 0
                 elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
@@ -177,7 +190,7 @@ PotatoBtn.MouseButton1Click:Connect(function()
             end
             
             count = count + 1
-            if count >= 500 then
+            if count >= 800 then
                 count = 0
                 task.wait() 
             end
