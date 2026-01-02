@@ -1,28 +1,30 @@
 --[[ 
- RakaHensem Utility V5.1 - Auto Sell Integrated
+ RakaHensem Utility V5.4 - Booster + Anim Scanner
 ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
+local MaterialService = game:GetService("MaterialService")
+local SoundService = game:GetService("SoundService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
+local Hum = Char:WaitForChild("Humanoid")
 local HRP = Char:WaitForChild("HumanoidRootPart")
+
+-- Folder Animasi sesuai permintaanmu
+local AnimFolder = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Animations")
 
 -- State
 local RenderEnabled = true
 local Optimized = false
 local Minimized = false
 local Enabled = false
-local SellingEnabled = false
-local SelectedItem = ""
+local CurrentTrack = nil
 local BV, Conn
-
--- Remote Path
-local SellRemote = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index")["sleitnick_net@0.2.0"].net["RF/SellItem"]
 
 -- Hapus UI Lama
 if CoreGui:FindFirstChild("RakaBoostV") then CoreGui.RakaBoostV:Destroy() end
@@ -32,7 +34,7 @@ local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "RakaBoostV"
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 180, 0, 280)
+MainFrame.Size = UDim2.new(0, 180, 0, 300)
 MainFrame.Position = UDim2.new(0.5, -90, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 0
@@ -49,7 +51,7 @@ Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 6)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.7, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SeraphinHelper V5.1"
+Title.Text = "SeraphinHelper V5.4"
 Title.TextColor3 = Color3.fromRGB(0, 255, 150)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 10
@@ -71,7 +73,7 @@ local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
 ScrollFrame.Size = UDim2.new(1, 0, 1, -70)
 ScrollFrame.Position = UDim2.new(0, 0, 0, 30)
 ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 1.5, 0)
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 2, 0)
 ScrollFrame.ScrollBarThickness = 2
 
 local Layout = Instance.new("UIListLayout", ScrollFrame)
@@ -90,34 +92,90 @@ local function CreateButton(text)
     return btn
 end
 
--- UI Elements
+-- Fitur Booster & WOW
 local WowBtn = CreateButton("WALK ON WATER: OFF")
-local BoostBtn = CreateButton("BOOSTER: OFF")
+local BoostBtn = CreateButton("ULTRA BOOSTER: OFF")
 local RenderBtn = CreateButton("3D RENDERING: ON")
-local SellBtn = CreateButton("AUTO SELL: OFF")
 
--- Item Scanner Display
-local ScanLabel = Instance.new("TextLabel", ScrollFrame)
-ScanLabel.Size = UDim2.new(0.9, 0, 0, 15)
-ScanLabel.Text = "SELECT ITEM TO SELL:"
-ScanLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-ScanLabel.BackgroundTransparency = 1
-ScanLabel.Font = Enum.Font.GothamBold
-ScanLabel.TextSize = 8
+-- --- ANIMATION SECTION ---
+local AnimLabel = Instance.new("TextLabel", ScrollFrame)
+AnimLabel.Size = UDim2.new(0.9, 0, 0, 20)
+AnimLabel.Text = "-- ANIMATION SCANNER --"
+AnimLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+AnimLabel.BackgroundTransparency = 1
+AnimLabel.Font = Enum.Font.GothamBold
+AnimLabel.TextSize = 8
 
-local ItemListFrame = Instance.new("Frame", ScrollFrame)
-ItemListFrame.Size = UDim2.new(0.9, 0, 0, 60)
-ItemListFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Instance.new("UICorner", ItemListFrame).CornerRadius = UDim.new(0, 4)
+local AnimListFrame = Instance.new("Frame", ScrollFrame)
+AnimListFrame.Size = UDim2.new(0.9, 0, 0, 80)
+AnimListFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Instance.new("UICorner", AnimListFrame).CornerRadius = UDim.new(0, 4)
 
-local ListLayout = Instance.new("UIListLayout", ItemListFrame)
-ListLayout.Padding = UDim.new(0, 2)
+local AnimScroll = Instance.new("ScrollingFrame", AnimListFrame)
+AnimScroll.Size = UDim2.new(1, -4, 1, -4)
+AnimScroll.Position = UDim2.new(0, 2, 0, 2)
+AnimScroll.BackgroundTransparency = 1
+AnimScroll.CanvasSize = UDim2.new(0, 0, 5, 0)
+AnimScroll.ScrollBarThickness = 2
 
--- Tombol Scan Manual
-local ScanBtn = CreateButton("REFRESH INVENTORY")
-ScanBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 100)
+local AnimLayout = Instance.new("UIListLayout", AnimScroll)
+AnimLayout.Padding = UDim.new(0, 2)
 
--- FPS Display
+local StopAnimBtn = CreateButton("STOP ANIMATION")
+StopAnimBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+
+-- Fungsi Play Animasi
+local function PlaySelectedAnim(animObject)
+    if CurrentTrack then CurrentTrack:Stop() end
+    
+    local anim = nil
+    if animObject:IsA("Animation") then
+        anim = animObject
+    elseif animObject:IsA("StringValue") or animObject:IsA("IntValue") then
+        anim = Instance.new("Animation")
+        anim.AnimationId = "rbxassetid://" .. tostring(animObject.Value)
+    end
+    
+    if anim then
+        CurrentTrack = Hum:LoadAnimation(anim)
+        CurrentTrack.Looped = true
+        CurrentTrack:Play()
+    end
+end
+
+-- Fungsi Scan Animasi
+local function ScanAnimations()
+    for _, child in pairs(AnimScroll:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    
+    for _, v in pairs(AnimFolder:GetDescendants()) do
+        if v:IsA("Animation") or v.Name:lower():find("anim") then
+            local btn = Instance.new("TextButton", AnimScroll)
+            btn.Size = UDim2.new(1, 0, 0, 18)
+            btn.Text = v.Name
+            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            btn.TextColor3 = Color3.new(1, 1, 1)
+            btn.Font = Enum.Font.Gotham
+            btn.TextSize = 8
+            
+            btn.MouseButton1Click:Connect(function()
+                PlaySelectedAnim(v)
+            end)
+        end
+    end
+end
+
+StopAnimBtn.MouseButton1Click:Connect(function()
+    if CurrentTrack then CurrentTrack:Stop() end
+end)
+
+-- Tombol Refresh Anim
+local RefreshAnimBtn = CreateButton("REFRESH ANIMATIONS")
+RefreshAnimBtn.BackgroundColor3 = Color3.fromRGB(50, 80, 120)
+RefreshAnimBtn.MouseButton1Click:Connect(ScanAnimations)
+
+-- --- FPS DISPLAY ---
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
 FpsDisplay.Size = UDim2.new(0.9, 0, 0, 25)
 FpsDisplay.Position = UDim2.new(0.05, 0, 1, -30)
@@ -128,64 +186,19 @@ FpsDisplay.Font = Enum.Font.Code
 FpsDisplay.TextSize = 14
 Instance.new("UICorner", FpsDisplay).CornerRadius = UDim.new(0, 4)
 
---- LOGIC ---
+-- --- ORIGINAL LOGIC ---
 
--- Auto Scan Backpack
-local function UpdateInventory()
-    for _, child in pairs(ItemListFrame:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
-    
-    local found = {}
-    for _, item in pairs(Player.Backpack:GetChildren()) do
-        if not found[item.Name] then
-            found[item.Name] = true
-            local btn = Instance.new("TextButton", ItemListFrame)
-            btn.Size = UDim2.new(1, 0, 0, 18)
-            btn.Text = item.Name
-            btn.BackgroundColor3 = (SelectedItem == item.Name) and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(40, 40, 40)
-            btn.TextColor3 = Color3.new(1, 1, 1)
-            btn.Font = Enum.Font.Gotham
-            btn.TextSize = 8
-            
-            btn.MouseButton1Click:Connect(function()
-                SelectedItem = item.Name
-                UpdateInventory()
-            end)
-        end
-    end
-end
-
-ScanBtn.MouseButton1Click:Connect(UpdateInventory)
-
--- Auto Sell Loop
-task.spawn(function()
-    while task.wait(0.5) do
-        if SellingEnabled and SelectedItem ~= "" then
-            for _, item in pairs(Player.Backpack:GetChildren()) do
-                if item.Name == SelectedItem then
-                    pcall(function()
-                        SellRemote:InvokeServer(item)
-                    end)
-                end
-            end
-        end
-    end
-end)
-
-SellBtn.MouseButton1Click:Connect(function()
-    SellingEnabled = not SellingEnabled
-    SellBtn.Text = SellingEnabled and "AUTO SELL: ACTIVE" or "AUTO SELL: OFF"
-    SellBtn.BackgroundColor3 = SellingEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 35)
-end)
-
--- Original Features
 BoostBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
-    BoostBtn.Text = Optimized and "BOOSTER: ACTIVE" or "BOOSTER: OFF"
+    BoostBtn.Text = Optimized and "ULTRA BOOSTER: ON" or "ULTRA BOOSTER: OFF"
     BoostBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 35)
-    settings().Rendering.QualityLevel = Optimized and 1 or 0
+    
     Lighting.GlobalShadows = not Optimized
+    for _, effect in pairs(Lighting:GetChildren()) do
+        if effect:IsA("PostProcessEffect") then effect.Enabled = not Optimized end
+    end
+    
+    settings().Rendering.QualityLevel = Optimized and 1 or 0
     for _, v in pairs(game:GetDescendants()) do
         if v:IsA("Part") or v:IsA("MeshPart") then
             if Optimized then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
@@ -219,7 +232,7 @@ end)
 
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    MainFrame:TweenSize(Minimized and UDim2.new(0, 180, 0, 25) or UDim2.new(0, 180, 0, 280), "Out", "Quad", 0.3, true)
+    MainFrame:TweenSize(Minimized and UDim2.new(0, 180, 0, 25) or UDim2.new(0, 180, 0, 300), "Out", "Quad", 0.3, true)
     ScrollFrame.Visible = not Minimized
     FpsDisplay.Visible = not Minimized
     MinBtn.Text = Minimized and "SHOW" or "HIDE"
@@ -234,4 +247,5 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-UpdateInventory()
+-- Initial Scan
+ScanAnimations()
