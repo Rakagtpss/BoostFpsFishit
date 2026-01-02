@@ -4,7 +4,6 @@ local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-local TeleportService = game:GetService("TeleportService")
 local VirtualUser = game:GetService("VirtualUser")
 
 local Player = Players.LocalPlayer
@@ -14,12 +13,7 @@ local HRP = Char:WaitForChild("HumanoidRootPart")
 -- // State Variables
 local Optimized = false
 local Minimized = false
-local WowEnabled = false
-local FullbrightEnabled = false
 local InstantPromptEnabled = false
-local BV, Conn
-
--- // Inventory State
 local SelectedItem = ""
 
 -- // UI Config
@@ -59,9 +53,9 @@ Header.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.6, 0, 1, 0)
+Title.Size = UDim2.new(0.8, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">GEARS</font>"
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">MANAGER V7</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(0.95, 0.95, 0.95)
 Title.Font = Enum.Font.GothamBlack
@@ -92,7 +86,7 @@ local Layout = Instance.new("UIListLayout", ScrollFrame)
 Layout.Padding = UDim.new(0, 6)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Helper Function UI
+-- Helper UI Function
 local function CreateButton(text)
     local btn = Instance.new("TextButton", ScrollFrame)
     btn.Size = UDim2.new(0.98, 0, 0, 30)
@@ -105,34 +99,27 @@ local function CreateButton(text)
     return btn
 end
 
--- ====================================================
--- SEPARATOR: GEARS COLLECTION SCANNER
--- ====================================================
+-- --- GEARS SCANNER SECTION ---
 local InvLabel = Instance.new("TextLabel", ScrollFrame)
 InvLabel.Size = UDim2.new(1, 0, 0, 20)
 InvLabel.BackgroundTransparency = 1
-InvLabel.Text = "--- GEARS COLLECTION ---"
+InvLabel.Text = "--- GEARS LIST ---"
 InvLabel.TextColor3 = ACCENT
 InvLabel.Font = Enum.Font.Code
 InvLabel.TextSize = 10
 
--- 1. Scan Button
-local ScanBtn = CreateButton("SCAN GEARS COLLECTION")
+local ScanBtn = CreateButton("SCAN GEARS")
 ScanBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 ScanBtn.TextColor3 = ACCENT
 
--- 2. List Frame
 local InvListFrame = Instance.new("ScrollingFrame", ScrollFrame)
 InvListFrame.Size = UDim2.new(0.98, 0, 0, 130) 
 InvListFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
 InvListFrame.ScrollBarThickness = 2
 InvListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 Instance.new("UICorner", InvListFrame).CornerRadius = UDim.new(0, 6)
+Instance.new("UIListLayout", InvListFrame).Padding = UDim.new(0, 2)
 
-local InvLayout = Instance.new("UIListLayout", InvListFrame)
-InvLayout.Padding = UDim.new(0, 2)
-
--- 3. Selection Info
 local SelectedDisplay = Instance.new("TextLabel", ScrollFrame)
 SelectedDisplay.Size = UDim2.new(0.98, 0, 0, 25)
 SelectedDisplay.BackgroundTransparency = 1
@@ -141,35 +128,23 @@ SelectedDisplay.TextColor3 = Color3.fromRGB(200, 200, 200)
 SelectedDisplay.Font = Enum.Font.GothamBold
 SelectedDisplay.TextSize = 11
 
--- 4. Sell Button
-local SellSelectBtn = CreateButton("SELL SELECTED GEAR")
+local SellSelectBtn = CreateButton("SELL SELECTED")
 SellSelectBtn.BackgroundColor3 = Color3.fromRGB(80, 40, 40)
 SellSelectBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
 
--- ====================================================
--- LOGIC: GEARS SCANNER
--- ====================================================
-
+-- --- LOGIC SCANNER ---
 local function UpdateGearsList()
     for _, child in pairs(InvListFrame:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
     
-    -- PATH TERBARU DARI USER
-    local gearsFolder = ReplicatedStorage:FindFirstChild("Modules")
-    if gearsFolder then
-        gearsFolder = gearsFolder:FindFirstChild("ModelDownloader")
-        if gearsFolder then
-            gearsFolder = gearsFolder:FindFirstChild("Collection")
-            if gearsFolder then
-                gearsFolder = gearsFolder:FindFirstChild("Gears")
-            end
-        end
-    end
+    local gearsPath = ReplicatedStorage:FindFirstChild("Modules")
+    if gearsPath then gearsPath = gearsPath:FindFirstChild("ModelDownloader") end
+    if gearsPath then gearsPath = gearsPath:FindFirstChild("Collection") end
+    if gearsPath then gearsPath = gearsPath:FindFirstChild("Gears") end
     
-    if gearsFolder then
-        local found = gearsFolder:GetChildren()
-        for _, gear in pairs(found) do
+    if gearsPath then
+        for _, gear in pairs(gearsPath:GetChildren()) do
             local btn = Instance.new("TextButton", InvListFrame)
             btn.Size = UDim2.new(1, 0, 0, 25)
             btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -189,37 +164,35 @@ local function UpdateGearsList()
                 btn.BackgroundColor3 = ACCENT
             end)
         end
-        ScanBtn.Text = "REFRESH (" .. #found .. " Gears)"
+        ScanBtn.Text = "REFRESH (" .. #gearsPath:GetChildren() .. " Gears)"
     else
-        ScanBtn.Text = "ERROR: Gears Path Not Found"
+        ScanBtn.Text = "PATH ERROR"
     end
 end
 
 ScanBtn.MouseButton1Click:Connect(UpdateGearsList)
 
--- SELL LOGIC BERDASARKAN SIMPLESPY USER
+-- --- LOGIC SELL (DENGAN PATH TERBARU) ---
 SellSelectBtn.MouseButton1Click:Connect(function()
     if SelectedItem == "" then return end
     
     local success, err = pcall(function()
-        -- PATH REMOTE DARI SIMPLESPY USER
-        local remote = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/SellItem")
+        -- PATH REMOTE SESUAI PERMINTAAN TERBARU
+        local remote = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RF/SellItem"]
         
-        -- Mengikuti format SimpleSpy: InvokeServer(item_name)
+        -- Mengirim nama item terpilih
         remote:InvokeServer(SelectedItem)
     end)
     
     if success then
-        SelectedDisplay.Text = "Success Sold: " .. SelectedItem
+        SelectedDisplay.Text = "Sold: " .. SelectedItem
     else
-        warn("Sell Error: " .. tostring(err))
-        SelectedDisplay.Text = "Error Selling!"
+        warn("Path/Remote Error: " .. tostring(err))
+        SelectedDisplay.Text = "Error! Cek Console."
     end
 end)
 
--- ====================================================
--- EXTRA FEATURES
--- ====================================================
+-- --- OTHER TOOLS ---
 local PotatoBtn = CreateButton("Booster Mode: OFF")
 local InstantBtn = CreateButton("Instant Interaction: OFF")
 
