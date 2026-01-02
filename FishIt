@@ -20,21 +20,19 @@ local currentLimitIndex = 4
 
 -- // UI Config
 local UI_WIDTH = 340
-local UI_HEIGHT = 180 
+local UI_HEIGHT = 200 -- Tinggi disesuaikan
 local ACCENT = Color3.fromRGB(0, 255, 170)
 local BG_MAIN = Color3.fromRGB(10, 10, 12)
 
--- // Cleanup Old UI
+-- // Cleanup
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
--- // NOTIFIKASI POJOK KANAN BAWAH (SeraphinXRaka)
+-- // NOTIFIKASI
 local function ShowSeraphinNotif()
     local NotifGui = Instance.new("ScreenGui", CoreGui)
-    NotifGui.Name = "SeraphinNotif"
-    
     local NotifLabel = Instance.new("TextLabel", NotifGui)
     NotifLabel.Size = UDim2.new(0, 200, 0, 40)
-    NotifLabel.Position = UDim2.new(1, -210, 1, 0) -- Mulai dari bawah layar
+    NotifLabel.Position = UDim2.new(1, -210, 1, 0)
     NotifLabel.BackgroundTransparency = 1
     NotifLabel.Text = "SeraphinXRaka"
     NotifLabel.TextColor3 = ACCENT
@@ -43,20 +41,10 @@ local function ShowSeraphinNotif()
     NotifLabel.TextXAlignment = Enum.TextXAlignment.Right
     NotifLabel.TextTransparency = 1
     
-    -- Efek Muncul (Slide Up & Fade In)
-    TweenService:Create(NotifLabel, TweenInfo.new(0.6, Enum.EasingStyle.Quart), {
-        TextTransparency = 0, 
-        Position = UDim2.new(1, -210, 1, -50)
-    }):Play()
-    
-    -- Menunggu sebentar lalu hilang
-    task.delay(3.5, function()
-        TweenService:Create(NotifLabel, TweenInfo.new(0.6, Enum.EasingStyle.Quart), {
-            TextTransparency = 1, 
-            Position = UDim2.new(1, -210, 1, 0)
-        }):Play()
-        task.wait(0.6)
-        NotifGui:Destroy()
+    TweenService:Create(NotifLabel, TweenInfo.new(0.6), {TextTransparency = 0, Position = UDim2.new(1, -210, 1, -50)}):Play()
+    task.delay(3, function()
+        TweenService:Create(NotifLabel, TweenInfo.new(0.6), {TextTransparency = 1, Position = UDim2.new(1, -210, 1, 0)}):Play()
+        task.wait(0.6) NotifGui:Destroy()
     end)
 end
 ShowSeraphinNotif()
@@ -69,58 +57,54 @@ local MainFrame = Instance.new("Frame", Gui)
 MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
 MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.4, 0)
 MainFrame.BackgroundColor3 = BG_MAIN
-MainFrame.BackgroundTransparency = 0.25
+MainFrame.BackgroundTransparency = 0.2
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
-
-local Line = Instance.new("Frame", MainFrame)
-Line.Size = UDim2.new(1, 0, 0, 1)
-Line.Position = UDim2.new(0, 0, 0, 32)
-Line.BackgroundColor3 = ACCENT
-Line.BackgroundTransparency = 0.5
-Line.BorderSizePixel = 0
+Instance.new("UICorner", MainFrame)
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(0.6, 0, 0, 32)
-Title.Position = UDim2.new(0.04, 0, 0, 0)
+Title.Size = UDim2.new(1, -100, 0, 35)
+Title.Position = UDim2.new(0, 15, 0, 0)
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 13
+Title.TextSize = 14
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local MinBtn = Instance.new("TextButton", MainFrame)
-MinBtn.Size = UDim2.new(0, 50, 0, 20)
-MinBtn.Position = UDim2.new(1, -58, 0, 6)
+MinBtn.Size = UDim2.new(0, 60, 0, 22)
+MinBtn.Position = UDim2.new(1, -70, 0, 7)
 MinBtn.Text = "HIDE"
-MinBtn.TextColor3 = Color3.new(1, 1, 1)
+MinBtn.TextColor3 = Color3.new(1,1,1)
 MinBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 9
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
+MinBtn.TextSize = 10
+Instance.new("UICorner", MinBtn)
 
-local Container = Instance.new("Frame", MainFrame)
-Container.Size = UDim2.new(1, -16, 1, -75)
-Container.Position = UDim2.new(0, 8, 0, 42)
-Container.BackgroundTransparency = 1
+-- CONTAINER BOX (Agar Tombol Rapi)
+local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
+ScrollFrame.Size = UDim2.new(1, -20, 1, -75)
+ScrollFrame.Position = UDim2.new(0, 10, 0, 45)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.BorderSizePixel = 0
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollFrame.ScrollBarThickness = 0
 
-local Layout = Instance.new("UIGridLayout", Container)
-Layout.CellSize = UDim2.new(0.5, -6, 0, 42)
-Layout.CellPadding = UDim2.new(0, 12, 0, 10)
+local Layout = Instance.new("UIGridLayout", ScrollFrame)
+Layout.CellSize = UDim2.new(0.5, -7, 0, 38) -- Ukuran tombol presisi
+Layout.CellPadding = UDim2.new(0, 10, 0, 8)
 
 local function CreateButton(text)
-    local btn = Instance.new("TextButton", Container)
+    local btn = Instance.new("TextButton", ScrollFrame)
     btn.Text = text
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 10
     btn.TextColor3 = Color3.new(0.9, 0.9, 0.9)
     btn.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-    btn.BackgroundTransparency = 0.3
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     return btn
 end
 
@@ -131,7 +115,7 @@ local FpsCapBtn = CreateButton("FPS: UNLIMITED")
 local FreezeBtn = CreateButton("FREEZE: OFF")
 
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
-FpsDisplay.Size = UDim2.new(1, -12, 0, 25)
+FpsDisplay.Size = UDim2.new(1, -15, 0, 20)
 FpsDisplay.Position = UDim2.new(0, 0, 1, -25)
 FpsDisplay.BackgroundTransparency = 1
 FpsDisplay.TextColor3 = ACCENT
@@ -141,8 +125,6 @@ FpsDisplay.TextSize = 10
 FpsDisplay.TextXAlignment = Enum.TextXAlignment.Right
 
 -- // LOGIC FUNCTIONS
-
--- 1. Freeze Player
 FreezeBtn.MouseButton1Click:Connect(function()
     Frozen = not Frozen
     FreezeBtn.Text = Frozen and "FREEZE: ON" or "FREEZE: OFF"
@@ -150,15 +132,12 @@ FreezeBtn.MouseButton1Click:Connect(function()
     if HRP then HRP.Anchored = Frozen end
 end)
 
--- 2. ULTRA DEEP BOOSTER (CPU + GPU OPTIMIZER)
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
     PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 30)
     
     settings().Rendering.QualityLevel = Optimized and 1 or 10
-    sethiddenproperty(workspace, "PhysicsSteppingMethod", Optimized and Enum.PhysicsSteppingMethod.Fixed or Enum.PhysicsSteppingMethod.Default)
-    workspace.InterpolationThrottling = Optimized and Enum.InterpolationThrottlingMode.Enabled or Enum.InterpolationThrottlingMode.Disabled
     Lighting.GlobalShadows = not Optimized
     
     task.spawn(function()
@@ -173,32 +152,16 @@ PotatoBtn.MouseButton1Click:Connect(function()
                     v.CollisionFidelity = Enum.CollisionFidelity.Box
                 elseif v:IsA("Texture") or v:IsA("Decal") then
                     v.Transparency = 1
-                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                    v.Enabled = false
                 end
             else
-                if v:IsA("BasePart") then
-                    v.Material = Enum.Material.Plastic
-                    v.CastShadow = true
-                elseif v:IsA("MeshPart") then
-                    v.CollisionFidelity = Enum.CollisionFidelity.Default
-                elseif v:IsA("Texture") or v:IsA("Decal") then
-                    v.Transparency = 0
-                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                    v.Enabled = true
-                end
+                if v:IsA("BasePart") then v.Material = Enum.Material.Plastic end
             end
-            
             count = count + 1
-            if count >= 800 then
-                count = 0
-                task.wait() 
-            end
+            if count >= 800 then count = 0 task.wait() end
         end
     end)
 end)
 
--- 3. FPS Cap
 FpsCapBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex % #fpsLimits + 1
     local newLimit = fpsLimits[currentLimitIndex]
@@ -206,7 +169,6 @@ FpsCapBtn.MouseButton1Click:Connect(function()
     FpsCapBtn.Text = (newLimit > 900) and "FPS: UNLIMITED" or "FPS: " .. newLimit
 end)
 
--- 4. No Render
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
@@ -214,7 +176,6 @@ RenderBtn.MouseButton1Click:Connect(function()
     RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(120, 30, 30) or Color3.fromRGB(25, 25, 30)
 end)
 
--- 5. Water Walk
 WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
     WowBtn.Text = WowEnabled and "WATER WALK: ON" or "WATER WALK: OFF"
@@ -232,22 +193,20 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 6. Hide/Show
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 32), "Out", "Quad", 0.2, true)
-        Container.Visible, FpsDisplay.Visible = false, false
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.2, true)
+        ScrollFrame.Visible, FpsDisplay.Visible = false, false
         MinBtn.Text = "SHOW"
     else
         MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.2, true)
-        task.wait(0.1)
-        Container.Visible, FpsDisplay.Visible = true, true
+        task.wait(0.2)
+        ScrollFrame.Visible, FpsDisplay.Visible = true, true
         MinBtn.Text = "HIDE"
     end
 end)
 
--- FPS Loop
 local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
