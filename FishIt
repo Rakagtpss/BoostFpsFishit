@@ -1,208 +1,287 @@
 --[[ 
- RakaHensem Utility V5.4 - Booster + Anim Scanner
+ RakaHensem Utility V5.5 - Modern Wide UI & Fixed Animation
 ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
-local MaterialService = game:GetService("MaterialService")
-local SoundService = game:GetService("SoundService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local Hum = Char:WaitForChild("Humanoid")
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
--- Folder Animasi sesuai permintaanmu
-local AnimFolder = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Animations")
+-- Pastikan Animator ada
+local Animator = Hum:FindFirstChild("Animator") or Instance.new("Animator", Hum)
+
+-- Folder Animasi (Sesuaikan Path jika perlu)
+local AnimFolderPath = ReplicatedStorage:WaitForChild("Modules"):FindFirstChild("Animations")
 
 -- State
-local RenderEnabled = true
 local Optimized = false
+local RenderEnabled = true
 local Minimized = false
-local Enabled = false
+local Enabled = false -- WOW State
 local CurrentTrack = nil
 local BV, Conn
 
--- Hapus UI Lama
+-- Cleanup UI Lama
 if CoreGui:FindFirstChild("RakaBoostV") then CoreGui.RakaBoostV:Destroy() end
 
--- UI Creation
+-- --- MODERN UI SETUP ---
 local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "RakaBoostV"
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 180, 0, 300)
-MainFrame.Position = UDim2.new(0.5, -90, 0.3, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.Size = UDim2.new(0, 400, 0, 280) -- Lebih Lebar (Wide)
+MainFrame.Position = UDim2.new(0.5, -200, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25) -- Modern Dark Blue-Grey
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(50, 50, 60)
 
 -- Header
 local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 25)
-Header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 6)
+Header.Size = UDim2.new(1, 0, 0, 35)
+Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.7, 0, 1, 0)
-Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SeraphinHelper V5.4"
-Title.TextColor3 = Color3.fromRGB(0, 255, 150)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 10
+Title.Size = UDim2.new(0.6, 0, 1, 0)
+Title.Position = UDim2.new(0.04, 0, 0, 0)
+Title.Text = "SeraphinHelper V5.5"
+Title.TextColor3 = Color3.fromRGB(0, 255, 180) -- Cyan Accent
+Title.Font = Enum.Font.GothamBlack
+Title.TextSize = 14 -- Font lebih besar
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
+-- Tombol Minimize
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 35, 0, 15)
-MinBtn.Position = UDim2.new(0.75, 0, 0.2, 0)
+MinBtn.Size = UDim2.new(0, 60, 0, 22)
+MinBtn.Position = UDim2.new(0.82, 0, 0.5, -11)
 MinBtn.Text = "HIDE"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+MinBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 8
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 3)
+MinBtn.TextSize = 10
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
 
--- Scrolling Content
+-- Kontainer Utama (Scrolling)
 local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
-ScrollFrame.Size = UDim2.new(1, 0, 1, -70)
-ScrollFrame.Position = UDim2.new(0, 0, 0, 30)
+ScrollFrame.Size = UDim2.new(1, -20, 1, -80)
+ScrollFrame.Position = UDim2.new(0, 10, 0, 45)
 ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 2, 0)
-ScrollFrame.ScrollBarThickness = 2
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 1.8, 0)
+ScrollFrame.ScrollBarThickness = 4
+ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 180)
 
-local Layout = Instance.new("UIListLayout", ScrollFrame)
-Layout.Padding = UDim.new(0, 4)
-Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+-- Layout untuk Fitur Utama (Grid 2 Kolom)
+local FeatureContainer = Instance.new("Frame", ScrollFrame)
+FeatureContainer.Size = UDim2.new(1, 0, 0, 80)
+FeatureContainer.BackgroundTransparency = 1
 
-local function CreateButton(text)
-    local btn = Instance.new("TextButton", ScrollFrame)
-    btn.Size = UDim2.new(0.9, 0, 0, 25)
+local GridLayout = Instance.new("UIGridLayout", FeatureContainer)
+GridLayout.CellSize = UDim2.new(0.48, 0, 0, 35) -- Tombol lebar
+GridLayout.CellPadding = UDim2.new(0.02, 0, 0.08, 0)
+GridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Fungsi Membuat Tombol Modern
+local function CreateModernButton(text, parent)
+    local btn = Instance.new("TextButton", parent)
     btn.Text = text
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 9
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.TextSize = 11 -- Font diperbesar
+    btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    btn.AutoButtonColor = true
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIStroke", btn).Color = Color3.fromRGB(60, 60, 65)
     return btn
 end
 
--- Fitur Booster & WOW
-local WowBtn = CreateButton("WALK ON WATER: OFF")
-local BoostBtn = CreateButton("ULTRA BOOSTER: OFF")
-local RenderBtn = CreateButton("3D RENDERING: ON")
+-- Tombol Fitur (Masuk ke Grid)
+local BoostBtn = CreateModernButton("BOOSTER: OFF", FeatureContainer)
+local WowBtn = CreateModernButton("WALK ON WATER: OFF", FeatureContainer)
+local RenderBtn = CreateModernButton("3D RENDERING: ON", FeatureContainer)
+local FpsCapBtn = CreateModernButton("FPS CAP: UNLIMITED", FeatureContainer)
 
--- --- ANIMATION SECTION ---
-local AnimLabel = Instance.new("TextLabel", ScrollFrame)
-AnimLabel.Size = UDim2.new(0.9, 0, 0, 20)
-AnimLabel.Text = "-- ANIMATION SCANNER --"
-AnimLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-AnimLabel.BackgroundTransparency = 1
+-- --- BAGIAN ANIMASI ---
+local AnimContainer = Instance.new("Frame", ScrollFrame)
+AnimContainer.Size = UDim2.new(1, 0, 0, 200)
+AnimContainer.Position = UDim2.new(0, 0, 0, 95) -- Di bawah grid fitur
+AnimContainer.BackgroundTransparency = 1
+
+local AnimLabel = Instance.new("TextLabel", AnimContainer)
+AnimLabel.Size = UDim2.new(1, 0, 0, 25)
+AnimLabel.Text = "ANIMATION LIST"
+AnimLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 AnimLabel.Font = Enum.Font.GothamBold
-AnimLabel.TextSize = 8
+AnimLabel.TextSize = 12
+AnimLabel.BackgroundTransparency = 1
+AnimLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-local AnimListFrame = Instance.new("Frame", ScrollFrame)
-AnimListFrame.Size = UDim2.new(0.9, 0, 0, 80)
-AnimListFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Instance.new("UICorner", AnimListFrame).CornerRadius = UDim.new(0, 4)
+-- Tombol Kontrol Animasi
+local ControlFrame = Instance.new("Frame", AnimContainer)
+ControlFrame.Size = UDim2.new(1, 0, 0, 30)
+ControlFrame.Position = UDim2.new(0, 0, 0, 25)
+ControlFrame.BackgroundTransparency = 1
 
-local AnimScroll = Instance.new("ScrollingFrame", AnimListFrame)
-AnimScroll.Size = UDim2.new(1, -4, 1, -4)
-AnimScroll.Position = UDim2.new(0, 2, 0, 2)
-AnimScroll.BackgroundTransparency = 1
-AnimScroll.CanvasSize = UDim2.new(0, 0, 5, 0)
-AnimScroll.ScrollBarThickness = 2
+local RefreshBtn = CreateModernButton("REFRESH", ControlFrame)
+RefreshBtn.Size = UDim2.new(0.48, 0, 1, 0)
+RefreshBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 150)
 
-local AnimLayout = Instance.new("UIListLayout", AnimScroll)
-AnimLayout.Padding = UDim.new(0, 2)
+local StopBtn = CreateModernButton("STOP ANIM", ControlFrame)
+StopBtn.Size = UDim2.new(0.48, 0, 1, 0)
+StopBtn.Position = UDim2.new(0.52, 0, 0, 0)
+StopBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 
-local StopAnimBtn = CreateButton("STOP ANIMATION")
-StopAnimBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+-- List Animasi
+local AnimScroll = Instance.new("ScrollingFrame", AnimContainer)
+AnimScroll.Size = UDim2.new(1, 0, 0, 100)
+AnimScroll.Position = UDim2.new(0, 0, 0, 65)
+AnimScroll.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+AnimScroll.BorderColor3 = Color3.fromRGB(0, 255, 180)
+AnimScroll.BorderSizePixel = 1
+AnimScroll.ScrollBarThickness = 3
+Instance.new("UICorner", AnimScroll).CornerRadius = UDim.new(0, 6)
 
--- Fungsi Play Animasi
-local function PlaySelectedAnim(animObject)
-    if CurrentTrack then CurrentTrack:Stop() end
-    
-    local anim = nil
-    if animObject:IsA("Animation") then
-        anim = animObject
-    elseif animObject:IsA("StringValue") or animObject:IsA("IntValue") then
-        anim = Instance.new("Animation")
-        anim.AnimationId = "rbxassetid://" .. tostring(animObject.Value)
+local AnimListLayout = Instance.new("UIListLayout", AnimScroll)
+AnimListLayout.Padding = UDim.new(0, 2)
+AnimListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- FPS Display (Footer)
+local FpsDisplay = Instance.new("TextLabel", MainFrame)
+FpsDisplay.Size = UDim2.new(0.9, 0, 0, 20)
+FpsDisplay.Position = UDim2.new(0.05, 0, 1, -25)
+FpsDisplay.BackgroundTransparency = 1
+FpsDisplay.TextColor3 = Color3.fromRGB(100, 255, 100)
+FpsDisplay.Text = "FPS: --"
+FpsDisplay.Font = Enum.Font.Code
+FpsDisplay.TextSize = 12
+
+-- --- LOGIC PERBAIKAN ANIMASI ---
+
+local function PlayAnim(animInstance)
+    -- Stop animasi lama
+    if CurrentTrack then 
+        CurrentTrack:Stop()
+        CurrentTrack = nil
     end
-    
-    if anim then
-        CurrentTrack = Hum:LoadAnimation(anim)
-        CurrentTrack.Looped = true
-        CurrentTrack:Play()
+
+    -- Pastikan karakter update
+    if not Player.Character or not Player.Character:FindFirstChild("Humanoid") then return end
+    local Humanoid = Player.Character.Humanoid
+    local Animator = Humanoid:FindFirstChild("Animator") or Instance.new("Animator", Humanoid)
+
+    local animationToLoad = nil
+
+    -- Cek tipe data
+    if animInstance:IsA("Animation") then
+        if animInstance.AnimationId ~= "" then
+            animationToLoad = animInstance
+        end
+    elseif animInstance:IsA("StringValue") or animInstance:IsA("IntValue") then
+        -- Konversi Value ke Animation Object
+        local tempAnim = Instance.new("Animation")
+        local id = tostring(animInstance.Value)
+        
+        -- Cek apakah ID hanya angka atau full URL
+        if not string.find(id, "rbxassetid://") then
+            id = "rbxassetid://" .. id
+        end
+        
+        tempAnim.AnimationId = id
+        animationToLoad = tempAnim
+    end
+
+    -- Eksekusi
+    if animationToLoad then
+        local success, track = pcall(function()
+            return Animator:LoadAnimation(animationToLoad)
+        end)
+
+        if success and track then
+            CurrentTrack = track
+            CurrentTrack.Priority = Enum.AnimationPriority.Action
+            CurrentTrack.Looped = true
+            CurrentTrack:Play()
+            print("Playing Animation: " .. animationToLoad.AnimationId)
+        else
+            warn("Gagal memuat animasi. ID mungkin invalid atau berbayar.")
+        end
+    else
+        warn("Objek bukan animasi yang valid.")
     end
 end
 
--- Fungsi Scan Animasi
-local function ScanAnimations()
-    for _, child in pairs(AnimScroll:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
+local function UpdateAnimList()
+    -- Hapus list lama
+    for _, v in pairs(AnimScroll:GetChildren()) do
+        if v:IsA("TextButton") then v:Destroy() end
     end
-    
-    for _, v in pairs(AnimFolder:GetDescendants()) do
-        if v:IsA("Animation") or v.Name:lower():find("anim") then
+
+    if not AnimFolderPath then 
+        local errorLabel = Instance.new("TextLabel", AnimScroll)
+        errorLabel.Size = UDim2.new(1, 0, 1, 0)
+        errorLabel.Text = "Folder Animasi Tidak Ditemukan!"
+        errorLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        errorLabel.BackgroundTransparency = 1
+        return 
+    end
+
+    for _, anim in pairs(AnimFolderPath:GetDescendants()) do
+        -- Filter hanya Animation atau Value yang namanya mengandung 'Anim'
+        if anim:IsA("Animation") or (anim:IsA("ValueBase") and string.find(anim.Name:lower(), "anim")) then
             local btn = Instance.new("TextButton", AnimScroll)
-            btn.Size = UDim2.new(1, 0, 0, 18)
-            btn.Text = v.Name
-            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-            btn.TextColor3 = Color3.new(1, 1, 1)
-            btn.Font = Enum.Font.Gotham
-            btn.TextSize = 8
-            
+            btn.Size = UDim2.new(0.98, 0, 0, 25)
+            btn.Text = "  " .. anim.Name -- Spasi untuk padding kiri
+            btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+            btn.Font = Enum.Font.GothamMedium
+            btn.TextSize = 11
+            btn.TextXAlignment = Enum.TextXAlignment.Left
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
             btn.MouseButton1Click:Connect(function()
-                PlaySelectedAnim(v)
+                -- Efek visual klik
+                for _, b in pairs(AnimScroll:GetChildren()) do
+                    if b:IsA("TextButton") then b.TextColor3 = Color3.fromRGB(200, 200, 200) end
+                end
+                btn.TextColor3 = Color3.fromRGB(0, 255, 180) -- Highlight Cyan
+                PlayAnim(anim)
             end)
         end
     end
 end
 
-StopAnimBtn.MouseButton1Click:Connect(function()
+RefreshBtn.MouseButton1Click:Connect(UpdateAnimList)
+StopBtn.MouseButton1Click:Connect(function()
     if CurrentTrack then CurrentTrack:Stop() end
 end)
 
--- Tombol Refresh Anim
-local RefreshAnimBtn = CreateButton("REFRESH ANIMATIONS")
-RefreshAnimBtn.BackgroundColor3 = Color3.fromRGB(50, 80, 120)
-RefreshAnimBtn.MouseButton1Click:Connect(ScanAnimations)
-
--- --- FPS DISPLAY ---
-local FpsDisplay = Instance.new("TextLabel", MainFrame)
-FpsDisplay.Size = UDim2.new(0.9, 0, 0, 25)
-FpsDisplay.Position = UDim2.new(0.05, 0, 1, -30)
-FpsDisplay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-FpsDisplay.TextColor3 = Color3.fromRGB(0, 255, 255)
-FpsDisplay.Text = "FPS: --"
-FpsDisplay.Font = Enum.Font.Code
-FpsDisplay.TextSize = 14
-Instance.new("UICorner", FpsDisplay).CornerRadius = UDim.new(0, 4)
-
--- --- ORIGINAL LOGIC ---
+-- --- LOGIC BOOSTER & TOOLS ---
 
 BoostBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
-    BoostBtn.Text = Optimized and "ULTRA BOOSTER: ON" or "ULTRA BOOSTER: OFF"
-    BoostBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 35)
+    BoostBtn.Text = Optimized and "BOOSTER: ACTIVE" or "BOOSTER: OFF"
+    BoostBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 45)
     
     Lighting.GlobalShadows = not Optimized
-    for _, effect in pairs(Lighting:GetChildren()) do
-        if effect:IsA("PostProcessEffect") then effect.Enabled = not Optimized end
-    end
-    
-    settings().Rendering.QualityLevel = Optimized and 1 or 0
     for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("Part") or v:IsA("MeshPart") then
-            if Optimized then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
-        elseif v:IsA("Decal") or v:IsA("ParticleEmitter") then v.Enabled = not Optimized end
+        if v:IsA("BasePart") then
+            if Optimized then
+                v.Material = Enum.Material.SmoothPlastic
+                v.CastShadow = false
+            end
+        elseif v:IsA("PostProcessEffect") then
+            v.Enabled = not Optimized
+        end
     end
 end)
 
@@ -210,13 +289,14 @@ RenderBtn.MouseButton1Click:Connect(function()
     RenderEnabled = not RenderEnabled
     RunService:Set3dRenderingEnabled(RenderEnabled)
     RenderBtn.Text = RenderEnabled and "3D RENDERING: ON" or "3D RENDERING: OFF"
-    RenderBtn.BackgroundColor3 = RenderEnabled and Color3.fromRGB(35, 35, 35) or Color3.fromRGB(150, 0, 0)
+    RenderBtn.TextColor3 = RenderEnabled and Color3.fromRGB(240,240,240) or Color3.fromRGB(255, 100, 100)
 end)
 
 WowBtn.MouseButton1Click:Connect(function()
     Enabled = not Enabled
     WowBtn.Text = Enabled and "WOW: ON" or "WOW: OFF"
-    WowBtn.BackgroundColor3 = Enabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 35)
+    WowBtn.BackgroundColor3 = Enabled and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 45)
+    
     if Enabled then
         BV = Instance.new("BodyVelocity", HRP)
         BV.MaxForce = Vector3.new(0, 1e6, 0)
@@ -230,14 +310,24 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+local caps = {60, 999} -- Simple Toggle
+local capIdx = 1
+FpsCapBtn.MouseButton1Click:Connect(function()
+    capIdx = capIdx == 1 and 2 or 1
+    setfpscap(caps[capIdx])
+    FpsCapBtn.Text = "FPS CAP: " .. (caps[capIdx] > 900 and "UNLIMITED" or "60")
+end)
+
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    MainFrame:TweenSize(Minimized and UDim2.new(0, 180, 0, 25) or UDim2.new(0, 180, 0, 300), "Out", "Quad", 0.3, true)
+    local targetSize = Minimized and UDim2.new(0, 400, 0, 35) or UDim2.new(0, 400, 0, 280)
+    MainFrame:TweenSize(targetSize, "Out", "Quart", 0.4, true)
     ScrollFrame.Visible = not Minimized
     FpsDisplay.Visible = not Minimized
     MinBtn.Text = Minimized and "SHOW" or "HIDE"
 end)
 
+-- FPS Counter loop
 local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
@@ -247,5 +337,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Initial Scan
-ScanAnimations()
+-- Jalankan scan pertama kali
+task.wait(1) -- Delay sebentar agar game load dulu
+UpdateAnimList()
