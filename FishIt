@@ -8,27 +8,26 @@ local MaterialService = game:GetService("MaterialService")
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
-local Camera = workspace.CurrentCamera
 
 -- // State
 local AfkModeActive, Optimized, Minimized, WowEnabled = false, false, false, false
-local CinematicEnabled, HdEnabled = false, false
-local BV, Conn, CineConn
+local Frozen = false
+local BV, Conn
 
 -- // FPS Settings
 local fpsLimits = {30, 60, 144, 999}
 local currentLimitIndex = 4
 
--- // UI Config
+-- // UI Config (Ultra Light & Clean)
 local UI_WIDTH = 340
-local UI_HEIGHT = 255 -- Disesuaikan untuk jumlah tombol
+local UI_HEIGHT = 220 -- Tinggi ditambah sedikit untuk tombol baru
 local ACCENT = Color3.fromRGB(0, 255, 170)
 local BG_MAIN = Color3.fromRGB(10, 10, 12)
 
--- // Cleanup
+-- // Cleanup Old UI
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
--- // FLOATING TEXT
+-- // FLOATING TEXT (Pojok Kanan Bawah)
 local function ShowFloatingText()
     local FloatingGui = Instance.new("ScreenGui", CoreGui)
     FloatingGui.Name = "SeraphinFloating"
@@ -120,8 +119,7 @@ local PotatoBtn = CreateButton("BOOSTER: OFF")
 local WowBtn = CreateButton("WATER WALK: OFF")
 local RenderBtn = CreateButton("NO RENDER: OFF")
 local FpsCapBtn = CreateButton("FPS: UNLIMITED")
-local CineBtn = CreateButton("CINEMATIC: OFF")
-local HdBtn = CreateButton("HD MODE: OFF") -- Tombol HD
+local FreezeBtn = CreateButton("FREEZE: OFF")
 
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
 FpsDisplay.Size = UDim2.new(1, -12, 0, 25)
@@ -135,75 +133,59 @@ FpsDisplay.TextXAlignment = Enum.TextXAlignment.Right
 
 -- // LOGIC FUNCTIONS
 
--- 1. HD MODE LOGIC
-HdBtn.MouseButton1Click:Connect(function()
-    HdEnabled = not HdEnabled
-    HdBtn.Text = HdEnabled and "HD MODE: ON" or "HD MODE: OFF"
-    HdBtn.BackgroundColor3 = HdEnabled and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 30)
+-- 1. Freeze Player Logic
+FreezeBtn.MouseButton1Click:Connect(function()
+    Frozen = not Frozen
+    FreezeBtn.Text = Frozen and "FREEZE: ON" or "FREEZE: OFF"
+    FreezeBtn.BackgroundColor3 = Frozen and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(25, 25, 30)
     
-    if HdEnabled then
-        -- Reset Booster jika sedang menyala
-        if Optimized then PotatoBtn:Click() end 
-        
-        Lighting.GlobalShadows = true
-        Lighting.Brightness = 2.5
-        Lighting.EnvironmentDiffuseScale = 1
-        Lighting.EnvironmentSpecularScale = 1
-        
-        -- Menambahkan efek HD jika belum ada
-        if not Lighting:FindFirstChild("HD_ColorCorrection") then
-            local cc = Instance.new("ColorCorrectionEffect", Lighting)
-            cc.Name = "HD_ColorCorrection"
-            cc.Saturation = 0.15
-            cc.Contrast = 0.1
-        end
-        
-        pcall(function() MaterialService.Use2022Materials = true end)
-    else
-        local cc = Lighting:FindFirstChild("HD_ColorCorrection")
-        if cc then cc:Destroy() end
-        Lighting.Brightness = 2
+    if HRP then
+        HRP.Anchored = Frozen
     end
 end)
 
--- 2. CINEMATIC CAMERA
-CineBtn.MouseButton1Click:Connect(function()
-    CinematicEnabled = not CinematicEnabled
-    CineBtn.Text = CinematicEnabled and "CINEMATIC: ON" or "CINEMATIC: OFF"
-    CineBtn.BackgroundColor3 = CinematicEnabled and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 30)
-    if CinematicEnabled then
-        CineConn = RunService.RenderStepped:Connect(function()
-            Camera.CFrame = Camera.CFrame:Lerp(Camera.CFrame, 0.05)
-        end)
-        TweenService:Create(Camera, TweenInfo.new(1), {FieldOfView = 85}):Play()
-    else
-        if CineConn then CineConn:Disconnect() end
-        TweenService:Create(Camera, TweenInfo.new(1), {FieldOfView = 70}):Play()
-    end
-end)
-
--- 3. BOOSTER LOGIC
+-- 2. Smooth Booster (Anti-Lag)
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
     PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 30)
     
-    if Optimized and HdEnabled then HdBtn:Click() end -- Matikan HD jika Booster nyala
-
     Lighting.GlobalShadows = not Optimized
     pcall(function() MaterialService.Use2022Materials = not Optimized end)
     
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("BasePart") then
-            v.Material = Optimized and Enum.Material.SmoothPlastic or Enum.Material.Plastic
-            v.CastShadow = not Optimized
-        elseif v:IsA("Texture") or v:IsA("Decal") then
-            v.Transparency = Optimized and 1 or 0
+    task.spawn(function()
+        local count = 0
+        for _, v in pairs(game:GetDescendants()) do
+            if Optimized then
+                if v:IsA("BasePart") then
+                    v.Material = Enum.Material.SmoothPlastic
+                    v.CastShadow = false
+                elseif v:IsA("Texture") or v:IsA("Decal") then
+                    v.Transparency = 1
+                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                    v.Enabled = false
+                end
+            else
+                if v:IsA("BasePart") then
+                    v.Material = Enum.Material.Plastic
+                    v.CastShadow = true
+                elseif v:IsA("Texture") or v:IsA("Decal") then
+                    v.Transparency = 0
+                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                    v.Enabled = true
+                end
+            end
+            
+            count = count + 1
+            if count >= 500 then
+                count = 0
+                task.wait() 
+            end
         end
-    end
+    end)
 end)
 
--- 4. OTHERS
+-- 3. FPS Cap
 FpsCapBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex % #fpsLimits + 1
     local newLimit = fpsLimits[currentLimitIndex]
@@ -211,6 +193,7 @@ FpsCapBtn.MouseButton1Click:Connect(function()
     FpsCapBtn.Text = (newLimit > 900) and "FPS: UNLIMITED" or "FPS: " .. newLimit
 end)
 
+-- 4. No Render
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
@@ -218,6 +201,7 @@ RenderBtn.MouseButton1Click:Connect(function()
     RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(120, 30, 30) or Color3.fromRGB(25, 25, 30)
 end)
 
+-- 5. Water Walk
 WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
     WowBtn.Text = WowEnabled and "WATER WALK: ON" or "WATER WALK: OFF"
@@ -235,6 +219,7 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- 6. Hide/Show
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
@@ -249,6 +234,7 @@ MinBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- FPS Loop
 local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
