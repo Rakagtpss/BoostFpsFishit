@@ -1,38 +1,34 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
-local Lighting = game:GetService("Lighting")
-local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local TweenService = game:GetService("TweenService")
 
 local Player = Players.LocalPlayer
-local Char = Player.Character or Player.CharacterAdded:Wait()
-local Humanoid = Char:WaitForChild("Humanoid")
 
 -- // --- CONFIGURATION ---
 local UI_WIDTH = 300 
-local UI_HEIGHT = 280 -- Sedikit lebih tinggi untuk opsi baru
+local UI_HEIGHT = 280
 local THEME = {
-    Background = Color3.fromRGB(25, 25, 30),
-    Header = Color3.fromRGB(35, 35, 40),
-    Button = Color3.fromRGB(45, 45, 50),
-    Accent = Color3.fromRGB(0, 255, 170),
-    Text = Color3.fromRGB(230, 230, 230),
+    Background = Color3.fromRGB(20, 20, 25),
+    Header = Color3.fromRGB(30, 30, 35),
+    Button = Color3.fromRGB(40, 40, 45),
+    Accent = Color3.fromRGB(0, 255, 170), -- Seraphin Green
     Red = Color3.fromRGB(255, 80, 80),
-    Yellow = Color3.fromRGB(255, 200, 50)
+    Text = Color3.fromRGB(230, 230, 230)
 }
 
 -- // State
 local AutoTotemActive = false
-local AutoEquipActive = true -- Default ON agar aman
 local SelectedTotemName = "" 
 
--- // Cleanup Old UI
-if CoreGui:FindFirstChild("SeraphinV7") then CoreGui.SeraphinV7:Destroy() end
+-- // Cleanup
+if CoreGui:FindFirstChild("SeraphinV8") then CoreGui.SeraphinV8:Destroy() end
 
 -- // --- UI CREATION ---
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "SeraphinV7"
+Gui.Name = "SeraphinV8"
 Gui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", Gui)
@@ -42,18 +38,18 @@ MainFrame.BackgroundColor3 = THEME.Background
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
 -- Header
 local Header = Instance.new("Frame", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 40)
 Header.BackgroundColor3 = THEME.Header
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.8, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <b>v7</b> (AUTO EQUIP)"
+Title.Text = "SERAPHIN <b>v8 (FIX)</b>"
 Title.RichText = true
 Title.TextColor3 = THEME.Text
 Title.Font = Enum.Font.GothamBold
@@ -69,7 +65,7 @@ MinBtn.BackgroundColor3 = THEME.Red
 MinBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
 
--- // --- CONTENT CONTAINER ---
+-- // --- CONTAINER ---
 local Container = Instance.new("Frame", MainFrame)
 Container.Size = UDim2.new(1, -20, 1, -50)
 Container.Position = UDim2.new(0, 10, 0, 45)
@@ -79,15 +75,15 @@ local UIList = Instance.new("UIListLayout", Container)
 UIList.Padding = UDim.new(0, 6)
 UIList.SortOrder = Enum.SortOrder.LayoutOrder
 
--- 1. INPUT MANUAL
+-- 1. INPUT MANUAL (Jaga-jaga)
 local InputBox = Instance.new("TextBox", Container)
 InputBox.Size = UDim2.new(1, 0, 0, 30)
-InputBox.PlaceholderText = "Select or Type Totem Name..."
+InputBox.PlaceholderText = "Click Item Below or Type Name..."
 InputBox.Text = ""
-InputBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+InputBox.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 InputBox.TextColor3 = THEME.Accent
 InputBox.Font = Enum.Font.GothamBold
-InputBox.TextSize = 12
+InputBox.TextSize = 11
 InputBox.LayoutOrder = 1
 Instance.new("UICorner", InputBox).CornerRadius = UDim.new(0, 6)
 
@@ -95,197 +91,185 @@ InputBox:GetPropertyChangedSignal("Text"):Connect(function()
     SelectedTotemName = InputBox.Text
 end)
 
--- 2. LIST HASIL SCAN
+-- 2. LIST SCROLL
 local ScrollList = Instance.new("ScrollingFrame", Container)
-ScrollList.Size = UDim2.new(1, 0, 0, 80)
-ScrollList.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-ScrollList.ScrollBarThickness = 2
+ScrollList.Size = UDim2.new(1, 0, 0, 90)
+ScrollList.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+ScrollList.ScrollBarThickness = 3
 ScrollList.LayoutOrder = 2
 ScrollList.AutomaticCanvasSize = Enum.AutomaticSize.Y
 Instance.new("UICorner", ScrollList).CornerRadius = UDim.new(0, 6)
 local ScrollLayout = Instance.new("UIListLayout", ScrollList)
 ScrollLayout.Padding = UDim.new(0, 2)
 
--- 3. OPTIONS TOGGLE
-local EquipToggleBtn = Instance.new("TextButton", Container)
-EquipToggleBtn.Size = UDim2.new(1, 0, 0, 25)
-EquipToggleBtn.Text = "AUTO EQUIP BEFORE SPAWN: ON"
-EquipToggleBtn.BackgroundColor3 = THEME.Accent
-EquipToggleBtn.TextColor3 = Color3.fromRGB(20, 20, 20)
-EquipToggleBtn.Font = Enum.Font.GothamBold
-EquipToggleBtn.TextSize = 10
-EquipToggleBtn.LayoutOrder = 3
-Instance.new("UICorner", EquipToggleBtn).CornerRadius = UDim.new(0, 6)
+-- 3. TOMBOL EKSEKUSI
+local SpawnBtn = Instance.new("TextButton", Container)
+SpawnBtn.Size = UDim2.new(1, 0, 0, 35)
+SpawnBtn.Text = "SPAWN TOTEM NOW"
+SpawnBtn.BackgroundColor3 = THEME.Accent
+SpawnBtn.TextColor3 = Color3.fromRGB(20, 20, 25)
+SpawnBtn.Font = Enum.Font.GothamBold
+SpawnBtn.TextSize = 12
+SpawnBtn.LayoutOrder = 3
+Instance.new("UICorner", SpawnBtn).CornerRadius = UDim.new(0, 6)
 
--- 4. ACTION BUTTONS
-local SpawnOnceBtn = Instance.new("TextButton", Container)
-SpawnOnceBtn.Size = UDim2.new(1, 0, 0, 30)
-SpawnOnceBtn.Text = "SPAWN ONCE"
-SpawnOnceBtn.BackgroundColor3 = THEME.Button
-SpawnOnceBtn.TextColor3 = THEME.Text
-SpawnOnceBtn.Font = Enum.Font.GothamBold
-SpawnOnceBtn.TextSize = 11
-SpawnOnceBtn.LayoutOrder = 4
-Instance.new("UICorner", SpawnOnceBtn).CornerRadius = UDim.new(0, 6)
-
-local AutoToggleBtn = Instance.new("TextButton", Container)
-AutoToggleBtn.Size = UDim2.new(1, 0, 0, 30)
-AutoToggleBtn.Text = "AUTO SPAWN LOOP (60m): OFF"
-AutoToggleBtn.BackgroundColor3 = THEME.Button
-AutoToggleBtn.TextColor3 = THEME.Red
-AutoToggleBtn.Font = Enum.Font.GothamBold
-AutoToggleBtn.TextSize = 11
-AutoToggleBtn.LayoutOrder = 5
-Instance.new("UICorner", AutoToggleBtn).CornerRadius = UDim.new(0, 6)
+local AutoBtn = Instance.new("TextButton", Container)
+AutoBtn.Size = UDim2.new(1, 0, 0, 25)
+AutoBtn.Text = "AUTO LOOP (60m): OFF"
+AutoBtn.BackgroundColor3 = THEME.Button
+AutoBtn.TextColor3 = THEME.Red
+AutoBtn.Font = Enum.Font.GothamBold
+AutoBtn.TextSize = 10
+AutoBtn.LayoutOrder = 4
+Instance.new("UICorner", AutoBtn).CornerRadius = UDim.new(0, 6)
 
 local StatusLbl = Instance.new("TextLabel", Container)
 StatusLbl.Size = UDim2.new(1, 0, 0, 20)
-StatusLbl.Text = "Status: Idle"
+StatusLbl.Text = "Ready."
 StatusLbl.TextColor3 = Color3.fromRGB(150, 150, 150)
 StatusLbl.BackgroundTransparency = 1
 StatusLbl.Font = Enum.Font.Code
 StatusLbl.TextSize = 10
-StatusLbl.LayoutOrder = 6
+StatusLbl.LayoutOrder = 5
 
--- // --- LOGIC FUNCTIONS ---
+-- // --- FUNGSI LOGIC ---
 
--- Fungsi Scan Totem
 local function ScanTotems()
-    local targetFolder = nil
-    pcall(function()
-        targetFolder = game:GetService("ReplicatedStorage").Modules.ModelDownloader.Collection.Totems
+    -- Scan backpack pemain (prioritas)
+    local itemsFound = {}
+    local Backpack = Player.Backpack
+    
+    -- Scan Collection (sebagai referensi nama)
+    local Success, Folder = pcall(function()
+        return game:GetService("ReplicatedStorage").Modules.ModelDownloader.Collection.Totems
     end)
-    
+
     -- Bersihkan list
-    for _, v in pairs(ScrollList:GetChildren()) do 
-        if v:IsA("TextButton") then v:Destroy() end 
-    end
-    
-    if targetFolder then
-        for _, item in pairs(targetFolder:GetChildren()) do
-            local btn = Instance.new("TextButton", ScrollList)
-            btn.Size = UDim2.new(1, 0, 0, 25)
-            btn.Text = item.Name
-            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-            btn.TextColor3 = Color3.new(0.8, 0.8, 0.8)
-            btn.Font = Enum.Font.Gotham
-            btn.TextSize = 10
+    for _, v in pairs(ScrollList:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+
+    -- Helper untuk buat tombol
+    local function AddBtn(name, isOwned)
+        local btn = Instance.new("TextButton", ScrollList)
+        btn.Size = UDim2.new(1, 0, 0, 25)
+        btn.Text = isOwned and " [OWNED] " .. name or " " .. name
+        btn.BackgroundColor3 = isOwned and Color3.fromRGB(50, 60, 50) or Color3.fromRGB(35, 35, 40)
+        btn.TextColor3 = isOwned and THEME.Accent or Color3.fromRGB(150, 150, 150)
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 10
+        
+        btn.MouseButton1Click:Connect(function()
+            SelectedTotemName = name
+            InputBox.Text = name
             
-            btn.MouseButton1Click:Connect(function()
-                SelectedTotemName = item.Name
-                InputBox.Text = item.Name
-                StatusLbl.Text = "Selected: " .. item.Name
-                
-                -- Efek Visual
-                for _, b in pairs(ScrollList:GetChildren()) do
-                     if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(40, 40, 45) end
-                end
-                btn.BackgroundColor3 = THEME.Accent
-                btn.TextColor3 = Color3.fromRGB(20, 20, 20)
-            end)
+            -- Feedback Visual
+            for _, b in pairs(ScrollList:GetChildren()) do
+                if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(35, 35, 40) end
+            end
+            btn.BackgroundColor3 = THEME.Accent
+            StatusLbl.Text = "Selected: " .. name
+        end)
+    end
+
+    -- Tambahkan item dari Collection ke list
+    if Success and Folder then
+        for _, item in pairs(Folder:GetChildren()) do
+            -- Cek apakah player punya item ini di backpack
+            local owned = Backpack:FindFirstChild(item.Name) ~= nil
+            if Player.Character then
+                if Player.Character:FindFirstChild(item.Name) then owned = true end
+            end
+            
+            AddBtn(item.Name, owned)
         end
     else
-        StatusLbl.Text = "Error: Folder Totems not found!"
+        StatusLbl.Text = "Scan Error: Path Not Found"
     end
 end
 
--- Fungsi Equip Item
-local function EquipItem(itemName)
-    if not AutoEquipActive then return true end -- Skip jika dimatikan
-    
-    local Backpack = Player.Backpack
-    local Char = Player.Character or Player.CharacterAdded:Wait()
-    local Hum = Char:FindFirstChild("Humanoid")
-    
-    -- Cek apakah sudah dipegang
-    local HeldItem = Char:FindFirstChild(itemName)
-    if HeldItem then 
-        return true 
-    end
-    
-    -- Cek di tas
-    local ToolInBag = Backpack:FindFirstChild(itemName)
-    if ToolInBag and Hum then
-        Hum:EquipTool(ToolInBag)
-        StatusLbl.Text = "Equipping " .. itemName .. "..."
-        task.wait(0.5) -- Beri waktu animasi equip
-        return true
-    end
-    
-    StatusLbl.Text = "Error: " .. itemName .. " not in Backpack!"
-    return false
-end
-
--- Fungsi Utama Spawn
-local function TriggerSpawn()
+local function ActivateTotem()
     if SelectedTotemName == "" then 
-        StatusLbl.Text = "Please select a totem first!"
+        StatusLbl.Text = "ERROR: Pilih Item Dulu!"
         return 
     end
-
-    -- 1. Lakukan Equip Otomatis
-    local equipped = EquipItem(SelectedTotemName)
-    if not equipped then return end -- Batal jika item tidak ada
-
-    -- 2. Fire Remote Spawn
-    local args = { [1] = SelectedTotemName }
-    local success, err = pcall(function()
-        game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RE/SpawnTotem"):FireServer(unpack(args))
-    end)
     
-    if success then
-        StatusLbl.Text = "Spawned: " .. SelectedTotemName
-        -- Opsional: Matikan input fishing jika perlu (sesuai request lama)
-        pcall(function()
-             game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/CancelFishingInputs"):InvokeServer()
-        end)
+    local Character = Player.Character
+    if not Character then return end
+    local Humanoid = Character:FindFirstChild("Humanoid")
+    local Backpack = Player.Backpack
+    
+    -- 1. CARI & EQUIP ITEM
+    local Tool = Character:FindFirstChild(SelectedTotemName) or Backpack:FindFirstChild(SelectedTotemName)
+    
+    if Tool then
+        if Tool.Parent == Backpack then
+            Humanoid:EquipTool(Tool)
+            StatusLbl.Text = "Equipping " .. SelectedTotemName .. "..."
+            task.wait(0.3) -- Tunggu equip selesai
+        end
     else
-        StatusLbl.Text = "Remote Failed!"
-        warn("Spawn Error: " .. tostring(err))
+        StatusLbl.Text = "ERROR: Item tidak ada di Tas!"
+        return -- Berhenti jika item tidak ada
     end
+    
+    -- 2. FIRE REMOTE (METODE 1: ARGUMEN 'Totems')
+    -- Ini sesuai log aslimu: [1] = "Totems"
+    local args = {
+        [1] = "Totems" 
+    }
+    
+    local Replicated = game:GetService("ReplicatedStorage")
+    local Net = Replicated.Packages._Index:FindFirstChild("sleitnick_net@0.2.0")
+    
+    if Net and Net.net then
+        local Remote = Net.net:FindFirstChild("RE/SpawnTotem")
+        if Remote then
+            Remote:FireServer(unpack(args))
+            print("Fired SpawnTotem with 'Totems'")
+        end
+    end
+    
+    -- 3. CADANGAN: SIMULASI KLIK (VIRTUAL INPUT)
+    -- Jika remote gagal, kita paksa klik kiri karena item sudah dipegang
+    task.wait(0.1)
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+    task.wait(0.1)
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+    
+    StatusLbl.Text = "Spawn Attempted!"
+    
+    -- 4. Unequip (Opsional, agar rapi)
+    task.wait(1)
+    -- Humanoid:UnequipTools() -- Aktifkan jika ingin otomatis lepas
 end
 
--- // --- BUTTON EVENTS ---
+-- // --- LOGIC TOMBOL ---
 
-EquipToggleBtn.MouseButton1Click:Connect(function()
-    AutoEquipActive = not AutoEquipActive
-    if AutoEquipActive then
-        EquipToggleBtn.Text = "AUTO EQUIP BEFORE SPAWN: ON"
-        EquipToggleBtn.BackgroundColor3 = THEME.Accent
-        EquipToggleBtn.TextColor3 = Color3.fromRGB(20, 20, 20)
-    else
-        EquipToggleBtn.Text = "AUTO EQUIP BEFORE SPAWN: OFF"
-        EquipToggleBtn.BackgroundColor3 = THEME.Red
-        EquipToggleBtn.TextColor3 = Color3.new(1,1,1)
-    end
+SpawnBtn.MouseButton1Click:Connect(function()
+    ActivateTotem()
 end)
 
-SpawnOnceBtn.MouseButton1Click:Connect(function()
-    TriggerSpawn()
-end)
-
-AutoToggleBtn.MouseButton1Click:Connect(function()
+AutoBtn.MouseButton1Click:Connect(function()
     AutoTotemActive = not AutoTotemActive
     if AutoTotemActive then
-        AutoToggleBtn.Text = "AUTO SPAWN LOOP (60m): ON"
-        AutoToggleBtn.TextColor3 = THEME.Accent
+        AutoBtn.Text = "AUTO LOOP (60m): ON"
+        AutoBtn.TextColor3 = THEME.Accent
         
         task.spawn(function()
             while AutoTotemActive do
-                TriggerSpawn()
+                ActivateTotem()
                 
-                -- Countdown
+                -- Countdown 3600 detik
                 for i = 3600, 1, -1 do
                     if not AutoTotemActive then break end
-                    StatusLbl.Text = "Next Spawn: " .. i .. "s"
+                    StatusLbl.Text = "Next: " .. i .. "s"
                     task.wait(1)
                 end
             end
         end)
     else
-        AutoToggleBtn.Text = "AUTO SPAWN LOOP (60m): OFF"
-        AutoToggleBtn.TextColor3 = THEME.Red
-        StatusLbl.Text = "Auto Loop Stopped."
+        AutoBtn.Text = "AUTO LOOP (60m): OFF"
+        AutoBtn.TextColor3 = THEME.Red
+        StatusLbl.Text = "Auto Stopped."
     end
 end)
 
@@ -293,5 +277,5 @@ MinBtn.MouseButton1Click:Connect(function()
     Gui:Destroy()
 end)
 
--- Jalankan Scan Awal
+-- Jalankan Scan
 ScanTotems()
