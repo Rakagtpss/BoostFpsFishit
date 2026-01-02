@@ -3,22 +3,25 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+local TweenService = game:GetService("TweenService")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
 -- // --- CONFIGURATION ---
-local UI_WIDTH = 260 -- Lebih lebar
+local UI_WIDTH = 260 
 local UI_HEIGHT = 220 
+local SELL_MENU_WIDTH = 240 -- Lebar menu sell agar teks muat
+
 local THEME = {
     Background = Color3.fromRGB(20, 20, 24), -- Dark Matte
     Header = Color3.fromRGB(28, 28, 32),
     Button = Color3.fromRGB(35, 35, 40),
     ButtonActive = Color3.fromRGB(45, 55, 65),
     Text = Color3.fromRGB(220, 220, 220),
-    Accent = Color3.fromRGB(80, 140, 255) -- Soft Blue (Modern)
+    Accent = Color3.fromRGB(80, 140, 255), -- Soft Blue
+    SellText = Color3.fromRGB(255, 100, 100) -- Merah pudar untuk teks [SELL]
 }
 
 -- // State
@@ -30,12 +33,12 @@ local BV, Conn
 local fpsLimits = {30, 60, 144, 999}
 local currentLimitIndex = 4
 
--- // Cleanup Old GUI
-if CoreGui:FindFirstChild("SeraphinModern") then CoreGui.SeraphinModern:Destroy() end
+-- // Cleanup
+if CoreGui:FindFirstChild("SeraphinUnique") then CoreGui.SeraphinUnique:Destroy() end
 
 -- // --- UI CREATION ---
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "SeraphinModern"
+Gui.Name = "SeraphinUnique"
 Gui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", Gui)
@@ -45,7 +48,6 @@ MainFrame.BackgroundColor3 = THEME.Background
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.ClipsDescendants = true -- Agar rapi
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
 -- Header
@@ -54,7 +56,7 @@ Header.Size = UDim2.new(1, 0, 0, 40)
 Header.BackgroundColor3 = THEME.Header
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 
--- Penutup sudut bawah header agar flat menyatu dengan body
+-- Filler untuk meratakan bawah header
 local HeaderFiller = Instance.new("Frame", Header)
 HeaderFiller.Size = UDim2.new(1, 0, 0, 10)
 HeaderFiller.Position = UDim2.new(0, 0, 1, -10)
@@ -64,7 +66,7 @@ HeaderFiller.BorderSizePixel = 0
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.6, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <b>v2</b>"
+Title.Text = "SERAPHIN <b>v3</b>"
 Title.RichText = true
 Title.TextColor3 = THEME.Text
 Title.Font = Enum.Font.GothamBold
@@ -79,10 +81,9 @@ MinBtn.Text = "-"
 MinBtn.TextColor3 = THEME.Text
 MinBtn.BackgroundColor3 = THEME.Button
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 14
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
 
--- Container
+-- Main Scroll
 local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
 ScrollFrame.Size = UDim2.new(1, -20, 1, -50)
 ScrollFrame.Position = UDim2.new(0, 10, 0, 45)
@@ -95,25 +96,24 @@ local Layout = Instance.new("UIListLayout", ScrollFrame)
 Layout.Padding = UDim.new(0, 8)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Helper Function: Create Button
+-- Helper Button Creator
 local function CreateButton(text)
     local btn = Instance.new("TextButton", ScrollFrame)
     btn.Size = UDim2.new(1, 0, 0, 32)
     btn.Text = text
     btn.Font = Enum.Font.GothamMedium
-    btn.TextSize = 12
+    btn.TextSize = 11
     btn.TextColor3 = THEME.Text
     btn.BackgroundColor3 = THEME.Button
     btn.AutoButtonColor = false
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     
-    -- Efek Hover Sederhana
     btn.MouseEnter:Connect(function() 
-        game:GetService("TweenService"):Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = THEME.ButtonActive}):Play() 
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = THEME.ButtonActive}):Play() 
     end)
     btn.MouseLeave:Connect(function() 
         if not (text:find("ON") or text:find("Unl")) then
-             game:GetService("TweenService"):Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = THEME.Button}):Play() 
+             TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = THEME.Button}):Play() 
         end
     end)
     return btn
@@ -126,19 +126,20 @@ local WowBtn = CreateButton("Walk On Water: OFF")
 local RenderBtn = CreateButton("No Render 3D: OFF")
 local FpsCapBtn = CreateButton("FPS Cap: Unlimited")
 
--- // --- SELL MENU POPUP (SCAN REPLICATED) ---
+-- // --- SELL MENU POPUP ---
 local SellFrame = Instance.new("Frame", MainFrame)
-SellFrame.Size = UDim2.new(0, 180, 0, 200)
-SellFrame.Position = UDim2.new(1, 10, 0, 0) -- Di sebelah kanan
+SellFrame.Size = UDim2.new(0, SELL_MENU_WIDTH, 0, 250) -- Lebih panjang agar enak dilihat
+SellFrame.Position = UDim2.new(1, 10, 0, 0) -- Muncul di sebelah kanan UI utama
 SellFrame.BackgroundColor3 = THEME.Background
 SellFrame.Visible = false
 SellFrame.ZIndex = 5
+SellFrame.ClipsDescendants = true
 Instance.new("UICorner", SellFrame).CornerRadius = UDim.new(0, 10)
 
 local SellTitle = Instance.new("TextLabel", SellFrame)
 SellTitle.Size = UDim2.new(1, -10, 0, 30)
 SellTitle.Position = UDim2.new(0, 5, 0, 0)
-SellTitle.Text = "REPLICATED SCAN"
+SellTitle.Text = "AVAILABLE ITEMS (SCROLL)"
 SellTitle.TextColor3 = Color3.fromRGB(150, 150, 150)
 SellTitle.Font = Enum.Font.GothamBold
 SellTitle.TextSize = 10
@@ -148,104 +149,115 @@ local SellScroll = Instance.new("ScrollingFrame", SellFrame)
 SellScroll.Size = UDim2.new(1, -10, 1, -35)
 SellScroll.Position = UDim2.new(0, 5, 0, 30)
 SellScroll.BackgroundTransparency = 1
-SellScroll.ScrollBarThickness = 2
-SellScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-Instance.new("UIListLayout", SellScroll).Padding = UDim.new(0, 4)
+SellScroll.ScrollBarThickness = 3
+SellScroll.ScrollBarImageColor3 = THEME.Accent
+SellScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y -- PENTING: Agar bisa digulir
+Instance.new("UIListLayout", SellScroll).Padding = UDim.new(0, 5)
 
--- // --- LOGIC FEATURES ---
+-- // --- LOGIC ---
 
--- 1. SELL LOGIC (SCAN REPLICATED STORAGE)
 local function TriggerSell()
-    -- Mencoba menekan tombol Sell VIP jika ada
     pcall(function()
         local PlayerGui = Player:FindFirstChild("PlayerGui")
+        -- Sesuaikan path ini dengan game kamu jika berbeda
         local SellBtn = PlayerGui["Exclusive Store"].Main.Content.Items["Sell VIP"]
-        SellBtn.MouseButton1Click:Fire()
+        if SellBtn then SellBtn.MouseButton1Click:Fire() end
     end)
 end
 
 local function ScanReplicatedAndList()
     -- Bersihkan list lama
     for _, child in pairs(SellScroll:GetChildren()) do 
-        if child:IsA("TextButton") then child:Destroy() end 
+        if child:IsA("TextButton") or child:IsA("TextLabel") then child:Destroy() end 
     end
 
-    -- Target Folder Scan: Kita cari Resources > Items agar lebih efisien
-    -- Jika tidak ada, fallback ke ReplicatedStorage root (Hati-hati, banyak item)
+    -- Mencari folder Items di ReplicatedStorage
     local TargetFolder = nil
     if ReplicatedStorage:FindFirstChild("Resources") and ReplicatedStorage.Resources:FindFirstChild("Items") then
         TargetFolder = ReplicatedStorage.Resources.Items
-    else
-        TargetFolder = ReplicatedStorage -- Fallback (bisa berat)
+    elseif ReplicatedStorage:FindFirstChild("Items") then
+        TargetFolder = ReplicatedStorage.Items
     end
 
-    -- Mulai Scan
     if TargetFolder then
-        -- Kita scan subfolder juga (misal Rods, Fish, dll)
-        for _, category in pairs(TargetFolder:GetChildren()) do
-            if category:IsA("Folder") then
-                 -- Buat Label Kategori
-                local label = Instance.new("TextLabel", SellScroll)
-                label.Size = UDim2.new(1,0,0,15)
-                label.Text = "--- " .. category.Name .. " ---"
-                label.TextColor3 = THEME.Accent
-                label.BackgroundTransparency = 1
-                label.Font = Enum.Font.Code
-                label.TextSize = 9
+        for _, item in pairs(TargetFolder:GetChildren()) do
+            -- Kita ambil item langsung atau jika ada dalam folder kategori
+            local itemsToDisplay = {}
+            if item:IsA("Folder") then
+                for _, subItem in pairs(item:GetChildren()) do table.insert(itemsToDisplay, subItem) end
+            else
+                table.insert(itemsToDisplay, item)
+            end
 
-                for _, item in pairs(category:GetChildren()) do
-                    local btn = Instance.new("TextButton", SellScroll)
-                    btn.Size = UDim2.new(1, 0, 0, 22)
-                    btn.Text = item.Name
-                    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-                    btn.TextColor3 = Color3.new(0.8, 0.8, 0.8)
-                    btn.Font = Enum.Font.Gotham
-                    btn.TextSize = 10
-                    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+            for _, realItem in pairs(itemsToDisplay) do
+                local btn = Instance.new("TextButton", SellScroll)
+                btn.Size = UDim2.new(1, -4, 0, 25) -- Sedikit padding kanan
+                btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+                btn.AutoButtonColor = false
+                btn.Font = Enum.Font.Code -- Font Code agar terlihat teknis
+                btn.TextSize = 10
+                btn.TextColor3 = THEME.Text
+                btn.TextXAlignment = Enum.TextXAlignment.Left
+                -- FORMAT TEKS SESUAI PERMINTAAN
+                btn.Text = "  [ SELL ITEM : ] [ " .. realItem.Name .. " ]"
+                btn.RichText = true -- Opsional jika ingin mewarnai sebagian teks
+                Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
 
-                    -- Logic saat item dari ReplicatedStorage diklik
-                    btn.MouseButton1Click:Connect(function()
-                        print("Selected form ReplicatedStorage: " .. item.Name)
+                -- Event Klik
+                btn.MouseButton1Click:Connect(function()
+                    local backpackItem = Player.Backpack:FindFirstChild(realItem.Name)
+                    
+                    if backpackItem then
+                        -- Animasi Feedback
+                        btn.BackgroundColor3 = Color3.fromRGB(50, 150, 100) -- Hijau
+                        btn.Text = "  [ PROCESSING... ]"
                         
-                        -- Cek apakah player punya item ini di Backpack
-                        local backpackItem = Player.Backpack:FindFirstChild(item.Name)
-                        if backpackItem then
-                            Char.Humanoid:EquipTool(backpackItem)
-                            task.wait(0.1)
-                            TriggerSell()
-                            btn.Text = "Attempting Sell..."
-                            btn.TextColor3 = Color3.fromRGB(255, 100, 100)
-                            task.wait(0.8)
-                            btn.Text = item.Name
-                            btn.TextColor3 = Color3.new(0.8, 0.8, 0.8)
-                        else
-                            -- Jika item tidak ada di backpack
-                            btn.Text = "Not in Backpack"
-                            task.wait(0.5)
-                            btn.Text = item.Name
-                        end
-                    end)
-                end
+                        -- Equip & Sell
+                        Char.Humanoid:EquipTool(backpackItem)
+                        task.wait(0.1)
+                        TriggerSell()
+                        
+                        task.wait(0.5)
+                        btn.Text = "  [ SOLD SUCCESS ]"
+                        task.wait(0.5)
+                        
+                        -- Reset Teks
+                        btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+                        btn.Text = "  [ SELL ITEM : ] [ " .. realItem.Name .. " ]"
+                    else
+                        -- Item tidak ada di tas
+                        btn.BackgroundColor3 = Color3.fromRGB(150, 50, 50) -- Merah
+                        btn.Text = "  [ ITEM NOT OWNED ]"
+                        task.wait(1)
+                        btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+                        btn.Text = "  [ SELL ITEM : ] [ " .. realItem.Name .. " ]"
+                    end
+                end)
             end
         end
     else
-        print("Folder Items tidak ditemukan di ReplicatedStorage")
+        local errLabel = Instance.new("TextLabel", SellScroll)
+        errLabel.Size = UDim2.new(1,0,0,30)
+        errLabel.Text = "Folder 'Items' not found in ReplicatedStorage"
+        errLabel.TextColor3 = Color3.fromRGB(200,50,50)
+        errLabel.BackgroundTransparency = 1
     end
 end
 
+-- Toggle Sell Menu
 SellMenuBtn.MouseButton1Click:Connect(function()
     SellFrame.Visible = not SellFrame.Visible
     if SellFrame.Visible then
         SellMenuBtn.Text = "Close Sell Menu <"
         SellMenuBtn.BackgroundColor3 = THEME.Accent
-        ScanReplicatedAndList()
+        ScanReplicatedAndList() -- Refresh list saat dibuka
     else
         SellMenuBtn.Text = "Open Sell Menu >"
         SellMenuBtn.BackgroundColor3 = THEME.Button
     end
 end)
 
--- 2. Booster / Potato
+-- Standard Features Logic
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
@@ -253,13 +265,11 @@ PotatoBtn.MouseButton1Click:Connect(function()
     Lighting.GlobalShadows = not Optimized
     if Optimized then
         for _, v in pairs(game:GetDescendants()) do
-            if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false
-            elseif v:IsA("Texture") then v.Transparency = 1 end
+            if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
         end
     end
 end)
 
--- 3. No Render
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
@@ -267,12 +277,10 @@ RenderBtn.MouseButton1Click:Connect(function()
     RenderBtn.TextColor3 = AfkModeActive and Color3.fromRGB(255, 80, 80) or THEME.Text
 end)
 
--- 4. Walk on Water
 WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
     WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
     WowBtn.TextColor3 = WowEnabled and THEME.Accent or THEME.Text
-    
     if WowEnabled then
         BV = Instance.new("BodyVelocity", HRP)
         BV.MaxForce = Vector3.new(0, 1e6, 0)
@@ -286,7 +294,6 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 5. FPS Cap
 FpsCapBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex + 1
     if currentLimitIndex > #fpsLimits then currentLimitIndex = 1 end
@@ -295,7 +302,6 @@ FpsCapBtn.MouseButton1Click:Connect(function()
     FpsCapBtn.Text = newLimit > 900 and "FPS Cap: Unlimited" or "FPS Cap: " .. newLimit
 end)
 
--- 6. Min/Max
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
@@ -310,10 +316,3 @@ MinBtn.MouseButton1Click:Connect(function()
         MinBtn.Text = "-"
     end
 end)
-
--- Notification Init
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Seraphin v2";
-    Text = "UI Loaded. Wide & Dark Mode.";
-    Duration = 3;
-})
