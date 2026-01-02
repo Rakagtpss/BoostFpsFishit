@@ -17,12 +17,12 @@ local ParentTarget = getUiParent()
 if not ParentTarget then warn("UI Parent Gagal") return end
 
 for _, child in pairs(ParentTarget:GetChildren()) do
-    if child.Name == "SeraphinSimple" then child:Destroy() end
+    if child.Name == "SeraphinFinal" then child:Destroy() end
 end
 
 -- // CONFIG UI
 local UI_WIDTH = 250
-local UI_HEIGHT = 450 -- Sedikit lebih tinggi untuk muat tombol baru
+local UI_HEIGHT = 450
 local THEME = {
     Bg = Color3.fromRGB(20, 21, 24),
     Item = Color3.fromRGB(35, 35, 40),
@@ -31,7 +31,7 @@ local THEME = {
 }
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SeraphinSimple"
+ScreenGui.Name = "SeraphinFinal"
 ScreenGui.Parent = ParentTarget
 ScreenGui.ResetOnSpawn = false
 
@@ -54,7 +54,7 @@ Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.6, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">FULL</font>"
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">REMOTE FIX</font>"
 Title.RichText = true
 Title.TextColor3 = THEME.Text
 Title.Font = Enum.Font.GothamBold
@@ -78,7 +78,7 @@ Scroll.Size = UDim2.new(1, -10, 1, -50)
 Scroll.Position = UDim2.new(0, 5, 0, 45)
 Scroll.BackgroundTransparency = 1
 Scroll.ScrollBarThickness = 2
-Scroll.CanvasSize = UDim2.new(0, 0, 1.2, 0) -- Extra space
+Scroll.CanvasSize = UDim2.new(0, 0, 1.2, 0)
 local Layout = Instance.new("UIListLayout", Scroll)
 Layout.Padding = UDim.new(0, 6)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -100,10 +100,13 @@ end
 
 local function GetUUID(tool)
     if not tool then return nil end
-    local uuid = tool:GetAttribute("UUID") or tool:GetAttribute("uuid") or tool:GetAttribute("id")
+    local uuid = tool:GetAttribute("UUID") or tool:GetAttribute("uuid") or tool:GetAttribute("id") or tool:GetAttribute("ID")
     if uuid then return uuid end
+    
     local val = tool:FindFirstChild("UUID") or tool:FindFirstChild("ID") or tool:FindFirstChild("uuid")
     if val then return val.Value end
+    
+    -- Cek Config
     local conf = tool:FindFirstChild("Configuration") or tool:FindFirstChild("Config")
     if conf then
         val = conf:FindFirstChild("UUID") or conf:FindFirstChild("ID")
@@ -219,7 +222,7 @@ local ToggleWoW = CreateButton("Walk on Water: OFF", 6)
 local ToggleNoRender = CreateButton("No Render (3D): OFF", 7)
 local ToggleBooster = CreateButton("Booster (FPS): OFF", 8)
 
--- 1. AUTO SELL (FIXED)
+-- 1. AUTO SELL (FIXED PATH & ARGS)
 ToggleSell.MouseButton1Click:Connect(function()
     if not SelectedSellItem then
         ToggleSell.Text = "Pilih Item Dulu!"
@@ -233,11 +236,29 @@ ToggleSell.MouseButton1Click:Connect(function()
         ToggleSell.BackgroundColor3 = THEME.Accent
         ToggleSell.TextColor3 = Color3.new(0,0,0)
         
+        -- PRE-SETUP: Pancing server dengan update threshold (Mencegah block)
+        task.spawn(function()
+            pcall(function()
+                local net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
+                local thresh = net:FindFirstChild("RF/UpdateAutoSellThreshold")
+                if thresh then thresh:InvokeServer(0) end -- Set threshold ke 0 (biasanya aman)
+            end)
+        end)
+        
         task.spawn(function()
             while AutoSellEnabled do
                 task.wait(1.5)
                 pcall(function()
-                    local remote = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RF/SellItem"]
+                    -- TARGET REMOTE (SESUAI DATA KAMU)
+                    local net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
+                    local remote = net:FindFirstChild("RF/SellItem")
+
+                    if not remote then 
+                        warn("Remote SellItem tidak ketemu di path!") 
+                        return 
+                    end
+                    
+                    -- LIST ITEM
                     local toSell = {}
                     if Player.Backpack then
                         for _,v in pairs(Player.Backpack:GetChildren()) do
@@ -251,15 +272,20 @@ ToggleSell.MouseButton1Click:Connect(function()
                     end
                     
                     local amount = #toSell - KeepAmount
+                    
                     if amount > 0 then
                         for i = 1, amount do
                             if not AutoSellEnabled then break end
                             local item = toSell[i]
                             local uuid = GetUUID(item)
+                            
                             if uuid then
+                                -- FORMAT BARU: Gunakan UUID + Amount (1) karena ada remote SellItem
                                 remote:InvokeServer(uuid, 1)
-                                print("Sold: "..item.Name)
-                                task.wait(0.1)
+                                print("Menjual: "..item.Name)
+                                task.wait(0.2)
+                            else
+                                warn("UUID Error pada item: "..item.Name)
                             end
                         end
                     end
@@ -289,8 +315,10 @@ ToggleTotem.MouseButton1Click:Connect(function()
         task.spawn(function()
             while AutoTotemEnabled do
                 pcall(function()
-                    local remote = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RE/PlaceCavernTotemItem"]
-                    if SelectedTotem then
+                    local net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
+                    local remote = net:FindFirstChild("RE/PlaceCavernTotemItem")
+                    
+                    if SelectedTotem and remote then
                         local tool = Player.Backpack:FindFirstChild(SelectedTotem) or (Player.Character and Player.Character:FindFirstChild(SelectedTotem))
                         if tool then
                             local uuid = GetUUID(tool)
@@ -308,7 +336,7 @@ ToggleTotem.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3. WALK ON WATER (RESTORED)
+-- 3. WALK ON WATER (WOW)
 local wowPart = nil
 ToggleWoW.MouseButton1Click:Connect(function()
     WoWEnabled = not WoWEnabled
@@ -316,8 +344,6 @@ ToggleWoW.MouseButton1Click:Connect(function()
         ToggleWoW.Text = "Walk on Water: ON"
         ToggleWoW.BackgroundColor3 = THEME.Accent
         ToggleWoW.TextColor3 = Color3.new(0,0,0)
-        
-        -- Logic WoW
         task.spawn(function()
             while WoWEnabled do
                 pcall(function()
@@ -330,14 +356,12 @@ ToggleWoW.MouseButton1Click:Connect(function()
                             wowPart.Anchored = true
                             wowPart.CanCollide = true
                         end
-                        -- Posisi di bawah kaki karakter
                         local hrp = Player.Character.HumanoidRootPart
                         wowPart.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 3.5, hrp.Position.Z)
                     end
                 end)
                 RunService.Heartbeat:Wait()
             end
-            -- Cleanup saat mati
             if wowPart then wowPart:Destroy(); wowPart = nil end
         end)
     else
@@ -348,7 +372,7 @@ ToggleWoW.MouseButton1Click:Connect(function()
     end
 end)
 
--- 4. NO RENDER (RESTORED)
+-- 4. NO RENDER
 local noRender = false
 ToggleNoRender.MouseButton1Click:Connect(function()
     noRender = not noRender
@@ -357,7 +381,7 @@ ToggleNoRender.MouseButton1Click:Connect(function()
         ToggleNoRender.BackgroundColor3 = THEME.Accent
         ToggleNoRender.TextColor3 = Color3.new(0,0,0)
         RunService:Set3dRenderingEnabled(false)
-        game.StarterGui:SetCore("SendNotification", {Title="No Render", Text="Layar beku untuk hemat RAM/CPU", Duration=3})
+        game.StarterGui:SetCore("SendNotification", {Title="No Render", Text="Hemat RAM Aktif", Duration=3})
     else
         ToggleNoRender.Text = "No Render (3D): OFF"
         ToggleNoRender.BackgroundColor3 = THEME.Item
@@ -398,4 +422,4 @@ MinBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-game.StarterGui:SetCore("SendNotification", {Title="Seraphin Full", Text="Walk on Water & No Render Added!", Duration=3})
+game.StarterGui:SetCore("SendNotification", {Title="Seraphin Fix", Text="Remote Path Adjusted", Duration=3})
