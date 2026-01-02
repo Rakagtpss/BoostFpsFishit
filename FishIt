@@ -1,4 +1,4 @@
--- // SERAPHIN HELPER - HIGH VISIBILITY & FIXED FEATURES // --
+-- // SERAPHIN HELPER - GIANT STATS & RGB EDITION // --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -15,173 +15,175 @@ local currentLimitIndex = 6
 local BV, WowConn
 
 -- // UI Config
-local UI_WIDTH, UI_HEIGHT = 380, 180 
-local ACCENT = Color3.fromRGB(0, 255, 170) -- Hijau Neon
-local BG_MAIN = Color3.fromRGB(10, 10, 12)
+local UI_WIDTH, UI_HEIGHT = 400, 220 
 
--- // ANTI-AFK & AUTO RECONNECT
+-- // ANTI-AFK
 task.spawn(function()
     local VirtualUser = game:GetService("VirtualUser")
     Player.Idled:Connect(function() VirtualUser:CaptureController() VirtualUser:ClickButton2(Vector2.new()) end)
 end)
 
-game:GetService("GuiService").ErrorMessageChanged:Connect(function()
-    task.wait(5) TeleportService:Teleport(game.PlaceId, Player)
-end)
-
--- // NOTIFIKASI LOAD
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Seraphin Helper",
-    Text = "Sistem Aktif & Teroptimasi!",
-    Duration = 3
-})
-
 -- // Cleanup
-if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
+if CoreGui:FindFirstChild("SeraphinRGB") then CoreGui.SeraphinRGB:Destroy() end
 
 -- // UI SETUP
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "SeraphinHelper"
+Gui.Name = "SeraphinRGB"
 
 local MainFrame = Instance.new("Frame", Gui)
 MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
 MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.4, 0)
-MainFrame.BackgroundColor3 = BG_MAIN
-MainFrame.BackgroundTransparency = 0.15
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
+MainFrame.BackgroundTransparency = 0.1
 MainFrame.Active, MainFrame.Draggable = true, true
+
+local Border = Instance.new("UIStroke", MainFrame)
+Border.Thickness = 3
+Border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
 Instance.new("UICorner", MainFrame)
 
--- Judul
-local Title = Instance.new("TextLabel", MainFrame)
-Title.Size, Title.Position = UDim2.new(0, 120, 0, 35), UDim2.new(0, 12, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
-Title.RichText, Title.TextColor3, Title.Font, Title.TextSize = true, Color3.new(1,1,1), Enum.Font.GothamBold, 12
-Title.BackgroundTransparency, Title.TextXAlignment = 1, 0
+-- STATS RAKSASA (FPS & PING)
+local StatsFrame = Instance.new("Frame", MainFrame)
+StatsFrame.Size = UDim2.new(1, -20, 0, 50)
+StatsFrame.Position = UDim2.new(0, 10, 0, 10)
+StatsFrame.BackgroundTransparency = 1
 
--- STATS (FPS & PING) - Dibuat Lebih Jelas
-local HeaderStats = Instance.new("TextLabel", MainFrame)
-HeaderStats.Size, HeaderStats.Position = UDim2.new(0, 180, 0, 35), UDim2.new(0, 135, 0, 0)
-HeaderStats.Text = "FPS: -- | PING: --"
-HeaderStats.TextColor3 = ACCENT
-HeaderStats.Font = Enum.Font.RobotoMono -- Font lebih tegas
-HeaderStats.TextSize = 13 -- Ukuran diperbesar
-HeaderStats.BackgroundTransparency, HeaderStats.TextXAlignment = 1, 0
+local FpsLabel = Instance.new("TextLabel", StatsFrame)
+FpsLabel.Size = UDim2.new(0.5, 0, 1, 0)
+FpsLabel.Text = "FPS: --"
+FpsLabel.Font = Enum.Font.GothamBold
+FpsLabel.TextSize = 25 -- Saiz Sangat Besar
+FpsLabel.TextColor3 = Color3.new(1,1,1)
+FpsLabel.BackgroundTransparency = 1
+
+local PingLabel = Instance.new("TextLabel", StatsFrame)
+PingLabel.Size = UDim2.new(0.5, 0, 1, 0)
+PingLabel.Position = UDim2.new(0.5, 0, 0, 0)
+PingLabel.Text = "PING: --"
+PingLabel.Font = Enum.Font.GothamBold
+PingLabel.TextSize = 25 -- Saiz Sangat Besar
+PingLabel.TextColor3 = Color3.new(1,1,1)
+PingLabel.BackgroundTransparency = 1
 
 -- Tombol Hide
 local MinBtn = Instance.new("TextButton", MainFrame)
-MinBtn.Size = UDim2.new(0, 50, 0, 22)
-MinBtn.Position = UDim2.new(1, -58, 0, 7)
+MinBtn.Size = UDim2.new(0, 50, 0, 25)
+MinBtn.Position = UDim2.new(1, -60, 0, 10)
 MinBtn.Text = "HIDE"
-MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 10
+MinBtn.TextColor3 = Color3.new(1,1,1)
+MinBtn.BackgroundColor3 = Color3.fromRGB(40,40,45)
 Instance.new("UICorner", MinBtn)
 
 local Scroll = Instance.new("ScrollingFrame", MainFrame)
-Scroll.Size, Scroll.Position = UDim2.new(1, -20, 1, -50), UDim2.new(0, 10, 0, 40)
-Scroll.BackgroundTransparency, Scroll.BorderSizePixel, Scroll.CanvasSize = 1, 0, UDim2.new(0,0,0,0)
+Scroll.Size = UDim2.new(1, -20, 1, -85)
+Scroll.Position = UDim2.new(0, 10, 0, 70)
+Scroll.BackgroundTransparency, Scroll.CanvasSize = 1, UDim2.new(0,0,0,0)
 Scroll.ScrollBarThickness = 0
 local Layout = Instance.new("UIGridLayout", Scroll)
-Layout.CellSize, Layout.CellPadding = UDim2.new(0.5, -7, 0, 35), UDim2.new(0, 10, 0, 8)
+Layout.CellSize = UDim2.new(0.5, -7, 0, 40)
 
 local function CreateButton(text)
     local btn = Instance.new("TextButton", Scroll)
-    btn.Text, btn.Font, btn.TextSize = text, Enum.Font.GothamBold, 10
-    btn.TextColor3, btn.BackgroundColor3, btn.BackgroundTransparency = Color3.new(0.9,0.9,0.9), Color3.fromRGB(28,28,33), 0.2
+    btn.Text = text
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.BackgroundColor3 = Color3.fromRGB(25,25,30)
     Instance.new("UICorner", btn)
     return btn
 end
 
 -- // FITUR
-local PotBtn = CreateButton("BOOSTER: OFF")
-local NetBtn = CreateButton("NET BOOST: OFF")
-local FpsBtn = CreateButton("FPS: UNLI")
-local RedBtn = CreateButton("NO RENDER: OFF")
-local WowBtn = CreateButton("W-WALK: OFF")
-local FrzBtn = CreateButton("FREEZE: OFF")
+local PotBtn = CreateButton("BOOSTER")
+local NetBtn = CreateButton("NET BOOST")
+local FpsBtn = CreateButton("FPS CAP")
+local RedBtn = CreateButton("NO RENDER")
+local WowBtn = CreateButton("WATER WALK")
+local FrzBtn = CreateButton("FREEZE")
+
+-- // RGB LOGIC
+task.spawn(function()
+    while task.wait() do
+        local hue = tick() % 5 / 5
+        local color = Color3.fromHSV(hue, 1, 1)
+        Border.Color = color
+        FpsLabel.TextColor3 = color
+        PingLabel.TextColor3 = color
+    end
+end)
 
 -- // LOGIC FUNCTIONS
-
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    MainFrame:TweenSize(Minimized and UDim2.new(0, UI_WIDTH, 0, 35) or UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
+    MainFrame:TweenSize(Minimized and UDim2.new(0, UI_WIDTH, 0, 70) or UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
     Scroll.Visible = not Minimized
     MinBtn.Text = Minimized and "SHOW" or "HIDE"
 end)
 
-PotBtn.MouseButton1Click:Connect(function()
-    Optimized = not Optimized
-    PotBtn.Text = Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
-    settings().Rendering.QualityLevel = Optimized and 1 or 10
-    Lighting.GlobalShadows = not Optimized
-    for _, v in pairs(game:GetDescendants()) do
-        if Optimized and v:IsA("BasePart") then v.Material, v.CastShadow = Enum.Material.SmoothPlastic, false end
+-- NO RENDER FIX (Alternative Method)
+RedBtn.MouseButton1Click:Connect(function()
+    _G.NoRender = not _G.NoRender
+    RedBtn.Text = _G.NoRender and "NO RENDER: ON" or "NO RENDER: OFF"
+    RunService:Set3dRenderingEnabled(not _G.NoRender)
+    if not _G.NoRender then
+        workspace.CurrentCamera.CFrame = Player.Character.HumanoidRootPart.CFrame
     end
 end)
 
--- NET BOOST (Logic Baru)
+-- NET BOOST (Brute Force)
 NetBtn.MouseButton1Click:Connect(function()
     _G.NetBoost = not _G.NetBoost
     NetBtn.Text = _G.NetBoost and "NET BOOST: ON" or "NET BOOST: OFF"
     if _G.NetBoost then
         settings().Network.IncomingReplicationLag = 0
-        game:GetService("NetworkClient").ClientReplicatedStorage.DirectPropertyReplication = true
+        sethiddenproperty(game:GetService("NetworkClient"), "PhysicsSendRate", 20)
     end
 end)
 
--- NO RENDER (Logic Baru dengan Proteksi)
-RedBtn.MouseButton1Click:Connect(function()
-    local success, err = pcall(function()
-        local state = not RunService:Get3dRenderingEnabled()
-        RunService:Set3dRenderingEnabled(state)
-        RedBtn.Text = state and "NO RENDER: OFF" or "NO RENDER: ON"
-    end)
-    if not success then RedBtn.Text = "NOT SUPPORTED" end
-end)
-
+-- WATER WALK
 WowBtn.MouseButton1Click:Connect(function()
     local Char = Player.Character
     local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
-    if not HRP then return end
     _G.WowActive = not _G.WowActive
     WowBtn.Text = _G.WowActive and "W-WALK: ON" or "W-WALK: OFF"
     if _G.WowActive then
         BV = Instance.new("BodyVelocity", HRP)
-        BV.Name = "SeraphinWow"
-        BV.MaxForce = Vector3.new(0, 1e6, 0)
-        BV.Velocity = Vector3.zero
-        WowConn = RunService.Stepped:Connect(function()
+        BV.Velocity = Vector3.new(0,0,0)
+        BV.MaxForce = Vector3.new(0, math.huge, 0)
+        WowConn = RunService.Heartbeat:Connect(function()
             HRP.Velocity = Vector3.new(HRP.Velocity.X, 0, HRP.Velocity.Z)
         end)
     else
         if WowConn then WowConn:Disconnect() end
-        if HRP:FindFirstChild("SeraphinWow") then HRP.SeraphinWow:Destroy() end
+        if HRP:FindFirstChild("BodyVelocity") then HRP.BodyVelocity:Destroy() end
+    end
+end)
+
+-- Lain-lain
+PotBtn.MouseButton1Click:Connect(function()
+    Optimized = not Optimized
+    settings().Rendering.QualityLevel = 1
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("BasePart") then v.Material, v.CastShadow = Enum.Material.SmoothPlastic, false end
     end
 end)
 
 FrzBtn.MouseButton1Click:Connect(function()
-    local HRP = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    if HRP then
-        HRP.Anchored = not HRP.Anchored
-        FrzBtn.Text = HRP.Anchored and "FREEZE: ON" or "FREEZE: OFF"
-    end
+    local HRP = Player.Character.HumanoidRootPart
+    HRP.Anchored = not HRP.Anchored
 end)
 
 FpsBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex % #fpsLimits + 1
-    local lim = fpsLimits[currentLimitIndex]
-    if setfpscap then setfpscap(lim) end
-    FpsBtn.Text = "FPS: "..(lim > 900 and "UNLI" or lim)
+    setfpscap(fpsLimits[currentLimitIndex])
 end)
 
--- // HEADER STATS LOOP
-local lastT, frames = os.clock(), 0
+-- // STATS LOOP
 RunService.RenderStepped:Connect(function()
-    frames = frames + 1
-    if os.clock() - lastT >= 1 then
-        local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-        HeaderStats.Text = string.format("FPS: %d | PING: %d ms", frames, ping)
-        frames, lastT = 0, os.clock()
-    end
+    local fps = math.floor(1/RunService.RenderStepped:Wait())
+    local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+    FpsLabel.Text = "FPS: " .. fps
+    PingLabel.Text = "PING: " .. ping .. "ms"
 end)
