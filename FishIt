@@ -1,6 +1,5 @@
-local Players = game:GetService("Players") -- Fixed typo 'Local' to 'local'
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Player = Players.LocalPlayer
 
@@ -28,7 +27,7 @@ Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- // UI Config
 local UI_WIDTH = 240
-local UI_HEIGHT = 420
+local UI_HEIGHT = 450 -- Sedikit lebih panjang untuk menu baru
 local ACCENT = Color3.fromRGB(0, 255, 170)
 
 local MainFrame = Instance.new("Frame", Gui)
@@ -103,13 +102,8 @@ local AutoTotemEnabled = false
 local AutoSellEnabled = false
 local Optimized = false
 local Minimized = false
-local WowEnabled = false
-local AfkModeActive = false
-local BV, Conn
-local fpsLimits = {30, 60, 144, 999}
-local currentLimitIndex = 4
 
--- // FUNGSI PENCARI REMOTE UMUM (Untuk Totem)
+-- // FUNGSI PENCARI REMOTE
 local CachedRemotes = {}
 local function GetRemote(name)
     if CachedRemotes[name] then return CachedRemotes[name] end
@@ -187,7 +181,7 @@ TotemSelectorBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- // [SYSTEM 2] SELL SCANNER (UPDATED)
+-- // [SYSTEM 2] SELL SCANNER & KEEP CONFIG
 local SellDropdownOpen = false
 local SellSelectorBtn = CreateButton("Pilih Item Jual: [None]", 3)
 SellSelectorBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
@@ -201,8 +195,35 @@ SellDropdownFrame.LayoutOrder = 4
 SellDropdownFrame.Visible = false
 Instance.new("UIListLayout", SellDropdownFrame).Padding = UDim.new(0, 2)
 
--- Kita hapus AmountBox karena Remote baru menggunakan UUID (biasanya jual per item)
--- Namun kita simpan loop untuk menjual banyak sekaligus.
+-- UI KEEP AMOUNT (Agar tidak terjual semua)
+local KeepFrame = Instance.new("Frame", ScrollFrame)
+KeepFrame.Size = UDim2.new(0.95, 0, 0, 30)
+KeepFrame.BackgroundTransparency = 1
+KeepFrame.LayoutOrder = 5
+
+local KeepLabel = Instance.new("TextLabel", KeepFrame)
+KeepLabel.Size = UDim2.new(0.6, 0, 1, 0)
+KeepLabel.Text = "Sisakan (Keep):"
+KeepLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+KeepLabel.Font = Enum.Font.GothamMedium
+KeepLabel.TextSize = 11
+KeepLabel.BackgroundTransparency = 1
+KeepLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local KeepBox = Instance.new("TextBox", KeepFrame)
+KeepBox.Size = UDim2.new(0.35, 0, 1, 0)
+KeepBox.Position = UDim2.new(0.65, 0, 0, 0)
+KeepBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+KeepBox.TextColor3 = Color3.fromRGB(255, 200, 50)
+KeepBox.Text = "1" -- Default sisakan 1
+KeepBox.PlaceholderText = "0"
+KeepBox.Font = Enum.Font.GothamBold
+KeepBox.TextSize = 12
+Instance.new("UICorner", KeepBox).CornerRadius = UDim.new(0, 6)
+
+KeepBox:GetPropertyChangedSignal("Text"):Connect(function()
+    KeepBox.Text = KeepBox.Text:gsub("%D+", "") -- Hanya angka
+end)
 
 local function AddSellButton(name)
     local choiceBtn = Instance.new("TextButton", SellDropdownFrame)
@@ -243,9 +264,12 @@ local function RefreshSellList()
         end
     end)
     
-    -- Tombol manual jika tidak terdeteksi
-    if not foundItems["Enchant Stone"] then AddSellButton("Enchant Stone"); itemCount=itemCount+1 end
-    if not foundItems["Train Wheel"] then AddSellButton("Train Wheel"); itemCount=itemCount+1 end
+    if itemCount == 0 then
+        -- Jika backpack kosong/tidak ada tool, tambahkan default manual
+        AddSellButton("Enchant Stone")
+        AddSellButton("Train Wheel")
+        itemCount = 2
+    end
     
     local contentHeight = itemCount * 27
     if contentHeight > 150 then contentHeight = 150 end
@@ -266,65 +290,75 @@ SellSelectorBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- // LOGIKA UTAMA
+-- // BUTTONS UTAMA
 local TotemBtn = CreateButton("Auto Totem (60m): OFF", 6)
-local SellBtn = CreateButton("Auto Sell (FAST): OFF", 7)
+local SellBtn = CreateButton("Auto Sell (Selective): OFF", 7)
 local PotatoBtn = CreateButton("Booster Mode: OFF", 8)
-local WowBtn = CreateButton("WALK ON WATER: OFF", 9)
-local RenderBtn = CreateButton("No Render 3D: OFF", 10)
-local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED", 11)
 
--- ==========================================
--- LOGIKA AUTO SELL BARU (FIXED UNTUK SLEITNICK)
--- ==========================================
+-- // LOGIKA AUTO SELL (SAFEGUARD MODE)
 SellBtn.MouseButton1Click:Connect(function()
     if not SelectedSellItem then
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper"; Text = "Pilih Item Jual dulu!"; Duration = 3;})
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper"; Text = "Pilih Item Jual dulu (Scan)!"; Duration = 3;})
         return
     end
 
     AutoSellEnabled = not AutoSellEnabled
-    SellBtn.Text = AutoSellEnabled and "Auto Sell: ON" or "Auto Sell (FAST): OFF"
+    SellBtn.Text = AutoSellEnabled and "Auto Sell: ON" or "Auto Sell (Selective): OFF"
     SellBtn.BackgroundColor3 = AutoSellEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
 
     if AutoSellEnabled then
         SellThread = task.spawn(function()
             while AutoSellEnabled do
-                task.wait(0.5) -- Kecepatan jual
+                task.wait(1) -- Cek setiap 1 detik
                 pcall(function()
-                    -- 1. Cari Remote Spesifik
+                    -- 1. Setup Remote
                     local packagePath = ReplicatedStorage:FindFirstChild("Packages") and ReplicatedStorage.Packages:FindFirstChild("_Index")
                     local sleitnick = packagePath and packagePath:FindFirstChild("sleitnick_net@0.2.0")
                     local sellRemote = sleitnick and sleitnick:FindFirstChild("net") and sleitnick.net:FindFirstChild("RF/SellItem")
 
-                    if not sellRemote then
-                        warn("Remote RF/SellItem tidak ditemukan!")
-                        return
+                    if not sellRemote then return end
+
+                    -- 2. Kumpulkan Item yang cocok
+                    local itemsToProcess = {}
+                    local backpack = Player.Backpack
+                    
+                    for _, tool in pairs(backpack:GetChildren()) do
+                        if tool.Name == SelectedSellItem then
+                            table.insert(itemsToProcess, tool)
+                        end
                     end
 
-                    -- 2. Cari Item di Backpack sesuai nama yang dipilih
-                    local backpack = Player.Backpack
-                    local targetItem = backpack:FindFirstChild(SelectedSellItem)
+                    -- 3. Logika "Sisakan" (Keep Amount)
+                    local keepAmount = tonumber(KeepBox.Text) or 0
+                    local totalItems = #itemsToProcess
+                    local amountToSell = totalItems - keepAmount
 
-                    if targetItem then
-                        -- 3. Dapatkan UUID (Unique ID)
-                        -- Cek attribute 'uuid', 'id', 'uniqueId', atau value didalamnya
-                        local uuid = targetItem:GetAttribute("UUID") or targetItem:GetAttribute("uuid") or targetItem:GetAttribute("id")
-                        
-                        -- Fallback jika tidak ada attribute, cari StringValue di dalam tool
-                        if not uuid then
-                            local val = targetItem:FindFirstChild("UUID") or targetItem:FindFirstChild("ID")
-                            if val then uuid = val.Value end
-                        end
+                    if amountToSell > 0 then
+                        -- Jual hanya sebanyak (Total - Keep)
+                        -- Loop dari 1 sampai amountToSell
+                        for i = 1, amountToSell do
+                            if not AutoSellEnabled then break end
+                            
+                            local targetItem = itemsToProcess[i]
+                            if targetItem then
+                                -- Cari UUID
+                                local uuid = targetItem:GetAttribute("UUID") or targetItem:GetAttribute("uuid") or targetItem:GetAttribute("id")
+                                if not uuid then
+                                    local val = targetItem:FindFirstChild("UUID") or targetItem:FindFirstChild("ID")
+                                    if val then uuid = val.Value end
+                                end
 
-                        if uuid then
-                            -- 4. Kirim UUID ke Server
-                            local args = { [1] = uuid }
-                            sellRemote:InvokeServer(unpack(args))
-                            print("Berhasil Jual: " .. SelectedSellItem .. " | UUID: " .. tostring(uuid))
-                        else
-                            warn("UUID tidak ditemukan pada item: " .. SelectedSellItem)
+                                if uuid then
+                                    -- Kirim Remote
+                                    sellRemote:InvokeServer(uuid)
+                                    print("Menjual: " .. targetItem.Name .. " (Sisa target: " .. keepAmount .. ")")
+                                    task.wait(0.2) -- Delay kecil agar tidak spam parah
+                                end
+                            end
                         end
+                    else
+                        -- Jika jumlah item sudah <= jumlah yang ingin disisakan
+                        -- Tidak melakukan apa-apa (Standby)
                     end
                 end)
             end
@@ -333,7 +367,6 @@ SellBtn.MouseButton1Click:Connect(function()
         if SellThread then task.cancel(SellThread) end
     end
 end)
--- ==========================================
 
 -- LOGIKA AUTO TOTEM
 TotemBtn.MouseButton1Click:Connect(function()
@@ -364,6 +397,7 @@ TotemBtn.MouseButton1Click:Connect(function()
                         else spawnEvent:FireServer(unpack(args)) end
                     end
                 end)
+                -- Timer mundur
                 for i = 3600, 1, -1 do
                     if not AutoTotemEnabled then break end
                     task.wait(1)
@@ -375,7 +409,7 @@ TotemBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- FUNGSI TAMBAHAN
+-- OPTIMIZATION
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
@@ -390,39 +424,10 @@ PotatoBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local function getRootPart() return Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") end
-WowBtn.MouseButton1Click:Connect(function()
-    WowEnabled = not WowEnabled
-    WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
-    WowBtn.BackgroundColor3 = WowEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
-    if WowEnabled then
-        local HRP = getRootPart()
-        if HRP then
-            BV = Instance.new("BodyVelocity", HRP); BV.Name = "SeraphinFloat"; BV.MaxForce = Vector3.new(0, 1e6, 0); BV.Velocity = Vector3.zero
-            Conn = RunService.Heartbeat:Connect(function() if HRP and HRP.Parent then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z) end end)
-        end
-    else
-        if Conn then Conn:Disconnect() end
-        if Player.Character then for _, v in pairs(Player.Character:GetDescendants()) do if v:IsA("BodyVelocity") and v.Name == "SeraphinFloat" then v:Destroy() end end end
-    end
-end)
-RenderBtn.MouseButton1Click:Connect(function()
-    AfkModeActive = not AfkModeActive
-    RunService:Set3dRenderingEnabled(not AfkModeActive)
-    RenderBtn.Text = AfkModeActive and "No Render 3D: ON" or "No Render 3D: OFF"
-    RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 35, 40)
-end)
-FpsCapBtn.MouseButton1Click:Connect(function()
-    currentLimitIndex = currentLimitIndex + 1
-    if currentLimitIndex > #fpsLimits then currentLimitIndex = 1 end
-    local newLimit = fpsLimits[currentLimitIndex]
-    if setfpscap then setfpscap(newLimit) end
-    FpsCapBtn.Text = (newLimit > 900) and "FPS CAP: UNLIMITED" or "FPS CAP: " .. newLimit
-end)
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.3, true); ScrollFrame.Visible = false; MinBtn.Text = "SHOW"
     else MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true); task.wait(0.2); ScrollFrame.Visible = true; MinBtn.Text = "HIDE" end
 end)
 
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper", Text = "Script Ready!", Duration = 5})
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper", Text = "Remote Sell Ready!", Duration = 5})
