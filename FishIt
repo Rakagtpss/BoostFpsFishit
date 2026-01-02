@@ -1,288 +1,259 @@
+--[[ SERAPHIN HELPER: SUPER LITE EDITION ]]--
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Debris = game:GetService("Debris")
 
+-- // Setup Variabel & Safety Check
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
-local HRP = Char:WaitForChild("HumanoidRootPart")
+local HRP = Char:WaitForChild("HumanoidRootPart", 5)
+if not HRP then return end 
 
--- // State
-local Optimized = false
-local Minimized = false
-local WowEnabled = false
-local IsFrozen = false
-local AfkModeActive = false
-local BV, Conn
+-- // Konfigurasi Tampilan
+local UI_CONFIG = {
+    Width = 330,        -- Sedikit lebih lebar agar "HELPER" muat
+    Height = 145,       
+    Color = Color3.fromRGB(12, 12, 14),
+    Accent = Color3.fromRGB(0, 255, 170),
+    Font = Enum.Font.GothamBold
+}
 
--- // Config Wide UI
-local UI_WIDTH = 350
-local UI_HEIGHT = 160
-local ACCENT = Color3.fromRGB(0, 255, 170)
-local BG_COLOR = Color3.fromRGB(15, 15, 17)
+-- // Cleanup UI Lama
+if CoreGui:FindFirstChild("SeraphinLite") then CoreGui.SeraphinLite:Destroy() end
 
-if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
+-- // Membuat UI Dasar
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SeraphinLite"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
 
--- // Notif System
-local function Notify(title, msg)
-    local NotifGui = Instance.new("ScreenGui", CoreGui)
-    local Frame = Instance.new("Frame", NotifGui)
-    Frame.Size = UDim2.new(0, 200, 0, 60)
-    Frame.Position = UDim2.new(1, 10, 0.9, 0)
-    Frame.BackgroundColor3 = BG_COLOR
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
-    Instance.new("UIStroke", Frame).Color = ACCENT
-    
-    local T = Instance.new("TextLabel", Frame)
-    T.Size = UDim2.new(1, 0, 0.4, 0)
-    T.Text = title:upper()
-    T.TextColor3 = ACCENT
-    T.Font = Enum.Font.GothamBold
-    T.TextSize = 12
-    T.BackgroundTransparency = 1
+local Main = Instance.new("Frame", ScreenGui)
+Main.Name = "Main"
+Main.Size = UDim2.new(0, UI_CONFIG.Width, 0, UI_CONFIG.Height)
+Main.Position = UDim2.new(0.5, -UI_CONFIG.Width/2, 0.2, 0)
+Main.BackgroundColor3 = UI_CONFIG.Color
+Main.BackgroundTransparency = 0.1
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 6)
 
-    local M = Instance.new("TextLabel", Frame)
-    M.Size = UDim2.new(1, 0, 0.6, 0)
-    M.Position = UDim2.new(0, 0, 0.4, 0)
-    M.Text = msg
-    M.TextColor3 = Color3.new(1,1,1)
-    M.Font = Enum.Font.Gotham
-    M.TextSize = 10
-    M.BackgroundTransparency = 1
+-- // Header
+local Header = Instance.new("Frame", Main)
+Header.Size = UDim2.new(1, 0, 0, 35)
+Header.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
+Header.BorderSizePixel = 0
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 6)
 
-    Frame:TweenPosition(UDim2.new(1, -210, 0.9, 0), "Out", "Quad", 0.5)
-    task.delay(3, function()
-        Frame:TweenPosition(UDim2.new(1, 10, 0.9, 0), "In", "Quad", 0.5)
-        task.wait(0.5)
-        NotifGui:Destroy()
-    end)
-end
-
--- // UI Setup
-local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "SeraphinHelper"
-
-local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
-MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.3, 0)
-MainFrame.BackgroundColor3 = BG_COLOR
-MainFrame.BackgroundTransparency = 0.1
-MainFrame.Active = true
-MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
-
--- Header
-local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 40)
-Header.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-Header.BackgroundTransparency = 0.2
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
-
+-- JUDUL (DIKEMBALIKAN KE SERAPHIN HELPER)
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.5, 0, 1, 0)
+Title.Size = UDim2.new(0.55, 0, 1, 0)
 Title.Position = UDim2.new(0.04, 0, 0, 0)
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 13
+Title.Font = UI_CONFIG.Font
+Title.TextSize = 12
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local FpsDisplay = Instance.new("TextLabel", Header)
-FpsDisplay.Size = UDim2.new(0.2, 0, 1, 0)
-FpsDisplay.Position = UDim2.new(0.55, 0, 0, 0)
-FpsDisplay.BackgroundTransparency = 1
-FpsDisplay.TextColor3 = ACCENT
-FpsDisplay.Text = "60 FPS"
-FpsDisplay.Font = Enum.Font.GothamBold
-FpsDisplay.TextSize = 12
-FpsDisplay.TextXAlignment = Enum.TextXAlignment.Left
+local FpsLbl = Instance.new("TextLabel", Header)
+FpsLbl.Size = UDim2.new(0.2, 0, 1, 0)
+FpsLbl.Position = UDim2.new(0.60, 0, 0, 0) -- Adjusted position
+FpsLbl.Text = "60 FPS"
+FpsLbl.TextColor3 = UI_CONFIG.Accent
+FpsLbl.Font = UI_CONFIG.Font
+FpsLbl.TextSize = 11
+FpsLbl.BackgroundTransparency = 1
+FpsLbl.TextXAlignment = Enum.TextXAlignment.Left
 
-local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 50, 0, 24)
-MinBtn.Position = UDim2.new(0.83, 0, 0.5, -12)
-MinBtn.Text = "HIDE"
-MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 9
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 5)
+local HideBtn = Instance.new("TextButton", Header)
+HideBtn.Size = UDim2.new(0, 45, 0, 20)
+HideBtn.Position = UDim2.new(0.84, 0, 0.5, -10)
+HideBtn.Text = "HIDE"
+HideBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+HideBtn.TextColor3 = Color3.new(1,1,1)
+HideBtn.Font = UI_CONFIG.Font
+HideBtn.TextSize = 9
+Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
 
--- Content Grid
-local ContentFrame = Instance.new("Frame", MainFrame)
-ContentFrame.Size = UDim2.new(1, -20, 1, -55)
-ContentFrame.Position = UDim2.new(0, 10, 0, 48)
-ContentFrame.BackgroundTransparency = 1
+-- // Container Tombol
+local Container = Instance.new("Frame", Main)
+Container.Size = UDim2.new(1, -16, 1, -45)
+Container.Position = UDim2.new(0, 8, 0, 40)
+Container.BackgroundTransparency = 1
 
-local GridLayout = Instance.new("UIGridLayout", ContentFrame)
-GridLayout.CellSize = UDim2.new(0, 160, 0, 32)
-GridLayout.CellPadding = UDim2.new(0, 10, 0, 8)
-GridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local Grid = Instance.new("UIGridLayout", Container)
+Grid.CellSize = UDim2.new(0, 152, 0, 28)
+Grid.CellPadding = UDim2.new(0, 8, 0, 6)
+Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-local function CreateButton(text)
-    local btn = Instance.new("TextButton", ContentFrame)
-    btn.Size = UDim2.new(0, 160, 0, 32)
-    btn.Text = text
-    btn.Font = Enum.Font.GothamMedium
-    btn.TextSize = 10
-    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    btn.BackgroundTransparency = 0.3
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-    return btn
+-- // Fungsi Helper
+local function MakeBtn(text)
+    local b = Instance.new("TextButton", Container)
+    b.Text = text
+    b.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    b.TextColor3 = Color3.fromRGB(200, 200, 200)
+    b.Font = Enum.Font.GothamMedium
+    b.TextSize = 10
+    b.BackgroundTransparency = 0.2
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
+    return b
 end
 
--- // Feature Buttons
-local FreezeBtn = CreateButton("Freeze Player: OFF")
-local WowBtn = CreateButton("Walk On Water: OFF")
-local PotatoBtn = CreateButton("Booster Mode: OFF")
-local RenderBtn = CreateButton("No Render 3D: OFF")
-local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
-
-local function UpdateBtnVisual(btn, state)
-    btn.BackgroundColor3 = state and ACCENT or Color3.fromRGB(40, 40, 45)
-    btn.TextColor3 = state and Color3.new(0,0,0) or Color3.fromRGB(200, 200, 200)
-    btn.BackgroundTransparency = state and 0 or 0.3
+local function ToggleVisual(btn, on)
+    btn.BackgroundColor3 = on and UI_CONFIG.Accent or Color3.fromRGB(35, 35, 40)
+    btn.TextColor3 = on and Color3.new(0,0,0) or Color3.fromRGB(200, 200, 200)
+    btn.BackgroundTransparency = on and 0 or 0.2
 end
 
--- // LOGIC IMPLEMENTATION
-FreezeBtn.MouseButton1Click:Connect(function()
-    IsFrozen = not IsFrozen
-    if HRP then HRP.Anchored = IsFrozen end
-    FreezeBtn.Text = "Freeze: " .. (IsFrozen and "ON" or "OFF")
-    UpdateBtnVisual(FreezeBtn, IsFrozen)
+-- // State & Connections
+local States = {Freeze=false, WoW=false, Boost=false, NoRender=false}
+local Connections = {}
+local BodyV = nil
+
+-- // TOMBOL UI
+local BtnFreeze = MakeBtn("Freeze: OFF")
+local BtnWow = MakeBtn("WaterWalk: OFF")
+local BtnBoost = MakeBtn("Booster: OFF")
+local BtnRender = MakeBtn("3D Render: ON")
+local BtnFps = MakeBtn("FPS Cap: Unlim")
+
+-- // FITUR UTAMA (Optimized Logic)
+
+-- 1. Freeze
+BtnFreeze.MouseButton1Click:Connect(function()
+    States.Freeze = not States.Freeze
+    if HRP then HRP.Anchored = States.Freeze end
+    BtnFreeze.Text = "Freeze: " .. (States.Freeze and "ON" or "OFF")
+    ToggleVisual(BtnFreeze, States.Freeze)
 end)
 
-WowBtn.MouseButton1Click:Connect(function()
-    WowEnabled = not WowEnabled
-    WowBtn.Text = "WaterWalk: " .. (WowEnabled and "ON" or "OFF")
-    UpdateBtnVisual(WowBtn, WowEnabled)
-    if WowEnabled then
-        BV = Instance.new("BodyVelocity", HRP)
-        BV.MaxForce = Vector3.new(0, 1e6, 0)
-        BV.Velocity = Vector3.zero
-        Conn = RunService.Heartbeat:Connect(function()
+-- 2. Walk On Water
+BtnWow.MouseButton1Click:Connect(function()
+    States.WoW = not States.WoW
+    BtnWow.Text = "WaterWalk: " .. (States.WoW and "ON" or "OFF")
+    ToggleVisual(BtnWow, States.WoW)
+    
+    if States.WoW then
+        BodyV = Instance.new("BodyVelocity", HRP)
+        BodyV.MaxForce = Vector3.new(0, 1e6, 0)
+        BodyV.Velocity = Vector3.zero
+        Connections["WoW"] = RunService.Heartbeat:Connect(function()
             if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z) end
         end)
     else
-        if Conn then Conn:Disconnect() end
-        if BV then BV:Destroy() end
+        if Connections["WoW"] then Connections["WoW"]:Disconnect() end
+        if BodyV then BodyV:Destroy() end
     end
 end)
 
--- // BOOSTER MODE LOGIC (UPDATED)
-PotatoBtn.MouseButton1Click:Connect(function()
-    Optimized = not Optimized
-    PotatoBtn.Text = "Booster: " .. (Optimized and "ON" or "OFF")
-    UpdateBtnVisual(PotatoBtn, Optimized)
+-- 3. BOOSTER MODE (Cerdas & Cepat)
+BtnBoost.MouseButton1Click:Connect(function()
+    States.Boost = not States.Boost
+    BtnBoost.Text = "Booster: " .. (States.Boost and "ON" or "OFF")
+    ToggleVisual(BtnBoost, States.Boost)
+
+    Lighting.GlobalShadows = not States.Boost
     
-    Lighting.GlobalShadows = not Optimized
+    -- Kumpulkan Target (Efisiensi Tinggi)
+    local targets = {}
+    table.insert(targets, workspace) -- Global
     
-    -- 1. General Optimization (All Descendants)
-    for _, v in pairs(game:GetDescendants()) do
-        if Optimized then
-            if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false
-            elseif v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 1
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = false
-            elseif v:IsA("Sound") then v:Pause() end
-        else
-            if v:IsA("BasePart") then v.CastShadow = true
-            elseif v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 0
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = true
-            elseif v:IsA("Sound") then v:Play() end
+    local function AddIfExist(parent, name)
+        local t = parent:FindFirstChild(name)
+        if t then table.insert(targets, t) return t end
+        return nil
+    end
+
+    -- Target Spesifik Anda
+    AddIfExist(workspace, "!!! EFFECTS")
+    AddIfExist(workspace, "Machines")
+    
+    local islands = workspace:FindFirstChild("Islands")
+    if islands then
+        local decor = AddIfExist(islands, "ChristmasDecor [Fisheman Island]")
+        if decor then
+            AddIfExist(decor, "SnowBenchs")
+            AddIfExist(decor, "Snow")
+            AddIfExist(decor, "ChristmasLightRopes")
+        end
+        local jungle = islands:FindFirstChild("Ancient Jungle")
+        if jungle then
+            local children = jungle:GetChildren()
+            if children[25] then table.insert(targets, children[25]) end
         end
     end
 
-    -- 2. TARGETED FOLDERS COLLECTION
-    -- Mengumpulkan semua target folder/objek ke dalam satu tabel agar mudah diproses
-    local specificTargets = {}
-    
-    -- Target A: Standard Folders
-    if workspace:FindFirstChild("!!! EFFECTS") then table.insert(specificTargets, workspace["!!! EFFECTS"]) end
-    if workspace:FindFirstChild("Machines") then table.insert(specificTargets, workspace.Machines) end
-    
-    -- Target B: Islands & Christmas Decor (Safe Check)
-    if workspace:FindFirstChild("Islands") then
-        local islands = workspace.Islands
+    -- Proses Optimasi
+    for _, root in pairs(targets) do
+        local isHeavy = (root.Name == "!!! EFFECTS" or root.Name == "Snow" or root.Name == "ChristmasLightRopes")
         
-        -- Fisherman Island Decor
-        local fishIsland = islands:FindFirstChild("ChristmasDecor [Fisheman Island]")
-        if fishIsland then
-            if fishIsland:FindFirstChild("SnowBenchs") then table.insert(specificTargets, fishIsland.SnowBenchs) end
-            if fishIsland:FindFirstChild("Snow") then table.insert(specificTargets, fishIsland.Snow) end
-            if fishIsland:FindFirstChild("ChristmasLightRopes") then table.insert(specificTargets, fishIsland.ChristmasLightRopes) end
-        end
-        
-        -- Ancient Jungle Index 25
-        local ancientJungle = islands:FindFirstChild("Ancient Jungle")
-        if ancientJungle then
-            local children = ancientJungle:GetChildren()
-            if children[25] then -- Pastikan index 25 ada
-                table.insert(specificTargets, children[25])
-            end
-        end
-    end
-
-    -- 3. PROCESS SPECIFIC TARGETS
-    for _, obj in pairs(specificTargets) do
-        for _, v in pairs(obj:GetDescendants()) do
-            if Optimized then
-                -- Logika Hapus Berat (Efek, Salju, Tali Lampu)
-                if obj.Name == "!!! EFFECTS" or obj.Name == "Snow" or obj.Name == "ChristmasLightRopes" then
+        for _, v in pairs(root:GetDescendants()) do
+            if States.Boost then
+                if isHeavy then
+                    -- Hapus visual berat
                     if v:IsA("BasePart") then v.Transparency = 1 v.CanCollide = false end
                     if v:IsA("ParticleEmitter") or v:IsA("Light") then v.Enabled = false end
-                
-                -- Logika Ringankan Objek (Mesin, Bangku, Jungle)
-                else 
+                else
+                    -- Optimasi standar
                     if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
+                    if v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 1 end
+                    if v:IsA("ParticleEmitter") then v.Enabled = false end
+                    if v:IsA("Sound") then v:Pause() end
                 end
             else
-                -- RESTORE
-                if obj.Name == "!!! EFFECTS" or obj.Name == "Snow" or obj.Name == "ChristmasLightRopes" then
+                -- Restore
+                if isHeavy then
                     if v:IsA("BasePart") then v.Transparency = 0 end
                     if v:IsA("ParticleEmitter") or v:IsA("Light") then v.Enabled = true end
                 else
                     if v:IsA("BasePart") then v.CastShadow = true end
+                    if v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 0 end
+                    if v:IsA("ParticleEmitter") then v.Enabled = true end
+                    if v:IsA("Sound") then v:Play() end
                 end
             end
         end
     end
 end)
 
-RenderBtn.MouseButton1Click:Connect(function()
-    AfkModeActive = not AfkModeActive
-    RunService:Set3dRenderingEnabled(not AfkModeActive)
-    RenderBtn.Text = "3D Render: " .. (AfkModeActive and "OFF" or "ON")
-    UpdateBtnVisual(RenderBtn, AfkModeActive)
+-- 4. No Render
+BtnRender.MouseButton1Click:Connect(function()
+    States.NoRender = not States.NoRender
+    RunService:Set3dRenderingEnabled(not States.NoRender)
+    BtnRender.Text = "3D Render: " .. (States.NoRender and "OFF" or "ON")
+    ToggleVisual(BtnRender, States.NoRender)
 end)
 
-FpsCapBtn.MouseButton1Click:Connect(function()
+-- 5. FPS Cap
+BtnFps.MouseButton1Click:Connect(function()
     local limits = {30, 60, 144, 999}
     _G.limitIdx = ((_G.limitIdx or 4) % #limits) + 1
-    local newLimit = limits[_G.limitIdx]
-    if setfpscap then setfpscap(newLimit) end
-    FpsCapBtn.Text = "FPS: " .. (newLimit > 900 and "UNLIMITED" or newLimit)
+    local val = limits[_G.limitIdx]
+    if setfpscap then setfpscap(val) end
+    BtnFps.Text = "FPS Cap: " .. (val > 900 and "Unlim" or val)
 end)
 
-MinBtn.MouseButton1Click:Connect(function()
-    Minimized = not Minimized
-    MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, Minimized and 40 or UI_HEIGHT), "Out", "Quad", 0.3, true)
-    ContentFrame.Visible = not Minimized
-    MainFrame.BackgroundTransparency = 0.1 -- Tetap terlihat
-    Header.BackgroundTransparency = 0.2
-    MinBtn.Text = Minimized and "SHOW" or "HIDE"
+-- // LOGIKA HIDE (Minimalis & Cepat)
+local IsMin = false
+HideBtn.MouseButton1Click:Connect(function()
+    IsMin = not IsMin
+    Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, IsMin and 35 or UI_CONFIG.Height), "Out", "Quad", 0.25, true)
+    Container.Visible = not IsMin
+    HideBtn.Text = IsMin and "SHOW" or "HIDE"
 end)
 
-local lastT, frames = os.clock(), 0
+-- // FPS Loop
+local last, f = os.clock(), 0
 RunService.RenderStepped:Connect(function()
-    frames = frames + 1
-    if os.clock() - lastT >= 1 then
-        FpsDisplay.Text = frames .. " FPS"
-        frames, lastT = 0, os.clock()
+    f += 1
+    if os.clock() - last >= 1 then
+        FpsLbl.Text = f .. " FPS"
+        f, last = 0, os.clock()
     end
 end)
 
-Notify("Seraphin Helper", "Credit By HelperSeraphin")
+print(":: SERAPHIN HELPER  ::")
