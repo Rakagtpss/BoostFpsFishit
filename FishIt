@@ -1,195 +1,223 @@
--- // Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local VirtualUser = game:GetService("VirtualUser")
+
+-- // Function Helper: ProximityPrompt
+local fireproximityprompt = fireproximityprompt or function(Obj)
+    if Obj:IsA("ProximityPrompt") then
+        Obj:InputHoldBegin()
+        task.wait(Obj.HoldDuration)
+        Obj:InputHoldEnd()
+    end
+end
 
 local Player = Players.LocalPlayer
-local Char = Player.Character or Player.CharacterAdded:Wait()
-local HRP = Char:WaitForChild("HumanoidRootPart")
+local SelectedItem = ""
 
--- // State Config
-local Config = {
-    AutoSell = false,
-    TargetItemSell = "",
-    TargetAmountSell = 0,
+-- // Toggles State
+local Toggles = {
+    AutoPrompt = false, 
+    AutoYes = false, 
     AutoEquip = false,
-    TargetItemEquip = "",
-    Optimized = false,
-    Wow = false,
-    AfkMode = false
+    Booster = false, 
+    NoRender = false, 
+    Minimized = false
 }
 
--- // UI Config
-local UI_WIDTH = 280
-local UI_HEIGHT = 400 -- Lebih tinggi untuk menampung input
-local ACCENT = Color3.fromRGB(0, 255, 170)
-
--- // Cleanup
-if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
+-- // UI Cleanup
+if CoreGui:FindFirstChild("SeraphinWideV16") then CoreGui.SeraphinWideV16:Destroy() end
 
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "SeraphinHelper"
+Gui.Name = "SeraphinWideV16"
 
-local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
-MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.3, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-MainFrame.Active = true
-MainFrame.Draggable = true -- Fitur Floating
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+local Main = Instance.new("Frame", Gui)
+Main.Size = UDim2.new(0, 450, 0, 420)
+Main.Position = UDim2.new(0.5, -225, 0.3, 0)
+Main.BackgroundColor3 = Color3.fromRGB(12, 12, 14)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
 -- Header
-local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 40)
-Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
+local Header = Instance.new("Frame", Main)
+Header.Size = UDim2.new(1, 0, 0, 35)
+Header.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+Instance.new("UICorner", Header)
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.6, 0, 1, 0)
-Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
+Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">MANAGER</font> V16"
 Title.RichText = true
-Title.TextColor3 = Color3.new(1,1,1)
+Title.TextColor3 = Color3.new(1, 1, 1)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 13
+Title.TextSize = 14
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Scrolling Content
-local Scroll = Instance.new("ScrollingFrame", MainFrame)
-Scroll.Size = UDim2.new(1, -10, 1, -80)
-Scroll.Position = UDim2.new(0, 5, 0, 45)
+local MinBtn = Instance.new("TextButton", Header)
+MinBtn.Size = UDim2.new(0, 50, 0, 22)
+MinBtn.Position = UDim2.new(1, -55, 0.5, -11)
+MinBtn.Text = "HIDE"
+MinBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 38)
+MinBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", MinBtn)
+
+local Scroll = Instance.new("ScrollingFrame", Main)
+Scroll.Size = UDim2.new(1, -20, 1, -75)
+Scroll.Position = UDim2.new(0, 10, 0, 45)
 Scroll.BackgroundTransparency = 1
-Scroll.ScrollBarThickness = 2
-Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Scroll.ScrollBarThickness = 3
+Scroll.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 170)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 600)
 
 local Layout = Instance.new("UIListLayout", Scroll)
 Layout.Padding = UDim.new(0, 8)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Helper function untuk Input Box
-local function CreateInput(placeholder, isNumber)
-    local box = Instance.new("TextBox", Scroll)
-    box.Size = UDim2.new(0.9, 0, 0, 30)
-    box.PlaceholderText = placeholder
-    box.Text = ""
-    box.Font = Enum.Font.Gotham
-    box.TextSize = 11
-    box.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    box.TextColor3 = Color3.new(1,1,1)
-    box.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
-    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
-    return box
+-- Helper: Button Creator
+local function AddBtn(text, callback)
+    local b = Instance.new("TextButton", Scroll)
+    b.Size = UDim2.new(0.95, 0, 0, 35)
+    b.Text = text
+    b.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
+    b.TextColor3 = Color3.fromRGB(220, 220, 220)
+    b.Font = Enum.Font.GothamSemibold
+    b.TextSize = 12
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    b.MouseButton1Click:Connect(function() callback(b) end)
+    return b
 end
 
-local function CreateToggle(text)
-    local btn = Instance.new("TextButton", Scroll)
-    btn.Size = UDim2.new(0.9, 0, 0, 35)
-    btn.Text = text
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 11
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-    return btn
-end
+-- --- 1. UPDATED SCANNER (PlayerGui Inventory) ---
+local ListFrame = Instance.new("ScrollingFrame", Scroll)
+ListFrame.Size = UDim2.new(0.95, 0, 0, 100)
+ListFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+Instance.new("UIListLayout", ListFrame)
 
---- /// UI ELEMENTS /// ---
+local SelDisp = Instance.new("TextLabel", Scroll)
+SelDisp.Size = UDim2.new(0.95, 0, 0, 20)
+SelDisp.Text = "Pilih item dari hasil scan"; SelDisp.TextColor3 = Color3.fromRGB(0, 255, 170); SelDisp.BackgroundTransparency = 1; SelDisp.TextSize = 11
 
--- Section: Auto Equip
-local LabelEquip = Instance.new("TextLabel", Scroll)
-LabelEquip.Size = UDim2.new(0.9, 0, 0, 20)
-LabelEquip.Text = "AUTO EQUIP SETTINGS"
-LabelEquip.TextColor3 = ACCENT
-LabelEquip.BackgroundTransparency = 1
-LabelEquip.Font = Enum.Font.GothamBold
-LabelEquip.TextSize = 10
-
-local EquipInput = CreateInput("Nama Item yg di-Equip...")
-local EquipToggle = CreateToggle("AUTO EQUIP: OFF")
-
--- Section: Auto Sell
-local LabelSell = Instance.new("TextLabel", Scroll)
-LabelSell.Size = UDim2.new(0.9, 0, 0, 20)
-LabelSell.Text = "AUTO SELL SETTINGS"
-LabelSell.TextColor3 = ACCENT
-LabelSell.BackgroundTransparency = 1
-LabelSell.Font = Enum.Font.GothamBold
-LabelSell.TextSize = 10
-
-local SellItemInput = CreateInput("Nama Item yg di-Jual...")
-local SellAmountInput = CreateInput("Jumlah (Angka)...")
-local SellToggle = CreateToggle("AUTO SELL: OFF")
-
--- Section: Others
-local LabelOther = Instance.new("TextLabel", Scroll)
-LabelOther.Size = UDim2.new(0.9, 0, 0, 20)
-LabelOther.Text = "OTHER TOOLS"
-LabelOther.TextColor3 = ACCENT
-LabelOther.BackgroundTransparency = 1
-LabelOther.Font = Enum.Font.GothamBold
-LabelOther.TextSize = 10
-
-local PotatoBtn = CreateToggle("BOOSTER MODE: OFF")
-local WowBtn = CreateToggle("WALK ON WATER: OFF")
-
---- /// LOGIC FUNCTION /// ---
-
--- Handle Auto Equip
-EquipInput.FocusLost:Connect(function() Config.TargetItemEquip = EquipInput.Text end)
-EquipToggle.MouseButton1Click:Connect(function()
-    Config.AutoEquip = not Config.AutoEquip
-    EquipToggle.Text = Config.AutoEquip and "AUTO EQUIP: ON" or "AUTO EQUIP: OFF"
-    EquipToggle.BackgroundColor3 = Config.AutoEquip and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 45)
-end)
-
--- Handle Auto Sell
-SellItemInput.FocusLost:Connect(function() Config.TargetItemSell = SellItemInput.Text end)
-SellAmountInput.FocusLost:Connect(function() Config.TargetAmountSell = tonumber(SellAmountInput.Text) or 0 end)
-SellToggle.MouseButton1Click:Connect(function()
-    Config.AutoSell = not Config.AutoSell
-    SellToggle.Text = Config.AutoSell and "AUTO SELL: ON" or "AUTO SELL: OFF"
-    SellToggle.BackgroundColor3 = Config.AutoSell and Color3.fromRGB(150, 50, 50) or Color3.fromRGB(40, 40, 45)
-end)
-
--- Loops
-task.spawn(function()
-    while task.wait(1) do
-        -- Auto Equip Logic
-        if Config.AutoEquip and Config.TargetItemEquip ~= "" then
-            pcall(function()
-                local net = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
-                net["RE/EquipItem"]:FireServer(Config.TargetItemEquip)
-            end)
-        end
-        
-        -- Auto Sell Logic (Scan Inventory & Prompt)
-        if Config.AutoSell and Config.TargetItemSell ~= "" then
-            local inv = Player.PlayerGui.Inventory
-            -- Cek apakah item ada di inventory (sesuaikan dengan struktur folder UI inventory game tersebut)
-            local itemFound = inv:FindFirstChild(Config.TargetItemSell, true)
-            
-            if itemFound then
-                pcall(function()
-                    local sellPart = workspace["!!! DEPENDENCIES"]:GetChildren()[4]
-                    fireproximityprompt(sellPart.SellPrompt.SellPrompt)
-                end)
+AddBtn("SCAN INVENTORY (PlayerGui)", function()
+    for _, c in pairs(ListFrame:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+    
+    -- Mencari folder Inventory di PlayerGui sesuai kodemu
+    local invPath = Player:WaitForChild("PlayerGui"):FindFirstChild("Inventory")
+    
+    if invPath then
+        -- Biasanya item ada di dalam folder 'Items', 'Frame', atau langsung di bawah Inventory
+        -- Kita scan semua objek yang memiliki nama (biasanya berupa TextButton atau Frame)
+        for _, item in pairs(invPath:GetDescendants()) do
+            -- Filter: kita hanya ambil objek yang namanya kemungkinan besar nama item (bukan UI standar)
+            if item:IsA("TextButton") or item:IsA("ImageButton") or item:IsA("StringValue") then
+                local itemName = item.Name
+                -- Hindari duplikasi nama di list
+                local exists = false
+                for _, btn in pairs(ListFrame:GetChildren()) do
+                    if btn:IsA("TextButton") and btn.Text == "  "..itemName then exists = true break end
+                end
+                
+                if not exists and itemName ~= "Back" and itemName ~= "Close" then
+                    local g = Instance.new("TextButton", ListFrame)
+                    g.Size = UDim2.new(1, 0, 0, 25)
+                    g.Text = "  "..itemName
+                    g.BackgroundColor3 = Color3.fromRGB(30,30,35)
+                    g.TextColor3 = Color3.new(1,1,1)
+                    g.TextSize = 10
+                    g.TextXAlignment = "Left"
+                    g.MouseButton1Click:Connect(function() 
+                        SelectedItem = itemName
+                        SelDisp.Text = "Target: "..itemName 
+                    end)
+                end
             end
         end
     end
 end)
 
--- Fitur Booster & WoW tetap sama seperti sebelumnya...
-PotatoBtn.MouseButton1Click:Connect(function()
-    Config.Optimized = not Config.Optimized
-    PotatoBtn.Text = Config.Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
-    Lighting.GlobalShadows = not Config.Optimized
+-- --- 2. AUTO EQUIP & SELL LOGIC ---
+AddBtn("AUTO EQUIP ITEM: OFF", function(b)
+    Toggles.AutoEquip = not Toggles.AutoEquip
+    b.Text = Toggles.AutoEquip and "AUTO EQUIP: ON" or "AUTO EQUIP ITEM: OFF"
+    b.TextColor3 = Toggles.AutoEquip and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(220, 220, 220)
+    
+    task.spawn(function()
+        while Toggles.AutoEquip do
+            if SelectedItem ~= "" then
+                pcall(function()
+                    local args = { [1] = SelectedItem }
+                    local remote = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RE/EquipItem")
+                    if remote then remote:FireServer(unpack(args)) end
+                end)
+            end
+            task.wait(0.8)
+        end
+    end)
 end)
 
-WowBtn.MouseButton1Click:Connect(function()
-    Config.Wow = not Config.Wow
-    WowBtn.Text = Config.Wow and "WOW: ON" or "WOW: OFF"
-    -- (Logika BodyVelocity seperti sebelumnya)
+AddBtn("AUTO SELL PROMPT: OFF", function(b)
+    Toggles.AutoPrompt = not Toggles.AutoPrompt
+    b.Text = Toggles.AutoPrompt and "AUTO SELL PROMPT: ON" or "AUTO SELL PROMPT: OFF"
+    b.TextColor3 = Toggles.AutoPrompt and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(220, 220, 220)
+    task.spawn(function()
+        while Toggles.AutoPrompt do
+            pcall(function()
+                fireproximityprompt(workspace["!!! DEPENDENCIES"]:GetChildren()[4].SellPrompt.SellPrompt)
+            end)
+            task.wait(0.3)
+        end
+    end)
+end)
+
+AddBtn("AUTO YES CLICKER: OFF", function(b)
+    Toggles.AutoYes = not Toggles.AutoYes
+    b.Text = Toggles.AutoYes and "AUTO YES CLICKER: ON" or "AUTO YES CLICKER: OFF"
+    b.TextColor3 = Toggles.AutoYes and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(220, 220, 220)
+    task.spawn(function()
+        while Toggles.AutoYes do
+            pcall(function()
+                for _, v in pairs(Player.PlayerGui:GetDescendants()) do
+                    if v:IsA("TextButton") and v.Text:lower() == "yes" and v.Visible then v:Activate() end
+                end
+            end)
+            task.wait(0.4)
+        end
+    end)
+end)
+
+-- --- 3. UTILITIES ---
+AddBtn("BOOSTER MODE (Plastic)", function()
+    Lighting.GlobalShadows = false
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("BasePart") then v.Material = "SmoothPlastic" elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1 end
+    end
+end)
+
+AddBtn("NO RENDER 3D: OFF", function(b)
+    Toggles.NoRender = not Toggles.NoRender
+    RunService:Set3dRenderingEnabled(not Toggles.NoRender)
+    b.Text = Toggles.NoRender and "NO RENDER 3D: ON" or "NO RENDER 3D: OFF"
+end)
+
+-- Footer
+local Footer = Instance.new("TextLabel", Main)
+Footer.Size = UDim2.new(1, 0, 0, 25); Footer.Position = UDim2.new(0, 0, 1, -25); Footer.BackgroundTransparency = 1; Footer.TextColor3 = Color3.new(0.4,0.4,0.4); Footer.Text = "FPS: -- | Anti-AFK Active"; Footer.Font = Enum.Font.Code; Footer.TextSize = 10
+
+RunService.RenderStepped:Connect(function()
+    Footer.Text = "FPS: "..math.floor(1/RunService.RenderStepped:Wait()).." | Anti-AFK Active"
+end)
+
+Player.Idled:Connect(function() VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(1); VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end)
+
+MinBtn.MouseButton1Click:Connect(function()
+    Toggles.Minimized = not Toggles.Minimized
+    Main:TweenSize(Toggles.Minimized and UDim2.new(0, 450, 0, 35) or UDim2.new(0, 450, 0, 420), "Out", "Quart", 0.3, true)
+    Scroll.Visible = not Toggles.Minimized; Footer.Visible = not Toggles.Minimized
+    MinBtn.Text = Toggles.Minimized and "SHOW" or "HIDE"
 end)
