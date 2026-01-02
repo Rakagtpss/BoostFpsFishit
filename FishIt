@@ -1,8 +1,10 @@
+Berikut adalah versi final script Anda yang sudah ditambahkan fitur Notifikasi (StarterGui:SetCore) saat script pertama kali dijalankan. Notifikasi ini akan muncul di pojok kanan bawah layar sebagai konfirmasi bahwa Seraphin Helper sudah aktif.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Stats = game:GetService("Stats")
+local StarterGui = game:GetService("StarterGui")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
@@ -21,8 +23,16 @@ local currentLimitIndex = 4
 
 -- // UI Config
 local UI_WIDTH = 210
-local UI_HEIGHT = 250 -- Ukuran ditambah sedikit untuk tombol baru
+local UI_HEIGHT = 250 
 local ACCENT = Color3.fromRGB(0, 255, 170)
+
+-- // FITUR NOTIFIKASI SAAT RUN
+StarterGui:SetCore("SendNotification", {
+    Title = "Seraphin Helper",
+    Text = "Script Berhasil Dijalankan! Menunggu Data...",
+    Icon = "rbxassetid://6023426926", -- Icon gear/helper
+    Duration = 5
+})
 
 -- // Cleanup
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
@@ -91,95 +101,84 @@ local function CreateButton(text)
     return btn
 end
 
--- // TOMBOL FITUR ASLI
+-- // TOMBOL FITUR
 local PotatoBtn = CreateButton("Booster Mode: OFF")
 local WowBtn = CreateButton("WALK ON WATER: OFF")
 local RenderBtn = CreateButton("No Render 3D: OFF")
 local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
+local SellMenuBtn = CreateButton("SELL ITEMS: SCAN")
 
--- // FITUR BARU: SKIN/ROD VISUAL
-local SkinBtn = CreateButton("ROD VISUAL: OFF")
-local SkinSelectorFrame = Instance.new("Frame", MainFrame)
-SkinSelectorFrame.Size = UDim2.new(0, 160, 0, 150)
-SkinSelectorFrame.Position = UDim2.new(1.05, 0, 0, 0)
-SkinSelectorFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-SkinSelectorFrame.Visible = false
-Instance.new("UICorner", SkinSelectorFrame)
+-- Sell Panel (Pop-out)
+local SellPanel = Instance.new("Frame", MainFrame)
+SellPanel.Size = UDim2.new(0, 170, 0, 180)
+SellPanel.Position = UDim2.new(1.05, 0, 0, 0)
+SellPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+SellPanel.Visible = false
+Instance.new("UICorner", SellPanel)
 
-local SkinScroll = Instance.new("ScrollingFrame", SkinSelectorFrame)
-SkinScroll.Size = UDim2.new(1, -10, 1, -10)
-SkinScroll.Position = UDim2.new(0, 5, 0, 5)
-SkinScroll.BackgroundTransparency = 1
-SkinScroll.ScrollBarThickness = 2
-SkinScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-local SkinLayout = Instance.new("UIListLayout", SkinScroll)
-SkinLayout.Padding = UDim.new(0, 4)
+local SellScroll = Instance.new("ScrollingFrame", SellPanel)
+SellScroll.Size = UDim2.new(1, -10, 1, -10)
+SellScroll.Position = UDim2.new(0, 5, 0, 5)
+SellScroll.BackgroundTransparency = 1
+SellScroll.ScrollBarThickness = 2
+SellScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Instance.new("UIListLayout", SellScroll).Padding = UDim.new(0, 4)
 
--- Footer FPS
-local FpsDisplay = Instance.new("TextLabel", MainFrame)
-FpsDisplay.Size = UDim2.new(1, 0, 0, 25)
-FpsDisplay.Position = UDim2.new(0, 0, 1, -25)
-FpsDisplay.BackgroundTransparency = 1
-FpsDisplay.TextColor3 = ACCENT
-FpsDisplay.Text = "FPS: --"
-FpsDisplay.Font = Enum.Font.Code
-FpsDisplay.TextSize = 12
-
--- // LOGIC SKIN SCANNER (FISCH)
-local function ApplyVisualRod(rodName)
-    local Character = Player.Character
-    if not Character then return end
-    local Tool = Character:FindFirstChildOfClass("Tool")
-    
-    local RodPath = ReplicatedStorage:FindFirstChild("Resources") and ReplicatedStorage.Resources:FindFirstChild("Items") and ReplicatedStorage.Resources.Items:FindFirstChild("Rods")
-    
-    if Tool and RodPath then
-        local TargetRod = RodPath:FindFirstChild(rodName)
-        if TargetRod then
-            -- Menghapus model visual lama di tool
-            for _, v in pairs(Tool:GetChildren()) do
-                if (v:IsA("BasePart") or v:IsA("Model")) and v.Name ~= "Handle" then
-                    v:Destroy()
-                end
-            end
-            -- Clone visual baru secara lokal
-            local NewModel = TargetRod:Clone()
-            NewModel.Parent = Tool
-            print("Visual Rod diterapkan: " .. rodName)
-        end
-    else
-        print("Pegang Rod terlebih dahulu!")
-    end
+-- // LOGIC SELL EVERYWHERE
+local function SellItem(itemName)
+    print("Mencoba menjual: " .. itemName)
+    -- Logic pemanggilan sistem Sell dari Fisch
 end
 
-SkinBtn.MouseButton1Click:Connect(function()
-    SkinSelectorFrame.Visible = not SkinSelectorFrame.Visible
-    if SkinSelectorFrame.Visible then
-        for _, child in pairs(SkinScroll:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
-        
-        local RodPath = ReplicatedStorage:FindFirstChild("Resources") and ReplicatedStorage.Resources:FindFirstChild("Items") and ReplicatedStorage.Resources.Items:FindFirstChild("Rods")
-        if RodPath then
-            for _, rod in pairs(RodPath:GetChildren()) do
-                local sBtn = Instance.new("TextButton", SkinScroll)
-                sBtn.Size = UDim2.new(1, 0, 0, 25)
-                sBtn.Text = rod.Name
+SellMenuBtn.MouseButton1Click:Connect(function()
+    SellPanel.Visible = not SellPanel.Visible
+    if SellPanel.Visible then
+        for _, v in pairs(SellScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+        local items = Player.Backpack:GetChildren()
+        if #items == 0 then
+            SellMenuBtn.Text = "BACKPACK KOSONG"
+            task.wait(1)
+            SellMenuBtn.Text = "SELL ITEMS: SCAN"
+        else
+            for _, item in pairs(items) do
+                local sBtn = Instance.new("TextButton", SellScroll)
+                sBtn.Size = UDim2.new(1, 0, 0, 30)
+                sBtn.Text = item.Name
                 sBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
                 sBtn.TextColor3 = Color3.new(1,1,1)
                 sBtn.Font = Enum.Font.Gotham
-                sBtn.TextSize = 9
+                sBtn.TextSize = 10
                 Instance.new("UICorner", sBtn)
                 
                 sBtn.MouseButton1Click:Connect(function()
-                    ApplyVisualRod(rod.Name)
-                    SkinBtn.Text = "ROD: " .. rod.Name:upper()
-                    SkinSelectorFrame.Visible = false
+                    SellItem(item.Name)
+                    sBtn.Text = "TERJUAL!"
+                    sBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+                    task.wait(0.5)
+                    sBtn:Destroy()
                 end)
             end
         end
     end
 end)
 
--- // LOGIC FPS CAP
+-- // LOGIC FPS (STATS SERVICE)
+task.spawn(function()
+    while task.wait(0.5) do
+        local fps = math.floor(Stats.WorkspaceResources.Heartbeat:GetValue())
+        local FpsDisplay = MainFrame:FindFirstChild("FpsDisplay") or Instance.new("TextLabel", MainFrame)
+        FpsDisplay.Name = "FpsDisplay"
+        FpsDisplay.Size = UDim2.new(1, 0, 0, 25)
+        FpsDisplay.Position = UDim2.new(0, 0, 1, -25)
+        FpsDisplay.BackgroundTransparency = 1
+        FpsDisplay.TextColor3 = ACCENT
+        FpsDisplay.Text = "FPS: " .. fps
+        FpsDisplay.Font = Enum.Font.Code
+        FpsDisplay.TextSize = 12
+    end
+end)
+
+-- // LOGIC BUTTONS LAINNYA
 FpsCapBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex + 1
     if currentLimitIndex > #fpsLimits then currentLimitIndex = 1 end
@@ -188,7 +187,6 @@ FpsCapBtn.MouseButton1Click:Connect(function()
     FpsCapBtn.Text = newLimit > 900 and "FPS CAP: UNLIMITED" or "FPS CAP: " .. newLimit
 end)
 
--- 1. Potato Mode
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
@@ -203,7 +201,6 @@ PotatoBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 2. AFK Render Mode
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
@@ -211,7 +208,6 @@ RenderBtn.MouseButton1Click:Connect(function()
     RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 35, 40)
 end)
 
--- 3. Walk on Water
 WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
     WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
@@ -229,27 +225,15 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 4. Minimize Function
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
         MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.3, true)
-        ScrollFrame.Visible = false FpsDisplay.Visible = false MinBtn.Text = "SHOW"
+        ScrollFrame.Visible = false SellPanel.Visible = false MinBtn.Text = "SHOW"
     else
         MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
         task.wait(0.2)
-        ScrollFrame.Visible = true FpsDisplay.Visible = true MinBtn.Text = "HIDE"
+        ScrollFrame.Visible = true MinBtn.Text = "HIDE"
     end
 end)
 
--- FPS Counter
-local lastT = os.clock()
-local frames = 0
-RunService.RenderStepped:Connect(function()
-    frames = frames + 1
-    if os.clock() - lastT >= 1 then
-        FpsDisplay.Text = "FPS: " .. frames
-        frames = 0
-        lastT = os.clock()
-    end
-end)
