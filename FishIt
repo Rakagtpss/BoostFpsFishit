@@ -9,8 +9,10 @@ local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
--- // Remotes & Paths
-local EquipRemote = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index")["sleitnick_net@0.2.0"].net["RE/EquipItem"]
+-- // Remotes Path
+local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index")["sleitnick_net@0.2.0"].net
+local EquipRemote = Net:WaitForChild("RE/EquipItem")
+local HotbarRemote = Net:WaitForChild("RE/EquipToolFromHotbar")
 local GearsPath = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("ModelDownloader"):WaitForChild("Collection"):WaitForChild("Gears")
 
 -- // State
@@ -23,7 +25,7 @@ local BV, Conn
 
 -- // UI Config
 local UI_WIDTH = 320
-local UI_HEIGHT = 400
+local UI_HEIGHT = 410
 local ACCENT = Color3.fromRGB(0, 255, 170)
 local BG_COLOR = Color3.fromRGB(15, 15, 17)
 local SECONDARY = Color3.fromRGB(25, 25, 30)
@@ -73,7 +75,7 @@ Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
 
 -- Scrolling Content
 local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
-ScrollFrame.Size = UDim2.new(1, -10, 1, -60)
+ScrollFrame.Size = UDim2.new(1, -10, 1, -65)
 ScrollFrame.Position = UDim2.new(0, 5, 0, 55)
 ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.ScrollBarThickness = 2
@@ -84,26 +86,26 @@ local Layout = Instance.new("UIListLayout", ScrollFrame)
 Layout.Padding = UDim.new(0, 8)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Floating Info (Di bawah MainFrame)
+-- Floating Info (DI BAWAH UI)
 local FloatingFrame = Instance.new("Frame", MainFrame)
-FloatingFrame.Size = UDim2.new(1, 0, 0, 30)
+FloatingFrame.Size = UDim2.new(1, 0, 0, 32)
 FloatingFrame.Position = UDim2.new(0, 0, 1, 10)
 FloatingFrame.BackgroundColor3 = SECONDARY
-FloatingFrame.BackgroundTransparency = 0.2
+FloatingFrame.BackgroundTransparency = 0.1
 Instance.new("UICorner", FloatingFrame).CornerRadius = UDim.new(0, 6)
 
 local FloatingText = Instance.new("TextLabel", FloatingFrame)
 FloatingText.Size = UDim2.new(1, 0, 1, 0)
 FloatingText.BackgroundTransparency = 1
-FloatingText.Text = "Status: Ready | FPS: --"
+FloatingText.Text = "Status: Idle | FPS: --"
 FloatingText.TextColor3 = ACCENT
 FloatingText.Font = Enum.Font.Code
 FloatingText.TextSize = 11
 
--- Helper Functions
+-- Helper Function Buttons
 local function CreateButton(text, color)
     local btn = Instance.new("TextButton", ScrollFrame)
-    btn.Size = UDim2.new(0.92, 0, 0, 42)
+    btn.Size = UDim2.new(0.94, 0, 0, 42)
     btn.Text = text
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 13
@@ -113,7 +115,7 @@ local function CreateButton(text, color)
     return btn
 end
 
--- // FEATURES SECTION
+-- // FEATURES
 local BoosterBtn = CreateButton("BOOSTER MODE: OFF")
 local WaterBtn = CreateButton("WALK ON WATER: OFF")
 local AntiRenderBtn = CreateButton("NO RENDER 3D: OFF")
@@ -125,8 +127,9 @@ Divider.BorderSizePixel = 0
 
 local ScanBtn = CreateButton("🔍 SCAN BACKPACK", Color3.fromRGB(40, 60, 100))
 
+-- Item Scroll Area
 local ItemScroll = Instance.new("ScrollingFrame", ScrollFrame)
-ItemScroll.Size = UDim2.new(0.92, 0, 0, 110)
+ItemScroll.Size = UDim2.new(0.94, 0, 0, 120)
 ItemScroll.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 ItemScroll.BorderSizePixel = 0
 ItemScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -136,33 +139,37 @@ local ItemLayout = Instance.new("UIListLayout", ItemScroll)
 
 local SellBtn = CreateButton("💰 SELL SELECTED ITEM", Color3.fromRGB(180, 130, 0))
 
--- // LOGIC: SCAN & AUTO EQUIP
+-- // LOGIC: SCAN & DOUBLE EQUIP
 ScanBtn.MouseButton1Click:Connect(function()
     for _, v in pairs(ItemScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
     
     for _, item in pairs(GearsPath:GetChildren()) do
         local ibtn = Instance.new("TextButton", ItemScroll)
-        ibtn.Size = UDim2.new(1, 0, 0, 35)
+        ibtn.Size = UDim2.new(1, -10, 0, 35)
         ibtn.BackgroundTransparency = 1
         ibtn.Text = "   " .. item.Name
         ibtn.TextColor3 = Color3.new(0.8, 0.8, 0.8)
         ibtn.Font = Enum.Font.GothamMedium
-        ibtn.TextSize = 12
+        ibtn.TextSize = 13
         ibtn.TextXAlignment = Enum.TextXAlignment.Left
         
         ibtn.MouseButton1Click:Connect(function()
             SelectedItem = item.Name
             SellBtn.Text = "SELL: " .. item.Name
             
-            -- Auto Equip Remote
+            -- EXECUTE DOUBLE EQUIP (RE/EquipItem & RE/EquipToolFromHotbar)
             pcall(function()
-                EquipRemote:FireServer(item.Name)
+                -- Remote 1: Equip dari Hotbar (Jika ada di slot)
+                HotbarRemote:FireServer(item.Name)
+                
+                -- Remote 2: Equip Item (Format Gears sesuai permintaan)
+                EquipRemote:FireServer(item.Name, "Gears")
             end)
             
-            -- Highlight selection
+            -- Visual Highlight
             for _, b in pairs(ItemScroll:GetChildren()) do if b:IsA("TextButton") then b.TextColor3 = Color3.new(0.8,0.8,0.8) end end
             ibtn.TextColor3 = ACCENT
-            FloatingText.Text = "Equipped: " .. item.Name
+            FloatingText.Text = "Status: Equipping " .. item.Name
         end)
     end
 end)
@@ -170,13 +177,13 @@ end)
 -- // LOGIC: SELL ITEM
 SellBtn.MouseButton1Click:Connect(function()
     if SelectedItem ~= "" then
-        local prompt = workspace["!!! DEPENDENCIES"]:GetChildren()[8].SellPrompt.SellPrompt
-        fireproximityprompt(prompt)
-        FloatingText.Text = "Sold: " .. SelectedItem
+        local sellPrompt = workspace["!!! DEPENDENCIES"]:GetChildren()[8].SellPrompt.SellPrompt
+        fireproximityprompt(sellPrompt)
+        FloatingText.Text = "Status: Sold " .. SelectedItem
     end
 end)
 
--- // UTILITIES
+-- // BOOSTER & UTILS
 BoosterBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     BoosterBtn.Text = Optimized and "BOOSTER MODE: ON" or "BOOSTER MODE: OFF"
@@ -210,9 +217,10 @@ AntiRenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
     AntiRenderBtn.Text = AfkModeActive and "NO RENDER 3D: ON" or "NO RENDER 3D: OFF"
-    AntiRenderBtn.TextColor3 = AfkModeActive and Color3.fromRGB(255, 80, 80) or Color3.new(1,1,1)
+    AntiRenderBtn.TextColor3 = AfkModeActive and Color3.new(1,0,0) or Color3.new(1,1,1)
 end)
 
+-- // MINIMIZE
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
@@ -229,14 +237,14 @@ MinBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- FPS Counter & Floating Info Update
+-- // FPS & STATUS LOOP
 local lastT = os.clock()
 local frames = 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
-        local currentStatus = SelectedItem ~= "" and "Ready to Sell: "..SelectedItem or "Ready"
-        FloatingText.Text = "Status: " .. currentStatus .. " | FPS: " .. frames
+        local subStatus = SelectedItem ~= "" and "Selected: " .. SelectedItem or "Idle"
+        FloatingText.Text = "Status: " .. subStatus .. " | FPS: " .. frames
         frames = 0
         lastT = os.clock()
     end
