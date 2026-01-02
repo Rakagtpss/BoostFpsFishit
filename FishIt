@@ -1,7 +1,3 @@
---[[ 
- RakaHensem Utility V5.6 - Wide UI & Animation Controls
-]]
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -10,280 +6,217 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
-local Hum = Char:WaitForChild("Humanoid")
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
--- Pastikan Animator ada
-local Animator = Hum:FindFirstChild("Animator") or Instance.new("Animator", Hum)
-
--- Folder Animasi (Sesuaikan Path jika folder game berbeda)
-local AnimFolderPath = ReplicatedStorage:WaitForChild("Modules"):FindFirstChild("Animations")
-
--- State
+-- // State
+local AfkModeActive = false 
 local Optimized = false
-local RenderEnabled = true
 local Minimized = false
-local Enabled = false -- WOW State
-local CurrentTrack = nil
-local CurrentBtn = nil -- Tombol yang sedang aktif
+local WowEnabled = false
 local BV, Conn
 
--- Cleanup UI Lama
-if CoreGui:FindFirstChild("RakaBoostV") then CoreGui.RakaBoostV:Destroy() end
+-- // FPS Settings
+local fpsLimits = {30, 60, 144, 999}
+local currentLimitIndex = 4
 
--- --- MODERN WIDE UI SETUP ---
+-- // UI Config
+local UI_WIDTH = 210
+local UI_HEIGHT = 250 -- Ukuran ditambah sedikit untuk tombol baru
+local ACCENT = Color3.fromRGB(0, 255, 170)
+
+-- // Cleanup
+if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
+
+-- // UI Creation
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "RakaBoostV"
+Gui.Name = "SeraphinHelper"
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 450, 0, 320) -- UI Lebih Lebar
-MainFrame.Position = UDim2.new(0.5, -225, 0.3, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22) -- Dark Theme
+MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
+MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
-Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(60, 60, 70)
-Instance.new("UIStroke", MainFrame).Thickness = 1
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
 -- Header
 local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 40)
+Header.Size = UDim2.new(1, 0, 0, 35)
 Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.6, 0, 1, 0)
-Title.Position = UDim2.new(0.04, 0, 0, 0)
-Title.Text = "SeraphinHelper V5.6"
-Title.TextColor3 = Color3.fromRGB(0, 255, 180) -- Cyan
-Title.Font = Enum.Font.GothamBlack
-Title.TextSize = 16
+Title.Position = UDim2.new(0.05, 0, 0, 0)
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
+Title.RichText = true
+Title.TextColor3 = Color3.new(1,1,1)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 11
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Tombol Minimize
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 80, 0, 26)
-MinBtn.Position = UDim2.new(0.80, 0, 0.5, -13)
-MinBtn.Text = "HIDE MENU"
+MinBtn.Size = UDim2.new(0, 45, 0, 22)
+MinBtn.Position = UDim2.new(0.75, 0, 0.5, -11)
+MinBtn.Text = "HIDE"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
 MinBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 10
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
+MinBtn.TextSize = 9
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
--- Kontainer Utama (Scrolling)
+-- Scrolling Content
 local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
-ScrollFrame.Size = UDim2.new(1, -20, 1, -85)
-ScrollFrame.Position = UDim2.new(0, 10, 0, 50)
+ScrollFrame.Size = UDim2.new(1, -10, 1, -70)
+ScrollFrame.Position = UDim2.new(0, 5, 0, 40)
 ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 1.6, 0)
-ScrollFrame.ScrollBarThickness = 5
-ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 180)
+ScrollFrame.ScrollBarThickness = 2
+ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
--- Layout Grid Fitur
-local FeatureContainer = Instance.new("Frame", ScrollFrame)
-FeatureContainer.Size = UDim2.new(1, 0, 0, 90)
-FeatureContainer.BackgroundTransparency = 1
+local Layout = Instance.new("UIListLayout", ScrollFrame)
+Layout.Padding = UDim.new(0, 6)
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-local GridLayout = Instance.new("UIGridLayout", FeatureContainer)
-GridLayout.CellSize = UDim2.new(0.48, 0, 0, 40) -- Tombol fitur lebih tinggi
-GridLayout.CellPadding = UDim2.new(0.02, 0, 0.08, 0)
-
--- Fungsi Helper Tombol
-local function CreateModernButton(text, parent, color)
-    local btn = Instance.new("TextButton", parent)
+local function CreateButton(text)
+    local btn = Instance.new("TextButton", ScrollFrame)
+    btn.Size = UDim2.new(0.95, 0, 0, 35)
     btn.Text = text
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 12
-    btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-    btn.BackgroundColor3 = color or Color3.fromRGB(40, 40, 45)
-    btn.AutoButtonColor = true
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 10
+    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     return btn
 end
 
--- Tombol Fitur Utama
-local BoostBtn = CreateModernButton("BOOSTER: OFF", FeatureContainer)
-local WowBtn = CreateModernButton("WALK ON WATER: OFF", FeatureContainer)
-local RenderBtn = CreateModernButton("3D RENDERING: ON", FeatureContainer)
-local FpsCapBtn = CreateModernButton("FPS CAP: UNLIMITED", FeatureContainer)
+-- // TOMBOL FITUR ASLI
+local PotatoBtn = CreateButton("Booster Mode: OFF")
+local WowBtn = CreateButton("WALK ON WATER: OFF")
+local RenderBtn = CreateButton("No Render 3D: OFF")
+local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
 
--- --- BAGIAN ANIMASI ---
-local AnimContainer = Instance.new("Frame", ScrollFrame)
-AnimContainer.Size = UDim2.new(1, 0, 0, 250)
-AnimContainer.Position = UDim2.new(0, 0, 0, 110)
-AnimContainer.BackgroundTransparency = 1
+-- // FITUR BARU: SKIN/ROD VISUAL
+local SkinBtn = CreateButton("ROD VISUAL: OFF")
+local SkinSelectorFrame = Instance.new("Frame", MainFrame)
+SkinSelectorFrame.Size = UDim2.new(0, 160, 0, 150)
+SkinSelectorFrame.Position = UDim2.new(1.05, 0, 0, 0)
+SkinSelectorFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+SkinSelectorFrame.Visible = false
+Instance.new("UICorner", SkinSelectorFrame)
 
-local AnimHeader = Instance.new("Frame", AnimContainer)
-AnimHeader.Size = UDim2.new(1, 0, 0, 30)
-AnimHeader.BackgroundTransparency = 1
-
-local AnimLabel = Instance.new("TextLabel", AnimHeader)
-AnimLabel.Size = UDim2.new(0.5, 0, 1, 0)
-AnimLabel.Text = "ANIMATION LIST"
-AnimLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-AnimLabel.Font = Enum.Font.GothamBold
-AnimLabel.TextSize = 12
-AnimLabel.BackgroundTransparency = 1
-AnimLabel.TextXAlignment = Enum.TextXAlignment.Left
-
--- Tombol Control (Stop & Refresh)
-local RefreshBtn = CreateModernButton("↻", AnimHeader, Color3.fromRGB(0, 100, 150))
-RefreshBtn.Size = UDim2.new(0, 40, 1, 0)
-RefreshBtn.Position = UDim2.new(0.88, 0, 0, 0)
-
-local StopBtn = CreateModernButton("STOP ANIMATION ⬛", AnimHeader, Color3.fromRGB(200, 60, 60))
-StopBtn.Size = UDim2.new(0.35, 0, 1, 0)
-StopBtn.Position = UDim2.new(0.50, 0, 0, 0)
-StopBtn.TextSize = 10
-
--- List Animasi (Lebar & Rapi)
-local AnimScroll = Instance.new("ScrollingFrame", AnimContainer)
-AnimScroll.Size = UDim2.new(1, 0, 1, -40)
-AnimScroll.Position = UDim2.new(0, 0, 0, 40)
-AnimScroll.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-AnimScroll.BorderColor3 = Color3.fromRGB(50, 50, 60)
-AnimScroll.BorderSizePixel = 1
-AnimScroll.ScrollBarThickness = 4
-Instance.new("UICorner", AnimScroll).CornerRadius = UDim.new(0, 8)
-
-local AnimListLayout = Instance.new("UIListLayout", AnimScroll)
-AnimListLayout.Padding = UDim.new(0, 4)
-AnimListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local SkinScroll = Instance.new("ScrollingFrame", SkinSelectorFrame)
+SkinScroll.Size = UDim2.new(1, -10, 1, -10)
+SkinScroll.Position = UDim2.new(0, 5, 0, 5)
+SkinScroll.BackgroundTransparency = 1
+SkinScroll.ScrollBarThickness = 2
+SkinScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+local SkinLayout = Instance.new("UIListLayout", SkinScroll)
+SkinLayout.Padding = UDim.new(0, 4)
 
 -- Footer FPS
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
-FpsDisplay.Size = UDim2.new(0.9, 0, 0, 20)
-FpsDisplay.Position = UDim2.new(0.05, 0, 1, -25)
+FpsDisplay.Size = UDim2.new(1, 0, 0, 25)
+FpsDisplay.Position = UDim2.new(0, 0, 1, -25)
 FpsDisplay.BackgroundTransparency = 1
-FpsDisplay.TextColor3 = Color3.fromRGB(100, 255, 100)
+FpsDisplay.TextColor3 = ACCENT
 FpsDisplay.Text = "FPS: --"
 FpsDisplay.Font = Enum.Font.Code
 FpsDisplay.TextSize = 12
 
--- --- LOGIC ANIMASI ---
-
-local function PlayAnim(animInstance, btnRef)
-    -- Reset tombol lama
-    if CurrentBtn then
-        CurrentBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-        CurrentBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        CurrentBtn.Text = CurrentBtn.Name -- Kembalikan teks asli
-    end
-
-    -- Stop animasi berjalan
-    if CurrentTrack then 
-        CurrentTrack:Stop()
-        CurrentTrack = nil
-    end
-
-    -- Update Tombol Baru (Visual Feedback)
-    if btnRef then
-        CurrentBtn = btnRef
-        CurrentBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100) -- Hijau Aktif
-        CurrentBtn.TextColor3 = Color3.new(1,1,1)
-        CurrentBtn.Text = "▶ PLAYING: " .. btnRef.Name
-    end
-
-    -- Load Animasi
-    if not Player.Character or not Player.Character:FindFirstChild("Humanoid") then return end
-    local Humanoid = Player.Character.Humanoid
-    local Animator = Humanoid:FindFirstChild("Animator") or Instance.new("Animator", Humanoid)
-
-    local animationToLoad = nil
-
-    if animInstance:IsA("Animation") then
-        if animInstance.AnimationId ~= "" then animationToLoad = animInstance end
-    elseif animInstance:IsA("StringValue") or animInstance:IsA("IntValue") then
-        local tempAnim = Instance.new("Animation")
-        local id = tostring(animInstance.Value)
-        if not string.find(id, "rbxassetid://") then id = "rbxassetid://" .. id end
-        tempAnim.AnimationId = id
-        animationToLoad = tempAnim
-    end
-
-    if animationToLoad then
-        local success, track = pcall(function() return Animator:LoadAnimation(animationToLoad) end)
-        if success and track then
-            CurrentTrack = track
-            CurrentTrack.Priority = Enum.AnimationPriority.Action
-            CurrentTrack.Looped = true
-            CurrentTrack:Play()
-        end
-    end
-end
-
-local function UpdateAnimList()
-    for _, v in pairs(AnimScroll:GetChildren()) do
-        if v:IsA("TextButton") then v:Destroy() end
-    end
-
-    if not AnimFolderPath then return end
-
-    for _, anim in pairs(AnimFolderPath:GetDescendants()) do
-        if anim:IsA("Animation") or (anim:IsA("ValueBase") and string.find(anim.Name:lower(), "anim")) then
-            
-            -- Tombol Animasi Lebar
-            local btn = Instance.new("TextButton", AnimScroll)
-            btn.Name = anim.Name
-            btn.Size = UDim2.new(0.96, 0, 0, 35) -- Tinggi 35px agar mudah diklik
-            btn.Text = "   " .. anim.Name
-            btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-            btn.Font = Enum.Font.GothamMedium
-            btn.TextSize = 12
-            btn.TextXAlignment = Enum.TextXAlignment.Left
-            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-
-            -- Play saat diklik
-            btn.MouseButton1Click:Connect(function()
-                PlayAnim(anim, btn)
-            end)
-        end
-    end
-end
-
-StopBtn.MouseButton1Click:Connect(function()
-    if CurrentTrack then CurrentTrack:Stop() end
-    if CurrentBtn then
-        CurrentBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-        CurrentBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        CurrentBtn.Text = CurrentBtn.Name
-        CurrentBtn = nil
-    end
-end)
-
-RefreshBtn.MouseButton1Click:Connect(UpdateAnimList)
-
--- --- LOGIC BOOSTER & UTILS ---
-
-BoostBtn.MouseButton1Click:Connect(function()
-    Optimized = not Optimized
-    BoostBtn.Text = Optimized and "BOOSTER: ACTIVE" or "BOOSTER: OFF"
-    BoostBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 45)
+-- // LOGIC SKIN SCANNER (FISCH)
+local function ApplyVisualRod(rodName)
+    local Character = Player.Character
+    if not Character then return end
+    local Tool = Character:FindFirstChildOfClass("Tool")
     
-    Lighting.GlobalShadows = not Optimized
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("BasePart") then
-            if Optimized then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
-        elseif v:IsA("PostProcessEffect") then v.Enabled = not Optimized end
+    local RodPath = ReplicatedStorage:FindFirstChild("Resources") and ReplicatedStorage.Resources:FindFirstChild("Items") and ReplicatedStorage.Resources.Items:FindFirstChild("Rods")
+    
+    if Tool and RodPath then
+        local TargetRod = RodPath:FindFirstChild(rodName)
+        if TargetRod then
+            -- Menghapus model visual lama di tool
+            for _, v in pairs(Tool:GetChildren()) do
+                if (v:IsA("BasePart") or v:IsA("Model")) and v.Name ~= "Handle" then
+                    v:Destroy()
+                end
+            end
+            -- Clone visual baru secara lokal
+            local NewModel = TargetRod:Clone()
+            NewModel.Parent = Tool
+            print("Visual Rod diterapkan: " .. rodName)
+        end
+    else
+        print("Pegang Rod terlebih dahulu!")
+    end
+end
+
+SkinBtn.MouseButton1Click:Connect(function()
+    SkinSelectorFrame.Visible = not SkinSelectorFrame.Visible
+    if SkinSelectorFrame.Visible then
+        for _, child in pairs(SkinScroll:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
+        
+        local RodPath = ReplicatedStorage:FindFirstChild("Resources") and ReplicatedStorage.Resources:FindFirstChild("Items") and ReplicatedStorage.Resources.Items:FindFirstChild("Rods")
+        if RodPath then
+            for _, rod in pairs(RodPath:GetChildren()) do
+                local sBtn = Instance.new("TextButton", SkinScroll)
+                sBtn.Size = UDim2.new(1, 0, 0, 25)
+                sBtn.Text = rod.Name
+                sBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+                sBtn.TextColor3 = Color3.new(1,1,1)
+                sBtn.Font = Enum.Font.Gotham
+                sBtn.TextSize = 9
+                Instance.new("UICorner", sBtn)
+                
+                sBtn.MouseButton1Click:Connect(function()
+                    ApplyVisualRod(rod.Name)
+                    SkinBtn.Text = "ROD: " .. rod.Name:upper()
+                    SkinSelectorFrame.Visible = false
+                end)
+            end
+        end
     end
 end)
 
-RenderBtn.MouseButton1Click:Connect(function()
-    RenderEnabled = not RenderEnabled
-    RunService:Set3dRenderingEnabled(RenderEnabled)
-    RenderBtn.Text = RenderEnabled and "3D RENDERING: ON" or "3D RENDERING: OFF"
-    RenderBtn.TextColor3 = RenderEnabled and Color3.fromRGB(240,240,240) or Color3.fromRGB(255, 100, 100)
+-- // LOGIC FPS CAP
+FpsCapBtn.MouseButton1Click:Connect(function()
+    currentLimitIndex = currentLimitIndex + 1
+    if currentLimitIndex > #fpsLimits then currentLimitIndex = 1 end
+    local newLimit = fpsLimits[currentLimitIndex]
+    if setfpscap then setfpscap(newLimit) end
+    FpsCapBtn.Text = newLimit > 900 and "FPS CAP: UNLIMITED" or "FPS CAP: " .. newLimit
 end)
 
+-- 1. Potato Mode
+PotatoBtn.MouseButton1Click:Connect(function()
+    Optimized = not Optimized
+    PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
+    PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+    Lighting.GlobalShadows = not Optimized
+    if Optimized then
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false
+            elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = false end
+        end
+    end
+end)
+
+-- 2. AFK Render Mode
+RenderBtn.MouseButton1Click:Connect(function()
+    AfkModeActive = not AfkModeActive
+    RunService:Set3dRenderingEnabled(not AfkModeActive)
+    RenderBtn.Text = AfkModeActive and "No Render 3D: ON" or "No Render 3D: OFF"
+    RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 35, 40)
+end)
+
+-- 3. Walk on Water
 WowBtn.MouseButton1Click:Connect(function()
-    Enabled = not Enabled
-    WowBtn.Text = Enabled and "WOW: ON" or "WOW: OFF"
-    WowBtn.BackgroundColor3 = Enabled and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 45)
-    if Enabled then
+    WowEnabled = not WowEnabled
+    WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
+    WowBtn.BackgroundColor3 = WowEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+    if WowEnabled then
         BV = Instance.new("BodyVelocity", HRP)
         BV.MaxForce = Vector3.new(0, 1e6, 0)
         BV.Velocity = Vector3.zero
@@ -296,31 +229,27 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local caps = {60, 999}
-local capIdx = 1
-FpsCapBtn.MouseButton1Click:Connect(function()
-    capIdx = capIdx == 1 and 2 or 1
-    setfpscap(caps[capIdx])
-    FpsCapBtn.Text = "FPS CAP: " .. (caps[capIdx] > 900 and "UNLIMITED" or "60")
-end)
-
+-- 4. Minimize Function
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
-    local targetSize = Minimized and UDim2.new(0, 450, 0, 40) or UDim2.new(0, 450, 0, 320)
-    MainFrame:TweenSize(targetSize, "Out", "Quart", 0.4, true)
-    ScrollFrame.Visible = not Minimized
-    FpsDisplay.Visible = not Minimized
-    MinBtn.Text = Minimized and "SHOW" or "HIDE MENU"
+    if Minimized then
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.3, true)
+        ScrollFrame.Visible = false FpsDisplay.Visible = false MinBtn.Text = "SHOW"
+    else
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
+        task.wait(0.2)
+        ScrollFrame.Visible = true FpsDisplay.Visible = true MinBtn.Text = "HIDE"
+    end
 end)
 
-local lastT, frames = os.clock(), 0
+-- FPS Counter
+local lastT = os.clock()
+local frames = 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
         FpsDisplay.Text = "FPS: " .. frames
-        frames, lastT = 0, os.clock()
+        frames = 0
+        lastT = os.clock()
     end
 end)
-
-task.wait(1)
-UpdateAnimList()
