@@ -2,7 +2,6 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
@@ -13,17 +12,22 @@ local AfkModeActive = false
 local Optimized = false
 local Minimized = false
 local WowEnabled = false
-local RodAnimEnabled = false
 local BV, Conn
 
--- // FPS Settings
-local fpsLimits = {30, 60, 144, 999}
-local currentLimitIndex = 4
+-- // Event State
+local availableEvents = {}
+local currentEventIndex = 1
 
--- // UI Config
-local UI_WIDTH = 210
-local UI_HEIGHT = 245
+-- // FPS Settings
+local fpsLimits = {30, 60, 144, 999} 
+local currentLimitIndex = 4 
+
+-- // UI Config (Diubah menjadi Dark Wide)
+local UI_WIDTH = 260 -- Lebih lebar
+local UI_HEIGHT = 260
 local ACCENT = Color3.fromRGB(0, 255, 170)
+local BG_DARK = Color3.fromRGB(15, 15, 17)
+local ITEM_BG = Color3.fromRGB(25, 25, 30)
 
 -- // Cleanup
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
@@ -35,118 +39,231 @@ Gui.Name = "SeraphinHelper"
 local MainFrame = Instance.new("Frame", Gui)
 MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
 MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.3, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+MainFrame.BackgroundColor3 = BG_DARK
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
 
 -- Header
 local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 35)
-Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
+Header.Size = UDim2.new(1, 0, 0, 30)
+Header.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 6)
 
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.6, 0, 1, 0)
-Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">DEBUG</font>"
+Title.Position = UDim2.new(0.04, 0, 0, 0)
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
-Title.TextColor3 = Color3.new(1,1,1)
+Title.TextColor3 = Color3.new(0.9,0.9,0.9)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 11
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 45, 0, 22)
-MinBtn.Position = UDim2.new(0.75, 0, 0.5, -11)
-MinBtn.Text = "HIDE"
+MinBtn.Size = UDim2.new(0, 40, 0, 18)
+MinBtn.Position = UDim2.new(1, -45, 0.5, -9)
+MinBtn.Text = "-"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
-MinBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+MinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 9
+MinBtn.TextSize = 12
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
 -- Scrolling Content
 local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
-ScrollFrame.Size = UDim2.new(1, -10, 1, -70)
-ScrollFrame.Position = UDim2.new(0, 5, 0, 40)
+ScrollFrame.Size = UDim2.new(1, -10, 1, -60)
+ScrollFrame.Position = UDim2.new(0, 5, 0, 35)
 ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.ScrollBarThickness = 2
 ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ScrollFrame.CanvasSize = UDim2.new(0,0,0,0)
+ScrollFrame.ScrollBarImageColor3 = ACCENT
 
 local Layout = Instance.new("UIListLayout", ScrollFrame)
-Layout.Padding = UDim.new(0, 6)
+Layout.Padding = UDim.new(0, 5)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
+-- Helper Function UI
 local function CreateButton(text)
     local btn = Instance.new("TextButton", ScrollFrame)
-    btn.Size = UDim2.new(0.95, 0, 0, 35)
+    btn.Size = UDim2.new(0.98, 0, 0, 32)
     btn.Text = text
     btn.Font = Enum.Font.GothamMedium
     btn.TextSize = 10
-    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
-    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    btn.BackgroundColor3 = ITEM_BG
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    
+    -- Hover effect simple
+    btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) end)
+    btn.MouseLeave:Connect(function() btn.BackgroundColor3 = ITEM_BG end)
+    
     return btn
 end
 
--- // TOMBOL
+local function CreateLabel(text)
+    local lbl = Instance.new("TextLabel", ScrollFrame)
+    lbl.Size = UDim2.new(0.98, 0, 0, 20)
+    lbl.Text = text
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextSize = 9
+    lbl.TextColor3 = ACCENT
+    lbl.BackgroundTransparency = 1
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    return lbl
+end
+
+-- // BAGIAN FITUR
+
+CreateLabel("  MAIN FEATURES")
 local PotatoBtn = CreateButton("Booster Mode: OFF")
 local WowBtn = CreateButton("WALK ON WATER: OFF")
 local RenderBtn = CreateButton("No Render 3D: OFF")
-local RodAnimBtn = CreateButton("Rod Anim: OFF") 
 local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
 
--- Footer
-local FpsDisplay = Instance.new("TextLabel", MainFrame)
-FpsDisplay.Size = UDim2.new(1, 0, 0, 25)
-FpsDisplay.Position = UDim2.new(0, 0, 1, -25)
-FpsDisplay.BackgroundTransparency = 1
-FpsDisplay.TextColor3 = ACCENT
-FpsDisplay.Text = "FPS: --"
-FpsDisplay.Font = Enum.Font.Code
-FpsDisplay.TextSize = 12
+CreateLabel("  EVENT TELEPORT")
+local ScanBtn = CreateButton("SCAN EVENTS (Klik Dulu)")
+local SelectEventBtn = CreateButton("Pilih: [Tidak Ada]")
+local TeleportEventBtn = CreateButton("TELEPORT KE EVENT")
 
--- // LOGIC DASAR
+-- Footer FPS
+local FpsDisplay = Instance.new("TextLabel", MainFrame)
+FpsDisplay.Size = UDim2.new(1, 0, 0, 20)
+FpsDisplay.Position = UDim2.new(0, 0, 1, -20)
+FpsDisplay.BackgroundTransparency = 1
+FpsDisplay.TextColor3 = Color3.fromRGB(100, 100, 100)
+FpsDisplay.Text = "FPS: -- | SERAPHIN"
+FpsDisplay.Font = Enum.Font.Code
+FpsDisplay.TextSize = 10
+
+-- // LOGIC UTAMA
+
+-- Fungsi Scan Event
+ScanBtn.MouseButton1Click:Connect(function()
+    availableEvents = {}
+    currentEventIndex = 1
+    
+    local success, result = pcall(function()
+        local eventPath = Player.PlayerGui:FindFirstChild("Events")
+        if eventPath and eventPath:FindFirstChild("Frame") and eventPath.Frame:FindFirstChild("Events") then
+            local container = eventPath.Frame.Events
+            for _, v in pairs(container:GetChildren()) do
+                -- Mengambil nama event, mengabaikan layout UI
+                if not v:IsA("UIListLayout") and not v:IsA("UIGridLayout") and v.Visible then
+                    table.insert(availableEvents, v.Name)
+                end
+            end
+        end
+    end)
+    
+    if #availableEvents > 0 then
+        ScanBtn.Text = "SCAN: " .. #availableEvents .. " Event Ditemukan"
+        ScanBtn.TextColor3 = ACCENT
+        SelectEventBtn.Text = "Pilih: " .. availableEvents[1] .. " (1/" .. #availableEvents .. ")"
+    else
+        ScanBtn.Text = "SCAN: Tidak Ada Event"
+        ScanBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
+        SelectEventBtn.Text = "Pilih: [Kosong]"
+    end
+end)
+
+-- Fungsi Pilih Event (Next)
+SelectEventBtn.MouseButton1Click:Connect(function()
+    if #availableEvents == 0 then return end
+    
+    currentEventIndex = currentEventIndex + 1
+    if currentEventIndex > #availableEvents then
+        currentEventIndex = 1
+    end
+    
+    SelectEventBtn.Text = "Pilih: " .. availableEvents[currentEventIndex] .. " (" .. currentEventIndex .. "/" .. #availableEvents .. ")"
+end)
+
+-- Fungsi Teleport Event
+TeleportEventBtn.MouseButton1Click:Connect(function()
+    if #availableEvents == 0 then 
+        TeleportEventBtn.Text = "Scan Terlebih Dahulu!"
+        task.wait(1)
+        TeleportEventBtn.Text = "TELEPORT KE EVENT"
+        return 
+    end
+    
+    local targetName = availableEvents[currentEventIndex]
+    local targetPart = workspace:FindFirstChild(targetName, true) -- Mencari Deep Scan di workspace
+    
+    if targetPart then
+        -- Mencoba teleport ke Part atau Model
+        if targetPart:IsA("Model") and targetPart.PrimaryPart then
+            HRP.CFrame = targetPart.PrimaryPart.CFrame + Vector3.new(0, 5, 0)
+            TeleportEventBtn.Text = "Teleporting..."
+        elseif targetPart:IsA("BasePart") then
+            HRP.CFrame = targetPart.CFrame + Vector3.new(0, 5, 0)
+            TeleportEventBtn.Text = "Teleporting..."
+        else
+            TeleportEventBtn.Text = "Lokasi Tidak Valid!"
+        end
+    else
+        TeleportEventBtn.Text = "Lokasi Tidak Ditemukan!"
+    end
+    
+    task.wait(1)
+    TeleportEventBtn.Text = "TELEPORT KE EVENT"
+end)
+
+-- Logic FPS Cap
 FpsCapBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex + 1
     if currentLimitIndex > #fpsLimits then currentLimitIndex = 1 end
     local newLimit = fpsLimits[currentLimitIndex]
+    
     if setfpscap then setfpscap(newLimit) end
-    FpsCapBtn.Text = newLimit > 900 and "FPS CAP: UNLIMITED" or "FPS CAP: " .. newLimit
+    
+    FpsCapBtn.Text = (newLimit > 900) and "FPS CAP: UNLIMITED" or "FPS CAP: " .. newLimit
 end)
 
+-- Potato Mode
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
-    PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+    PotatoBtn.TextColor3 = Optimized and ACCENT or Color3.fromRGB(200, 200, 200)
+    
     Lighting.GlobalShadows = not Optimized
+    if Optimized then
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.CastShadow = false
+            elseif v:IsA("Texture") or v:IsA("Decal") then
+                v.Transparency = 1
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Enabled = false
+            end
+        end
+    end
 end)
 
+-- AFK Render Mode
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
     RenderBtn.Text = AfkModeActive and "No Render 3D: ON" or "No Render 3D: OFF"
-    RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 35, 40)
+    RenderBtn.TextColor3 = AfkModeActive and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(200, 200, 200)
 end)
 
+-- Walk on Water
 WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
     WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
-    WowBtn.BackgroundColor3 = WowEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+    WowBtn.TextColor3 = WowEnabled and ACCENT or Color3.fromRGB(200, 200, 200)
     
     if WowEnabled then
         BV = Instance.new("BodyVelocity", HRP)
         BV.MaxForce = Vector3.new(0, 1e6, 0)
         BV.Velocity = Vector3.zero
         Conn = RunService.Heartbeat:Connect(function()
-            if HRP then 
-                local vel = HRP.AssemblyLinearVelocity
-                HRP.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z) 
-            end
+            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z) end
         end)
     else
         if Conn then Conn:Disconnect() end
@@ -154,137 +271,30 @@ WowBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- // ==========================================
--- // LOGIC ROD ANIMATION (DEBUG VERSION)
--- // ==========================================
-
-local function GetAnimId(pathName)
-    -- Cek Folder "Modules"
-    local modules = ReplicatedStorage:FindFirstChild("Modules")
-    if not modules then 
-        warn("[DEBUG] Folder 'Modules' tidak ditemukan di ReplicatedStorage!") 
-        return nil 
-    end
-
-    -- Cek Folder "Animations"
-    local animsFolder = modules:FindFirstChild("Animations")
-    if not animsFolder then 
-        warn("[DEBUG] Folder 'Animations' tidak ditemukan di Modules!") 
-        return nil 
-    end
-    
-    -- Cek File Animasi
-    local targetAnim = animsFolder:FindFirstChild(pathName)
-    if targetAnim then
-        print("[SUCCESS] Ditemukan ID untuk: " .. pathName)
-        return targetAnim.AnimationId
-    else
-        warn("[ERROR] File animasi TIDAK ADA: " .. pathName)
-        return nil
-    end
-end
-
--- Dictionary mapping
-local tridentMap = {
-    ["idle"] = GetAnimId("Holy Trident - EquipIdle"),
-    ["cast"] = GetAnimId("Holy Trident - RodThrow"),
-    ["throw"] = GetAnimId("Holy Trident - RodThrow"),
-    ["reel"] = GetAnimId("Holy Trident - ReelStart"),
-    ["charge"] = GetAnimId("Holy Trident - StartRodCharge"),
-    ["caught"] = GetAnimId("Holy Trident - FishCaught"),
-    ["fishcaught"] = GetAnimId("Holy Trident - FishCaught")
-}
-
-local function ApplyRodAnimations(tool)
-    if not RodAnimEnabled then return end
-    task.wait(0.2)
-    
-    print("[DEBUG] Mengecek Tool: " .. tool.Name)
-    local foundAny = false
-    
-    for _, item in pairs(tool:GetDescendants()) do
-        if item:IsA("Animation") then
-            local lowerName = item.Name:lower()
-            print("[DEBUG] Cek animasi tool: " .. item.Name)
-            
-            for key, newId in pairs(tridentMap) do
-                if string.find(lowerName, key) and newId then
-                    print("[REPLACE] Mengganti " .. item.Name .. " dengan Trident Anim!")
-                    item.AnimationId = newId
-                    foundAny = true
-                end
-            end
-        end
-    end
-    
-    if not foundAny then
-        warn("[WARNING] Tidak ada animasi di tool yang cocok dengan keyword (idle/cast/reel)!")
-    end
-end
-
-RodAnimBtn.MouseButton1Click:Connect(function()
-    RodAnimEnabled = not RodAnimEnabled
-    RodAnimBtn.Text = RodAnimEnabled and "Rod Anim: ON" or "Rod Anim: OFF"
-    RodAnimBtn.BackgroundColor3 = RodAnimEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
-    
-    if RodAnimEnabled then
-        print("--- MENGAKTIFKAN ROD ANIM ---")
-        local currentTool = Char:FindFirstChildOfClass("Tool")
-        if currentTool then
-            ApplyRodAnimations(currentTool)
-            
-            -- Unequip & Equip Trick
-            local hum = Char:FindFirstChild("Humanoid")
-            if hum then
-                hum:UnequipTools()
-                task.wait(0.1)
-                hum:EquipTool(currentTool)
-            end
-        else
-            warn("[INFO] Kamu sedang tidak memegang pancingan!")
-        end
-    end
-end)
-
-Player.CharacterAdded:Connect(function(newChar)
-    Char = newChar
-    HRP = newChar:WaitForChild("HumanoidRootPart")
-    newChar.ChildAdded:Connect(function(child)
-        if child:IsA("Tool") and RodAnimEnabled then
-            ApplyRodAnimations(child)
-        end
-    end)
-end)
-
-Char.ChildAdded:Connect(function(child)
-    if child:IsA("Tool") and RodAnimEnabled then
-        ApplyRodAnimations(child)
-    end
-end)
-
--- UI Handling
+-- Minimize Function
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.3, true)
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 30), "Out", "Quad", 0.3, true)
         ScrollFrame.Visible = false
         FpsDisplay.Visible = false
-        MinBtn.Text = "SHOW"
+        MinBtn.Text = "+"
     else
         MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
         task.wait(0.2)
         ScrollFrame.Visible = true
         FpsDisplay.Visible = true
-        MinBtn.Text = "HIDE"
+        MinBtn.Text = "-"
     end
 end)
 
+-- FPS Counter
 local lastT = os.clock()
 local frames = 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
-        FpsDisplay.Text = "FPS: " .. frames
+        FpsDisplay.Text = "FPS: " .. frames .. " | SERAPHIN"
         frames = 0
         lastT = os.clock()
     end
