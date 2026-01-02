@@ -29,8 +29,8 @@ Gui.ResetOnSpawn = false
 Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- // UI Config
-local UI_WIDTH = 220
-local UI_HEIGHT = 300 
+local UI_WIDTH = 240
+local UI_HEIGHT = 420 -- Dipertinggi untuk kotak input
 local ACCENT = Color3.fromRGB(0, 255, 170)
 
 local MainFrame = Instance.new("Frame", Gui)
@@ -98,8 +98,11 @@ end
 
 -- // VARIABEL STATE
 local SelectedTotemName = nil
+local SelectedSellItem = nil
 local TotemThread = nil
+local SellThread = nil
 local AutoTotemEnabled = false
+local AutoSellEnabled = false
 local Optimized = false
 local Minimized = false
 local WowEnabled = false
@@ -108,39 +111,38 @@ local BV, Conn
 local fpsLimits = {30, 60, 144, 999}
 local currentLimitIndex = 4
 
--- // --- SCANNER DROPDOWN ---
-local DropdownOpen = false
+-- // ==========================================
+-- // [SYSTEM 1] TOTEM SCANNER
+-- // ==========================================
+
+local TotemDropdownOpen = false
 local TotemSelectorBtn = CreateButton("Pilih Totem: [None]", 1)
 TotemSelectorBtn.TextColor3 = ACCENT
 
-local DropdownFrame = Instance.new("ScrollingFrame", ScrollFrame)
-DropdownFrame.Name = "DropdownFrame"
-DropdownFrame.Size = UDim2.new(0.9, 0, 0, 0)
-DropdownFrame.BackgroundTransparency = 1
-DropdownFrame.ScrollBarThickness = 2
-DropdownFrame.LayoutOrder = 2
-DropdownFrame.Visible = false
-
-local DropLayout = Instance.new("UIListLayout", DropdownFrame)
-DropLayout.Padding = UDim.new(0, 2)
-DropLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local TotemDropdownFrame = Instance.new("ScrollingFrame", ScrollFrame)
+TotemDropdownFrame.Name = "TotemDropdownFrame"
+TotemDropdownFrame.Size = UDim2.new(0.9, 0, 0, 0)
+TotemDropdownFrame.BackgroundTransparency = 1
+TotemDropdownFrame.ScrollBarThickness = 2
+TotemDropdownFrame.LayoutOrder = 2
+TotemDropdownFrame.Visible = false
+Instance.new("UIListLayout", TotemDropdownFrame).Padding = UDim.new(0, 2)
 
 local function RefreshTotemList()
-    for _, child in pairs(DropdownFrame:GetChildren()) do
+    for _, child in pairs(TotemDropdownFrame:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
     
-    -- Scan Folder Totem (Path untuk membaca nama totem)
     local path = ReplicatedStorage:FindFirstChild("Modules")
     if path then path = path:FindFirstChild("ModelDownloader") end
     if path then path = path:FindFirstChild("Collection") end
     if path then path = path:FindFirstChild("Totems") end
     
-    if not path then return 0 end -- Jika path tidak ketemu
+    if not path then return 0 end
 
     local items = path:GetChildren()
     for _, totem in pairs(items) do
-        local choiceBtn = Instance.new("TextButton", DropdownFrame)
+        local choiceBtn = Instance.new("TextButton", TotemDropdownFrame)
         choiceBtn.Size = UDim2.new(1, 0, 0, 25)
         choiceBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
         choiceBtn.TextColor3 = Color3.new(0.8, 0.8, 0.8)
@@ -151,38 +153,172 @@ local function RefreshTotemList()
         
         choiceBtn.MouseButton1Click:Connect(function()
             SelectedTotemName = totem.Name
-            TotemSelectorBtn.Text = "Pilih Totem: " .. totem.Name
-            DropdownOpen = false
-            DropdownFrame.Visible = false
-            DropdownFrame.Size = UDim2.new(0.9, 0, 0, 0)
+            TotemSelectorBtn.Text = "Totem: " .. totem.Name
+            TotemDropdownOpen = false
+            TotemDropdownFrame.Visible = false
+            TotemDropdownFrame.Size = UDim2.new(0.9, 0, 0, 0)
         end)
     end
     
     local contentHeight = #items * 27
-    if contentHeight > 150 then contentHeight = 150 end
-    DropdownFrame.CanvasSize = UDim2.new(0, 0, 0, #items * 27)
+    if contentHeight > 120 then contentHeight = 120 end
+    TotemDropdownFrame.CanvasSize = UDim2.new(0, 0, 0, #items * 27)
     return contentHeight
 end
 
 TotemSelectorBtn.MouseButton1Click:Connect(function()
-    DropdownOpen = not DropdownOpen
-    if DropdownOpen then
+    TotemDropdownOpen = not TotemDropdownOpen
+    if TotemDropdownOpen then
         local height = RefreshTotemList() or 100
-        DropdownFrame.Visible = true
-        DropdownFrame:TweenSize(UDim2.new(0.9, 0, 0, height), "Out", "Quad", 0.3, true)
+        TotemDropdownFrame.Visible = true
+        TotemDropdownFrame:TweenSize(UDim2.new(0.9, 0, 0, height), "Out", "Quad", 0.3, true)
     else
-        DropdownFrame:TweenSize(UDim2.new(0.9, 0, 0, 0), "Out", "Quad", 0.3, true)
+        TotemDropdownFrame:TweenSize(UDim2.new(0.9, 0, 0, 0), "Out", "Quad", 0.3, true)
         task.wait(0.3)
-        DropdownFrame.Visible = false
+        TotemDropdownFrame.Visible = false
     end
 end)
 
--- // --- TOMBOL FITUR ---
-local TotemBtn = CreateButton("Auto Totem (60m): OFF", 3)
-local PotatoBtn = CreateButton("Booster Mode: OFF", 4)
-local WowBtn = CreateButton("WALK ON WATER: OFF", 5)
-local RenderBtn = CreateButton("No Render 3D: OFF", 6)
-local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED", 7)
+-- // ==========================================
+-- // [SYSTEM 2] SELL SCANNER & AMOUNT INPUT
+-- // ==========================================
+
+local SellDropdownOpen = false
+local SellSelectorBtn = CreateButton("Pilih Item Jual: [None]", 3)
+SellSelectorBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+
+local SellDropdownFrame = Instance.new("ScrollingFrame", ScrollFrame)
+SellDropdownFrame.Name = "SellDropdownFrame"
+SellDropdownFrame.Size = UDim2.new(0.9, 0, 0, 0)
+SellDropdownFrame.BackgroundTransparency = 1
+SellDropdownFrame.ScrollBarThickness = 2
+SellDropdownFrame.LayoutOrder = 4
+SellDropdownFrame.Visible = false
+Instance.new("UIListLayout", SellDropdownFrame).Padding = UDim.new(0, 2)
+
+-- --- FITUR BARU: INPUT JUMLAH ---
+local AmountFrame = Instance.new("Frame", ScrollFrame)
+AmountFrame.Size = UDim2.new(0.95, 0, 0, 30)
+AmountFrame.BackgroundTransparency = 1
+AmountFrame.LayoutOrder = 5
+
+local AmountLabel = Instance.new("TextLabel", AmountFrame)
+AmountLabel.Size = UDim2.new(0.4, 0, 1, 0)
+AmountLabel.Text = "Jumlah Jual:"
+AmountLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+AmountLabel.Font = Enum.Font.GothamMedium
+AmountLabel.TextSize = 11
+AmountLabel.BackgroundTransparency = 1
+AmountLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local AmountBox = Instance.new("TextBox", AmountFrame)
+AmountBox.Size = UDim2.new(0.55, 0, 1, 0)
+AmountBox.Position = UDim2.new(0.45, 0, 0, 0)
+AmountBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+AmountBox.TextColor3 = Color3.fromRGB(0, 255, 170)
+AmountBox.Text = "1" -- Default Jumlah
+AmountBox.PlaceholderText = "Angka..."
+AmountBox.Font = Enum.Font.GothamBold
+AmountBox.TextSize = 12
+Instance.new("UICorner", AmountBox).CornerRadius = UDim.new(0, 6)
+
+-- Validasi Input (Hanya Angka)
+AmountBox:GetPropertyChangedSignal("Text"):Connect(function()
+    AmountBox.Text = AmountBox.Text:gsub("%D+", "")
+end)
+-- ------------------------------
+
+local function AddSellButton(name, val)
+    local choiceBtn = Instance.new("TextButton", SellDropdownFrame)
+    choiceBtn.Size = UDim2.new(1, 0, 0, 25)
+    choiceBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+    choiceBtn.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+    choiceBtn.Text = name
+    choiceBtn.Font = Enum.Font.Gotham
+    choiceBtn.TextSize = 10
+    Instance.new("UICorner", choiceBtn).CornerRadius = UDim.new(0, 4)
+    
+    choiceBtn.MouseButton1Click:Connect(function()
+        SelectedSellItem = val
+        SellSelectorBtn.Text = "Jual: " .. name
+        SellDropdownOpen = false
+        SellDropdownFrame.Visible = false
+        SellDropdownFrame.Size = UDim2.new(0.9, 0, 0, 0)
+    end)
+    return choiceBtn
+end
+
+local function RefreshSellList()
+    for _, child in pairs(SellDropdownFrame:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    
+    local foundItems = {}
+    local itemCount = 0
+
+    pcall(function()
+        local gearPath = ReplicatedStorage.Modules.ModelDownloader.Collection.Gears
+        if gearPath then
+            for _, item in pairs(gearPath:GetChildren()) do
+                if not foundItems[item.Name] then
+                    AddSellButton(item.Name, item.Name)
+                    foundItems[item.Name] = true
+                    itemCount = itemCount + 1
+                end
+            end
+        end
+    end)
+
+    pcall(function()
+        local stonePath = Player.PlayerGui["Exclusive Store"].Main.Content.Items.Stone
+        if stonePath then
+            for _, item in pairs(stonePath:GetChildren()) do
+                if item:IsA("Frame") or item:IsA("ImageButton") or item:IsA("TextButton") then
+                    if not foundItems[item.Name] then
+                        AddSellButton(item.Name, item.Name)
+                        foundItems[item.Name] = true
+                        itemCount = itemCount + 1
+                    end
+                end
+            end
+        end
+    end)
+    
+    if not foundItems["Enchant Stone"] then AddSellButton("Enchant Stone (Manual)", "Enchant Stone"); itemCount=itemCount+1 end
+    if not foundItems["Train Wheel"] then AddSellButton("Train Wheel (Manual)", "Train Wheel"); itemCount=itemCount+1 end
+    
+    AddSellButton(">> COMBO: Stone + Wheel", "Enchant Stone,Train Wheel ")
+    itemCount = itemCount + 1
+    
+    local contentHeight = itemCount * 27
+    if contentHeight > 150 then contentHeight = 150 end
+    SellDropdownFrame.CanvasSize = UDim2.new(0, 0, 0, itemCount * 27)
+    return contentHeight
+end
+
+SellSelectorBtn.MouseButton1Click:Connect(function()
+    SellDropdownOpen = not SellDropdownOpen
+    if SellDropdownOpen then
+        local height = RefreshSellList() or 100
+        SellDropdownFrame.Visible = true
+        SellDropdownFrame:TweenSize(UDim2.new(0.9, 0, 0, height), "Out", "Quad", 0.3, true)
+    else
+        SellDropdownFrame:TweenSize(UDim2.new(0.9, 0, 0, 0), "Out", "Quad", 0.3, true)
+        task.wait(0.3)
+        SellDropdownFrame.Visible = false
+    end
+end)
+
+-- // ==========================================
+-- // TOMBOL FITUR
+-- // ==========================================
+
+local TotemBtn = CreateButton("Auto Totem (60m): OFF", 6)
+local SellBtn = CreateButton("Auto Sell (2s): OFF", 7)
+local PotatoBtn = CreateButton("Booster Mode: OFF", 8)
+local WowBtn = CreateButton("WALK ON WATER: OFF", 9)
+local RenderBtn = CreateButton("No Render 3D: OFF", 10)
+local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED", 11)
 
 -- Footer FPS
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
@@ -194,12 +330,55 @@ FpsDisplay.Text = "FPS: --"
 FpsDisplay.Font = Enum.Font.Code
 FpsDisplay.TextSize = 12
 
--- // --- LOGIKA AUTO TOTEM (DIPERBARUI) ---
+-- // LOGIKA AUTO SELL (UPDATED)
+SellBtn.MouseButton1Click:Connect(function()
+    if not SelectedSellItem then
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper"; Text = "Pilih Item Jual dulu!"; Duration = 3;})
+        return
+    end
+
+    -- Ambil nilai jumlah dari Textbox
+    local sellAmount = tonumber(AmountBox.Text)
+    if not sellAmount or sellAmount <= 0 then
+        sellAmount = 1 -- Default jika kosong/error
+        AmountBox.Text = "1"
+    end
+
+    AutoSellEnabled = not AutoSellEnabled
+    SellBtn.Text = AutoSellEnabled and "Auto Sell: ON" or "Auto Sell (2s): OFF"
+    SellBtn.BackgroundColor3 = AutoSellEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
+
+    if AutoSellEnabled then
+        SellThread = task.spawn(function()
+            while AutoSellEnabled do
+                pcall(function()
+                    local netFolder = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
+                    local sellEvent = netFolder:FindFirstChild("RF/SellItem")
+                    if sellEvent then
+                        -- Argument: [1] Nama Item, [2] Jumlah
+                        local args = { 
+                            [1] = SelectedSellItem,
+                            [2] = sellAmount 
+                        }
+                        
+                        sellEvent:InvokeServer(unpack(args))
+                        print("Auto Sell: " .. SelectedSellItem .. " | Qty: " .. sellAmount)
+                    end
+                end)
+                
+                -- DELAY 2 DETIK
+                task.wait(2)
+            end
+        end)
+    else
+        if SellThread then task.cancel(SellThread) end
+    end
+end)
+
+-- LOGIKA AUTO TOTEM
 TotemBtn.MouseButton1Click:Connect(function()
     if not SelectedTotemName then
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Seraphin Helper"; Text = "Pilih Totem dulu!"; Duration = 3;
-        })
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper"; Text = "Pilih Totem dulu!"; Duration = 3;})
         return
     end
 
@@ -211,32 +390,16 @@ TotemBtn.MouseButton1Click:Connect(function()
         TotemThread = task.spawn(function()
             while AutoTotemEnabled do
                 pcall(function()
-                    -- AKSES PATH SESUAI PERMINTAAN USER
                     local netFolder = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
-                    
                     if netFolder then
                         local args = { [1] = SelectedTotemName }
-                        
-                        -- 1. Spawn Totem
                         local spawnEvent = netFolder["RE/SpawnTotem"]
-                        if spawnEvent then 
-                            spawnEvent:FireServer(unpack(args))
-                            print("DEBUG: Spawned " .. SelectedTotemName)
-                        end
-                        
-                        task.wait(1.5) -- Delay agar server memproses spawn
-                        
-                        -- 2. Equip Totem (Asumsi path sama)
+                        if spawnEvent then spawnEvent:FireServer(unpack(args)) end
+                        task.wait(1.5)
                         local equipEvent = netFolder:FindFirstChild("RE/EquipItem") 
-                        -- Menggunakan FindFirstChild untuk Equip jaga-jaga, tapi biasanya satu folder
-                        if equipEvent then 
-                            equipEvent:FireServer(unpack(args))
-                            print("DEBUG: Equipped " .. SelectedTotemName)
-                        end
+                        if equipEvent then equipEvent:FireServer(unpack(args)) end
                     end
                 end)
-                
-                -- Timer 60 Menit
                 for i = 3600, 1, -1 do
                     if not AutoTotemEnabled then break end
                     task.wait(1)
@@ -248,7 +411,7 @@ TotemBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- // --- FITUR LAIN ---
+-- FITUR LAIN
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
@@ -334,4 +497,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper", Text = "Script Loaded!", Duration = 5})
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper", Text = "Fitur Jumlah Jual (2s) Ready!", Duration = 5})
