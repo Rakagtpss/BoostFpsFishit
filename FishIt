@@ -1,211 +1,216 @@
--- // Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
--- // Remotes Path
-local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index")["sleitnick_net@0.2.0"].net
-local EquipRemote = Net:WaitForChild("RE/EquipItem")
-local HotbarRemote = Net:WaitForChild("RE/EquipToolFromHotbar")
-local GearsPath = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("ModelDownloader"):WaitForChild("Collection"):WaitForChild("Gears")
-
 -- // State
+local AfkModeActive = false 
 local Optimized = false
-local AfkModeActive = false
-local WowEnabled = false
 local Minimized = false
-local SelectedItem = ""
+local WowEnabled = false
 local BV, Conn
 
+-- // FPS Settings
+local fpsLimits = {30, 60, 144, 999}
+local currentLimitIndex = 4
+
 -- // UI Config
-local UI_WIDTH = 320
-local UI_HEIGHT = 410
+local UI_WIDTH = 350
+local UI_HEIGHT = 200
 local ACCENT = Color3.fromRGB(0, 255, 170)
-local BG_COLOR = Color3.fromRGB(15, 15, 17)
-local SECONDARY = Color3.fromRGB(25, 25, 30)
+local BG_MAIN = Color3.fromRGB(10, 10, 12)
+local TRANSPARENCY = 0.25
 
 -- // Cleanup
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
--- // Main UI
+-- // FLOATING TEXT (Pojok Kanan Bawah)
+local function ShowFloatingText()
+    local FloatingGui = Instance.new("ScreenGui", CoreGui)
+    FloatingGui.Name = "SeraphinFloating"
+    
+    local TextLabel = Instance.new("TextLabel", FloatingGui)
+    TextLabel.Size = UDim2.new(0, 200, 0, 30)
+    TextLabel.Position = UDim2.new(1, -210, 1, 0) 
+    TextLabel.BackgroundTransparency = 1
+    TextLabel.Text = "SeraphinXRaka Loaded"
+    TextLabel.TextColor3 = ACCENT
+    TextLabel.Font = Enum.Font.GothamBold
+    TextLabel.TextSize = 16
+    TextLabel.TextXAlignment = Enum.TextXAlignment.Right
+    TextLabel.TextTransparency = 1
+    
+    task.spawn(function()
+        TweenService:Create(TextLabel, TweenInfo.new(0.6), {
+            TextTransparency = 0, 
+            Position = UDim2.new(1, -210, 1, -40)
+        }):Play()
+        task.wait(2.5)
+        TweenService:Create(TextLabel, TweenInfo.new(0.6), {
+            TextTransparency = 1, 
+            Position = UDim2.new(1, -210, 1, -20)
+        }):Play()
+        task.wait(1)
+        FloatingGui:Destroy()
+    end)
+end
+
+ShowFloatingText()
+
+-- // UI Creation
 local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "SeraphinHelper"
+Gui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", Gui)
 MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
-MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.3, 0)
-MainFrame.BackgroundColor3 = BG_COLOR
+MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.4, 0)
+MainFrame.BackgroundColor3 = BG_MAIN
+MainFrame.BackgroundTransparency = TRANSPARENCY
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+local Stroke = Instance.new("UIStroke", MainFrame)
+Stroke.Color = ACCENT
+Stroke.Thickness = 1.2
+Stroke.Transparency = 0.6
 
 -- Header
 local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 45)
-Header.BackgroundColor3 = SECONDARY
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
+Header.Size = UDim2.new(1, 0, 0, 35)
+Header.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Header.BackgroundTransparency = 0.4
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.6, 0, 1, 0)
-Title.Position = UDim2.new(0.05, 0, 0, 0)
+Title.Position = UDim2.new(0.04, 0, 0, 0)
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
+Title.TextSize = 14
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 60, 0, 25)
-MinBtn.Position = UDim2.new(0.95, -65, 0.5, -12)
+MinBtn.Size = UDim2.new(0, 60, 0, 24)
+MinBtn.Position = UDim2.new(1, -68, 0.5, -12)
 MinBtn.Text = "HIDE"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
 MinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 11
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
+MinBtn.TextSize = 10
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 5)
 
--- Scrolling Content
-local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
-ScrollFrame.Size = UDim2.new(1, -10, 1, -65)
-ScrollFrame.Position = UDim2.new(0, 5, 0, 55)
-ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.ScrollBarThickness = 2
-ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ScrollFrame.CanvasSize = UDim2.new(0,0,0,0)
+-- Button Container
+local Container = Instance.new("Frame", MainFrame)
+Container.Name = "Container"
+Container.Size = UDim2.new(1, -20, 1, -80)
+Container.Position = UDim2.new(0, 10, 0, 45)
+Container.BackgroundTransparency = 1
 
-local Layout = Instance.new("UIListLayout", ScrollFrame)
-Layout.Padding = UDim.new(0, 8)
-Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local Layout = Instance.new("UIGridLayout", Container)
+Layout.CellSize = UDim2.new(0.5, -8, 0, 45)
+Layout.CellPadding = UDim2.new(0, 16, 0, 12)
+Layout.VerticalAlignment = Enum.VerticalAlignment.Center
 
--- Floating Info (DI BAWAH UI)
-local FloatingFrame = Instance.new("Frame", MainFrame)
-FloatingFrame.Size = UDim2.new(1, 0, 0, 32)
-FloatingFrame.Position = UDim2.new(0, 0, 1, 10)
-FloatingFrame.BackgroundColor3 = SECONDARY
-FloatingFrame.BackgroundTransparency = 0.1
-Instance.new("UICorner", FloatingFrame).CornerRadius = UDim.new(0, 6)
-
-local FloatingText = Instance.new("TextLabel", FloatingFrame)
-FloatingText.Size = UDim2.new(1, 0, 1, 0)
-FloatingText.BackgroundTransparency = 1
-FloatingText.Text = "Status: Idle | FPS: --"
-FloatingText.TextColor3 = ACCENT
-FloatingText.Font = Enum.Font.Code
-FloatingText.TextSize = 11
-
--- Helper Function Buttons
-local function CreateButton(text, color)
-    local btn = Instance.new("TextButton", ScrollFrame)
-    btn.Size = UDim2.new(0.94, 0, 0, 42)
+local function CreateButton(text)
+    local btn = Instance.new("TextButton", Container)
     btn.Text = text
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 13
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.BackgroundColor3 = color or SECONDARY
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    btn.TextSize = 11
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
+    btn.BackgroundTransparency = 0.1
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     return btn
 end
 
--- // FEATURES
-local BoosterBtn = CreateButton("BOOSTER MODE: OFF")
-local WaterBtn = CreateButton("WALK ON WATER: OFF")
-local AntiRenderBtn = CreateButton("NO RENDER 3D: OFF")
+local PotatoBtn = CreateButton("BOOSTER: OFF")
+local WowBtn = CreateButton("WATER WALK: OFF")
+local RenderBtn = CreateButton("NO RENDER: OFF")
+local FpsCapBtn = CreateButton("FPS: UNLIMITED")
 
-local Divider = Instance.new("Frame", ScrollFrame)
-Divider.Size = UDim2.new(0.9, 0, 0, 2)
-Divider.BackgroundColor3 = SECONDARY
-Divider.BorderSizePixel = 0
+-- Footer
+local Footer = Instance.new("Frame", MainFrame)
+Footer.Size = UDim2.new(1, 0, 0, 30)
+Footer.Position = UDim2.new(0, 0, 1, -30)
+Footer.BackgroundTransparency = 1
 
-local ScanBtn = CreateButton("🔍 SCAN BACKPACK", Color3.fromRGB(40, 60, 100))
+local FpsDisplay = Instance.new("TextLabel", Footer)
+FpsDisplay.Size = UDim2.new(1, -15, 1, 0)
+FpsDisplay.BackgroundTransparency = 1
+FpsDisplay.TextColor3 = ACCENT
+FpsDisplay.Text = "FPS: -- | SeraphinXRaka"
+FpsDisplay.Font = Enum.Font.Code
+FpsDisplay.TextSize = 11
+FpsDisplay.TextXAlignment = Enum.TextXAlignment.Right
 
--- Item Scroll Area
-local ItemScroll = Instance.new("ScrollingFrame", ScrollFrame)
-ItemScroll.Size = UDim2.new(0.94, 0, 0, 120)
-ItemScroll.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
-ItemScroll.BorderSizePixel = 0
-ItemScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ItemScroll.CanvasSize = UDim2.new(0,0,0,0)
-Instance.new("UICorner", ItemScroll).CornerRadius = UDim.new(0, 8)
-local ItemLayout = Instance.new("UIListLayout", ItemScroll)
+-- // LOGIC SECTION
 
-local SellBtn = CreateButton("💰 SELL SELECTED ITEM", Color3.fromRGB(180, 130, 0))
-
--- // LOGIC: SCAN & DOUBLE EQUIP
-ScanBtn.MouseButton1Click:Connect(function()
-    for _, v in pairs(ItemScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
-    
-    for _, item in pairs(GearsPath:GetChildren()) do
-        local ibtn = Instance.new("TextButton", ItemScroll)
-        ibtn.Size = UDim2.new(1, -10, 0, 35)
-        ibtn.BackgroundTransparency = 1
-        ibtn.Text = "   " .. item.Name
-        ibtn.TextColor3 = Color3.new(0.8, 0.8, 0.8)
-        ibtn.Font = Enum.Font.GothamMedium
-        ibtn.TextSize = 13
-        ibtn.TextXAlignment = Enum.TextXAlignment.Left
-        
-        ibtn.MouseButton1Click:Connect(function()
-            SelectedItem = item.Name
-            SellBtn.Text = "SELL: " .. item.Name
-            
-            -- EXECUTE DOUBLE EQUIP (RE/EquipItem & RE/EquipToolFromHotbar)
-            pcall(function()
-                -- Remote 1: Equip dari Hotbar (Jika ada di slot)
-                HotbarRemote:FireServer(item.Name)
-                
-                -- Remote 2: Equip Item (Format Gears sesuai permintaan)
-                EquipRemote:FireServer(item.Name, "Gears")
-            end)
-            
-            -- Visual Highlight
-            for _, b in pairs(ItemScroll:GetChildren()) do if b:IsA("TextButton") then b.TextColor3 = Color3.new(0.8,0.8,0.8) end end
-            ibtn.TextColor3 = ACCENT
-            FloatingText.Text = "Status: Equipping " .. item.Name
-        end)
-    end
-end)
-
--- // LOGIC: SELL ITEM
-SellBtn.MouseButton1Click:Connect(function()
-    if SelectedItem ~= "" then
-        local sellPrompt = workspace["!!! DEPENDENCIES"]:GetChildren()[8].SellPrompt.SellPrompt
-        fireproximityprompt(sellPrompt)
-        FloatingText.Text = "Status: Sold " .. SelectedItem
-    end
-end)
-
--- // BOOSTER & UTILS
-BoosterBtn.MouseButton1Click:Connect(function()
+-- 1. Optimized Booster Mode (Super Potato)
+PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
-    BoosterBtn.Text = Optimized and "BOOSTER MODE: ON" or "BOOSTER MODE: OFF"
-    BoosterBtn.TextColor3 = Optimized and ACCENT or Color3.new(1,1,1)
+    PotatoBtn.Text = Optimized and "BOOSTER: ON" or "BOOSTER: OFF"
+    PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 28)
+    
     Lighting.GlobalShadows = not Optimized
-    if Optimized then
-        for _, v in pairs(game:GetDescendants()) do
-            if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false
-            elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1 end
+    
+    -- Post Processing Effects
+    for _, effect in pairs(Lighting:GetChildren()) do
+        if effect:IsA("PostEffect") or effect:IsA("BloomEffect") or effect:IsA("BlurEffect") or effect:IsA("SunRaysEffect") then
+            effect.Enabled = not Optimized
+        end
+    end
+
+    -- Objek & Material
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Material = Optimized and Enum.Material.SmoothPlastic or Enum.Material.Plastic
+            v.CastShadow = not Optimized
+        elseif v:IsA("Texture") or v:IsA("Decal") then
+            v.Transparency = Optimized and 1 or 0
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            v.Enabled = not Optimized
         end
     end
 end)
 
-WaterBtn.MouseButton1Click:Connect(function()
+-- 2. FPS Cap Logic
+FpsCapBtn.MouseButton1Click:Connect(function()
+    currentLimitIndex = currentLimitIndex % #fpsLimits + 1
+    local newLimit = fpsLimits[currentLimitIndex]
+    if setfpscap then setfpscap(newLimit) end
+    FpsCapBtn.Text = (newLimit > 900) and "FPS: UNLIMITED" or "FPS: " .. newLimit
+end)
+
+-- 3. No Render Mode
+RenderBtn.MouseButton1Click:Connect(function()
+    AfkModeActive = not AfkModeActive
+    RunService:Set3dRenderingEnabled(not AfkModeActive)
+    RenderBtn.Text = AfkModeActive and "NO RENDER: ON" or "NO RENDER: OFF"
+    RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(120, 30, 30) or Color3.fromRGB(25, 25, 28)
+end)
+
+-- 4. Walk on Water
+WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
-    WaterBtn.Text = WowEnabled and "WALK ON WATER: ON" or "WALK ON WATER: OFF"
-    WaterBtn.TextColor3 = WowEnabled and ACCENT or Color3.new(1,1,1)
+    WowBtn.Text = WowEnabled and "WATER WALK: ON" or "WATER WALK: OFF"
+    WowBtn.BackgroundColor3 = WowEnabled and Color3.fromRGB(0, 120, 80) or Color3.fromRGB(25, 25, 28)
     if WowEnabled then
         BV = Instance.new("BodyVelocity", HRP)
         BV.MaxForce = Vector3.new(0, 1e6, 0)
+        BV.Velocity = Vector3.zero
         Conn = RunService.Heartbeat:Connect(function()
-            HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
+            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z) end
         end)
     else
         if Conn then Conn:Disconnect() end
@@ -213,38 +218,30 @@ WaterBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-AntiRenderBtn.MouseButton1Click:Connect(function()
-    AfkModeActive = not AfkModeActive
-    RunService:Set3dRenderingEnabled(not AfkModeActive)
-    AntiRenderBtn.Text = AfkModeActive and "NO RENDER 3D: ON" or "NO RENDER 3D: OFF"
-    AntiRenderBtn.TextColor3 = AfkModeActive and Color3.new(1,0,0) or Color3.new(1,1,1)
-end)
-
--- // MINIMIZE
+-- 5. Hide/Show Function
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 45), "Out", "Quad", 0.3, true)
-        ScrollFrame.Visible = false
-        FloatingFrame.Visible = false
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 35), "Out", "Quad", 0.2, true)
+        Container.Visible = false
+        Footer.Visible = false
         MinBtn.Text = "SHOW"
     else
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
-        task.wait(0.2)
-        ScrollFrame.Visible = true
-        FloatingFrame.Visible = true
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.2, true)
+        task.wait(0.1)
+        Container.Visible = true
+        Footer.Visible = true
         MinBtn.Text = "HIDE"
     end
 end)
 
--- // FPS & STATUS LOOP
+-- FPS Loop
 local lastT = os.clock()
 local frames = 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
-        local subStatus = SelectedItem ~= "" and "Selected: " .. SelectedItem or "Idle"
-        FloatingText.Text = "Status: " .. subStatus .. " | FPS: " .. frames
+        FpsDisplay.Text = "FPS: " .. frames .. " | SeraphinXRaka"
         frames = 0
         lastT = os.clock()
     end
