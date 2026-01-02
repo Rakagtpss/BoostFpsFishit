@@ -17,7 +17,7 @@ local ParentTarget = getUiParent()
 if not ParentTarget then warn("UI Parent Gagal") return end
 
 for _, child in pairs(ParentTarget:GetChildren()) do
-    if child.Name == "SeraphinPrompt" then child:Destroy() end
+    if child.Name == "SeraphinPromptOnly" then child:Destroy() end
 end
 
 -- // CONFIG UI
@@ -31,7 +31,7 @@ local THEME = {
 }
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SeraphinPrompt"
+ScreenGui.Name = "SeraphinPromptOnly"
 ScreenGui.Parent = ParentTarget
 ScreenGui.ResetOnSpawn = false
 
@@ -54,7 +54,7 @@ Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.6, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">PROMPT</font>"
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">NO CLICK</font>"
 Title.RichText = true
 Title.TextColor3 = THEME.Text
 Title.Font = Enum.Font.GothamBold
@@ -100,7 +100,7 @@ end
 
 local function GetUUID(tool)
     if not tool then return nil end
-    local uuid = tool:GetAttribute("UUID") or tool:GetAttribute("uuid") or tool:GetAttribute("id") or tool:GetAttribute("ID")
+    local uuid = tool:GetAttribute("UUID") or tool:GetAttribute("uuid") or tool:GetAttribute("id")
     if uuid then return uuid end
     local val = tool:FindFirstChild("UUID") or tool:FindFirstChild("ID") or tool:FindFirstChild("uuid")
     if val then return val.Value end
@@ -133,15 +133,12 @@ Instance.new("UIListLayout", DropdownFrame).Padding = UDim.new(0, 2)
 
 local function RefreshList()
     for _, v in pairs(DropdownFrame:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
-    
     local count = 0
     local found = {}
-    
     local function Add(name)
         if found[name] then return end
         found[name] = true
         count = count + 1
-        
         local b = Instance.new("TextButton", DropdownFrame)
         b.Size = UDim2.new(1, 0, 0, 25)
         b.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
@@ -150,7 +147,6 @@ local function RefreshList()
         b.Font = Enum.Font.Gotham
         b.TextSize = 10
         Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
-        
         b.MouseButton1Click:Connect(function()
             SelectedSellItem = name
             SellStatus.Text = "Jual: " .. name
@@ -159,13 +155,11 @@ local function RefreshList()
             DropdownFrame.Visible = false
         end)
     end
-    
     pcall(function()
         local gears = ReplicatedStorage.Modules.ModelDownloader.Collection.Gears
         for _, v in pairs(gears:GetChildren()) do Add(v.Name) end
     end)
     Add("Enchant Stone"); Add("Train Wheel")
-    
     DropdownFrame.CanvasSize = UDim2.new(0, 0, 0, count * 27)
     return math.min(count * 27, 150)
 end
@@ -187,7 +181,6 @@ local KeepFrame = Instance.new("Frame", Scroll)
 KeepFrame.Size = UDim2.new(0.95, 0, 0, 30)
 KeepFrame.BackgroundTransparency = 1
 KeepFrame.LayoutOrder = 3
-
 local KeepLbl = Instance.new("TextLabel", KeepFrame)
 KeepLbl.Size = UDim2.new(0.6, 0, 1, 0)
 KeepLbl.Text = "Sisakan (Keep):"
@@ -196,7 +189,6 @@ KeepLbl.Font = Enum.Font.GothamMedium
 KeepLbl.TextSize = 11
 KeepLbl.BackgroundTransparency = 1
 KeepLbl.TextXAlignment = Enum.TextXAlignment.Left
-
 local KeepBox = Instance.new("TextBox", KeepFrame)
 KeepBox.Size = UDim2.new(0.35, 0, 1, 0)
 KeepBox.Position = UDim2.new(0.65, 0, 0, 0)
@@ -206,20 +198,19 @@ KeepBox.Text = "1"
 KeepBox.Font = Enum.Font.GothamBold
 KeepBox.TextSize = 12
 Instance.new("UICorner", KeepBox).CornerRadius = UDim.new(0, 4)
-
 KeepBox:GetPropertyChangedSignal("Text"):Connect(function()
     KeepBox.Text = KeepBox.Text:gsub("%D+", "")
     KeepAmount = tonumber(KeepBox.Text) or 1
 end)
 
--- // [3] FEATURE BUTTONS
+-- // [3] BUTTONS
 local ToggleSell = CreateButton("Auto Sell (PROMPT): OFF", 4)
 local ToggleTotem = CreateButton("Auto Totem: OFF", 5)
 local ToggleWoW = CreateButton("Walk on Water: OFF", 6)
 local ToggleNoRender = CreateButton("No Render (3D): OFF", 7)
 local ToggleBooster = CreateButton("Booster (FPS): OFF", 8)
 
--- 1. AUTO SELL (PHYSICAL PROMPT METHOD)
+-- 1. AUTO SELL (PATH INDEX 7 - NO AUTO CLICK)
 ToggleSell.MouseButton1Click:Connect(function()
     if not SelectedSellItem then
         ToggleSell.Text = "Pilih Item Dulu!"
@@ -235,22 +226,14 @@ ToggleSell.MouseButton1Click:Connect(function()
         
         task.spawn(function()
             while AutoSellEnabled do
-                task.wait(1) -- Interval Jual
+                task.wait(1) 
                 pcall(function()
-                    -- TARGET PATH PROMPT BARU
-                    -- workspace["!!! DEPENDENCIES"]:GetChildren()[8].SellPrompt.SellPrompt
+                    -- TARGET PATH PROMPT (INDEX 7)
                     local deps = workspace:FindFirstChild("!!! DEPENDENCIES")
                     if not deps then return end
                     
                     local children = deps:GetChildren()
-                    local target = children[8] -- Index 8 sesuai request
-                    
-                    -- Failsafe jika index berubah, cari nama
-                    if not target then
-                        for _, v in pairs(children) do
-                            if v:FindFirstChild("SellPrompt") then target = v; break end
-                        end
-                    end
+                    local target = children[7] -- INDEX 7
                     
                     if target then
                         local sellPart = target:FindFirstChild("SellPrompt")
@@ -258,41 +241,35 @@ ToggleSell.MouseButton1Click:Connect(function()
                         
                         if prompt and prompt:IsA("ProximityPrompt") then
                             
-                            -- A. TELEPORT KE NPC (Wajib untuk prompt)
+                            -- A. TELEPORT
                             if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
                                 local hrp = Player.Character.HumanoidRootPart
                                 local targetPos = sellPart.Position
-                                -- Cek jarak, jika jauh baru teleport
                                 if (hrp.Position - targetPos).Magnitude > 5 then
                                     hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
                                 end
                             end
                             
-                            -- B. CEK JUMLAH ITEM
+                            -- B. EQUIP & CEK ITEM
                             local toSell = {}
                             local backpack = Player.Backpack:GetChildren()
                             for _, v in pairs(backpack) do
                                 if v.Name == SelectedSellItem then table.insert(toSell, v) end
                             end
-                            
-                            local total = #toSell
-                            local sisa = total - KeepAmount
+                            local sisa = #toSell - KeepAmount
                             
                             if sisa > 0 then
-                                -- C. EQUIP ITEM (NPC butuh item di tangan)
                                 local tool = Player.Backpack:FindFirstChild(SelectedSellItem)
                                 if tool and Player.Character:FindFirstChild("Humanoid") then
                                     Player.Character.Humanoid:EquipTool(tool)
-                                    task.wait(0.2) -- Tunggu animasi equip
+                                    task.wait(0.2)
                                 end
                                 
-                                -- D. TEKAN PROMPT
+                                -- C. FIRE PROMPT (HANYA MEMBUKA MENU)
                                 fireproximityprompt(prompt)
-                                print("Interacting with Prompt...")
-                                task.wait(0.3)
+                                print("Prompt triggered... (Silakan tekan Yes)")
+                                task.wait(1.5) -- Jeda agar tidak spamming prompt terus menerus
                             end
-                        else
-                            print("Prompt tidak ditemukan di Index 8!")
                         end
                     end
                 end)
@@ -313,18 +290,13 @@ ToggleTotem.MouseButton1Click:Connect(function()
         ToggleTotem.BackgroundColor3 = THEME.Accent
         ToggleTotem.TextColor3 = Color3.new(0,0,0)
         if not SelectedTotem then
-            pcall(function() 
-                local t = ReplicatedStorage.Modules.ModelDownloader.Collection.Totems:GetChildren()
-                if t[1] then SelectedTotem = t[1].Name end 
-            end)
+            pcall(function() local t=ReplicatedStorage.Modules.ModelDownloader.Collection.Totems:GetChildren(); if t[1] then SelectedTotem=t[1].Name end end)
         end
         task.spawn(function()
             while AutoTotemEnabled do
                 pcall(function()
-                    local net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
-                    local remote = net:FindFirstChild("RE/PlaceCavernTotemItem")
-                    
-                    if SelectedTotem and remote then
+                    local remote = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RE/PlaceCavernTotemItem"]
+                    if SelectedTotem then
                         local tool = Player.Backpack:FindFirstChild(SelectedTotem) or (Player.Character and Player.Character:FindFirstChild(SelectedTotem))
                         if tool then
                             local uuid = GetUUID(tool)
@@ -342,7 +314,7 @@ ToggleTotem.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3. WALK ON WATER (WOW)
+-- 3. WALK ON WATER
 local wowPart = nil
 ToggleWoW.MouseButton1Click:Connect(function()
     WoWEnabled = not WoWEnabled
@@ -387,7 +359,7 @@ ToggleNoRender.MouseButton1Click:Connect(function()
         ToggleNoRender.BackgroundColor3 = THEME.Accent
         ToggleNoRender.TextColor3 = Color3.new(0,0,0)
         RunService:Set3dRenderingEnabled(false)
-        game.StarterGui:SetCore("SendNotification", {Title="No Render", Text="Hemat RAM Aktif", Duration=3})
+        game.StarterGui:SetCore("SendNotification", {Title="No Render", Text="Layar Beku (Hemat RAM)", Duration=3})
     else
         ToggleNoRender.Text = "No Render (3D): OFF"
         ToggleNoRender.BackgroundColor3 = THEME.Item
@@ -428,4 +400,4 @@ MinBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-game.StarterGui:SetCore("SendNotification", {Title="Seraphin Prompt", Text="Sell Prompt Mode Active!", Duration=3})
+game.StarterGui:SetCore("SendNotification", {Title="Seraphin No Click", Text="Prompt Only Mode (Index 7)", Duration=3})
