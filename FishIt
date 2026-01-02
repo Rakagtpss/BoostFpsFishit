@@ -15,15 +15,15 @@ local WowEnabled = false
 local BV, Conn
 
 -- // Event State
-local availableEvents = {}
+local availableEvents = {} -- Menyimpan Instance (Part/Model) langsung
 local currentEventIndex = 1
 
 -- // FPS Settings
 local fpsLimits = {30, 60, 144, 999} 
 local currentLimitIndex = 4 
 
--- // UI Config (Diubah menjadi Dark Wide)
-local UI_WIDTH = 260 -- Lebih lebar
+-- // UI Config (Dark Wide)
+local UI_WIDTH = 260
 local UI_HEIGHT = 260
 local ACCENT = Color3.fromRGB(0, 255, 170)
 local BG_DARK = Color3.fromRGB(15, 15, 17)
@@ -96,7 +96,6 @@ local function CreateButton(text)
     btn.BackgroundColor3 = ITEM_BG
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     
-    -- Hover effect simple
     btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) end)
     btn.MouseLeave:Connect(function() btn.BackgroundColor3 = ITEM_BG end)
     
@@ -115,20 +114,19 @@ local function CreateLabel(text)
     return lbl
 end
 
--- // BAGIAN FITUR
-
+-- // FITUR UI
 CreateLabel("  MAIN FEATURES")
 local PotatoBtn = CreateButton("Booster Mode: OFF")
 local WowBtn = CreateButton("WALK ON WATER: OFF")
 local RenderBtn = CreateButton("No Render 3D: OFF")
 local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
 
-CreateLabel("  EVENT TELEPORT")
-local ScanBtn = CreateButton("SCAN EVENTS (Klik Dulu)")
-local SelectEventBtn = CreateButton("Pilih: [Tidak Ada]")
-local TeleportEventBtn = CreateButton("TELEPORT KE EVENT")
+CreateLabel("  EVENT TELEPORT (WS Index 40)")
+local ScanBtn = CreateButton("SCAN EVENTS")
+local SelectEventBtn = CreateButton("Pilih: [Scan Dulu]")
+local TeleportEventBtn = CreateButton("TELEPORT SEKARANG")
 
--- Footer FPS
+-- Footer
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
 FpsDisplay.Size = UDim2.new(1, 0, 0, 20)
 FpsDisplay.Position = UDim2.new(0, 0, 1, -20)
@@ -140,36 +138,41 @@ FpsDisplay.TextSize = 10
 
 -- // LOGIC UTAMA
 
--- Fungsi Scan Event
+-- Fungsi Scan Event (Target: workspace:GetChildren()[40])
 ScanBtn.MouseButton1Click:Connect(function()
     availableEvents = {}
     currentEventIndex = 1
     
-    local success, result = pcall(function()
-        local eventPath = Player.PlayerGui:FindFirstChild("Events")
-        if eventPath and eventPath:FindFirstChild("Frame") and eventPath.Frame:FindFirstChild("Events") then
-            local container = eventPath.Frame.Events
-            for _, v in pairs(container:GetChildren()) do
-                -- Mengambil nama event, mengabaikan layout UI
-                if not v:IsA("UIListLayout") and not v:IsA("UIGridLayout") and v.Visible then
-                    table.insert(availableEvents, v.Name)
+    local success, err = pcall(function()
+        local wsChildren = workspace:GetChildren()
+        
+        -- Cek apakah index ke-40 ada
+        if #wsChildren >= 40 then
+            local targetFolder = wsChildren[40] -- Mengambil object ke-40 sesuai request
+            
+            -- Memasukkan children dari object ke-40 ke dalam list
+            for _, v in pairs(targetFolder:GetChildren()) do
+                if v:IsA("BasePart") or v:IsA("Model") then
+                    table.insert(availableEvents, v)
                 end
             end
+        else
+            warn("Workspace tidak memiliki 40 children!")
         end
     end)
     
     if #availableEvents > 0 then
         ScanBtn.Text = "SCAN: " .. #availableEvents .. " Event Ditemukan"
         ScanBtn.TextColor3 = ACCENT
-        SelectEventBtn.Text = "Pilih: " .. availableEvents[1] .. " (1/" .. #availableEvents .. ")"
+        SelectEventBtn.Text = "Pilih: " .. availableEvents[1].Name .. " (1/" .. #availableEvents .. ")"
     else
-        ScanBtn.Text = "SCAN: Tidak Ada Event"
+        ScanBtn.Text = "SCAN: Gagal / Kosong (Cek Index 40)"
         ScanBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
         SelectEventBtn.Text = "Pilih: [Kosong]"
     end
 end)
 
--- Fungsi Pilih Event (Next)
+-- Fungsi Pilih Event (Ganti Event 1 -> Event 2 dst)
 SelectEventBtn.MouseButton1Click:Connect(function()
     if #availableEvents == 0 then return end
     
@@ -178,38 +181,44 @@ SelectEventBtn.MouseButton1Click:Connect(function()
         currentEventIndex = 1
     end
     
-    SelectEventBtn.Text = "Pilih: " .. availableEvents[currentEventIndex] .. " (" .. currentEventIndex .. "/" .. #availableEvents .. ")"
+    local currentObj = availableEvents[currentEventIndex]
+    SelectEventBtn.Text = "Pilih: " .. currentObj.Name .. " (" .. currentEventIndex .. "/" .. #availableEvents .. ")"
 end)
 
--- Fungsi Teleport Event
+-- Fungsi Teleport
 TeleportEventBtn.MouseButton1Click:Connect(function()
     if #availableEvents == 0 then 
-        TeleportEventBtn.Text = "Scan Terlebih Dahulu!"
+        TeleportEventBtn.Text = "Scan Dulu!"
         task.wait(1)
-        TeleportEventBtn.Text = "TELEPORT KE EVENT"
+        TeleportEventBtn.Text = "TELEPORT SEKARANG"
         return 
     end
     
-    local targetName = availableEvents[currentEventIndex]
-    local targetPart = workspace:FindFirstChild(targetName, true) -- Mencari Deep Scan di workspace
+    local targetObj = availableEvents[currentEventIndex]
     
-    if targetPart then
-        -- Mencoba teleport ke Part atau Model
-        if targetPart:IsA("Model") and targetPart.PrimaryPart then
-            HRP.CFrame = targetPart.PrimaryPart.CFrame + Vector3.new(0, 5, 0)
+    if targetObj then
+        if targetObj:IsA("Model") and targetObj.PrimaryPart then
+            HRP.CFrame = targetObj.PrimaryPart.CFrame + Vector3.new(0, 5, 0)
             TeleportEventBtn.Text = "Teleporting..."
-        elseif targetPart:IsA("BasePart") then
-            HRP.CFrame = targetPart.CFrame + Vector3.new(0, 5, 0)
+        elseif targetObj:IsA("BasePart") then
+            HRP.CFrame = targetObj.CFrame + Vector3.new(0, 5, 0)
             TeleportEventBtn.Text = "Teleporting..."
         else
-            TeleportEventBtn.Text = "Lokasi Tidak Valid!"
+            -- Fallback jika Model tidak punya PrimaryPart, coba cari child part
+            local part = targetObj:FindFirstChildWhichIsA("BasePart")
+            if part then
+                HRP.CFrame = part.CFrame + Vector3.new(0, 5, 0)
+                TeleportEventBtn.Text = "Teleporting..."
+            else
+                TeleportEventBtn.Text = "Event Tidak Valid!"
+            end
         end
     else
-        TeleportEventBtn.Text = "Lokasi Tidak Ditemukan!"
+        TeleportEventBtn.Text = "Event Hilang!"
     end
     
     task.wait(1)
-    TeleportEventBtn.Text = "TELEPORT KE EVENT"
+    TeleportEventBtn.Text = "TELEPORT SEKARANG"
 end)
 
 -- Logic FPS Cap
@@ -244,7 +253,7 @@ PotatoBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- AFK Render Mode
+-- AFK Render
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
