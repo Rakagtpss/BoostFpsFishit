@@ -15,16 +15,16 @@ local WowEnabled = false
 local BV, Conn
 
 -- // Event State
-local availableEvents = {} -- Menyimpan Instance (Part/Model) langsung
+local availableEvents = {} 
 local currentEventIndex = 1
 
 -- // FPS Settings
 local fpsLimits = {30, 60, 144, 999} 
 local currentLimitIndex = 4 
 
--- // UI Config (Dark Wide)
-local UI_WIDTH = 260
-local UI_HEIGHT = 260
+-- // UI Config (Dark Wide & BIG FONT)
+local UI_WIDTH = 300 -- Diperlebar lagi agar teks muat
+local UI_HEIGHT = 300
 local ACCENT = Color3.fromRGB(0, 255, 170)
 local BG_DARK = Color3.fromRGB(15, 15, 17)
 local ITEM_BG = Color3.fromRGB(25, 25, 30)
@@ -43,60 +43,60 @@ MainFrame.BackgroundColor3 = BG_DARK
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
 -- Header
 local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 30)
+Header.Size = UDim2.new(1, 0, 0, 40) -- Header lebih tinggi
 Header.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.6, 0, 1, 0)
+Title.Size = UDim2.new(0.7, 0, 1, 0)
 Title.Position = UDim2.new(0.04, 0, 0, 0)
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
-Title.TextColor3 = Color3.new(0.9,0.9,0.9)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 11
+Title.TextColor3 = Color3.new(0.95, 0.95, 0.95)
+Title.Font = Enum.Font.GothamBlack -- Font sangat tebal
+Title.TextSize = 16 -- Font Besar
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local MinBtn = Instance.new("TextButton", Header)
-MinBtn.Size = UDim2.new(0, 40, 0, 18)
-MinBtn.Position = UDim2.new(1, -45, 0.5, -9)
-MinBtn.Text = "-"
+MinBtn.Size = UDim2.new(0, 50, 0, 26)
+MinBtn.Position = UDim2.new(1, -60, 0.5, -13)
+MinBtn.Text = "_"
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
 MinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 12
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
+MinBtn.TextSize = 14
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
 
 -- Scrolling Content
 local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
-ScrollFrame.Size = UDim2.new(1, -10, 1, -60)
-ScrollFrame.Position = UDim2.new(0, 5, 0, 35)
+ScrollFrame.Size = UDim2.new(1, -14, 1, -70)
+ScrollFrame.Position = UDim2.new(0, 7, 0, 45)
 ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.ScrollBarThickness = 2
+ScrollFrame.ScrollBarThickness = 4
 ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 ScrollFrame.ScrollBarImageColor3 = ACCENT
 
 local Layout = Instance.new("UIListLayout", ScrollFrame)
-Layout.Padding = UDim.new(0, 5)
+Layout.Padding = UDim.new(0, 8) -- Jarak antar tombol diperluas
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Helper Function UI
+-- Helper Function UI (BIG MODE)
 local function CreateButton(text)
     local btn = Instance.new("TextButton", ScrollFrame)
-    btn.Size = UDim2.new(0.98, 0, 0, 32)
+    btn.Size = UDim2.new(0.98, 0, 0, 42) -- Tombol lebih tinggi
     btn.Text = text
-    btn.Font = Enum.Font.GothamMedium
-    btn.TextSize = 10
-    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    btn.Font = Enum.Font.GothamBold -- Font Tebal
+    btn.TextSize = 13 -- Font Lebih Besar
+    btn.TextColor3 = Color3.fromRGB(230, 230, 230)
     btn.BackgroundColor3 = ITEM_BG
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     
-    btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) end)
+    btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(45, 45, 50) end)
     btn.MouseLeave:Connect(function() btn.BackgroundColor3 = ITEM_BG end)
     
     return btn
@@ -104,10 +104,10 @@ end
 
 local function CreateLabel(text)
     local lbl = Instance.new("TextLabel", ScrollFrame)
-    lbl.Size = UDim2.new(0.98, 0, 0, 20)
+    lbl.Size = UDim2.new(0.98, 0, 0, 24)
     lbl.Text = text
-    lbl.Font = Enum.Font.GothamBold
-    lbl.TextSize = 9
+    lbl.Font = Enum.Font.GothamBlack
+    lbl.TextSize = 12
     lbl.TextColor3 = ACCENT
     lbl.BackgroundTransparency = 1
     lbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -121,58 +121,57 @@ local WowBtn = CreateButton("WALK ON WATER: OFF")
 local RenderBtn = CreateButton("No Render 3D: OFF")
 local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
 
-CreateLabel("  EVENT TELEPORT (WS Index 40)")
+CreateLabel("  EVENT TELEPORT (Scan GUI)")
 local ScanBtn = CreateButton("SCAN EVENTS")
-local SelectEventBtn = CreateButton("Pilih: [Scan Dulu]")
+local SelectEventBtn = CreateButton("PILIH: [Scan Dulu]")
 local TeleportEventBtn = CreateButton("TELEPORT SEKARANG")
 
 -- Footer
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
-FpsDisplay.Size = UDim2.new(1, 0, 0, 20)
-FpsDisplay.Position = UDim2.new(0, 0, 1, -20)
+FpsDisplay.Size = UDim2.new(1, 0, 0, 25)
+FpsDisplay.Position = UDim2.new(0, 0, 1, -25)
 FpsDisplay.BackgroundTransparency = 1
-FpsDisplay.TextColor3 = Color3.fromRGB(100, 100, 100)
+FpsDisplay.TextColor3 = Color3.fromRGB(150, 150, 150)
 FpsDisplay.Text = "FPS: -- | SERAPHIN"
-FpsDisplay.Font = Enum.Font.Code
-FpsDisplay.TextSize = 10
+FpsDisplay.Font = Enum.Font.GothamBold
+FpsDisplay.TextSize = 12
 
 -- // LOGIC UTAMA
 
--- Fungsi Scan Event (Target: workspace:GetChildren()[40])
+-- Fungsi Scan Event (Path: PlayerGui...Events)
 ScanBtn.MouseButton1Click:Connect(function()
     availableEvents = {}
     currentEventIndex = 1
     
     local success, err = pcall(function()
-        local wsChildren = workspace:GetChildren()
-        
-        -- Cek apakah index ke-40 ada
-        if #wsChildren >= 40 then
-            local targetFolder = wsChildren[40] -- Mengambil object ke-40 sesuai request
+        -- Path sesuai request
+        local guiPath = Player.PlayerGui:FindFirstChild("Events")
+        if guiPath and guiPath:FindFirstChild("Frame") and guiPath.Frame:FindFirstChild("Events") then
+            local container = guiPath.Frame.Events
             
-            -- Memasukkan children dari object ke-40 ke dalam list
-            for _, v in pairs(targetFolder:GetChildren()) do
-                if v:IsA("BasePart") or v:IsA("Model") then
-                    table.insert(availableEvents, v)
+            for _, v in pairs(container:GetChildren()) do
+                -- Mengambil nama event dari tombol GUI
+                if v:IsA("GuiObject") and v.Visible and not v:IsA("UIListLayout") and not v:IsA("UIGridLayout") then
+                    table.insert(availableEvents, v.Name)
                 end
             end
         else
-            warn("Workspace tidak memiliki 40 children!")
+            warn("Path GUI Events tidak ditemukan!")
         end
     end)
     
     if #availableEvents > 0 then
-        ScanBtn.Text = "SCAN: " .. #availableEvents .. " Event Ditemukan"
+        ScanBtn.Text = "SCAN: " .. #availableEvents .. " FOUND"
         ScanBtn.TextColor3 = ACCENT
-        SelectEventBtn.Text = "Pilih: " .. availableEvents[1].Name .. " (1/" .. #availableEvents .. ")"
+        SelectEventBtn.Text = "PILIH: " .. availableEvents[1] .. " (1/" .. #availableEvents .. ")"
     else
-        ScanBtn.Text = "SCAN: Gagal / Kosong (Cek Index 40)"
-        ScanBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
-        SelectEventBtn.Text = "Pilih: [Kosong]"
+        ScanBtn.Text = "SCAN: TIDAK ADA / ERROR"
+        ScanBtn.TextColor3 = Color3.fromRGB(255, 60, 60)
+        SelectEventBtn.Text = "PILIH: [KOSONG]"
     end
 end)
 
--- Fungsi Pilih Event (Ganti Event 1 -> Event 2 dst)
+-- Fungsi Pilih Event
 SelectEventBtn.MouseButton1Click:Connect(function()
     if #availableEvents == 0 then return end
     
@@ -181,40 +180,43 @@ SelectEventBtn.MouseButton1Click:Connect(function()
         currentEventIndex = 1
     end
     
-    local currentObj = availableEvents[currentEventIndex]
-    SelectEventBtn.Text = "Pilih: " .. currentObj.Name .. " (" .. currentEventIndex .. "/" .. #availableEvents .. ")"
+    local eventName = availableEvents[currentEventIndex]
+    SelectEventBtn.Text = "PILIH: " .. eventName .. " (" .. currentEventIndex .. "/" .. #availableEvents .. ")"
 end)
 
 -- Fungsi Teleport
 TeleportEventBtn.MouseButton1Click:Connect(function()
     if #availableEvents == 0 then 
-        TeleportEventBtn.Text = "Scan Dulu!"
+        TeleportEventBtn.Text = "SCAN DULU!"
         task.wait(1)
         TeleportEventBtn.Text = "TELEPORT SEKARANG"
         return 
     end
     
-    local targetObj = availableEvents[currentEventIndex]
+    local targetName = availableEvents[currentEventIndex]
     
-    if targetObj then
-        if targetObj:IsA("Model") and targetObj.PrimaryPart then
-            HRP.CFrame = targetObj.PrimaryPart.CFrame + Vector3.new(0, 5, 0)
-            TeleportEventBtn.Text = "Teleporting..."
-        elseif targetObj:IsA("BasePart") then
-            HRP.CFrame = targetObj.CFrame + Vector3.new(0, 5, 0)
-            TeleportEventBtn.Text = "Teleporting..."
+    -- Mencari object fisik di Workspace berdasarkan nama dari GUI
+    local targetPart = workspace:FindFirstChild(targetName, true) 
+    
+    if targetPart then
+        if targetPart:IsA("Model") and targetPart.PrimaryPart then
+            HRP.CFrame = targetPart.PrimaryPart.CFrame + Vector3.new(0, 5, 0)
+            TeleportEventBtn.Text = "TELEPORTING..."
+        elseif targetPart:IsA("BasePart") then
+            HRP.CFrame = targetPart.CFrame + Vector3.new(0, 5, 0)
+            TeleportEventBtn.Text = "TELEPORTING..."
         else
-            -- Fallback jika Model tidak punya PrimaryPart, coba cari child part
-            local part = targetObj:FindFirstChildWhichIsA("BasePart")
-            if part then
-                HRP.CFrame = part.CFrame + Vector3.new(0, 5, 0)
-                TeleportEventBtn.Text = "Teleporting..."
+             -- Backup search jika tipe part berbeda
+            local subPart = targetPart:FindFirstChildWhichIsA("BasePart")
+            if subPart then
+                HRP.CFrame = subPart.CFrame + Vector3.new(0, 5, 0)
+                TeleportEventBtn.Text = "TELEPORTING..."
             else
-                TeleportEventBtn.Text = "Event Tidak Valid!"
+                TeleportEventBtn.Text = "LOKASI TIDAK VALID"
             end
         end
     else
-        TeleportEventBtn.Text = "Event Hilang!"
+        TeleportEventBtn.Text = "PART TIDAK ADA DI WS"
     end
     
     task.wait(1)
@@ -235,8 +237,8 @@ end)
 -- Potato Mode
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
-    PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
-    PotatoBtn.TextColor3 = Optimized and ACCENT or Color3.fromRGB(200, 200, 200)
+    PotatoBtn.Text = Optimized and "BOOSTER MODE: ON" or "BOOSTER MODE: OFF"
+    PotatoBtn.TextColor3 = Optimized and ACCENT or Color3.fromRGB(230, 230, 230)
     
     Lighting.GlobalShadows = not Optimized
     if Optimized then
@@ -257,15 +259,15 @@ end)
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
-    RenderBtn.Text = AfkModeActive and "No Render 3D: ON" or "No Render 3D: OFF"
-    RenderBtn.TextColor3 = AfkModeActive and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(200, 200, 200)
+    RenderBtn.Text = AfkModeActive and "NO RENDER 3D: ON" or "NO RENDER 3D: OFF"
+    RenderBtn.TextColor3 = AfkModeActive and Color3.fromRGB(255, 60, 60) or Color3.fromRGB(230, 230, 230)
 end)
 
 -- Walk on Water
 WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
-    WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
-    WowBtn.TextColor3 = WowEnabled and ACCENT or Color3.fromRGB(200, 200, 200)
+    WowBtn.Text = WowEnabled and "WALK ON WATER: ON" or "WALK ON WATER: OFF"
+    WowBtn.TextColor3 = WowEnabled and ACCENT or Color3.fromRGB(230, 230, 230)
     
     if WowEnabled then
         BV = Instance.new("BodyVelocity", HRP)
@@ -284,7 +286,7 @@ end)
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
-        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 30), "Out", "Quad", 0.3, true)
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 40), "Out", "Quad", 0.3, true)
         ScrollFrame.Visible = false
         FpsDisplay.Visible = false
         MinBtn.Text = "+"
@@ -293,7 +295,7 @@ MinBtn.MouseButton1Click:Connect(function()
         task.wait(0.2)
         ScrollFrame.Visible = true
         FpsDisplay.Visible = true
-        MinBtn.Text = "-"
+        MinBtn.Text = "_"
     end
 end)
 
