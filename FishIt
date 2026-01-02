@@ -1,112 +1,141 @@
---[[ SERAPHIN HELPER: SUPER LITE EDITION ]]--
+--[[ SERAPHIN HELPER: WIDE DARK MODERN ]]--
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- // Setup Variabel & Safety Check
+-- // Setup & Safety
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 5)
 if not HRP then return end 
 
--- // Konfigurasi Tampilan
+-- // Konfigurasi Tampilan (Modern Wide)
 local UI_CONFIG = {
-    Width = 330,        -- Sedikit lebih lebar agar "HELPER" muat
-    Height = 145,       
-    Color = Color3.fromRGB(12, 12, 14),
-    Accent = Color3.fromRGB(0, 255, 170),
-    Font = Enum.Font.GothamBold
+    Width = 460,        -- Lebar (Wide)
+    Height = 160,       -- Tinggi Compact
+    Color = Color3.fromRGB(10, 10, 12), -- Darkest Grey (Hampir Hitam)
+    HeaderColor = Color3.fromRGB(15, 15, 18),
+    Accent = Color3.fromRGB(0, 255, 170), -- Seraphin Cyan
+    TextColor = Color3.fromRGB(240, 240, 240),
+    Font = Enum.Font.GothamBold, -- Modern Font
+    BtnFont = Enum.Font.GothamMedium
 }
 
 -- // Cleanup UI Lama
-if CoreGui:FindFirstChild("SeraphinLite") then CoreGui.SeraphinLite:Destroy() end
+if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
--- // Membuat UI Dasar
+-- // Main UI Container
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SeraphinLite"
+ScreenGui.Name = "SeraphinHelper"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
 Main.Size = UDim2.new(0, UI_CONFIG.Width, 0, UI_CONFIG.Height)
-Main.Position = UDim2.new(0.5, -UI_CONFIG.Width/2, 0.2, 0)
+Main.Position = UDim2.new(0.5, -UI_CONFIG.Width/2, 0.3, 0)
 Main.BackgroundColor3 = UI_CONFIG.Color
-Main.BackgroundTransparency = 0.1
+Main.BackgroundTransparency = 0.05
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 6)
 
--- // Header
+-- Modern Styling (Rounded + Stroke)
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+local MainStroke = Instance.new("UIStroke", Main)
+MainStroke.Color = Color3.fromRGB(40, 40, 45) -- Subtle Border
+MainStroke.Thickness = 1
+
+-- // Header Section
 local Header = Instance.new("Frame", Main)
-Header.Size = UDim2.new(1, 0, 0, 35)
-Header.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundColor3 = UI_CONFIG.HeaderColor
 Header.BorderSizePixel = 0
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 
--- JUDUL (DIKEMBALIKAN KE SERAPHIN HELPER)
+-- Fix corner bawah header agar rata
+local HeaderFiller = Instance.new("Frame", Header)
+HeaderFiller.Size = UDim2.new(1, 0, 0.5, 0)
+HeaderFiller.Position = UDim2.new(0, 0, 0.5, 0)
+HeaderFiller.BackgroundColor3 = UI_CONFIG.HeaderColor
+HeaderFiller.BorderSizePixel = 0
+
+-- JUDUL (Modern Left Align)
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.55, 0, 1, 0)
+Title.Size = UDim2.new(0.4, 0, 1, 0)
 Title.Position = UDim2.new(0.04, 0, 0, 0)
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = UI_CONFIG.Font
-Title.TextSize = 12
+Title.TextSize = 14
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
+-- FPS Counter (Tengah-Kanan)
 local FpsLbl = Instance.new("TextLabel", Header)
 FpsLbl.Size = UDim2.new(0.2, 0, 1, 0)
-FpsLbl.Position = UDim2.new(0.60, 0, 0, 0) -- Adjusted position
+FpsLbl.Position = UDim2.new(0.65, 0, 0, 0)
 FpsLbl.Text = "60 FPS"
-FpsLbl.TextColor3 = UI_CONFIG.Accent
-FpsLbl.Font = UI_CONFIG.Font
-FpsLbl.TextSize = 11
+FpsLbl.TextColor3 = Color3.fromRGB(150, 150, 160)
+FpsLbl.Font = Enum.Font.GothamMedium
+FpsLbl.TextSize = 12
 FpsLbl.BackgroundTransparency = 1
-FpsLbl.TextXAlignment = Enum.TextXAlignment.Left
+FpsLbl.TextXAlignment = Enum.TextXAlignment.Right
 
+-- Hide Button (Modern Pill Shape)
 local HideBtn = Instance.new("TextButton", Header)
-HideBtn.Size = UDim2.new(0, 45, 0, 20)
-HideBtn.Position = UDim2.new(0.84, 0, 0.5, -10)
+HideBtn.Size = UDim2.new(0, 50, 0, 24)
+HideBtn.Position = UDim2.new(0.87, 0, 0.5, -12)
 HideBtn.Text = "HIDE"
-HideBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+HideBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
 HideBtn.TextColor3 = Color3.new(1,1,1)
 HideBtn.Font = UI_CONFIG.Font
-HideBtn.TextSize = 9
-Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
+HideBtn.TextSize = 10
+Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 6)
 
--- // Container Tombol
+-- // Content Grid (2 Kolom)
 local Container = Instance.new("Frame", Main)
-Container.Size = UDim2.new(1, -16, 1, -45)
-Container.Position = UDim2.new(0, 8, 0, 40)
+Container.Size = UDim2.new(1, -24, 1, -55)
+Container.Position = UDim2.new(0, 12, 0, 50)
 Container.BackgroundTransparency = 1
 
 local Grid = Instance.new("UIGridLayout", Container)
-Grid.CellSize = UDim2.new(0, 152, 0, 28)
-Grid.CellPadding = UDim2.new(0, 8, 0, 6)
+Grid.CellSize = UDim2.new(0, 212, 0, 36) -- Tombol Lebar & Besar
+Grid.CellPadding = UDim2.new(0, 12, 0, 10)
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- // Fungsi Helper
+-- // Fungsi Helper UI
 local function MakeBtn(text)
     local b = Instance.new("TextButton", Container)
     b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    b.BackgroundColor3 = Color3.fromRGB(20, 20, 24) -- Dark Button
     b.TextColor3 = Color3.fromRGB(200, 200, 200)
-    b.Font = Enum.Font.GothamMedium
-    b.TextSize = 10
-    b.BackgroundTransparency = 0.2
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
+    b.Font = UI_CONFIG.BtnFont
+    b.TextSize = 11
+    b.BackgroundTransparency = 0
+    b.AutoButtonColor = true
+    
+    -- Styling Tombol
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    local s = Instance.new("UIStroke", b)
+    s.Color = Color3.fromRGB(50, 50, 55)
+    s.Thickness = 1
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     return b
 end
 
 local function ToggleVisual(btn, on)
-    btn.BackgroundColor3 = on and UI_CONFIG.Accent or Color3.fromRGB(35, 35, 40)
-    btn.TextColor3 = on and Color3.new(0,0,0) or Color3.fromRGB(200, 200, 200)
-    btn.BackgroundTransparency = on and 0 or 0.2
+    if on then
+        btn.BackgroundColor3 = Color3.fromRGB(0, 255, 170) -- Accent Active
+        btn.TextColor3 = Color3.new(0,0,0) -- Black Text on Active
+        btn.UIStroke.Transparency = 1 -- Hide stroke when active
+    else
+        btn.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+        btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        btn.UIStroke.Transparency = 0
+    end
 end
 
 -- // State & Connections
@@ -114,27 +143,30 @@ local States = {Freeze=false, WoW=false, Boost=false, NoRender=false}
 local Connections = {}
 local BodyV = nil
 
--- // TOMBOL UI
-local BtnFreeze = MakeBtn("Freeze: OFF")
-local BtnWow = MakeBtn("WaterWalk: OFF")
-local BtnBoost = MakeBtn("Booster: OFF")
-local BtnRender = MakeBtn("3D Render: ON")
-local BtnFps = MakeBtn("FPS Cap: Unlim")
+-- // TOMBOL UI (Wide Layout)
+local BtnFreeze = MakeBtn("Freeze Player")
+local BtnWow = MakeBtn("Walk On Water")
+local BtnBoost = MakeBtn("Booster Mode")
+local BtnRender = MakeBtn("3D Rendering: ON")
+local BtnFps = MakeBtn("FPS Cap: Unlimited")
 
--- // FITUR UTAMA (Optimized Logic)
+-- Tombol ke-6 (Placeholder agar simetris, atau Info)
+local BtnInfo = MakeBtn("Seraphin Ready")
+BtnInfo.TextColor3 = Color3.fromRGB(100, 100, 100)
+BtnInfo.Active = false
+
+-- // LOGIKA FITUR
 
 -- 1. Freeze
 BtnFreeze.MouseButton1Click:Connect(function()
     States.Freeze = not States.Freeze
     if HRP then HRP.Anchored = States.Freeze end
-    BtnFreeze.Text = "Freeze: " .. (States.Freeze and "ON" or "OFF")
     ToggleVisual(BtnFreeze, States.Freeze)
 end)
 
 -- 2. Walk On Water
 BtnWow.MouseButton1Click:Connect(function()
     States.WoW = not States.WoW
-    BtnWow.Text = "WaterWalk: " .. (States.WoW and "ON" or "OFF")
     ToggleVisual(BtnWow, States.WoW)
     
     if States.WoW then
@@ -150,17 +182,16 @@ BtnWow.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3. BOOSTER MODE (Cerdas & Cepat)
+-- 3. BOOSTER MODE (Full Target List)
 BtnBoost.MouseButton1Click:Connect(function()
     States.Boost = not States.Boost
-    BtnBoost.Text = "Booster: " .. (States.Boost and "ON" or "OFF")
     ToggleVisual(BtnBoost, States.Boost)
+    BtnBoost.Text = States.Boost and "Booster: ACTIVE" or "Booster Mode"
 
     Lighting.GlobalShadows = not States.Boost
     
-    -- Kumpulkan Target (Efisiensi Tinggi)
     local targets = {}
-    table.insert(targets, workspace) -- Global
+    table.insert(targets, workspace)
     
     local function AddIfExist(parent, name)
         local t = parent:FindFirstChild(name)
@@ -168,9 +199,10 @@ BtnBoost.MouseButton1Click:Connect(function()
         return nil
     end
 
-    -- Target Spesifik Anda
+    -- Target List (Termasuk TrainSystem)
     AddIfExist(workspace, "!!! EFFECTS")
     AddIfExist(workspace, "Machines")
+    AddIfExist(workspace, "TrainSystem")
     
     local islands = workspace:FindFirstChild("Islands")
     if islands then
@@ -187,25 +219,21 @@ BtnBoost.MouseButton1Click:Connect(function()
         end
     end
 
-    -- Proses Optimasi
     for _, root in pairs(targets) do
         local isHeavy = (root.Name == "!!! EFFECTS" or root.Name == "Snow" or root.Name == "ChristmasLightRopes")
         
         for _, v in pairs(root:GetDescendants()) do
             if States.Boost then
                 if isHeavy then
-                    -- Hapus visual berat
                     if v:IsA("BasePart") then v.Transparency = 1 v.CanCollide = false end
                     if v:IsA("ParticleEmitter") or v:IsA("Light") then v.Enabled = false end
                 else
-                    -- Optimasi standar
                     if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
                     if v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 1 end
                     if v:IsA("ParticleEmitter") then v.Enabled = false end
                     if v:IsA("Sound") then v:Pause() end
                 end
             else
-                -- Restore
                 if isHeavy then
                     if v:IsA("BasePart") then v.Transparency = 0 end
                     if v:IsA("ParticleEmitter") or v:IsA("Light") then v.Enabled = true end
@@ -224,7 +252,7 @@ end)
 BtnRender.MouseButton1Click:Connect(function()
     States.NoRender = not States.NoRender
     RunService:Set3dRenderingEnabled(not States.NoRender)
-    BtnRender.Text = "3D Render: " .. (States.NoRender and "OFF" or "ON")
+    BtnRender.Text = "3D Rendering: " .. (States.NoRender and "OFF" or "ON")
     ToggleVisual(BtnRender, States.NoRender)
 end)
 
@@ -234,14 +262,14 @@ BtnFps.MouseButton1Click:Connect(function()
     _G.limitIdx = ((_G.limitIdx or 4) % #limits) + 1
     local val = limits[_G.limitIdx]
     if setfpscap then setfpscap(val) end
-    BtnFps.Text = "FPS Cap: " .. (val > 900 and "Unlim" or val)
+    BtnFps.Text = "FPS Cap: " .. (val > 900 and "Unlimited" or val)
 end)
 
--- // LOGIKA HIDE (Minimalis & Cepat)
+-- // LOGIKA HIDE
 local IsMin = false
 HideBtn.MouseButton1Click:Connect(function()
     IsMin = not IsMin
-    Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, IsMin and 35 or UI_CONFIG.Height), "Out", "Quad", 0.25, true)
+    Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, IsMin and 40 or UI_CONFIG.Height), "Out", "Quad", 0.25, true)
     Container.Visible = not IsMin
     HideBtn.Text = IsMin and "SHOW" or "HIDE"
 end)
@@ -256,4 +284,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-print(":: SERAPHIN HELPER  ::")
+print(":: SERAPHIN LOADING ::")
