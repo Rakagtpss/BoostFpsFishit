@@ -10,39 +10,34 @@ local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart")
 
 -- // --- CONFIGURATION ---
-local UI_WIDTH = 280 
-local UI_HEIGHT = 240 
+local UI_WIDTH = 290 
+local UI_HEIGHT = 220 
 local THEME = {
-    Background = Color3.fromRGB(20, 20, 24),
+    Background = Color3.fromRGB(20, 20, 24), -- Dark Matte
     Header = Color3.fromRGB(28, 28, 32),
     Button = Color3.fromRGB(35, 35, 40),
     ButtonActive = Color3.fromRGB(45, 55, 65),
     Text = Color3.fromRGB(220, 220, 220),
-    Accent = Color3.fromRGB(80, 140, 255),
-    Success = Color3.fromRGB(100, 255, 100),
-    Warning = Color3.fromRGB(255, 200, 50)
+    Accent = Color3.fromRGB(0, 255, 170), -- Greenish Cyan
+    Alert = Color3.fromRGB(255, 80, 80)
 }
 
 -- // State
-local AfkModeActive = false 
 local Optimized = false
 local Minimized = false
 local WowEnabled = false
+local AutoTotemActive = false
+local SelectedTotemName = nil
 local BV, Conn
 local fpsLimits = {30, 60, 144, 999}
 local currentLimitIndex = 4
 
--- // Auto Totem State
-local AutoTotemActive = false
-local SelectedTotemName = nil
-local TotemTimer = 0
-
--- // Cleanup Old GUI
-if CoreGui:FindFirstChild("SeraphinTotem") then CoreGui.SeraphinTotem:Destroy() end
+-- // Cleanup
+if CoreGui:FindFirstChild("SeraphinV5") then CoreGui.SeraphinV5:Destroy() end
 
 -- // --- UI CREATION ---
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "SeraphinTotem"
+Gui.Name = "SeraphinV5"
 Gui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame", Gui)
@@ -69,7 +64,7 @@ HeaderFiller.BorderSizePixel = 0
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.7, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <b>TOTEM</b>"
+Title.Text = "SERAPHIN <b>v5</b>"
 Title.RichText = true
 Title.TextColor3 = THEME.Text
 Title.Font = Enum.Font.GothamBold
@@ -99,7 +94,6 @@ local Layout = Instance.new("UIListLayout", ScrollFrame)
 Layout.Padding = UDim.new(0, 8)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Helper: Create Button
 local function CreateButton(text)
     local btn = Instance.new("TextButton", ScrollFrame)
     btn.Size = UDim2.new(1, 0, 0, 32)
@@ -116,218 +110,179 @@ local function CreateButton(text)
     return btn
 end
 
--- // --- UI ELEMENTS ---
+-- // --- TOMBOL UTAMA ---
+local TotemManagerBtn = CreateButton("Open Totem Manager >")
+TotemManagerBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+TotemManagerBtn.TextColor3 = Color3.fromRGB(150, 200, 255)
 
--- Tombol Biasa
 local PotatoBtn = CreateButton("Booster Mode: OFF")
 local WowBtn = CreateButton("Walk On Water: OFF")
 local FpsCapBtn = CreateButton("FPS Cap: Unlimited")
 
--- Tombol Menu Totem
-local TotemMenuBtn = CreateButton("Configure Auto Totem >")
-TotemMenuBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-
--- Status Totem Display
-local StatusLabel = Instance.new("TextLabel", MainFrame)
-StatusLabel.Size = UDim2.new(1, 0, 0, 20)
-StatusLabel.Position = UDim2.new(0, 0, 1, -25)
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Text = "Status: Idle"
-StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-StatusLabel.Font = Enum.Font.Code
-StatusLabel.TextSize = 10
-
--- // --- TOTEM POPUP FRAME ---
+-- // --- POPUP TOTEM MANAGER ---
 local TotemFrame = Instance.new("Frame", MainFrame)
-TotemFrame.Size = UDim2.new(0, 220, 0, 240)
-TotemFrame.Position = UDim2.new(1, 10, 0, 0)
+TotemFrame.Size = UDim2.new(0, 240, 0, 260)
+TotemFrame.Position = UDim2.new(1, 15, 0, 0) -- Muncul di sebelah kanan
 TotemFrame.BackgroundColor3 = THEME.Background
 TotemFrame.Visible = false
 TotemFrame.ZIndex = 5
 Instance.new("UICorner", TotemFrame).CornerRadius = UDim.new(0, 10)
 
-local TTitle = Instance.new("TextLabel", TotemFrame)
-TTitle.Size = UDim2.new(1, 0, 0, 30)
-TTitle.Text = "SELECT TOTEM TO AUTO USE"
-TTitle.TextColor3 = THEME.Accent
-TTitle.BackgroundTransparency = 1
-TTitle.Font = Enum.Font.GothamBold
-TTitle.TextSize = 10
+local THeader = Instance.new("TextLabel", TotemFrame)
+THeader.Size = UDim2.new(1, 0, 0, 30)
+THeader.Text = "TOTEM COLLECTION"
+THeader.TextColor3 = Color3.fromRGB(150, 150, 150)
+THeader.Font = Enum.Font.GothamBold
+THeader.TextSize = 10
+THeader.BackgroundTransparency = 1
 
--- Toggle Button Inside Popup
-local ToggleAutoBtn = Instance.new("TextButton", TotemFrame)
-ToggleAutoBtn.Size = UDim2.new(0.9, 0, 0, 30)
-ToggleAutoBtn.Position = UDim2.new(0.05, 0, 0, 35)
-ToggleAutoBtn.Text = "ENABLE AUTO: OFF"
-ToggleAutoBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
-ToggleAutoBtn.TextColor3 = Color3.new(1,1,1)
-ToggleAutoBtn.Font = Enum.Font.GothamBold
-ToggleAutoBtn.TextSize = 11
-Instance.new("UICorner", ToggleAutoBtn).CornerRadius = UDim.new(0, 6)
+-- Tombol Auto (Hanya aktif jika sudah pilih item)
+local AutoBtn = Instance.new("TextButton", TotemFrame)
+AutoBtn.Size = UDim2.new(0.9, 0, 0, 35)
+AutoBtn.Position = UDim2.new(0.05, 0, 0, 30)
+AutoBtn.Text = "SELECT A TOTEM FIRST"
+AutoBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50) -- Abu-abu (mati)
+AutoBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+AutoBtn.Font = Enum.Font.GothamBold
+AutoBtn.TextSize = 10
+AutoBtn.AutoButtonColor = false
+Instance.new("UICorner", AutoBtn).CornerRadius = UDim.new(0, 6)
 
-local RefreshBtn = Instance.new("TextButton", TotemFrame)
-RefreshBtn.Size = UDim2.new(0.9, 0, 0, 20)
-RefreshBtn.Position = UDim2.new(0.05, 0, 0, 70)
-RefreshBtn.Text = "[ REFRESH BACKPACK ]"
-RefreshBtn.BackgroundColor3 = THEME.Button
-RefreshBtn.TextColor3 = THEME.Text
-RefreshBtn.Font = Enum.Font.Code
-RefreshBtn.TextSize = 10
-Instance.new("UICorner", RefreshBtn).CornerRadius = UDim.new(0, 4)
+-- Timer Countdown
+local TimerLabel = Instance.new("TextLabel", TotemFrame)
+TimerLabel.Size = UDim2.new(1, 0, 0, 15)
+TimerLabel.Position = UDim2.new(0, 0, 0, 70)
+TimerLabel.Text = "Next Spawn: --"
+TimerLabel.TextColor3 = THEME.Accent
+TimerLabel.Font = Enum.Font.Code
+TimerLabel.TextSize = 10
+TimerLabel.BackgroundTransparency = 1
 
 local TotemScroll = Instance.new("ScrollingFrame", TotemFrame)
 TotemScroll.Size = UDim2.new(1, -10, 1, -100)
-TotemScroll.Position = UDim2.new(0, 5, 0, 95)
+TotemScroll.Position = UDim2.new(0, 5, 0, 90)
 TotemScroll.BackgroundTransparency = 1
 TotemScroll.ScrollBarThickness = 3
 TotemScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 Instance.new("UIListLayout", TotemScroll).Padding = UDim.new(0, 5)
 
--- // --- LOGIC AUTO TOTEM ---
+-- // --- LOGIC TOTEM ---
 
-local function GetNetRemote(name)
-    -- Helper function to safely get remote based on user provided path
-    local success, result = pcall(function()
-        return ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild(name)
-    end)
-    if success and result then return result else return nil end
-end
-
-local function ActivateTotem()
-    if not SelectedTotemName then return end
-    
-    local Backpack = Player.Backpack
-    local Character = Player.Character or Player.CharacterAdded:Wait()
-    local Humanoid = Character:WaitForChild("Humanoid", 5)
-    
-    -- Cari Item di Backpack atau Character
-    local TotemTool = Backpack:FindFirstChild(SelectedTotemName) or Character:FindFirstChild(SelectedTotemName)
-    
-    if TotemTool and Humanoid then
-        -- 1. Equip Tool
-        Humanoid:EquipTool(TotemTool)
-        
-        -- 2. Fire Remote (Sesuai path user)
-        local SpawnRemote = GetNetRemote("RE/SpawnTotem")
-        if SpawnRemote then
-             -- User provided: args = {[1] = "Totems"}. 
-             -- Note: Usually game expects Totem Name here, but if "Totems" is a category, we try passing the Item Name first.
-            SpawnRemote:FireServer(SelectedTotemName) 
-            
-            -- Feedback
-            StatusLabel.Text = "Status: Used " .. SelectedTotemName
-            print("Auto Totem: Used " .. SelectedTotemName)
-        end
-    else
-        StatusLabel.Text = "Status: Totem Not Found in Inv"
-        -- Matikan auto jika item habis
-        AutoTotemActive = false
-        ToggleAutoBtn.Text = "ENABLE AUTO: OFF"
-        ToggleAutoBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
-    end
-end
-
--- Loop Auto Spawn (Setiap 60 Menit)
-task.spawn(function()
-    while true do
-        if AutoTotemActive and SelectedTotemName then
-            ActivateTotem()
-            
-            -- Countdown 60 Menit (3600 Detik)
-            for i = 3600, 1, -1 do
-                if not AutoTotemActive then break end
-                StatusLabel.Text = "Next Totem: " .. i .. "s"
-                task.wait(1)
-            end
-        else
-            task.wait(1)
-        end
-    end
-end)
-
-local function ScanTotems()
+-- Fungsi Scan Path Spesifik
+local function ScanTotemPath()
+    -- Bersihkan list lama
     for _, v in pairs(TotemScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
     
-    local found = false
-    local itemsToCheck = {}
+    local pathSuccess, folder = pcall(function()
+        return game:GetService("ReplicatedStorage").Modules.ModelDownloader.Collection.Totems
+    end)
     
-    -- Ambil dari Backpack & Character (siapa tau lagi dipegang)
-    for _, item in pairs(Player.Backpack:GetChildren()) do table.insert(itemsToCheck, item) end
-    if Player.Character then
-        for _, item in pairs(Player.Character:GetChildren()) do 
-            if item:IsA("Tool") then table.insert(itemsToCheck, item) end 
-        end
-    end
-    
-    for _, item in pairs(itemsToCheck) do
-        -- Cek jika nama item mengandung kata "Totem"
-        if item:IsA("Tool") and string.find(item.Name, "Totem") then
-            found = true
+    if pathSuccess and folder then
+        for _, totem in pairs(folder:GetChildren()) do
             local btn = Instance.new("TextButton", TotemScroll)
             btn.Size = UDim2.new(1, -5, 0, 25)
             btn.BackgroundColor3 = THEME.Button
+            btn.Text = "  " .. totem.Name
             btn.TextColor3 = THEME.Text
-            btn.Text = "  " .. item.Name
             btn.Font = Enum.Font.Gotham
             btn.TextSize = 10
             btn.TextXAlignment = Enum.TextXAlignment.Left
             Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
             
+            -- Saat item dipilih
             btn.MouseButton1Click:Connect(function()
-                SelectedTotemName = item.Name
-                TotemMenuBtn.Text = "Auto: " .. item.Name
+                SelectedTotemName = totem.Name
                 
-                -- Visual Selection
+                -- Update UI Button
+                AutoBtn.Text = "AUTO SPAWN: " .. string.upper(SelectedTotemName) .. " [OFF]"
+                AutoBtn.BackgroundColor3 = THEME.Alert -- Merah (Ready to start)
+                AutoBtn.TextColor3 = Color3.new(1,1,1)
+                
+                -- Visual Feedback List
                 for _, b in pairs(TotemScroll:GetChildren()) do
                     if b:IsA("TextButton") then b.BackgroundColor3 = THEME.Button end
                 end
                 btn.BackgroundColor3 = THEME.Accent
             end)
         end
-    end
-    
-    if not found then
-        local lbl = Instance.new("TextLabel", TotemScroll)
-        lbl.Size = UDim2.new(1,0,0,30)
-        lbl.Text = "No Totems Found in Backpack"
-        lbl.TextColor3 = Color3.fromRGB(255, 100, 100)
-        lbl.BackgroundTransparency = 1
-        lbl.TextSize = 9
+    else
+        local err = Instance.new("TextLabel", TotemScroll)
+        err.Size = UDim2.new(1,0,0,30)
+        err.Text = "Folder 'Totems' not found in path!"
+        err.TextColor3 = THEME.Alert
+        err.BackgroundTransparency = 1
+        err.TextSize = 9
     end
 end
 
--- // --- UI EVENTS ---
-
-TotemMenuBtn.MouseButton1Click:Connect(function()
-    TotemFrame.Visible = not TotemFrame.Visible
-    if TotemFrame.Visible then ScanTotems() end
-end)
-
-RefreshBtn.MouseButton1Click:Connect(function()
-    ScanTotems()
-end)
-
-ToggleAutoBtn.MouseButton1Click:Connect(function()
-    if not SelectedTotemName then 
-        ToggleAutoBtn.Text = "SELECT A TOTEM FIRST!"
-        task.wait(1)
-        ToggleAutoBtn.Text = "ENABLE AUTO: OFF"
-        return 
+-- Fungsi Eksekusi Auto Totem
+local function SpawnTotem()
+    if not SelectedTotemName then return end
+    
+    -- Remote Path sesuai permintaan
+    local net = game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0")
+    if net and net.net then
+        local remote = net.net:FindFirstChild("RE/SpawnTotem")
+        if remote then
+            local args = {
+                [1] = SelectedTotemName -- Menggunakan nama yang dipilih dari list
+            }
+            remote:FireServer(unpack(args))
+            print("Auto Totem Fired: " .. SelectedTotemName)
+        end
     end
+end
+
+-- Loop Auto (Coroutine)
+task.spawn(function()
+    while true do
+        if AutoTotemActive and SelectedTotemName then
+            -- 1. Spawn Totem
+            SpawnTotem()
+            
+            -- 2. Countdown 60 Menit (3600 Detik)
+            for i = 3600, 1, -1 do
+                if not AutoTotemActive then 
+                    TimerLabel.Text = "Status: Stopped"
+                    break 
+                end
+                TimerLabel.Text = "Next Spawn: " .. i .. "s"
+                task.wait(1)
+            end
+        else
+            task.wait(0.5)
+        end
+    end
+end)
+
+-- Tombol Toggle Auto
+AutoBtn.MouseButton1Click:Connect(function()
+    if not SelectedTotemName then return end -- Jangan lakukan apa-apa jika belum pilih
     
     AutoTotemActive = not AutoTotemActive
+    
     if AutoTotemActive then
-        ToggleAutoBtn.Text = "ENABLE AUTO: ON"
-        ToggleAutoBtn.BackgroundColor3 = THEME.Success
-        StatusLabel.Text = "Status: Starting Auto..."
+        AutoBtn.Text = "AUTO SPAWN: " .. string.upper(SelectedTotemName) .. " [ON]"
+        AutoBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100) -- Hijau
     else
-        ToggleAutoBtn.Text = "ENABLE AUTO: OFF"
-        ToggleAutoBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
-        StatusLabel.Text = "Status: Idle"
+        AutoBtn.Text = "AUTO SPAWN: " .. string.upper(SelectedTotemName) .. " [OFF]"
+        AutoBtn.BackgroundColor3 = THEME.Alert -- Merah
+        TimerLabel.Text = "Status: Paused"
     end
 end)
 
--- Basic Buttons Logic
+-- Tombol Buka Menu Totem
+TotemManagerBtn.MouseButton1Click:Connect(function()
+    TotemFrame.Visible = not TotemFrame.Visible
+    if TotemFrame.Visible then
+        TotemManagerBtn.Text = "Close Totem Manager <"
+        ScanTotemPath() -- Scan saat dibuka
+    else
+        TotemManagerBtn.Text = "Open Totem Manager >"
+    end
+end)
+
+-- // --- FITUR UTILITAS LAINNYA ---
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
