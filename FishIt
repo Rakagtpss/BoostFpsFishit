@@ -17,7 +17,7 @@ local ParentTarget = getUiParent()
 if not ParentTarget then warn("UI Parent Gagal") return end
 
 for _, child in pairs(ParentTarget:GetChildren()) do
-    if child.Name == "SeraphinFinal" then child:Destroy() end
+    if child.Name == "SeraphinPrompt" then child:Destroy() end
 end
 
 -- // CONFIG UI
@@ -31,7 +31,7 @@ local THEME = {
 }
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SeraphinFinal"
+ScreenGui.Name = "SeraphinPrompt"
 ScreenGui.Parent = ParentTarget
 ScreenGui.ResetOnSpawn = false
 
@@ -54,7 +54,7 @@ Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.6, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">REMOTE FIX</font>"
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">PROMPT</font>"
 Title.RichText = true
 Title.TextColor3 = THEME.Text
 Title.Font = Enum.Font.GothamBold
@@ -102,11 +102,8 @@ local function GetUUID(tool)
     if not tool then return nil end
     local uuid = tool:GetAttribute("UUID") or tool:GetAttribute("uuid") or tool:GetAttribute("id") or tool:GetAttribute("ID")
     if uuid then return uuid end
-    
     local val = tool:FindFirstChild("UUID") or tool:FindFirstChild("ID") or tool:FindFirstChild("uuid")
     if val then return val.Value end
-    
-    -- Cek Config
     local conf = tool:FindFirstChild("Configuration") or tool:FindFirstChild("Config")
     if conf then
         val = conf:FindFirstChild("UUID") or conf:FindFirstChild("ID")
@@ -216,18 +213,18 @@ KeepBox:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 -- // [3] FEATURE BUTTONS
-local ToggleSell = CreateButton("Auto Sell: OFF", 4)
+local ToggleSell = CreateButton("Auto Sell (PROMPT): OFF", 4)
 local ToggleTotem = CreateButton("Auto Totem: OFF", 5)
 local ToggleWoW = CreateButton("Walk on Water: OFF", 6)
 local ToggleNoRender = CreateButton("No Render (3D): OFF", 7)
 local ToggleBooster = CreateButton("Booster (FPS): OFF", 8)
 
--- 1. AUTO SELL (FIXED PATH & ARGS)
+-- 1. AUTO SELL (PHYSICAL PROMPT METHOD)
 ToggleSell.MouseButton1Click:Connect(function()
     if not SelectedSellItem then
         ToggleSell.Text = "Pilih Item Dulu!"
         task.wait(1)
-        ToggleSell.Text = "Auto Sell: OFF"
+        ToggleSell.Text = "Auto Sell (PROMPT): OFF"
         return
     end
     AutoSellEnabled = not AutoSellEnabled
@@ -236,64 +233,73 @@ ToggleSell.MouseButton1Click:Connect(function()
         ToggleSell.BackgroundColor3 = THEME.Accent
         ToggleSell.TextColor3 = Color3.new(0,0,0)
         
-        -- PRE-SETUP: Pancing server dengan update threshold (Mencegah block)
-        task.spawn(function()
-            pcall(function()
-                local net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
-                local thresh = net:FindFirstChild("RF/UpdateAutoSellThreshold")
-                if thresh then thresh:InvokeServer(0) end -- Set threshold ke 0 (biasanya aman)
-            end)
-        end)
-        
         task.spawn(function()
             while AutoSellEnabled do
-                task.wait(1.5)
+                task.wait(1) -- Interval Jual
                 pcall(function()
-                    -- TARGET REMOTE (SESUAI DATA KAMU)
-                    local net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
-                    local remote = net:FindFirstChild("RF/SellItem")
-
-                    if not remote then 
-                        warn("Remote SellItem tidak ketemu di path!") 
-                        return 
-                    end
+                    -- TARGET PATH PROMPT BARU
+                    -- workspace["!!! DEPENDENCIES"]:GetChildren()[8].SellPrompt.SellPrompt
+                    local deps = workspace:FindFirstChild("!!! DEPENDENCIES")
+                    if not deps then return end
                     
-                    -- LIST ITEM
-                    local toSell = {}
-                    if Player.Backpack then
-                        for _,v in pairs(Player.Backpack:GetChildren()) do
-                            if v.Name == SelectedSellItem then table.insert(toSell, v) end
-                        end
-                    end
-                    if Player.Character then
-                        for _,v in pairs(Player.Character:GetChildren()) do
-                            if v:IsA("Tool") and v.Name == SelectedSellItem then table.insert(toSell, v) end
+                    local children = deps:GetChildren()
+                    local target = children[8] -- Index 8 sesuai request
+                    
+                    -- Failsafe jika index berubah, cari nama
+                    if not target then
+                        for _, v in pairs(children) do
+                            if v:FindFirstChild("SellPrompt") then target = v; break end
                         end
                     end
                     
-                    local amount = #toSell - KeepAmount
-                    
-                    if amount > 0 then
-                        for i = 1, amount do
-                            if not AutoSellEnabled then break end
-                            local item = toSell[i]
-                            local uuid = GetUUID(item)
+                    if target then
+                        local sellPart = target:FindFirstChild("SellPrompt")
+                        local prompt = sellPart and sellPart:FindFirstChild("SellPrompt")
+                        
+                        if prompt and prompt:IsA("ProximityPrompt") then
                             
-                            if uuid then
-                                -- FORMAT BARU: Gunakan UUID + Amount (1) karena ada remote SellItem
-                                remote:InvokeServer(uuid, 1)
-                                print("Menjual: "..item.Name)
-                                task.wait(0.2)
-                            else
-                                warn("UUID Error pada item: "..item.Name)
+                            -- A. TELEPORT KE NPC (Wajib untuk prompt)
+                            if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+                                local hrp = Player.Character.HumanoidRootPart
+                                local targetPos = sellPart.Position
+                                -- Cek jarak, jika jauh baru teleport
+                                if (hrp.Position - targetPos).Magnitude > 5 then
+                                    hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+                                end
                             end
+                            
+                            -- B. CEK JUMLAH ITEM
+                            local toSell = {}
+                            local backpack = Player.Backpack:GetChildren()
+                            for _, v in pairs(backpack) do
+                                if v.Name == SelectedSellItem then table.insert(toSell, v) end
+                            end
+                            
+                            local total = #toSell
+                            local sisa = total - KeepAmount
+                            
+                            if sisa > 0 then
+                                -- C. EQUIP ITEM (NPC butuh item di tangan)
+                                local tool = Player.Backpack:FindFirstChild(SelectedSellItem)
+                                if tool and Player.Character:FindFirstChild("Humanoid") then
+                                    Player.Character.Humanoid:EquipTool(tool)
+                                    task.wait(0.2) -- Tunggu animasi equip
+                                end
+                                
+                                -- D. TEKAN PROMPT
+                                fireproximityprompt(prompt)
+                                print("Interacting with Prompt...")
+                                task.wait(0.3)
+                            end
+                        else
+                            print("Prompt tidak ditemukan di Index 8!")
                         end
                     end
                 end)
             end
         end)
     else
-        ToggleSell.Text = "Auto Sell: OFF"
+        ToggleSell.Text = "Auto Sell (PROMPT): OFF"
         ToggleSell.BackgroundColor3 = THEME.Item
         ToggleSell.TextColor3 = THEME.Text
     end
@@ -422,4 +428,4 @@ MinBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-game.StarterGui:SetCore("SendNotification", {Title="Seraphin Fix", Text="Remote Path Adjusted", Duration=3})
+game.StarterGui:SetCore("SendNotification", {Title="Seraphin Prompt", Text="Sell Prompt Mode Active!", Duration=3})
