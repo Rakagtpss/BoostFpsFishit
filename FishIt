@@ -13,7 +13,7 @@ local AfkModeActive = false
 local Optimized = false
 local Minimized = false
 local WowEnabled = false
-local RodAnimEnabled = false -- State baru untuk Rod Anim
+local RodAnimEnabled = false
 local BV, Conn
 
 -- // FPS Settings
@@ -22,10 +22,10 @@ local currentLimitIndex = 4
 
 -- // UI Config
 local UI_WIDTH = 210
-local UI_HEIGHT = 245 -- Sedikit diperbesar agar muat tombol baru
+local UI_HEIGHT = 245
 local ACCENT = Color3.fromRGB(0, 255, 170)
 
--- // Cleanup Lama
+-- // Cleanup
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
 -- // UI Creation
@@ -50,7 +50,7 @@ Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0.6, 0, 1, 0)
 Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">DEBUG</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
@@ -75,7 +75,7 @@ ScrollFrame.Position = UDim2.new(0, 5, 0, 40)
 ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.ScrollBarThickness = 2
 ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Reset
+ScrollFrame.CanvasSize = UDim2.new(0,0,0,0)
 
 local Layout = Instance.new("UIListLayout", ScrollFrame)
 Layout.Padding = UDim.new(0, 6)
@@ -93,14 +93,14 @@ local function CreateButton(text)
     return btn
 end
 
--- // TOMBOL FITUR
+-- // TOMBOL
 local PotatoBtn = CreateButton("Booster Mode: OFF")
 local WowBtn = CreateButton("WALK ON WATER: OFF")
 local RenderBtn = CreateButton("No Render 3D: OFF")
-local RodAnimBtn = CreateButton("Rod Anim (Trident): OFF") -- Tombol Baru
+local RodAnimBtn = CreateButton("Rod Anim: OFF") 
 local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
 
--- Footer FPS
+-- Footer
 local FpsDisplay = Instance.new("TextLabel", MainFrame)
 FpsDisplay.Size = UDim2.new(1, 0, 0, 25)
 FpsDisplay.Position = UDim2.new(0, 0, 1, -25)
@@ -110,11 +110,7 @@ FpsDisplay.Text = "FPS: --"
 FpsDisplay.Font = Enum.Font.Code
 FpsDisplay.TextSize = 12
 
--- // ==========================================
--- // LOGIC FEATURES
--- // ==========================================
-
--- FPS CAP
+-- // LOGIC DASAR
 FpsCapBtn.MouseButton1Click:Connect(function()
     currentLimitIndex = currentLimitIndex + 1
     if currentLimitIndex > #fpsLimits then currentLimitIndex = 1 end
@@ -123,27 +119,13 @@ FpsCapBtn.MouseButton1Click:Connect(function()
     FpsCapBtn.Text = newLimit > 900 and "FPS CAP: UNLIMITED" or "FPS CAP: " .. newLimit
 end)
 
--- Potato Mode
 PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
     PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
     PotatoBtn.BackgroundColor3 = Optimized and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
     Lighting.GlobalShadows = not Optimized
-    if Optimized then
-        for _, v in pairs(game:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.Material = Enum.Material.SmoothPlastic
-                v.CastShadow = false
-            elseif v:IsA("Texture") or v:IsA("Decal") then
-                v.Transparency = 1
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                v.Enabled = false
-            end
-        end
-    end
 end)
 
--- Render Mode
 RenderBtn.MouseButton1Click:Connect(function()
     AfkModeActive = not AfkModeActive
     RunService:Set3dRenderingEnabled(not AfkModeActive)
@@ -151,7 +133,6 @@ RenderBtn.MouseButton1Click:Connect(function()
     RenderBtn.BackgroundColor3 = AfkModeActive and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(35, 35, 40)
 end)
 
--- Walk on Water
 WowBtn.MouseButton1Click:Connect(function()
     WowEnabled = not WowEnabled
     WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
@@ -174,21 +155,36 @@ WowBtn.MouseButton1Click:Connect(function()
 end)
 
 -- // ==========================================
--- // ROD ANIMATION LOGIC (HOLY TRIDENT)
+-- // LOGIC ROD ANIMATION (DEBUG VERSION)
 -- // ==========================================
 
--- Fungsi untuk mengambil ID Animasi dari ReplicatedStorage dengan aman
 local function GetAnimId(pathName)
-    local animsFolder = ReplicatedStorage:FindFirstChild("Modules") 
-        and ReplicatedStorage.Modules:FindFirstChild("Animations")
-    
-    if animsFolder and animsFolder:FindFirstChild(pathName) then
-        return animsFolder[pathName].AnimationId
+    -- Cek Folder "Modules"
+    local modules = ReplicatedStorage:FindFirstChild("Modules")
+    if not modules then 
+        warn("[DEBUG] Folder 'Modules' tidak ditemukan di ReplicatedStorage!") 
+        return nil 
     end
-    return nil
+
+    -- Cek Folder "Animations"
+    local animsFolder = modules:FindFirstChild("Animations")
+    if not animsFolder then 
+        warn("[DEBUG] Folder 'Animations' tidak ditemukan di Modules!") 
+        return nil 
+    end
+    
+    -- Cek File Animasi
+    local targetAnim = animsFolder:FindFirstChild(pathName)
+    if targetAnim then
+        print("[SUCCESS] Ditemukan ID untuk: " .. pathName)
+        return targetAnim.AnimationId
+    else
+        warn("[ERROR] File animasi TIDAK ADA: " .. pathName)
+        return nil
+    end
 end
 
--- Dictionary mapping nama animasi umum ke ID Holy Trident
+-- Dictionary mapping
 local tridentMap = {
     ["idle"] = GetAnimId("Holy Trident - EquipIdle"),
     ["cast"] = GetAnimId("Holy Trident - RodThrow"),
@@ -201,51 +197,55 @@ local tridentMap = {
 
 local function ApplyRodAnimations(tool)
     if not RodAnimEnabled then return end
+    task.wait(0.2)
     
-    -- Tunggu sebentar untuk memastikan animasi tool termuat
-    task.wait(0.1)
+    print("[DEBUG] Mengecek Tool: " .. tool.Name)
+    local foundAny = false
     
-    -- Cari animasi di dalam Tool (bisa di root tool atau di folder 'animations')
-    local targets = tool:GetDescendants()
-    
-    for _, item in pairs(targets) do
+    for _, item in pairs(tool:GetDescendants()) do
         if item:IsA("Animation") then
             local lowerName = item.Name:lower()
+            print("[DEBUG] Cek animasi tool: " .. item.Name)
             
-            -- Cek pencocokan nama dan ganti ID
             for key, newId in pairs(tridentMap) do
                 if string.find(lowerName, key) and newId then
+                    print("[REPLACE] Mengganti " .. item.Name .. " dengan Trident Anim!")
                     item.AnimationId = newId
-                    -- print("Swapped " .. item.Name .. " to Trident Anim")
+                    foundAny = true
                 end
             end
         end
     end
+    
+    if not foundAny then
+        warn("[WARNING] Tidak ada animasi di tool yang cocok dengan keyword (idle/cast/reel)!")
+    end
 end
 
--- Tombol Trigger
 RodAnimBtn.MouseButton1Click:Connect(function()
     RodAnimEnabled = not RodAnimEnabled
-    RodAnimBtn.Text = RodAnimEnabled and "Rod Anim (Trident): ON" or "Rod Anim (Trident): OFF"
+    RodAnimBtn.Text = RodAnimEnabled and "Rod Anim: ON" or "Rod Anim: OFF"
     RodAnimBtn.BackgroundColor3 = RodAnimEnabled and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(35, 35, 40)
     
     if RodAnimEnabled then
-        -- Apply ke tool yang sedang dipegang
+        print("--- MENGAKTIFKAN ROD ANIM ---")
         local currentTool = Char:FindFirstChildOfClass("Tool")
         if currentTool then
             ApplyRodAnimations(currentTool)
-            -- Unequip & Equip paksa untuk refresh animasi (opsional, tapi disarankan)
+            
+            -- Unequip & Equip Trick
             local hum = Char:FindFirstChild("Humanoid")
             if hum then
                 hum:UnequipTools()
                 task.wait(0.1)
                 hum:EquipTool(currentTool)
             end
+        else
+            warn("[INFO] Kamu sedang tidak memegang pancingan!")
         end
     end
 end)
 
--- Listener saat ganti pancingan
 Player.CharacterAdded:Connect(function(newChar)
     Char = newChar
     HRP = newChar:WaitForChild("HumanoidRootPart")
@@ -256,17 +256,13 @@ Player.CharacterAdded:Connect(function(newChar)
     end)
 end)
 
--- Listener awal untuk karakter yang sudah ada
 Char.ChildAdded:Connect(function(child)
     if child:IsA("Tool") and RodAnimEnabled then
         ApplyRodAnimations(child)
     end
 end)
 
--- // ==========================================
--- // UI HANDLING
--- // ==========================================
-
+-- UI Handling
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
@@ -283,7 +279,6 @@ MinBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- FPS Counter
 local lastT = os.clock()
 local frames = 0
 RunService.RenderStepped:Connect(function()
