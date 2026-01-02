@@ -27,7 +27,7 @@ Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- // UI Config
 local UI_WIDTH = 240
-local UI_HEIGHT = 450 -- Sedikit lebih panjang untuk menu baru
+local UI_HEIGHT = 450
 local ACCENT = Color3.fromRGB(0, 255, 170)
 
 local MainFrame = Instance.new("Frame", Gui)
@@ -103,19 +103,6 @@ local AutoSellEnabled = false
 local Optimized = false
 local Minimized = false
 
--- // FUNGSI PENCARI REMOTE
-local CachedRemotes = {}
-local function GetRemote(name)
-    if CachedRemotes[name] then return CachedRemotes[name] end
-    for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-        if v.Name == name then
-            CachedRemotes[name] = v
-            return v
-        end
-    end
-    return nil
-end
-
 -- // [SYSTEM 1] TOTEM SCANNER
 local TotemDropdownOpen = false
 local TotemSelectorBtn = CreateButton("Pilih Totem: [None]", 1)
@@ -135,6 +122,7 @@ local function RefreshTotemList()
         if child:IsA("TextButton") then child:Destroy() end
     end
     
+    -- Mencoba mencari path Totems (sesuaikan jika game update pathnya)
     local path = ReplicatedStorage:FindFirstChild("Modules")
     if path then path = path:FindFirstChild("ModelDownloader") end
     if path then path = path:FindFirstChild("Collection") end
@@ -195,7 +183,6 @@ SellDropdownFrame.LayoutOrder = 4
 SellDropdownFrame.Visible = false
 Instance.new("UIListLayout", SellDropdownFrame).Padding = UDim.new(0, 2)
 
--- UI KEEP AMOUNT (Agar tidak terjual semua)
 local KeepFrame = Instance.new("Frame", ScrollFrame)
 KeepFrame.Size = UDim2.new(0.95, 0, 0, 30)
 KeepFrame.BackgroundTransparency = 1
@@ -215,14 +202,14 @@ KeepBox.Size = UDim2.new(0.35, 0, 1, 0)
 KeepBox.Position = UDim2.new(0.65, 0, 0, 0)
 KeepBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 KeepBox.TextColor3 = Color3.fromRGB(255, 200, 50)
-KeepBox.Text = "1" -- Default sisakan 1
+KeepBox.Text = "1"
 KeepBox.PlaceholderText = "0"
 KeepBox.Font = Enum.Font.GothamBold
 KeepBox.TextSize = 12
 Instance.new("UICorner", KeepBox).CornerRadius = UDim.new(0, 6)
 
 KeepBox:GetPropertyChangedSignal("Text"):Connect(function()
-    KeepBox.Text = KeepBox.Text:gsub("%D+", "") -- Hanya angka
+    KeepBox.Text = KeepBox.Text:gsub("%D+", "")
 end)
 
 local function AddSellButton(name)
@@ -251,10 +238,10 @@ local function RefreshSellList()
     local foundItems = {}
     local itemCount = 0
 
-    -- Scan Backpack pemain untuk melihat apa yang bisa dijual
     pcall(function()
-        if Player.Backpack then
-            for _, item in pairs(Player.Backpack:GetChildren()) do
+        local backpack = game:GetService("Players").LocalPlayer:FindFirstChild("Backpack")
+        if backpack then
+            for _, item in pairs(backpack:GetChildren()) do
                 if item:IsA("Tool") and not foundItems[item.Name] then
                     AddSellButton(item.Name)
                     foundItems[item.Name] = true
@@ -264,12 +251,8 @@ local function RefreshSellList()
         end
     end)
     
-    if itemCount == 0 then
-        -- Jika backpack kosong/tidak ada tool, tambahkan default manual
-        AddSellButton("Enchant Stone")
-        AddSellButton("Train Wheel")
-        itemCount = 2
-    end
+    if not foundItems["Enchant Stone"] then AddSellButton("Enchant Stone"); itemCount=itemCount+1 end
+    if not foundItems["Train Wheel"] then AddSellButton("Train Wheel"); itemCount=itemCount+1 end
     
     local contentHeight = itemCount * 27
     if contentHeight > 150 then contentHeight = 150 end
@@ -295,7 +278,7 @@ local TotemBtn = CreateButton("Auto Totem (60m): OFF", 6)
 local SellBtn = CreateButton("Auto Sell (Selective): OFF", 7)
 local PotatoBtn = CreateButton("Booster Mode: OFF", 8)
 
--- // LOGIKA AUTO SELL (SAFEGUARD MODE)
+-- // LOGIKA AUTO SELL
 SellBtn.MouseButton1Click:Connect(function()
     if not SelectedSellItem then
         game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper"; Text = "Pilih Item Jual dulu (Scan)!"; Duration = 3;})
@@ -309,56 +292,43 @@ SellBtn.MouseButton1Click:Connect(function()
     if AutoSellEnabled then
         SellThread = task.spawn(function()
             while AutoSellEnabled do
-                task.wait(1) -- Cek setiap 1 detik
+                task.wait(0.5)
                 pcall(function()
-                    -- 1. Setup Remote
                     local packagePath = ReplicatedStorage:FindFirstChild("Packages") and ReplicatedStorage.Packages:FindFirstChild("_Index")
                     local sleitnick = packagePath and packagePath:FindFirstChild("sleitnick_net@0.2.0")
                     local sellRemote = sleitnick and sleitnick:FindFirstChild("net") and sleitnick.net:FindFirstChild("RF/SellItem")
 
                     if not sellRemote then return end
 
-                    -- 2. Kumpulkan Item yang cocok
+                    local backpack = game:GetService("Players").LocalPlayer:FindFirstChild("Backpack")
+                    if not backpack then return end
+
                     local itemsToProcess = {}
-                    local backpack = Player.Backpack
-                    
                     for _, tool in pairs(backpack:GetChildren()) do
-                        if tool.Name == SelectedSellItem then
-                            table.insert(itemsToProcess, tool)
-                        end
+                        if tool.Name == SelectedSellItem then table.insert(itemsToProcess, tool) end
                     end
 
-                    -- 3. Logika "Sisakan" (Keep Amount)
                     local keepAmount = tonumber(KeepBox.Text) or 0
                     local totalItems = #itemsToProcess
                     local amountToSell = totalItems - keepAmount
 
                     if amountToSell > 0 then
-                        -- Jual hanya sebanyak (Total - Keep)
-                        -- Loop dari 1 sampai amountToSell
                         for i = 1, amountToSell do
                             if not AutoSellEnabled then break end
-                            
                             local targetItem = itemsToProcess[i]
                             if targetItem then
-                                -- Cari UUID
                                 local uuid = targetItem:GetAttribute("UUID") or targetItem:GetAttribute("uuid") or targetItem:GetAttribute("id")
                                 if not uuid then
                                     local val = targetItem:FindFirstChild("UUID") or targetItem:FindFirstChild("ID")
                                     if val then uuid = val.Value end
                                 end
-
                                 if uuid then
-                                    -- Kirim Remote
                                     sellRemote:InvokeServer(uuid)
-                                    print("Menjual: " .. targetItem.Name .. " (Sisa target: " .. keepAmount .. ")")
-                                    task.wait(0.2) -- Delay kecil agar tidak spam parah
+                                    print("Menjual: " .. targetItem.Name .. " | UUID: " .. tostring(uuid))
+                                    task.wait(0.1)
                                 end
                             end
                         end
-                    else
-                        -- Jika jumlah item sudah <= jumlah yang ingin disisakan
-                        -- Tidak melakukan apa-apa (Standby)
                     end
                 end)
             end
@@ -368,7 +338,7 @@ SellBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- LOGIKA AUTO TOTEM
+-- // LOGIKA AUTO TOTEM (FIXED DENGAN SLEITNICK)
 TotemBtn.MouseButton1Click:Connect(function()
     if not SelectedTotemName then
         game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper"; Text = "Pilih Totem dulu!"; Duration = 3;})
@@ -383,21 +353,56 @@ TotemBtn.MouseButton1Click:Connect(function()
         TotemThread = task.spawn(function()
             while AutoTotemEnabled do
                 pcall(function()
-                    local equipEvent = GetRemote("EquipItem")
-                    local spawnEvent = GetRemote("SpawnTotem")
-                    local args = { [1] = SelectedTotemName }
+                    -- 1. Setup Remote sesuai request (sleitnick_net)
+                    local packagePath = ReplicatedStorage:FindFirstChild("Packages") and ReplicatedStorage.Packages:FindFirstChild("_Index")
+                    local sleitnick = packagePath and packagePath:FindFirstChild("sleitnick_net@0.2.0")
+                    local net = sleitnick and sleitnick:FindFirstChild("net")
                     
-                    if equipEvent then 
-                        if equipEvent:IsA("RemoteFunction") then equipEvent:InvokeServer(unpack(args))
-                        else equipEvent:FireServer(unpack(args)) end
+                    local spawnRemote = net and net:FindFirstChild("RE/SpawnTotem")
+                    -- Kita tidak menggunakan EquipToolFromHotbar dengan angka statis [2] karena itu berisiko
+                    -- Kita gunakan Humanoid:EquipTool untuk keamanan
+
+                    if not spawnRemote then 
+                        warn("Remote RE/SpawnTotem tidak ditemukan!")
+                        return 
                     end
-                    task.wait(0.5)
-                    if spawnEvent then 
-                        if spawnEvent:IsA("RemoteFunction") then spawnEvent:InvokeServer(unpack(args))
-                        else spawnEvent:FireServer(unpack(args)) end
+                    
+                    -- 2. Cari Item di Backpack atau Character
+                    local character = Player.Character or Player.CharacterAdded:Wait()
+                    local humanoid = character:FindFirstChild("Humanoid")
+                    
+                    local tool = character:FindFirstChild(SelectedTotemName) -- Cek apakah sudah dipegang
+                    if not tool then
+                        tool = Player.Backpack:FindFirstChild(SelectedTotemName) -- Cek di tas
+                        if tool and humanoid then
+                            humanoid:EquipTool(tool) -- Equip manual (lebih aman daripada hardcode slot hotbar)
+                            task.wait(0.5) -- Tunggu animasi equip
+                        end
+                    end
+                    
+                    -- 3. Jika tool ada dan dipegang, Ambil UUID dan Spawn
+                    if tool then
+                        -- Ambil UUID Dinamis (Bukan hardcode)
+                        local uuid = tool:GetAttribute("UUID") or tool:GetAttribute("uuid") or tool:GetAttribute("id")
+                        if not uuid then
+                            local val = tool:FindFirstChild("UUID") or tool:FindFirstChild("ID")
+                            if val then uuid = val.Value end
+                        end
+                        
+                        if uuid then
+                            local args = { [1] = uuid }
+                            spawnRemote:FireServer(unpack(args))
+                            print("Spawned Totem: " .. SelectedTotemName)
+                        else
+                            warn("UUID Totem tidak ditemukan!")
+                        end
+                    else
+                        -- Jika totem habis, coba notif atau diam saja
+                        print("Totem " .. SelectedTotemName .. " tidak ditemukan di inventory!")
                     end
                 end)
-                -- Timer mundur
+
+                -- Timer 60 Menit
                 for i = 3600, 1, -1 do
                     if not AutoTotemEnabled then break end
                     task.wait(1)
@@ -430,4 +435,4 @@ MinBtn.MouseButton1Click:Connect(function()
     else MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true); task.wait(0.2); ScrollFrame.Visible = true; MinBtn.Text = "HIDE" end
 end)
 
-game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper", Text = "Remote Sell Ready!", Duration = 5})
+game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Seraphin Helper", Text = "Totem Fix Applied!", Duration = 5})
