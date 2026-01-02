@@ -1,191 +1,273 @@
--- // SERAPHIN HELPER - CENTERED VERSION // --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
-local TeleportService = game:GetService("TeleportService")
-local Stats = game:GetService("Stats")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local MaterialService = game:GetService("MaterialService")
 
 local Player = Players.LocalPlayer
+local Char = Player.Character or Player.CharacterAdded:Wait()
+local HRP = Char:WaitForChild("HumanoidRootPart")
 
--- // NOTIFIKASI LOAD CUSTOM
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "SeraphinXRaka",
-    Text = "Loading Script",
-    Icon = "rbxassetid://6023454852",
-    Duration = 5
-})
+-- // State
+local AfkModeActive = false 
+local Optimized = false
+local Minimized = false
+local WowEnabled = false
+local IsFrozen = false
+local BV, Conn
 
--- // State & Config
-local Optimized, Minimized, NoRenderActive = false, false, false
-local ACCENT = Color3.fromRGB(0, 255, 170) 
-local BG_MAIN = Color3.fromRGB(10, 10, 12)
-local BTN_OFF = Color3.fromRGB(28, 28, 33)
+-- // Config
+local UI_WIDTH = 230
+local UI_HEIGHT = 220
+local ACCENT = Color3.fromRGB(0, 255, 170)
+local BG_COLOR = Color3.fromRGB(15, 15, 17)
 
--- // ANTI-AFK
-task.spawn(function()
-    local VirtualUser = game:GetService("VirtualUser")
-    Player.Idled:Connect(function() VirtualUser:CaptureController() VirtualUser:ClickButton2(Vector2.new()) end)
-end)
-
--- // Cleanup Old UI
+-- // Cleanup
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
-if CoreGui:FindFirstChild("SeraphinFloating") then CoreGui.SeraphinFloating:Destroy() end
 
--- // 1. MINI FLOATING UI (FPS & PING)
-local FloatGui = Instance.new("ScreenGui", CoreGui)
-FloatGui.Name = "MiniSeraphine"
+-- // Notification System
+local function Notify(title, msg)
+    local NotifGui = Instance.new("ScreenGui", CoreGui)
+    local Frame = Instance.new("Frame", NotifGui)
+    Frame.Size = UDim2.new(0, 200, 0, 60)
+    Frame.Position = UDim2.new(1, 10, 0.9, 0)
+    Frame.BackgroundColor3 = BG_COLOR
+    Frame.BorderSizePixel = 0
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
+    local Stroke = Instance.new("UIStroke", Frame)
+    Stroke.Color = ACCENT
+    Stroke.Thickness = 1.5
 
-local FloatFrame = Instance.new("Frame", FloatGui)
-FloatFrame.Size = UDim2.new(0, 150, 0, 35)
-FloatFrame.Position = UDim2.new(0.1, 0, 0.05, 0)
-FloatFrame.BackgroundColor3 = BG_MAIN
-FloatFrame.BackgroundTransparency = 0.2
-FloatFrame.Active, FloatFrame.Draggable = true, true
-Instance.new("UICorner", FloatFrame)
-local FloatStroke = Instance.new("UIStroke", FloatFrame)
-FloatStroke.Color, FloatStroke.Thickness = ACCENT, 2
+    local T = Instance.new("TextLabel", Frame)
+    T.Size = UDim2.new(1, 0, 0.4, 0)
+    T.Text = title:upper()
+    T.TextColor3 = ACCENT
+    T.Font = Enum.Font.GothamBold
+    T.TextSize = 12
+    T.BackgroundTransparency = 1
 
-local FloatLabel = Instance.new("TextLabel", FloatFrame)
-FloatLabel.Size = UDim2.new(1, 0, 1, 0)
-FloatLabel.BackgroundTransparency = 1
-FloatLabel.Font = Enum.Font.GothamBold
-FloatLabel.TextSize = 14
-FloatLabel.TextColor3 = ACCENT
-FloatLabel.Text = "FPS: -- | PING: --"
+    local M = Instance.new("TextLabel", Frame)
+    M.Size = UDim2.new(1, 0, 0.6, 0)
+    M.Position = UDim2.new(0, 0, 0.4, 0)
+    M.Text = msg
+    M.TextColor3 = Color3.new(1,1,1)
+    M.Font = Enum.Font.Gotham
+    M.TextSize = 10
+    M.BackgroundTransparency = 1
 
--- // 2. MAIN UI
+    Frame:TweenPosition(UDim2.new(1, -210, 0.9, 0), "Out", "Quad", 0.5)
+    task.delay(3, function()
+        Frame:TweenPosition(UDim2.new(1, 10, 0.9, 0), "In", "Quad", 0.5)
+        task.wait(0.5)
+        NotifGui:Destroy()
+    end)
+end
+
+-- // UI Creation
 local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = "SeraphinHelper"
 
 local MainFrame = Instance.new("Frame", Gui)
-MainFrame.Size = UDim2.new(0, 340, 0, 180)
-MainFrame.Position = UDim2.new(0.5, -170, 0.4, 0)
-MainFrame.BackgroundColor3 = BG_MAIN
-MainFrame.BackgroundTransparency = 0.15
-MainFrame.Active, MainFrame.Draggable = true, true
-Instance.new("UICorner", MainFrame)
+MainFrame.Size = UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT)
+MainFrame.Position = UDim2.new(0.5, -UI_WIDTH/2, 0.3, 0)
+MainFrame.BackgroundColor3 = BG_COLOR
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
--- JUDUL: SERAPHIN HELPER (DIUBAH & DIGESER KE TENGAH)
-local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 35) -- Lebar penuh untuk centering
-Title.Position = UDim2.new(0, 0, 0, 0)
+local Header = Instance.new("Frame", MainFrame)
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+Header.BackgroundTransparency = 0.2
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
+
+local Title = Instance.new("TextLabel", Header)
+Title.Size = UDim2.new(0.55, 0, 1, 0)
+Title.Position = UDim2.new(0.05, 0, 0, 0)
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14 -- Sedikit lebih besar untuk judul utama
+Title.TextSize = 11
 Title.BackgroundTransparency = 1
-Title.TextXAlignment = Enum.TextXAlignment.Center -- Membuat teks ke tengah
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local MinBtn = Instance.new("TextButton", MainFrame)
-MinBtn.Size = UDim2.new(0, 50, 0, 22)
-MinBtn.Position = UDim2.new(1, -58, 0, 7)
+local FpsDisplay = Instance.new("TextLabel", Header)
+FpsDisplay.Size = UDim2.new(0.25, 0, 1, 0)
+FpsDisplay.Position = UDim2.new(0.58, 0, 0, 0)
+FpsDisplay.BackgroundTransparency = 1
+FpsDisplay.TextColor3 = ACCENT
+FpsDisplay.Text = "60 FPS"
+FpsDisplay.Font = Enum.Font.GothamBold
+FpsDisplay.TextSize = 11
+FpsDisplay.TextXAlignment = Enum.TextXAlignment.Left
+
+local MinBtn = Instance.new("TextButton", Header)
+MinBtn.Size = UDim2.new(0, 40, 0, 22)
+MinBtn.Position = UDim2.new(0.82, 0, 0.5, -11)
 MinBtn.Text = "HIDE"
+MinBtn.TextColor3 = Color3.new(1, 1, 1)
+MinBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextColor3 = Color3.new(1,1,1)
-MinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-MinBtn.ZIndex = 2 -- Agar selalu di atas judul
-Instance.new("UICorner", MinBtn)
+MinBtn.TextSize = 8
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
-local Scroll = Instance.new("ScrollingFrame", MainFrame)
-Scroll.Size, Scroll.Position = UDim2.new(1, -20, 1, -50), UDim2.new(0, 10, 0, 40)
-Scroll.BackgroundTransparency, Scroll.CanvasSize = 1, UDim2.new(0,0,0,0)
-Scroll.ScrollBarThickness = 0
-local Layout = Instance.new("UIGridLayout", Scroll)
-Layout.CellSize = UDim2.new(0.5, -7, 0, 38)
+local ScrollFrame = Instance.new("ScrollingFrame", MainFrame)
+ScrollFrame.Size = UDim2.new(1, -14, 1, -50)
+ScrollFrame.Position = UDim2.new(0, 7, 0, 45)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.ScrollBarThickness = 0
+ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
--- Fungsi Helper Visual Tombol
-local function UpdateButtonVisual(btn, state)
-    btn.BackgroundColor3 = state and ACCENT or BTN_OFF
-    btn.TextColor3 = state and Color3.new(0,0,0) or Color3.new(0.9,0.9,0.9)
-end
+local Layout = Instance.new("UIListLayout", ScrollFrame)
+Layout.Padding = UDim.new(0, 6)
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local function CreateButton(text)
-    local btn = Instance.new("TextButton", Scroll)
-    btn.Text, btn.Font, btn.TextSize = text, Enum.Font.GothamBold, 10
-    btn.TextColor3, btn.BackgroundColor3 = Color3.new(0.9,0.9,0.9), BTN_OFF
-    Instance.new("UICorner", btn)
+    local btn = Instance.new("TextButton", ScrollFrame)
+    btn.Size = UDim2.new(0.98, 0, 0, 30)
+    btn.Text = text
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 10
+    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    btn.BackgroundTransparency = 0.3
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     return btn
 end
 
-local PotBtn = CreateButton("BOOSTER: OFF")
-local FpsBtn = CreateButton("FPS: UNLI")
-local RedBtn = CreateButton("NO RENDER: OFF")
-local WowBtn = CreateButton("W-WALK: OFF")
-local FrzBtn = CreateButton("FREEZE: OFF")
-local ReBtn = CreateButton("REJOIN SERVER")
+-- // Fitur
+local FreezeBtn = CreateButton("Freeze Player: OFF")
+local WowBtn = CreateButton("Walk On Water: OFF")
+local PotatoBtn = CreateButton("Booster Mode: OFF")
+local RenderBtn = CreateButton("No Render 3D: OFF")
+local FpsCapBtn = CreateButton("FPS CAP: UNLIMITED")
 
--- // 3. CORE LOGIC
+local function UpdateBtnVisual(btn, state)
+    if state then
+        btn.BackgroundColor3 = ACCENT
+        btn.TextColor3 = Color3.new(0, 0, 0)
+        btn.BackgroundTransparency = 0
+    else
+        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        btn.BackgroundTransparency = 0.3
+    end
+end
 
--- ULTRA BOOST (Extreme Cleaning)
-PotBtn.MouseButton1Click:Connect(function()
+-- // Boost Logic (Enhanced)
+PotatoBtn.MouseButton1Click:Connect(function()
     Optimized = not Optimized
-    PotBtn.Text = Optimized and "ULTRA BOOST: ON" or "ULTRA BOOST: OFF"
-    UpdateButtonVisual(PotBtn, Optimized)
+    PotatoBtn.Text = Optimized and "Booster Mode: ON" or "Booster Mode: OFF"
+    UpdateBtnVisual(PotatoBtn, Optimized)
     
-    settings().Rendering.QualityLevel = 1
+    -- Lighting Optimization
     Lighting.GlobalShadows = not Optimized
+    Lighting.Mode = Optimized and Enum.LightingMode.Compatibility or Enum.LightingMode.Voxel
     
-    task.spawn(function()
-        for i, v in pairs(game:GetDescendants()) do
-            if Optimized then
-                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") then
-                    v.Enabled = false
-                elseif v:IsA("Decal") or v:IsA("Texture") then
-                    v.Transparency = 1
-                elseif v:IsA("MeshPart") then
-                    v.RenderFidelity = Enum.RenderFidelity.Performance
-                    v.CollisionFidelity = Enum.CollisionFidelity.Box
-                elseif v:IsA("BasePart") then
-                    v.Material = Enum.Material.SmoothPlastic
-                    v.CastShadow = false
-                end
-            end
-            if i % 400 == 0 then task.wait() end
+    for _, v in pairs(Lighting:GetChildren()) do
+        if v:IsA("PostEffect") or v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("SunRaysEffect") then
+            v.Enabled = not Optimized
         end
-    end)
+    end
+
+    -- Material & World Optimization
+    for _, v in pairs(game:GetDescendants()) do
+        if Optimized then
+            if v:IsA("BasePart") and v.Material ~= Enum.Material.SmoothPlastic then
+                v.Material = Enum.Material.SmoothPlastic
+                v.CastShadow = false
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 1
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Enabled = false
+            end
+        else
+            if v:IsA("BasePart") then
+                v.CastShadow = true
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 0
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Enabled = true
+            end
+        end
+    end
+    
+    -- ReplicatedStorage Cleanup (NPC & VFX)
+    local vfx = ReplicatedStorage:FindFirstChild("VFX")
+    local npc = ReplicatedStorage:FindFirstChild("NPC")
+    if vfx then vfx.Parent = Optimized and nil or ReplicatedStorage end
+    if npc then npc.Parent = Optimized and nil or ReplicatedStorage end
 end)
 
--- NO RENDER (Blackout)
-RedBtn.MouseButton1Click:Connect(function()
-    NoRenderActive = not NoRenderActive
-    RedBtn.Text = NoRenderActive and "NO RENDER: ON" or "NO RENDER: OFF"
-    UpdateButtonVisual(RedBtn, NoRenderActive)
-    RunService:Set3dRenderingEnabled(not NoRenderActive)
-    if NoRenderActive then
-        local black = Instance.new("Frame", FloatGui)
-        black.Name = "Blackout"
-        black.Size = UDim2.new(1,0,1,0)
-        black.BackgroundColor3 = Color3.new(0,0,0)
-        black.ZIndex = -1
+-- // Fitur Lainnya (Freeze, WoW, Render, dll)
+FreezeBtn.MouseButton1Click:Connect(function()
+    IsFrozen = not IsFrozen
+    if HRP then HRP.Anchored = IsFrozen end
+    FreezeBtn.Text = IsFrozen and "Freeze Player: ON" or "Freeze Player: OFF"
+    UpdateBtnVisual(FreezeBtn, IsFrozen)
+end)
+
+WowBtn.MouseButton1Click:Connect(function()
+    WowEnabled = not WowEnabled
+    WowBtn.Text = WowEnabled and "Walk On Water: ON" or "Walk On Water: OFF"
+    UpdateBtnVisual(WowBtn, WowEnabled)
+    if WowEnabled then
+        BV = Instance.new("BodyVelocity", HRP)
+        BV.MaxForce = Vector3.new(0, 1e6, 0)
+        BV.Velocity = Vector3.zero
+        Conn = RunService.Heartbeat:Connect(function()
+            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z) end
+        end)
     else
-        if FloatGui:FindFirstChild("Blackout") then FloatGui.Blackout:Destroy() end
+        if Conn then Conn:Disconnect() end
+        if BV then BV:Destroy() end
     end
 end)
 
--- Stats Loop (FPS & PING)
+RenderBtn.MouseButton1Click:Connect(function()
+    AfkModeActive = not AfkModeActive
+    RunService:Set3dRenderingEnabled(not AfkModeActive)
+    RenderBtn.Text = AfkModeActive and "No Render 3D: ON" or "No Render 3D: OFF"
+    UpdateBtnVisual(RenderBtn, AfkModeActive)
+end)
+
+FpsCapBtn.MouseButton1Click:Connect(function()
+    local limits = {30, 60, 144, 999}
+    currentLimitIndex = (currentLimitIndex or 4) % #limits + 1
+    local newLimit = limits[currentLimitIndex]
+    if setfpscap then setfpscap(newLimit) end
+    FpsCapBtn.Text = (newLimit > 900) and "FPS CAP: UNLIMITED" or "FPS CAP: " .. newLimit
+end)
+
+MinBtn.MouseButton1Click:Connect(function()
+    Minimized = not Minimized
+    if Minimized then
+        ScrollFrame.Visible = false
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, 40), "Out", "Quad", 0.3, true)
+        MainFrame.BackgroundTransparency = 1
+        Header.BackgroundTransparency = 1
+        MinBtn.Text = "SHOW"
+    else
+        MainFrame:TweenSize(UDim2.new(0, UI_WIDTH, 0, UI_HEIGHT), "Out", "Quad", 0.3, true)
+        task.wait(0.2)
+        ScrollFrame.Visible = true
+        MainFrame.BackgroundTransparency = 0.1
+        Header.BackgroundTransparency = 0.2
+        MinBtn.Text = "HIDE"
+    end
+end)
+
 local lastT, frames = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if os.clock() - lastT >= 1 then
-        local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-        FloatLabel.Text = string.format("FPS: %d | PING: %dms", frames, ping)
+        FpsDisplay.Text = frames .. " FPS"
         frames, lastT = 0, os.clock()
     end
 end)
 
--- UI Interactions
-MinBtn.MouseButton1Click:Connect(function()
-    Minimized = not Minimized
-    MainFrame:TweenSize(Minimized and UDim2.new(0, 340, 0, 35) or UDim2.new(0, 340, 0, 180), "Out", "Quad", 0.3, true)
-    Scroll.Visible = not Minimized
-    MinBtn.Text = Minimized and "SHOW" or "HIDE"
-end)
-
-ReBtn.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
-
-FrzBtn.MouseButton1Click:Connect(function()
-    local HRP = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    if HRP then HRP.Anchored = not HRP.Anchored UpdateButtonVisual(FrzBtn, HRP.Anchored) end
-end)
+Notify("Seraphin Helper", "Script Berhasil Dijalankan!")
