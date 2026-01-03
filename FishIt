@@ -1,19 +1,21 @@
 --[[ 
-    SERAPHIN HELPER: RESIZABLE EDITION
-    - Fitur Baru: Tombol Resize (Ganti Ukuran UI)
-    - Fix: Show/Hide Animation & Layout
+    SERAPHIN HELPER: FINAL FIXED EDITION
+    - Size: Fixed 250x200
+    - Button: Show/Hide Text
+    - Panel: Custom Labels
+    - Feature: Save/Load Notifications
 ]]--
 
 -- [1] Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Raka Ganteng",
-        Text = "Loading Sayang ",
+        Title = "SERAPHIN HELPER",
+        Text = "Memuat Script...",
         Duration = 2,
     })
 end)
 
-task.wait(3)
+task.wait(1)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -32,15 +34,10 @@ Player.CharacterAdded:Connect(function(newChar)
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
 end)
 
--- // Konfigurasi Visual Awal
-local UI_STATE = {
-    IsMinimized = false,
-    CurrentWidth = 250,  -- Default Compact
-    CurrentHeight = 200, -- Default Compact
-    CellWidth = 114      -- Untuk Grid
-}
-
+-- // Konfigurasi Visual
 local UI_THEME = {
+    Width = 250,
+    Height = 200,
     Color = Color3.fromRGB(14, 14, 18), 
     HeaderColor = Color3.fromRGB(20, 20, 25),
     Accent = Color3.fromRGB(0, 255, 170),
@@ -110,26 +107,29 @@ local function CreateRow(text, isHeader)
     return lbl
 end
 
-local LblTitle       = CreateRow("Panel Fish Seraphin", true) 
-local Div            = Instance.new("Frame", FloatHUD) 
-Div.Size             = UDim2.new(0.7, 0, 0, 1) 
+-- Header Panel
+local LblTitle = CreateRow("Panel Fish Seraphin", true) 
+local Div = Instance.new("Frame", FloatHUD) 
+Div.Size = UDim2.new(0.7, 0, 0, 1) 
 Div.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-Div.BorderSizePixel  = 0
-local LblInv         = CreateRow("Fish: ...", false)
-local LblCaught      = CreateRow("Caught: ...", false)
+Div.BorderSizePixel = 0
+
+-- Stats Labels (Sesuai Request)
+local LblFishStat = CreateRow("Fish: ...", false)       -- Untuk Total Caught
+local LblInvStat  = CreateRow("Inventory: ...", false)  -- Untuk Backpack
 
 -- ====================================================
--- [2] MAIN MENU
+-- [2] MAIN MENU (Fixed 250x200)
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
-Main.Size = UDim2.new(0, UI_STATE.CurrentWidth, 0, UI_STATE.CurrentHeight) 
-Main.Position = UDim2.new(0.5, -UI_STATE.CurrentWidth/2, 0.4, 0)
+Main.Size = UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height) 
+Main.Position = UDim2.new(0.5, -UI_THEME.Width/2, 0.4, 0)
 Main.BackgroundColor3 = UI_THEME.Color
 Main.BackgroundTransparency = 0.05
 Main.Active = true
 Main.Draggable = true
-Main.ClipsDescendants = true -- Penting agar tombol tidak bocor saat minimize
+Main.ClipsDescendants = true 
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
 local MainStroke = Instance.new("UIStroke", Main)
@@ -151,7 +151,7 @@ HeaderFiller.BorderSizePixel = 0
 
 -- // TITLE HEADER
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1, -90, 1, 0) -- Space dikurangi untuk tombol-tombol kanan
+Title.Size = UDim2.new(1, -60, 1, 0) 
 Title.Position = UDim2.new(0, 10, 0, 0)
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
@@ -161,33 +161,15 @@ Title.TextSize = 12
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left 
 
--- // TOMBOL CONTROLS (Hide & Resize)
-local BtnContainer = Instance.new("Frame", Header)
-BtnContainer.Size = UDim2.new(0, 80, 1, 0)
-BtnContainer.Position = UDim2.new(1, -85, 0, 0)
-BtnContainer.BackgroundTransparency = 1
-
--- Tombol Resize
-local ResizeBtn = Instance.new("TextButton", BtnContainer)
-ResizeBtn.Size = UDim2.new(0, 35, 0, 20) 
-ResizeBtn.Position = UDim2.new(0, 0, 0.5, -10)
-ResizeBtn.Text = "SIZE" 
-ResizeBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-ResizeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-ResizeBtn.Font = Enum.Font.GothamBold
-ResizeBtn.TextSize = 10
-ResizeBtn.AutoButtonColor = true
-Instance.new("UICorner", ResizeBtn).CornerRadius = UDim.new(0, 4)
-
--- Tombol Hide
-local HideBtn = Instance.new("TextButton", BtnContainer)
-HideBtn.Size = UDim2.new(0, 35, 0, 20) 
-HideBtn.Position = UDim2.new(1, -35, 0.5, -10)
-HideBtn.Text = "-" 
+-- // TOMBOL SHOW/HIDE
+local HideBtn = Instance.new("TextButton", Header)
+HideBtn.Size = UDim2.new(0, 45, 0, 20) -- Sedikit diperlebar untuk teks "Show"
+HideBtn.Position = UDim2.new(1, -50, 0.5, -10)
+HideBtn.Text = "Hide" 
 HideBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 HideBtn.TextColor3 = UI_THEME.Accent
 HideBtn.Font = Enum.Font.GothamBold
-HideBtn.TextSize = 14
+HideBtn.TextSize = 10
 HideBtn.AutoButtonColor = true
 Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
 
@@ -199,73 +181,37 @@ Container.Position = UDim2.new(0, 8, 0, 38)
 Container.BackgroundTransparency = 1
 
 local Grid = Instance.new("UIGridLayout", Container)
-Grid.CellSize = UDim2.new(0, UI_STATE.CellWidth, 0, 28) 
+-- Perhitungan: (250 - 16 padding kiri kanan) = 234. (234 - 6 spasi) / 2 = 114.
+Grid.CellSize = UDim2.new(0, 114, 0, 28) 
 Grid.CellPadding = UDim2.new(0, 6, 0, 5) 
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 -- ====================================================
--- [3] LOGIC RESIZE & HIDE (YANG DIPERBAIKI)
+-- [3] LOGIC HIDE & BUTTONS
 -- ====================================================
 
--- Fungsi Update Tampilan Grid
-local function UpdateGrid()
-    local containerWidth = UI_STATE.CurrentWidth - 16
-    local cellW = (containerWidth - 6) / 2
-    Grid.CellSize = UDim2.new(0, cellW, 0, 28)
-end
+local IsMinimized = false
 
--- Logic Resize Button
-ResizeBtn.MouseButton1Click:Connect(function()
-    if UI_STATE.IsMinimized then return end -- Jangan resize kalau sedang minimize
-
-    -- Toggle Ukuran
-    if UI_STATE.CurrentWidth == 250 then
-        -- Ganti ke Besar
-        UI_STATE.CurrentWidth = 300
-        UI_STATE.CurrentHeight = 250
-        ResizeBtn.Text = "MAX"
-        ResizeBtn.TextColor3 = UI_THEME.Accent
-    else
-        -- Ganti ke Kecil (Compact)
-        UI_STATE.CurrentWidth = 250
-        UI_STATE.CurrentHeight = 200
-        ResizeBtn.Text = "MIN"
-        ResizeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-    end
-
-    -- Animasi Perubahan Ukuran
-    Main:TweenSize(UDim2.new(0, UI_STATE.CurrentWidth, 0, UI_STATE.CurrentHeight), "Out", "Quad", 0.3, true)
-    UpdateGrid()
-end)
-
--- Logic Hide Button (Perbaikan)
 HideBtn.MouseButton1Click:Connect(function() 
-    UI_STATE.IsMinimized = not UI_STATE.IsMinimized 
+    IsMinimized = not IsMinimized 
     
-    if UI_STATE.IsMinimized then
-        -- Action: Minimize
-        Container.Visible = false -- Sembunyikan isi dulu agar rapi
-        Main:TweenSize(UDim2.new(0, UI_STATE.CurrentWidth, 0, 32), "Out", "Quad", 0.3, true) 
-        HideBtn.Text = "+" 
-        ResizeBtn.Visible = false -- Sembunyikan tombol resize saat minimized
+    if IsMinimized then
+        -- Minimize
+        Container.Visible = false
+        Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, 32), "Out", "Quad", 0.3, true) 
+        HideBtn.Text = "Show" 
+        HideBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     else
-        -- Action: Maximize (Kembali ke ukuran terakhir yang disimpan)
-        Main:TweenSize(UDim2.new(0, UI_STATE.CurrentWidth, 0, UI_STATE.CurrentHeight), "Out", "Back", 0.3, true) 
-        HideBtn.Text = "-" 
+        -- Maximize
+        Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height), "Out", "Back", 0.3, true) 
+        HideBtn.Text = "Hide" 
+        HideBtn.TextColor3 = UI_THEME.Accent
         
-        -- Tampilkan isi setelah delay sedikit agar animasi mulus
         task.delay(0.2, function()
-            if not UI_STATE.IsMinimized then
-                Container.Visible = true
-                ResizeBtn.Visible = true
-            end
+            if not IsMinimized then Container.Visible = true end
         end)
     end
 end)
-
--- ====================================================
--- [4] TOMBOL & FITUR
--- ====================================================
 
 local function MakeBtn(text)
     local b = Instance.new("TextButton", Container)
@@ -298,12 +244,20 @@ local function ToggleVisual(btn, on)
     end
 end
 
+local function Notify(title, text)
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = title,
+        Text = text,
+        Duration = 3,
+    })
+end
+
 local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true}
 local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
 
--- Create Buttons
+-- Tombol
 local BtnFreeze = MakeBtn("Freeze Player")
 local BtnWow    = MakeBtn("Walk On Water")
 local BtnNoclip = MakeBtn("No Clip: OFF")
@@ -315,7 +269,7 @@ local BtnLoad   = MakeBtn("Load Pos")
 local BtnRejoin = MakeBtn("Rejoin Server")
 local BtnPanel  = MakeBtn("Panel Info: ON")
 
--- FPS Counter in Title
+-- FPS Counter
 local fpsT = 0
 RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
@@ -343,20 +297,24 @@ BtnPanel.MouseButton1Click:Connect(function()
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
--- Update Info Panel
+-- Update Info Panel (Fish & Inventory)
 task.spawn(function()
     while task.wait(0.5) do
         if not States.Panel then continue end
         pcall(function()
+            -- [1] Total Fish (Leaderstats)
             local ls = Player:FindFirstChild("leaderstats")
             local caughtObj = ls and ls:FindFirstChild("Caught")
             local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
             local val = caughtObj and caughtObj.Value or 0
-            LblCaught.Text = "Caught: " .. formatNum(val)
+            LblFishStat.Text = "Fish: " .. formatNum(val)
 
+            -- [2] Inventory (Backpack)
             local pg = Player:FindFirstChild("PlayerGui")
             local backpackGui = pg and pg:FindFirstChild("Backpack")
-            local bagText = "0"
+            local bagText = "0/?"
+            
+            -- Coba baca dari GUI backpack game asli jika ada
             if backpackGui then
                 for _, v in pairs(backpackGui:GetDescendants()) do
                     if v:IsA("TextLabel") and string.find(v.Text, "/") then 
@@ -365,10 +323,11 @@ task.spawn(function()
                     end
                 end
             else 
+                -- Fallback baca jumlah item
                 local current = #Player.Backpack:GetChildren()
-                bagText = tostring(current) .. "/?"
+                bagText = tostring(current)
             end
-            LblInv.Text = "Fish: " .. bagText
+            LblInvStat.Text = "Inventory: " .. bagText
         end)
     end
 end)
@@ -434,11 +393,16 @@ end)
 
 BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
 
+-- [REQUEST] Fitur Notifikasi Save & Load
 BtnSave.MouseButton1Click:Connect(function() 
     if HRP then 
         SavedCFrame = HRP.CFrame 
         BtnSave.Text="SAVED" 
         BtnSave.TextColor3 = Color3.fromRGB(100, 255, 100)
+        
+        -- Notifikasi Save
+        Notify("Posisi Disimpan", "Lokasi Anda saat ini telah disimpan.")
+        
         task.delay(1, function()
             BtnSave.Text="Save Pos" 
             BtnSave.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -450,7 +414,13 @@ BtnLoad.MouseButton1Click:Connect(function()
     if SavedCFrame and HRP then 
         HRP.CFrame = SavedCFrame 
         ToggleVisual(BtnLoad,true) 
+        
+        -- Notifikasi Load
+        Notify("Posisi Dimuat", "Teleportasi ke lokasi yang disimpan...")
+        
         wait(0.2) 
         ToggleVisual(BtnLoad,false) 
+    else
+        Notify("Gagal", "Belum ada posisi yang disimpan!")
     end 
 end)
