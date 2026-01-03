@@ -1,4 +1,4 @@
---[[ SERAPHIN HELPER: AUTO RESPAWN STUCK FIX ]]--
+--[[ SERAPHIN HELPER: SMART STUCK DETECTOR (NO FISHING RESET) ]]--
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -38,11 +38,11 @@ ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 -- ==========================================
--- [1] VERTICAL FLOATING PANEL (HUD)
+-- [1] VERTICAL FLOATING PANEL
 -- ==========================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 240, 0, 100) -- Agak lebar untuk teks status
+FloatHUD.Size = UDim2.new(0, 240, 0, 100)
 FloatHUD.Position = UDim2.new(0.75, 0, 0.2, 0)
 FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
 FloatHUD.BackgroundTransparency = 0.1
@@ -57,7 +57,6 @@ HudStroke.Color = UI_CONFIG.Accent
 HudStroke.Thickness = 2
 HudStroke.Transparency = 0.3
 
--- Layout
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
 ListLayout.FillDirection = Enum.FillDirection.Vertical
 ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
@@ -107,7 +106,6 @@ MainStroke.Color = UI_CONFIG.Accent
 MainStroke.Thickness = 1.5
 MainStroke.Transparency = 0.3
 
--- Header
 local Header = Instance.new("Frame", Main)
 Header.Size = UDim2.new(1, 0, 0, 40)
 Header.BackgroundColor3 = UI_CONFIG.HeaderColor
@@ -169,7 +167,7 @@ Grid.CellSize = UDim2.new(0, 210, 0, 38)
 Grid.CellPadding = UDim2.new(0, 14, 0, 10)
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- // Fungsi Helper UI
+-- Helper function
 local function MakeBtn(text)
     local b = Instance.new("TextButton", Container)
     b.Text = text
@@ -204,8 +202,8 @@ local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=fal
 local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
-local StuckTime = 0     -- Menghitung durasi stuck
-local IsFixing = false  -- Mencegah loop respawn
+local StuckTime = 0     
+local IsFixing = false  
 
 -- // TOMBOL UI
 local BtnFreeze = MakeBtn("Freeze Player")
@@ -228,20 +226,48 @@ BtnPanel.MouseButton1Click:Connect(function()
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
--- // LOGIKA UTAMA (Loop Check)
+-- // FUNGSI PINTAR: CEK STATUS FISHING
+-- Fungsi ini mengecek apakah player sedang mancing (UI muncul atau Tool aktif)
+local function CheckIsFishing()
+    -- Cek 1: Apakah ada GUI Mancing (biasanya 'shakeui' atau 'reel')
+    local pGui = Player:FindFirstChild("PlayerGui")
+    if pGui then
+        if pGui:FindFirstChild("shakeui") and pGui.shakeui.Enabled then return true end
+        if pGui:FindFirstChild("reelui") and pGui.reelui.Enabled then return true end
+        if pGui:FindFirstChild("bar") and pGui.bar.Enabled then return true end -- generic
+    end
+
+    -- Cek 2: Apakah Tool 'Rod' sedang dipegang & Animasi aktif?
+    -- Kita anggap jika tool rod dipegang dan player diam, jangan reset.
+    local char = Player.Character
+    if char then
+        local tool = char:FindFirstChildWhichIsA("Tool")
+        if tool and (string.find(tool.Name:lower(), "rod") or string.find(tool.Name:lower(), "fish")) then
+            -- Jika pegang rod, kita lebih hati-hati. 
+            -- Jika speed 0, kita asumsikan sedang menunggu ikan (jangan di reset).
+            if char.HumanoidRootPart.AssemblyLinearVelocity.Magnitude < 1 then
+                return true 
+            end
+        end
+    end
+
+    return false
+end
+
+-- // LOOP UTAMA (PANEL + STUCK LOGIC)
 task.spawn(function()
     while task.wait(0.2) do
         if not States.Panel then continue end
-        if IsFixing then continue end -- Jangan update panel kalau lagi proses respawn
+        if IsFixing then continue end 
         
         -- 1. Fish Caught
         pcall(function()
             local ls = Player:FindFirstChild("leaderstats")
             local caught = ls and ls:FindFirstChild("Caught")
-            LblFish.Text = "🐟 Fish Caught : " .. (caught and caught.Value or "0")
+            LblFish.Text = "Fish Caught : " .. (caught and caught.Value or "0")
         end)
 
-        -- 2. Inventory / Backpack
+        -- 2. Inventory
         pcall(function()
             local pg = Player:FindFirstChild("PlayerGui")
             local backpackGui = pg and pg:FindFirstChild("Backpack")
@@ -256,86 +282,86 @@ task.spawn(function()
             else
                 bagText = #Player.Backpack:GetChildren() 
             end
-            LblBag.Text = "🎒 Inventory   : " .. bagText
+            LblBag.Text = "Inventory   : " .. bagText
         end)
 
-        -- 3. AUTO STUCK DETECTOR & FIXER
+        -- 3. SMART STUCK DETECTOR
         pcall(function()
             if not Char or not HRP then return end
             local hum = Char:FindFirstChild("Humanoid")
             
             if hum and HRP then
-                local isTryingToMove = hum.MoveDirection.Magnitude > 0
-                local speed = HRP.AssemblyLinearVelocity.Magnitude
-                
-                -- LOGIKA STUCK
-                if isTryingToMove and speed < 1 then
-                    StuckTime = StuckTime + 0.2
-                    
-                    -- Update UI Warning
-                    local timeLeft = math.ceil(3 - StuckTime)
-                    LblStuck.Text = "🔴 Stuck! Auto Fix in: " .. timeLeft .. "s"
-                    LblStuck.TextColor3 = Color3.fromRGB(255, 50, 50)
-
-                    -- TRIGGER AUTO FIX (Jika stuck > 3 detik)
-                    if StuckTime >= 3 then
-                        IsFixing = true
-                        LblStuck.Text = "♻️ RESPAWNING..."
-                        
-                        -- Save Posisi Terakhir
-                        local LastPos = HRP.CFrame
-                        
-                        -- Kill Character (Reset)
-                        hum.Health = 0
-                        
-                        -- Wait Respawn
-                        local newChar = Player.CharacterAdded:Wait()
-                        local newHRP = newChar:WaitForChild("HumanoidRootPart")
-                        local newHum = newChar:WaitForChild("Humanoid")
-                        
-                        -- Update Variables Global
-                        Char = newChar
-                        HRP = newHRP
-                        
-                        LblStuck.Text = "🚀 TELEPORTING BACK..."
-                        task.wait(1) -- Tunggu loading sebentar
-                        
-                        -- Teleport Back
-                        newHRP.CFrame = LastPos
-                        
-                        -- Reset Logic
-                        StuckTime = 0
-                        IsFixing = false
-                        LblStuck.Text = "🟢 Status      : Recovered!"
-                        LblStuck.TextColor3 = Color3.fromRGB(0, 255, 100)
-                    end
-                    
-                elseif isTryingToMove then
-                    -- Normal Walking
-                    StuckTime = 0
-                    LblStuck.Text = "🟢 Status      : Moving"
-                    LblStuck.TextColor3 = UI_CONFIG.Accent
+                -- Cek apakah kita sedang Fishing?
+                if CheckIsFishing() then
+                    StuckTime = 0 -- Reset timer stuck
+                    LblStuck.Text = "🎣 Status      : Fishing..."
+                    LblStuck.TextColor3 = Color3.fromRGB(0, 200, 255) -- Biru Laut
                 else
-                    -- Idle
-                    StuckTime = 0
-                    LblStuck.Text = "⚪ Status      : Idle"
-                    LblStuck.TextColor3 = Color3.fromRGB(200, 200, 200)
+                    -- Jika TIDAK Mancing, baru kita cek Stuck
+                    local isTryingToMove = hum.MoveDirection.Magnitude > 0
+                    local speed = HRP.AssemblyLinearVelocity.Magnitude
+                    
+                    if isTryingToMove and speed < 1 then
+                        -- Mencoba jalan tapi diam = STUCK
+                        StuckTime = StuckTime + 0.3
+                        local timeLeft = math.ceil(3 - StuckTime)
+                        LblStuck.Text = "🔴 Stuck! Fix in: " .. timeLeft .. "s"
+                        LblStuck.TextColor3 = Color3.fromRGB(255, 50, 50)
+
+                        -- TRIGGER AUTO FIX
+                        if StuckTime >= 3 then
+                            IsFixing = true
+                            LblStuck.Text = "♻️ RESPAWNING..."
+                            local LastPos = HRP.CFrame
+                            
+                            -- Reset Karakter
+                            hum.Health = 0
+                            
+                            -- Tunggu Spawn
+                            local newChar = Player.CharacterAdded:Wait()
+                            local newHRP = newChar:WaitForChild("HumanoidRootPart")
+                            local newHum = newChar:WaitForChild("Humanoid")
+                            
+                            -- Update Ref
+                            Char = newChar
+                            HRP = newHRP
+                            
+                            LblStuck.Text = "🚀 RETURNING..."
+                            task.wait(1) 
+                            
+                            -- Teleport Balik
+                            newHRP.CFrame = LastPos
+                            
+                            StuckTime = 0
+                            IsFixing = false
+                            LblStuck.Text = "🟢 Recovered!"
+                            LblStuck.TextColor3 = Color3.fromRGB(0, 255, 100)
+                        end
+                        
+                    elseif isTryingToMove then
+                        -- Jalan Normal
+                        StuckTime = 0
+                        LblStuck.Text = "🟢 Status      : Moving"
+                        LblStuck.TextColor3 = UI_CONFIG.Accent
+                    else
+                        -- Diam (Idle)
+                        StuckTime = 0
+                        LblStuck.Text = "⚪ Status      : Idle"
+                        LblStuck.TextColor3 = Color3.fromRGB(200, 200, 200)
+                    end
                 end
             end
         end)
     end
 end)
 
--- // FITUR TOMBOL (Tetap Sama)
-
--- Freeze
+-- // FITUR TOMBOL (Sama seperti sebelumnya)
 BtnFreeze.MouseButton1Click:Connect(function()
     States.Freeze = not States.Freeze
     if HRP then HRP.Anchored = States.Freeze end
     ToggleVisual(BtnFreeze, States.Freeze)
 end)
 
--- Walk On Water
 BtnWow.MouseButton1Click:Connect(function()
     States.WoW = not States.WoW
     ToggleVisual(BtnWow, States.WoW)
@@ -352,12 +378,10 @@ BtnWow.MouseButton1Click:Connect(function()
     end
 end)
 
--- No Clip
 BtnNoclip.MouseButton1Click:Connect(function()
     States.Noclip = not States.Noclip
     BtnNoclip.Text = "No Clip: " .. (States.Noclip and "ON" or "OFF")
     ToggleVisual(BtnNoclip, States.Noclip)
-    
     if States.Noclip then
         Connections["Noclip"] = RunService.Stepped:Connect(function()
             if Player.Character then
@@ -371,7 +395,6 @@ BtnNoclip.MouseButton1Click:Connect(function()
     end
 end)
 
--- Booster Mode
 BtnBoost.MouseButton1Click:Connect(function()
     States.Boost = not States.Boost
     ToggleVisual(BtnBoost, States.Boost)
@@ -416,7 +439,6 @@ BtnBoost.MouseButton1Click:Connect(function()
     end
 end)
 
--- Render & FPS
 BtnRender.MouseButton1Click:Connect(function()
     States.NoRender = not States.NoRender
     RunService:Set3dRenderingEnabled(not States.NoRender)
@@ -432,7 +454,6 @@ BtnFps.MouseButton1Click:Connect(function()
     BtnFps.Text = "FPS Cap: " .. (val > 900 and "Unlimited" or val)
 end)
 
--- Rejoin & Teleport
 BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
 
 BtnSave.MouseButton1Click:Connect(function()
@@ -443,7 +464,6 @@ BtnLoad.MouseButton1Click:Connect(function()
     if SavedCFrame and HRP then HRP.CFrame = SavedCFrame ToggleVisual(BtnLoad, true) wait(0.5) ToggleVisual(BtnLoad, false) end
 end)
 
--- Hide Logic
 local IsMin = false
 HideBtn.MouseButton1Click:Connect(function()
     IsMin = not IsMin
@@ -452,11 +472,10 @@ HideBtn.MouseButton1Click:Connect(function()
     HideBtn.Text = IsMin and "SHOW" or "HIDE"
 end)
 
--- FPS Loop
 local last, f = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     f += 1
     if os.clock() - last >= 1 then FpsLbl.Text = f .. " FPS" f, last = 0, os.clock() end
 end)
 
-print(":: SERAPHIN HELPER + AUTO STUCK FIX LOADED ::")
+print(":: SERAPHIN HELPER LOADING ::")
