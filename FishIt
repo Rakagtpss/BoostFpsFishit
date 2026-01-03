@@ -1,26 +1,27 @@
---[[ SERAPHIN HELPER: CUSTOM DIMENSIONS (350x230 | 200x150) ]]--
+--[[ SERAPHIN HELPER: FINAL ADJUSTMENT (300x250 | NOTIF SAVE) ]]--
 
--- [1] Kirim Notifikasi Terlebih Dahulu
+-- [1] Kirim Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "SERAPHIN HELPER",
-        Text = "LOADING MENU ",
+        Text = "Memuat Script... Tunggu 3 Detik",
         Duration = 3,
     })
 end)
 
--- [2] Delay Selama 3 Detik
+-- [2] Delay
 task.wait(3)
 
--- [3] Mulai Script Utama
+-- [3] Mulai Script
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui") -- Service untuk Notif
 
--- // Setup & Safety
+-- // Setup
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 5)
@@ -30,10 +31,10 @@ Player.CharacterAdded:Connect(function(newChar)
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
 end)
 
--- // Konfigurasi UI
+-- // Konfigurasi UI (UPDATED)
 local UI_CONFIG = {
-    Width = 350,   -- [UBAH] Lebar Main UI
-    Height = 230,  -- [UBAH] Tinggi Main UI
+    Width = 300,   -- [UBAH] Lebar Main UI
+    Height = 250,  -- [UBAH] Tinggi Main UI
     Color = Color3.fromRGB(10, 10, 12), 
     HeaderColor = Color3.fromRGB(15, 15, 18),
     Accent = Color3.fromRGB(0, 255, 170),
@@ -50,11 +51,10 @@ ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 -- ==========================================
--- [1] FLOAT HUD (CUSTOM SIZE 200x150)
+-- [1] FLOAT HUD (TITLE MOVED UP)
 -- ==========================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
--- [UBAH] Ukuran Mini Floating UI disesuaikan permintaan
 FloatHUD.Size = UDim2.new(0, 200, 0, 150) 
 FloatHUD.Position = UDim2.new(0.85, 0, 0.3, 0)
 FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
@@ -71,12 +71,12 @@ HudStroke.Transparency = 0.1
 
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
 ListLayout.FillDirection = Enum.FillDirection.Vertical
-ListLayout.Padding = UDim.new(0, 4) -- Sedikit dilonggarkan karena tinggi bertambah
+ListLayout.Padding = UDim.new(0, 4) 
 ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center 
-ListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+ListLayout.VerticalAlignment = Enum.VerticalAlignment.Top -- [UBAH] Align Top agar judul naik
 
 local Padding = Instance.new("UIPadding", FloatHUD)
-Padding.PaddingTop = UDim.new(0, 10)
+Padding.PaddingTop = UDim.new(0, 8) -- [UBAH] Padding atas dikurangi agar judul naik
 Padding.PaddingBottom = UDim.new(0, 10)
 
 -- // FUNGSI LABEL
@@ -92,12 +92,12 @@ local function CreateLabel(text, size, color, font)
     return l
 end
 
--- 1. JUDUL
+-- 1. JUDUL (Posisi lebih ke atas sekarang)
 local LblTitle = CreateLabel("SERAPHIN PANEL", 14, UI_CONFIG.Accent, Enum.Font.GothamBlack)
 
 -- SPASI
 local Spacer1 = Instance.new("Frame", FloatHUD)
-Spacer1.Size = UDim2.new(1,0,0,8)
+Spacer1.Size = UDim2.new(1,0,0,10) -- Sedikit jarak setelah judul
 Spacer1.BackgroundTransparency = 1
 
 -- 2. INVENTORY (BOLD)
@@ -114,7 +114,7 @@ local LblCaughtHeader = CreateLabel("TOTAL FISH CAUGHT:", 11, Color3.fromRGB(180
 local LblCaughtVal    = CreateLabel("Value: ...", 13, UI_CONFIG.TextColor, Enum.Font.GothamBold)
 
 -- ==========================================
--- [2] MAIN MENU (CUSTOM SIZE 350x230)
+-- [2] MAIN MENU (300x250)
 -- ==========================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
@@ -162,8 +162,8 @@ Container.Position = UDim2.new(0, 5, 0, 35)
 Container.BackgroundTransparency = 1
 
 local Grid = Instance.new("UIGridLayout", Container)
--- [UBAH] Ukuran Tombol dikecilkan lebarnya (160) agar muat di lebar UI 350
-Grid.CellSize = UDim2.new(0, 160, 0, 24) 
+-- [UBAH] Tombol dikecilkan lebar (135) agar muat di lebar 300
+Grid.CellSize = UDim2.new(0, 135, 0, 24) 
 Grid.CellPadding = UDim2.new(0, 5, 0, 5) 
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
@@ -221,13 +221,12 @@ BtnPanel.MouseButton1Click:Connect(function()
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
--- // LOOP UTAMA (UPDATER)
+-- // LOOP UTAMA
 task.spawn(function()
     while task.wait(0.5) do
         if not States.Panel then continue end 
         
         pcall(function()
-            -- Update Caught
             local ls = Player:FindFirstChild("leaderstats")
             local caughtObj = ls and ls:FindFirstChild("Caught")
             if caughtObj then 
@@ -236,7 +235,6 @@ task.spawn(function()
                 LblCaughtVal.Text = "Value: -"
             end
 
-            -- Update Inventory
             local pg = Player:FindFirstChild("PlayerGui")
             local backpackGui = pg and pg:FindFirstChild("Backpack")
             local bagText = "0"
@@ -251,7 +249,6 @@ task.spawn(function()
                 bagText = #Player.Backpack:GetChildren() 
             end
             
-            -- Format Bold
             if string.find(bagText, "/") then
                 LblInvVal.Text = "Fish: " .. bagText
             else
@@ -289,21 +286,30 @@ end)
 
 BtnRender.MouseButton1Click:Connect(function() States.NoRender = not States.NoRender RunService:Set3dRenderingEnabled(not States.NoRender) BtnRender.Text = "3D Rendering: "..(States.NoRender and "OFF" or "ON") ToggleVisual(BtnRender, States.NoRender) end)
 BtnFps.MouseButton1Click:Connect(function() local l={30,60,144,999} _G.l=((_G.l or 4)%#l)+1 local v=l[_G.l] if setfpscap then setfpscap(v) end BtnFps.Text="FPS Cap: "..(v>900 and "Unlimited" or v) end)
-
 BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
-BtnSave.MouseButton1Click:Connect(function() if HRP then SavedCFrame = HRP.CFrame BtnSave.Text="Pos Saved!" ToggleVisual(BtnSave,true) wait(1) ToggleVisual(BtnSave,false) BtnSave.Text="Save Position" end end)
-BtnLoad.MouseButton1Click:Connect(function() if SavedCFrame and HRP then HRP.CFrame = SavedCFrame ToggleVisual(BtnLoad,true) wait(0.5) ToggleVisual(BtnLoad,false) end end)
 
--- // FPS UPDATER
-local last, f = os.clock(), 0
-local BaseTitle = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
-
-RunService.RenderStepped:Connect(function() 
-    f += 1 
-    if os.clock() - last >= 1 then 
-        Title.Text = BaseTitle .. " <font color=\"rgb(150,150,150)\">|</font> FPS : <font color=\"rgb(0,255,170)\">" .. f .. "</font>"
-        f, last = 0, os.clock() 
+-- [UPDATED] SAVE POSITION WITH NOTIFICATION
+BtnSave.MouseButton1Click:Connect(function() 
+    if HRP then 
+        SavedCFrame = HRP.CFrame 
+        BtnSave.Text="Pos Saved!" 
+        ToggleVisual(BtnSave,true) 
+        
+        -- Kirim Notifikasi
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {
+                Title = "Position Saved",
+                Text = "Lokasi Anda telah disimpan!",
+                Duration = 2,
+            })
+        end)
+        
+        wait(1) 
+        ToggleVisual(BtnSave,false) 
+        BtnSave.Text="Save Position" 
     end 
 end)
 
-print(":: SERAPHIN HELPER CUSTOM SIZE LOADED ::")
+BtnLoad.MouseButton1Click:Connect(function() if SavedCFrame and HRP then HRP.CFrame = SavedCFrame ToggleVisual(BtnLoad,true) wait(0.5) ToggleVisual(BtnLoad,false) end end)
+
+print(":: SERAPHIN HELPER FINAL LOADED ::")
