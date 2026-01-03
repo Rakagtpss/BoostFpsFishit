@@ -1,10 +1,10 @@
---[[ SERAPHIN HELPER: VERTICAL HUD STYLE (DELAY + NOTIF) ]]--
+--[[ SERAPHIN HELPER: COMPACT VERTICAL + BOLD FONT + SMALL BTNS ]]--
 
 -- [1] Kirim Notifikasi Terlebih Dahulu
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "SERAPHIN HELPER",
-        Text = "LOADING SCRIPT",
+        Text = "Loading Script",
         Duration = 3,
     })
 end)
@@ -30,13 +30,13 @@ Player.CharacterAdded:Connect(function(newChar)
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
 end)
 
--- // Konfigurasi UI (Warna Lama)
+-- // Konfigurasi UI
 local UI_CONFIG = {
-    Width = 460, 
-    Height = 250, 
+    Width = 430,  -- Lebar Panel Utama dikurangi sedikit
+    Height = 220, -- Tinggi Panel Utama dikurangi
     Color = Color3.fromRGB(10, 10, 12), 
     HeaderColor = Color3.fromRGB(15, 15, 18),
-    Accent = Color3.fromRGB(0, 255, 170), -- Warna Hijau/Teal Lama
+    Accent = Color3.fromRGB(0, 255, 170),
     StatsColor = Color3.fromRGB(15, 15, 20),
     TextColor = Color3.fromRGB(255, 255, 255),
     Font = Enum.Font.GothamBold,
@@ -50,20 +50,20 @@ ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 -- ==========================================
--- [1] FLOAT HUD (REMASTERED LIKE IMAGE)
+-- [1] FLOAT HUD (SHORT VERSION + BOLD)
 -- ==========================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
--- [UBAH] Ukuran dibuat memanjang ke bawah (Vertikal) seperti gambar
-FloatHUD.Size = UDim2.new(0, 200, 0, 220) 
-FloatHUD.Position = UDim2.new(0.8, 0, 0.3, 0)
+-- [UBAH] Ukuran diperpendek (155px) agar tidak kepanjangan
+FloatHUD.Size = UDim2.new(0, 180, 0, 155) 
+FloatHUD.Position = UDim2.new(0.85, 0, 0.3, 0)
 FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
 FloatHUD.BackgroundTransparency = 0.1
 FloatHUD.Visible = true 
 FloatHUD.Active = true
 FloatHUD.Draggable = true 
 
-Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 10)
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_CONFIG.Accent
 HudStroke.Thickness = 2
@@ -71,17 +71,15 @@ HudStroke.Transparency = 0.1
 
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
 ListLayout.FillDirection = Enum.FillDirection.Vertical
-ListLayout.Padding = UDim.new(0, 5) -- Jarak antar elemen
+ListLayout.Padding = UDim.new(0, 2) -- Spasi sangat rapat
 ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center 
 ListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 
 local Padding = Instance.new("UIPadding", FloatHUD)
-Padding.PaddingTop = UDim.new(0, 15)
-Padding.PaddingBottom = UDim.new(0, 15)
-Padding.PaddingLeft = UDim.new(0, 10)
-Padding.PaddingRight = UDim.new(0, 10)
+Padding.PaddingTop = UDim.new(0, 10)
+Padding.PaddingBottom = UDim.new(0, 10)
 
--- // FUNGSI PEMBUAT LABEL //
+-- // FUNGSI LABEL
 local function CreateLabel(text, size, color, font)
     local l = Instance.new("TextLabel", FloatHUD)
     l.Size = UDim2.new(1, 0, 0, size)
@@ -94,38 +92,38 @@ local function CreateLabel(text, size, color, font)
     return l
 end
 
--- 1. JUDUL PANEL (Sisi Kanan di Gambar, tapi kita taruh di Atas agar rapi)
-local LblTitle = CreateLabel("SERAPHIN PANEL", 16, UI_CONFIG.Accent, Enum.Font.GothamBlack)
+-- 1. JUDUL
+local LblTitle = CreateLabel("SERAPHIN PANEL", 14, UI_CONFIG.Accent, Enum.Font.GothamBlack)
 
--- SPASI
+-- SPASI KECIL
 local Spacer1 = Instance.new("Frame", FloatHUD)
-Spacer1.Size = UDim2.new(1,0,0,10)
+Spacer1.Size = UDim2.new(1,0,0,4)
 Spacer1.BackgroundTransparency = 1
 
--- 2. INVENTORY SECTION
-local LblInvHeader = CreateLabel("INVENTORY COUNT:", 14, UI_CONFIG.TextColor, Enum.Font.GothamBold)
-local LblInvVal    = CreateLabel("Fish: Loading...", 14, Color3.fromRGB(200, 200, 200), Enum.Font.Gotham)
+-- 2. INVENTORY (BOLD)
+local LblInvHeader = CreateLabel("INVENTORY COUNT:", 11, Color3.fromRGB(180,180,180), Enum.Font.GothamBold)
+local LblInvVal    = CreateLabel("Fish: ...", 13, UI_CONFIG.TextColor, Enum.Font.GothamBold) -- [BOLD]
 
--- SPASI
+-- SPASI KECIL
 local Spacer2 = Instance.new("Frame", FloatHUD)
-Spacer2.Size = UDim2.new(1,0,0,10)
+Spacer2.Size = UDim2.new(1,0,0,4)
 Spacer2.BackgroundTransparency = 1
 
--- 3. CAUGHT SECTION
-local LblCaughtHeader = CreateLabel("TOTAL FISH CAUGHT:", 14, UI_CONFIG.TextColor, Enum.Font.GothamBold)
-local LblCaughtVal    = CreateLabel("Value: Loading...", 14, Color3.fromRGB(200, 200, 200), Enum.Font.Gotham)
+-- 3. CAUGHT (BOLD)
+local LblCaughtHeader = CreateLabel("TOTAL FISH CAUGHT:", 11, Color3.fromRGB(180,180,180), Enum.Font.GothamBold)
+local LblCaughtVal    = CreateLabel("Value: ...", 13, UI_CONFIG.TextColor, Enum.Font.GothamBold) -- [BOLD]
 
--- SPASI
+-- SPASI AGAK BESAR SEBELUM STATUS
 local Spacer3 = Instance.new("Frame", FloatHUD)
-Spacer3.Size = UDim2.new(1,0,0,15)
+Spacer3.Size = UDim2.new(1,0,0,8)
 Spacer3.BackgroundTransparency = 1
 
--- 4. STATUS (Hijau Besar di Bawah)
-local LblStatus = CreateLabel("FISHING NORMAL", 18, UI_CONFIG.Accent, Enum.Font.GothamBlack)
+-- 4. STATUS
+local LblStatus = CreateLabel("FISHING NORMAL", 14, UI_CONFIG.Accent, Enum.Font.GothamBlack)
 
 
 -- ==========================================
--- [2] MAIN MENU (COMPACT)
+-- [2] MAIN MENU (SMALL BUTTONS)
 -- ==========================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
@@ -142,39 +140,40 @@ MainStroke.Thickness = 1.5
 MainStroke.Transparency = 0.3
 
 local Header = Instance.new("Frame", Main)
-Header.Size = UDim2.new(1, 0, 0, 35) 
+Header.Size = UDim2.new(1, 0, 0, 30) -- Header lebih kecil dikit
 Header.BackgroundColor3 = UI_CONFIG.HeaderColor
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0)
 Title.Position = UDim2.new(0, 10, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font> | FPS : ..."
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = UI_CONFIG.Font
-Title.TextSize = 13 
+Title.TextSize = 12
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local HideBtn = Instance.new("TextButton", Header)
-HideBtn.Size = UDim2.new(0, 45, 0, 22) 
-HideBtn.Position = UDim2.new(1, -55, 0.5, -11)
+HideBtn.Size = UDim2.new(0, 40, 0, 18) 
+HideBtn.Position = UDim2.new(1, -45, 0.5, -9)
 HideBtn.Text = "HIDE"
 HideBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
 HideBtn.TextColor3 = Color3.new(1,1,1)
 HideBtn.Font = UI_CONFIG.Font
 HideBtn.TextSize = 9
-Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
 
 local Container = Instance.new("Frame", Main)
-Container.Size = UDim2.new(1, -20, 1, -45) 
-Container.Position = UDim2.new(0, 10, 0, 40)
+Container.Size = UDim2.new(1, -10, 1, -35) 
+Container.Position = UDim2.new(0, 5, 0, 35)
 Container.BackgroundTransparency = 1
 
 local Grid = Instance.new("UIGridLayout", Container)
-Grid.CellSize = UDim2.new(0, 215, 0, 32) 
-Grid.CellPadding = UDim2.new(0, 10, 0, 8) 
+-- [UBAH] Tombol dibuat lebih kecil (Tinggi 25px) agar muat banyak & tidak makan tempat
+Grid.CellSize = UDim2.new(0, 205, 0, 25) 
+Grid.CellPadding = UDim2.new(0, 5, 0, 5) 
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local function MakeBtn(text)
@@ -183,9 +182,9 @@ local function MakeBtn(text)
     b.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
     b.TextColor3 = Color3.fromRGB(200, 200, 200)
     b.Font = UI_CONFIG.BtnFont 
-    b.TextSize = 10 
+    b.TextSize = 9 -- Ukuran text tombol disesuaikan
     b.AutoButtonColor = true
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 5) 
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
     local s = Instance.new("UIStroke", b)
     s.Color = Color3.fromRGB(50, 50, 55)
     s.Thickness = 1
@@ -261,7 +260,7 @@ task.spawn(function()
                 bagText = #Player.Backpack:GetChildren() 
             end
             
-            -- Format sesuai gambar
+            -- Format Bold
             if string.find(bagText, "/") then
                 LblInvVal.Text = "Fish: " .. bagText
             else
@@ -273,7 +272,7 @@ end)
 
 -- // FITUR TOMBOL
 local IsMin = false
-HideBtn.MouseButton1Click:Connect(function() IsMin = not IsMin Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, IsMin and 35 or UI_CONFIG.Height), "Out", "Quad", 0.25, true) Container.Visible = not IsMin HideBtn.Text = IsMin and "SHOW" or "HIDE" end)
+HideBtn.MouseButton1Click:Connect(function() IsMin = not IsMin Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, IsMin and 30 or UI_CONFIG.Height), "Out", "Quad", 0.25, true) Container.Visible = not IsMin HideBtn.Text = IsMin and "SHOW" or "HIDE" end)
 BtnFreeze.MouseButton1Click:Connect(function() States.Freeze = not States.Freeze if HRP then HRP.Anchored = States.Freeze end ToggleVisual(BtnFreeze, States.Freeze) end)
 BtnWow.MouseButton1Click:Connect(function() States.WoW = not States.WoW ToggleVisual(BtnWow, States.WoW) if States.WoW then BodyV = Instance.new("BodyVelocity", HRP) BodyV.MaxForce = Vector3.new(0,1e6,0) BodyV.Velocity = Vector3.zero Connections["WoW"] = RunService.Heartbeat:Connect(function() if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X,0,HRP.AssemblyLinearVelocity.Z) end end) else if Connections["WoW"] then Connections["WoW"]:Disconnect() end if BodyV then BodyV:Destroy() end end end)
 BtnNoclip.MouseButton1Click:Connect(function() States.Noclip = not States.Noclip BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") ToggleVisual(BtnNoclip, States.Noclip) if States.Noclip then Connections["Noclip"] = RunService.Stepped:Connect(function() if Player.Character then for _,v in pairs(Player.Character:GetDescendants()) do if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end end end end) else if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end end end)
