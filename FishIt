@@ -32,8 +32,8 @@ end)
 
 -- // Konfigurasi UI
 local UI_CONFIG = {
-    Width = 430,  
-    Height = 200, -- [UBAH] Tinggi Panel Utama dikurangi agar pas dengan tombol yang padat
+    Width = 350,  
+    Height = 250, -- [UBAH] Tinggi Panel Utama dikurangi agar pas dengan tombol yang padat
     Color = Color3.fromRGB(10, 10, 12), 
     HeaderColor = Color3.fromRGB(15, 15, 18),
     Accent = Color3.fromRGB(0, 255, 170),
