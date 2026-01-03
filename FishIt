@@ -1,6 +1,6 @@
 --[[ 
-    SERAPHIN HELPER: OPTIMIZED CORE 
-    Rewritten for Maximum Performance & Minimalism
+    SERAPHIN HELPER: DARK GLASS OPTIMIZED 
+    Style: Dark Glass (Black/Neon) | Core: Lightweight
 ]]
 
 -- [1] SERVICES & VARIABLES
@@ -23,14 +23,14 @@ end
 if LocalPlayer.Character then UpdateChar(LocalPlayer.Character) end
 LocalPlayer.CharacterAdded:Connect(UpdateChar)
 
--- [2] THEME CONFIGURATION (Dark Glass)
+-- [2] THEME CONFIGURATION (Dark Glass Style)
 local Theme = {
     MainColor = Color3.fromRGB(0, 0, 0),         -- Hitam Pekat
-    Transp    = 0.55,                            -- Transparansi Kaca
-    Accent    = Color3.fromRGB(0, 255, 170),     -- Hijau Neon
-    Text      = Color3.fromRGB(255, 255, 255),   -- Putih
-    Gray      = Color3.fromRGB(40, 40, 40),      -- Abu Gelap (Tombol)
-    Font      = Enum.Font.Gotham,                -- Font Ringan
+    Transp    = 0.6,                             -- Transparansi Kaca (60%)
+    Accent    = Color3.fromRGB(0, 255, 180),     -- Hijau Neon
+    Text      = Color3.fromRGB(240, 240, 240),   -- Putih Tulang
+    BtnOff    = Color3.fromRGB(30, 30, 30),      -- Abu Gelap (Tombol Mati)
+    Font      = Enum.Font.Gotham,                -- Font Tipis (Modern)
     Bold      = Enum.Font.GothamBold
 }
 
@@ -41,23 +41,27 @@ Screen.Name = "SeraphinOpt"
 Screen.Parent = Services.CoreGui
 Screen.ResetOnSpawn = false
 
--- > Floating HUD
+-- > Floating HUD (Pojok Kanan)
 local HUD = Instance.new("Frame", Screen)
 HUD.Name = "HUD"
-HUD.Size = UDim2.new(0, 180, 0, 50)
+HUD.Size = UDim2.new(0, 180, 0, 55)
 HUD.Position = UDim2.new(0.85, -90, 0.2, 0)
 HUD.BackgroundColor3 = Theme.MainColor
-HUD.BackgroundTransparency = 0.5
+HUD.BackgroundTransparency = 0.5 -- Sedikit lebih gelap dari menu utama
 HUD.Active = true
 HUD.Draggable = true
+HUD.Visible = true
 Instance.new("UICorner", HUD).CornerRadius = UDim.new(0, 6)
-Instance.new("UIStroke", HUD).Color = Theme.Accent
-HUD.UIStroke.Transparency = 0.7
+-- Menggunakan UIStroke sebagai border tipis (Ringan)
+local HudStroke = Instance.new("UIStroke", HUD)
+HudStroke.Color = Theme.Accent
+HudStroke.Transparency = 0.6
+HudStroke.Thickness = 1
 
 local function AddLabel(parent, text, yPos)
     local l = Instance.new("TextLabel", parent)
     l.Size = UDim2.new(1, -10, 0, 20)
-    l.Position = UDim2.new(0, 8, 0, yPos)
+    l.Position = UDim2.new(0, 10, 0, yPos)
     l.BackgroundTransparency = 1
     l.Text = text
     l.TextColor3 = Theme.Text
@@ -67,14 +71,14 @@ local function AddLabel(parent, text, yPos)
     l.RichText = true
     return l
 end
-local StatFish = AddLabel(HUD, "Fetching...", 4)
-local StatBag  = AddLabel(HUD, "Fetching...", 24)
+local StatFish = AddLabel(HUD, "Fetching...", 5)
+local StatBag  = AddLabel(HUD, "Fetching...", 28)
 
 -- > Main Window
 local Main = Instance.new("Frame", Screen)
 Main.Name = "Main"
-Main.Size = UDim2.new(0, 400, 0, 260)
-Main.Position = UDim2.new(0.5, -200, 0.4, 0)
+Main.Size = UDim2.new(0, 420, 0, 260) -- Lebar sedikit ditambah agar lega
+Main.Position = UDim2.new(0.5, -210, 0.4, 0)
 Main.BackgroundColor3 = Theme.MainColor
 Main.BackgroundTransparency = Theme.Transp
 Main.Active = true
@@ -84,15 +88,15 @@ Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
 -- > Header
 local Header = Instance.new("Frame", Main)
-Header.Size = UDim2.new(1, 0, 0, 32)
+Header.Size = UDim2.new(1, 0, 0, 35)
 Header.BackgroundColor3 = Color3.new(1,1,1)
-Header.BackgroundTransparency = 0.95
+Header.BackgroundTransparency = 0.95 -- Hampir invisible
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0, 200, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
+Title.Position = UDim2.new(0, 12, 0, 0)
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,180)\">HELPER</font>" -- Nama & Warna Sesuai Request
 Title.RichText = true
 Title.TextColor3 = Theme.Text
 Title.Font = Theme.Bold
@@ -102,19 +106,32 @@ Title.BackgroundTransparency = 1
 
 local FPSLabel = Instance.new("TextLabel", Header)
 FPSLabel.Size = UDim2.new(0, 60, 1, 0)
-FPSLabel.Position = UDim2.new(1, -60, 0, 0)
+FPSLabel.Position = UDim2.new(1, -65, 0, 0)
 FPSLabel.Text = "60 FPS"
 FPSLabel.TextColor3 = Theme.Accent
 FPSLabel.Font = Theme.Bold
 FPSLabel.TextSize = 11
 FPSLabel.BackgroundTransparency = 1
+FPSLabel.TextXAlignment = Enum.TextXAlignment.Right
+
+-- Tombol Minimize (Simple)
+local HideBtn = Instance.new("TextButton", Header)
+HideBtn.Size = UDim2.new(0, 20, 0, 20)
+HideBtn.Position = UDim2.new(1, -28, 0.5, -10)
+HideBtn.Text = "-"
+HideBtn.BackgroundColor3 = Color3.new(1,1,1)
+HideBtn.BackgroundTransparency = 0.9
+HideBtn.TextColor3 = Theme.Accent
+HideBtn.Font = Theme.Bold
+HideBtn.TextSize = 14
+Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
 
 -- > Button Container
 local Grid = Instance.new("UIGridLayout", Instance.new("Frame", Main))
 Grid.Parent.Size = UDim2.new(1, -20, 1, -45)
 Grid.Parent.Position = UDim2.new(0, 10, 0, 40)
 Grid.Parent.BackgroundTransparency = 1
-Grid.CellSize = UDim2.new(0, 185, 0, 30)
+Grid.CellSize = UDim2.new(0, 195, 0, 32)
 Grid.CellPadding = UDim2.new(0, 10, 0, 8)
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
@@ -126,12 +143,14 @@ local SavedPos = nil
 local function ToggleBtn(btn, isActive)
     if isActive then
         btn.BackgroundColor3 = Theme.Accent
-        btn.TextColor3 = Color3.new(0,0,0)
         btn.BackgroundTransparency = 0.2
+        btn.TextColor3 = Color3.new(0,0,0) -- Hitam agar kontras dengan hijau
+        btn.Font = Theme.Bold
     else
-        btn.BackgroundColor3 = Theme.Gray
-        btn.TextColor3 = Theme.Text
+        btn.BackgroundColor3 = Theme.BtnOff
         btn.BackgroundTransparency = 0.4
+        btn.TextColor3 = Theme.Text
+        btn.Font = Theme.Font
     end
 end
 
@@ -142,7 +161,14 @@ local function CreateButton(text, onClick)
     b.TextSize = 11
     b.AutoButtonColor = true
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
-    ToggleBtn(b, false) -- Set default visual
+    -- Stroke tipis agar elegan
+    local s = Instance.new("UIStroke", b)
+    s.Color = Color3.new(1,1,1)
+    s.Transparency = 0.9
+    s.Thickness = 1
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    
+    ToggleBtn(b, false)
     
     b.MouseButton1Click:Connect(function()
         local newState = onClick()
@@ -160,10 +186,11 @@ end)
 CreateButton("Walk On Water", function()
     State.WoW = not State.WoW
     if State.WoW then
+        -- Logic WoW yang sangat ringan (Manipulasi Velocity)
         Connections.WoW = Services.RunService.Heartbeat:Connect(function()
             if RootPart then 
                 local vel = RootPart.AssemblyLinearVelocity
-                RootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z) -- Kunci Y axis
+                RootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
             end
         end)
     else
@@ -172,7 +199,7 @@ CreateButton("Walk On Water", function()
     return State.WoW
 end)
 
-local BtnNoclip = CreateButton("No Clip: OFF", function() end) -- Placeholder logic below
+local BtnNoclip = CreateButton("No Clip: OFF", function() end)
 BtnNoclip.MouseButton1Click:Connect(function()
     State.Noclip = not State.Noclip
     BtnNoclip.Text = "No Clip: " .. (State.Noclip and "ON" or "OFF")
@@ -201,7 +228,7 @@ local BtnRender = CreateButton("3D Render: ON", function()
     State.Render = not State.Render
     Services.RunService:Set3dRenderingEnabled(State.Render)
     BtnRender.Text = "3D Render: " .. (State.Render and "ON" or "OFF")
-    return not State.Render -- Visual invert (Active = Red/Off logic differs here but sticking to toggle style)
+    return not State.Render -- Visual invert
 end)
 
 local BtnFps = CreateButton("FPS: Unlimited", function() end)
@@ -229,16 +256,23 @@ local BtnLoad = CreateButton("Teleport Saved", function()
     return true
 end)
 
-CreateButton("Toggle Panel", function()
+CreateButton("Panel Info: ON", function()
     State.Panel = not State.Panel
     HUD.Visible = State.Panel
     return State.Panel
 end)
 
--- [6] OPTIMIZED LOOPS (HEARTBEAT)
--- Satu loop untuk FPS counter, Satu loop lambat untuk stats
+-- Tombol Minimize Logic
+local IsMin = false
+HideBtn.MouseButton1Click:Connect(function()
+    IsMin = not IsMin
+    Main:TweenSize(UDim2.new(0, 420, 0, IsMin and 35 or 260), "Out", "Quad", 0.3, true)
+    Grid.Parent.Visible = not IsMin
+    HideBtn.Text = IsMin and "+" or "-"
+end)
 
--- FPS Counter (Ringan)
+-- [6] OPTIMIZED LOOPS
+-- 1. FPS Counter (Update setiap 1 detik)
 local lastClock = os.clock()
 local frameCount = 0
 Services.RunService.RenderStepped:Connect(function()
@@ -251,31 +285,29 @@ Services.RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Stats Updater (Jalan tiap 1 detik saja, tidak perlu real-time extrim)
+-- 2. Stats Updater (Jalan tiap 1 detik saja, sangat ringan)
 task.spawn(function()
     while task.wait(1) do
         if not State.Panel then continue end
         
-        -- Safe Data Fetch
-        local s, err = pcall(function()
-            -- Fish
+        pcall(function()
+            -- Fish Stats
             local ls = LocalPlayer:FindFirstChild("leaderstats")
             local fish = ls and ls:FindFirstChild("Caught")
-            StatFish.Text = "🐟 Fish: <b>" .. (fish and fish.Value or "-") .. "</b>"
+            StatFish.Text = "🐟 <font color=\"rgb(200,200,200)\">Caught:</font> <b>" .. (fish and fish.Value or "-") .. "</b>"
             
-            -- Bag
+            -- Bag Stats
             local pg = LocalPlayer:FindFirstChild("PlayerGui")
             local bagLbl = nil
             if pg and pg:FindFirstChild("Backpack") then
-                 -- Cari label yang punya format "x/y"
                 for _, v in pairs(pg.Backpack:GetDescendants()) do
                     if v:IsA("TextLabel") and v.Text:find("/") then bagLbl = v.Text break end
                 end
             end
             local count = bagLbl or (#LocalPlayer.Backpack:GetChildren() .. " Items")
-            StatBag.Text = "🎒 Bag: <b>" .. count .. "</b>"
+            StatBag.Text = "🎒 <font color=\"rgb(200,200,200)\">Bag:</font> <b>" .. count .. "</b>"
         end)
     end
 end)
 
-print(":: SERAPHIN OPTIMIZED LOADED ::")
+print(":: SERAPHIN HELPER (DARK GLASS OPTIMIZED) LOADED ::")
