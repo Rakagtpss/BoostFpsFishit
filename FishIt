@@ -1,391 +1,530 @@
-local function SafeLoad()
-    if not game:IsLoaded() then game.Loaded:Wait() end
+-- [1] Notifikasi Awal
+pcall(function()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Raka Ganteng",
+        Text = " Loading Sayang... (Updated)",
+        Duration = 2,
+    })
+end)
+
+task.wait(3.5)
+
+-- [2] Variable & Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
+local TeleportService = game:GetService("TeleportService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage") 
+
+local Player = Players.LocalPlayer
+local Char = Player.Character or Player.CharacterAdded:Wait()
+local HRP = Char:WaitForChild("HumanoidRootPart", 5)
+
+Player.CharacterAdded:Connect(function(newChar)
+    Char = newChar
+    HRP = newChar:WaitForChild("HumanoidRootPart", 10)
+end)
+
+-- // Konfigurasi Visual
+local UI_THEME = {
+    Width = 260,
+    Height = 285, -- Diperbesar agar muat tombol Event
+    Color = Color3.fromRGB(14, 14, 18), 
+    HeaderColor = Color3.fromRGB(20, 20, 25),
+    Accent = Color3.fromRGB(0, 255, 170),
+    StatsColor = Color3.fromRGB(12, 12, 15),
+    TextColor = Color3.fromRGB(255, 255, 255),
+    SubTextColor = Color3.fromRGB(150, 150, 160),
+    Font = Enum.Font.GothamBold,
+    BtnFont = Enum.Font.GothamMedium 
+}
+
+-- Bersihkan UI Lama
+if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SeraphinHelper"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- ====================================================
+-- [1] MINI FLOATING HUD (PANEL SERAPHIN)
+-- ====================================================
+local FloatHUD = Instance.new("Frame", ScreenGui)
+FloatHUD.Name = "FloatingStats"
+FloatHUD.Size = UDim2.new(0, 140, 0, 125) 
+FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
+FloatHUD.BackgroundColor3 = UI_THEME.StatsColor
+FloatHUD.BackgroundTransparency = 0.15
+FloatHUD.Visible = true
+FloatHUD.Active = true
+FloatHUD.Draggable = true 
+
+-- Stroke/Border
+local HudStroke = Instance.new("UIStroke", FloatHUD)
+HudStroke.Color = UI_THEME.Accent
+HudStroke.Thickness = 1.5
+HudStroke.Transparency = 0.3
+
+-- Corner Rounding
+Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
+
+-- Layout
+local ListLayout = Instance.new("UIListLayout", FloatHUD)
+ListLayout.FillDirection = Enum.FillDirection.Vertical
+ListLayout.Padding = UDim.new(0, 6) 
+ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+ListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+ListLayout.SortOrder = Enum.SortOrder.LayoutOrder 
+
+local Padding = Instance.new("UIPadding", FloatHUD)
+Padding.PaddingTop = UDim.new(0, 10) 
+Padding.PaddingBottom = UDim.new(0, 8)
+Padding.PaddingLeft = UDim.new(0, 5)
+Padding.PaddingRight = UDim.new(0, 5)
+
+-- >> JUDUL PANEL
+local TitleLabel = Instance.new("TextLabel", FloatHUD)
+TitleLabel.LayoutOrder = 1
+TitleLabel.Size = UDim2.new(1, 0, 0, 15)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "PANEL SERAPHIN" 
+TitleLabel.TextColor3 = UI_THEME.Accent
+TitleLabel.Font = Enum.Font.GothamBlack
+TitleLabel.TextSize = 12
+TitleLabel.TextStrokeTransparency = 0.8
+
+-- Garis Pembatas
+local Div = Instance.new("Frame", FloatHUD)
+Div.LayoutOrder = 2
+Div.Size = UDim2.new(0.8, 0, 0, 1)
+Div.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+Div.BorderSizePixel = 0
+
+-- >> FUNGSI STATISTIK
+local function CreateStatBlock(titleText, defaultVal, order)
+    local Block = Instance.new("Frame", FloatHUD)
+    Block.Name = titleText.."Block"
+    Block.LayoutOrder = order
+    Block.Size = UDim2.new(1, 0, 0, 35) 
+    Block.BackgroundTransparency = 1
     
-    -- [ SERVICES ]
-    local Players = game:GetService("Players")
-    local RunService = game:GetService("RunService")
-    local CoreGui = game:GetService("CoreGui")
-    local Lighting = game:GetService("Lighting")
-    local TeleportService = game:GetService("TeleportService")
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local StarterGui = game:GetService("StarterGui")
-
-    local Player = Players.LocalPlayer
-
-    -- [1] SAFE UI PARENTING (SOLUSI JIKA UI TIDAK MUNCUL)
-    local UI_Parent = CoreGui
-    local success, err = pcall(function()
-        local test = Instance.new("ScreenGui", CoreGui)
-        test:Destroy()
-    end)
-
-    if not success then
-        UI_Parent = Player:WaitForChild("PlayerGui")
-        -- warn("CoreGui tidak aksesibel, menggunakan PlayerGui.")
-    end
-
-    -- [2] CHARACTER HANDLING (ANTI STUCK)
-    local Char = Player.Character or Player.CharacterAdded:Wait()
-    local HRP = Char:FindFirstChild("HumanoidRootPart")
-
-    Player.CharacterAdded:Connect(function(newChar)
-        Char = newChar
-        HRP = newChar:WaitForChild("HumanoidRootPart", 10)
-    end)
-
-    -- [3] DATA EVENT (SAFE LOAD)
-    local AvailableEvents = {"Megalodon", "Shark", "Treasure", "Merchant", "Kraken", "Rumia", "Seabeast"} 
-    local EventsFolder = ReplicatedStorage:FindFirstChild("Events")
-
-    if EventsFolder then
-        local names = {}
-        for _, evt in pairs(EventsFolder:GetChildren()) do
-            table.insert(names, evt.Name)
-        end
-        if #names > 0 then AvailableEvents = names end
-    end
-
-    -- [4] UI CONFIGURATION
-    local UI_THEME = {
-        Width = 260,
-        Height = 310,
-        Color = Color3.fromRGB(14, 14, 18), 
-        HeaderColor = Color3.fromRGB(20, 20, 25),
-        Accent = Color3.fromRGB(0, 255, 170),
-        TextColor = Color3.fromRGB(255, 255, 255),
-        Font = Enum.Font.GothamBold,
-        BtnFont = Enum.Font.GothamMedium 
-    }
-
-    -- Bersihkan UI Lama
-    if UI_Parent:FindFirstChild("SeraphinHelper") then UI_Parent.SeraphinHelper:Destroy() end
-
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "SeraphinHelper"
-    ScreenGui.Parent = UI_Parent
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-    -- ====================================================
-    -- FLOATING PANEL (MINI HUD)
-    -- ====================================================
-    local FloatHUD = Instance.new("Frame", ScreenGui)
-    FloatHUD.Name = "FloatingStats"
-    FloatHUD.Size = UDim2.new(0, 140, 0, 125) 
-    FloatHUD.Position = UDim2.new(0.8, 0, 0.3, 0)
-    FloatHUD.BackgroundColor3 = Color3.fromRGB(12, 12, 15)
-    FloatHUD.BackgroundTransparency = 0.2
-    FloatHUD.Active = true
-    FloatHUD.Draggable = true 
-
-    Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
-    local HudStroke = Instance.new("UIStroke", FloatHUD)
-    HudStroke.Color = UI_THEME.Accent
-    HudStroke.Thickness = 1.5
-    HudStroke.Transparency = 0.4
-
-    local ListLayout = Instance.new("UIListLayout", FloatHUD)
-    ListLayout.FillDirection = Enum.FillDirection.Vertical
-    ListLayout.Padding = UDim.new(0, 5) 
-    ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder 
-
-    local Padding = Instance.new("UIPadding", FloatHUD)
-    Padding.PaddingTop = UDim.new(0, 10) 
-
-    local TitleInfo = Instance.new("TextLabel", FloatHUD)
-    TitleInfo.Size = UDim2.new(1, 0, 0, 15)
-    TitleInfo.BackgroundTransparency = 1
-    TitleInfo.Text = "INFO PANEL"
-    TitleInfo.TextColor3 = UI_THEME.Accent
-    TitleInfo.Font = Enum.Font.GothamBlack
-    TitleInfo.TextSize = 12
-
-    local function CreateStat(text, val)
-        local F = Instance.new("Frame", FloatHUD)
-        F.Size = UDim2.new(0.9, 0, 0, 30)
-        F.BackgroundTransparency = 1
-        
-        local T = Instance.new("TextLabel", F)
-        T.Size = UDim2.new(1,0,0,10)
-        T.Text = text
-        T.TextColor3 = Color3.fromRGB(150,150,150)
-        T.BackgroundTransparency = 1
-        T.Font = Enum.Font.GothamBold
-        T.TextSize = 10
-        
-        local V = Instance.new("TextLabel", F)
-        V.Size = UDim2.new(1,0,0,15)
-        V.Position = UDim2.new(0,0,0,12)
-        V.Text = val
-        V.TextColor3 = Color3.fromRGB(255,255,255)
-        V.BackgroundTransparency = 1
-        V.Font = Enum.Font.GothamBold
-        V.TextSize = 14
-        return V
-    end
-
-    local LblFish = CreateStat("FISH CAUGHT", "...")
-    local LblBag  = CreateStat("BACKPACK", "...")
-
-    -- ====================================================
-    -- MAIN UI
-    -- ====================================================
-    local Main = Instance.new("Frame", ScreenGui)
-    Main.Name = "MainFrame"
-    Main.Size = UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height)
-    Main.Position = UDim2.new(0.5, -130, 0.4, 0)
-    Main.BackgroundColor3 = UI_THEME.Color
-    Main.Active = true
-    Main.Draggable = true
-    Main.ClipsDescendants = true
-    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
-
-    local Header = Instance.new("Frame", Main)
-    Header.Size = UDim2.new(1, 0, 0, 30)
-    Header.BackgroundColor3 = UI_THEME.HeaderColor
-    Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
-
-    local Title = Instance.new("TextLabel", Header)
-    Title.Size = UDim2.new(1, -50, 1, 0)
-    Title.Position = UDim2.new(0, 10, 0, 0)
-    Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
-    Title.RichText = true
-    Title.TextColor3 = Color3.white
-    Title.BackgroundTransparency = 1
-    Title.Font = UI_THEME.Font
-    Title.TextSize = 12
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-
-    -- Hide Button
-    local HideBtn = Instance.new("TextButton", Header)
-    HideBtn.Size = UDim2.new(0, 40, 0, 18)
-    HideBtn.Position = UDim2.new(1, -45, 0.5, -9)
-    HideBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    HideBtn.Text = "Hide"
-    HideBtn.TextColor3 = Color3.white
-    HideBtn.TextSize = 9
-    Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
-
-    -- Container
-    local Container = Instance.new("Frame", Main)
-    Container.Size = UDim2.new(1, -10, 1, -40)
-    Container.Position = UDim2.new(0, 5, 0, 35)
-    Container.BackgroundTransparency = 1
-
-    local Grid = Instance.new("UIGridLayout", Container)
-    Grid.CellSize = UDim2.new(0, 120, 0, 30)
-    Grid.CellPadding = UDim2.new(0, 5, 0, 5)
-    Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-    -- ====================================================
-    -- LOGIC & BUTTONS
-    -- ====================================================
-    local States = {
-        Freeze = false, WoW = false, Noclip = false, 
-        Boost = false, Panel = true, AutoEvent = false
-    }
-
-    local EvtPrimary = AvailableEvents[1]
-    local EvtSecondary = AvailableEvents[2] or AvailableEvents[1]
-    local Idx1, Idx2 = 1, 2
-    if #AvailableEvents < 2 then Idx2 = 1 end
-
-    local function CreateBtn(text, callback)
-        local B = Instance.new("TextButton", Container)
-        B.Text = text
-        B.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-        B.TextColor3 = Color3.fromRGB(200, 200, 200)
-        B.TextSize = 10
-        B.Font = UI_THEME.BtnFont
-        Instance.new("UICorner", B).CornerRadius = UDim.new(0, 4)
-        local S = Instance.new("UIStroke", B)
-        S.Color = Color3.fromRGB(50,50,50)
-        S.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        
-        B.MouseButton1Click:Connect(function()
-            callback(B)
-        end)
-        return B
-    end
-
-    local function UpdateBtn(btn, status)
-        if status then
-            btn.BackgroundColor3 = UI_THEME.Accent
-            btn.TextColor3 = Color3.black
-            btn.UIStroke.Transparency = 1
-        else
-            btn.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-            btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-            btn.UIStroke.Transparency = 0
-        end
-    end
-
-    -- [BUTTONS]
-    local BtnFrz = CreateBtn("Freeze: OFF", function(b)
-        States.Freeze = not States.Freeze
-        b.Text = "Freeze: "..(States.Freeze and "ON" or "OFF")
-        UpdateBtn(b, States.Freeze)
-        if HRP then HRP.Anchored = States.Freeze end
-    end)
-
-    local BtnWoW = CreateBtn("Water Walk: OFF", function(b)
-        States.WoW = not States.WoW
-        b.Text = "Water Walk: "..(States.WoW and "ON" or "OFF")
-        UpdateBtn(b, States.WoW)
-    end)
-
-    local BtnNC = CreateBtn("NoClip: OFF", function(b)
-        States.Noclip = not States.Noclip
-        b.Text = "NoClip: "..(States.Noclip and "ON" or "OFF")
-        UpdateBtn(b, States.Noclip)
-    end)
-
-    local BtnEv1 = CreateBtn("1. Utama: "..EvtPrimary, function(b)
-        Idx1 = Idx1 + 1
-        if Idx1 > #AvailableEvents then Idx1 = 1 end
-        EvtPrimary = AvailableEvents[Idx1]
-        b.Text = "1. Utama: "..string.sub(EvtPrimary, 1, 9)
-    end)
-
-    local BtnEv2 = CreateBtn("2. Cadangan: "..EvtSecondary, function(b)
-        Idx2 = Idx2 + 1
-        if Idx2 > #AvailableEvents then Idx2 = 1 end
-        EvtSecondary = AvailableEvents[Idx2]
-        b.Text = "2. Cadangan: "..string.sub(EvtSecondary, 1, 9)
-    end)
-
-    local BtnAuto = CreateBtn("Auto TP: OFF", function(b)
-        States.AutoEvent = not States.AutoEvent
-        b.Text = "Auto TP: "..(States.AutoEvent and "ON" or "OFF")
-        UpdateBtn(b, States.AutoEvent)
-        if States.AutoEvent then
-            StarterGui:SetCore("SendNotification", {Title="Auto TP", Text="Mencari: "..EvtPrimary})
-        end
-    end)
-
-    local BtnRejoin = CreateBtn("Rejoin", function()
-        TeleportService:Teleport(game.PlaceId, Player)
-    end)
-
-    local BtnPanel = CreateBtn("Panel Info: ON", function(b)
-        States.Panel = not States.Panel
-        FloatHUD.Visible = States.Panel
-        b.Text = "Panel Info: "..(States.Panel and "ON" or "OFF")
-        UpdateBtn(b, States.Panel)
-    end)
-
-    UpdateBtn(BtnPanel, true)
-
-    -- ====================================================
-    -- LOOPS & LOGIC
-    -- ====================================================
-    local BodyV = nil
-
-    -- UI Hiding Logic
-    local minimized = false
-    HideBtn.MouseButton1Click:Connect(function()
-        minimized = not minimized
-        if minimized then
-            Container.Visible = false
-            Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, 30), "Out", "Quad", 0.3, true)
-            HideBtn.Text = "+"
-        else
-            Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height), "Out", "Back", 0.3, true)
-            HideBtn.Text = "Hide"
-            task.delay(0.25, function() if not minimized then Container.Visible = true end end)
-        end
-    end)
-
-    -- Main Loop
-    task.spawn(function()
-        while true do
-            task.wait(1)
-            
-            -- Safe Character Refetch
-            if not HRP or not HRP.Parent then
-                if Player.Character then HRP = Player.Character:FindFirstChild("HumanoidRootPart") end
-            end
-
-            -- Water Walk Logic
-            if States.WoW and HRP then
-                if not BodyV then
-                    BodyV = Instance.new("BodyVelocity", HRP)
-                    BodyV.MaxForce = Vector3.new(0, 1e5, 0)
-                    BodyV.Velocity = Vector3.zero
-                end
-            elseif BodyV then
-                BodyV:Destroy()
-                BodyV = nil
-            end
-
-            -- Auto Teleport Logic
-            if States.AutoEvent and HRP then
-                pcall(function()
-                    local Target = nil
-                    
-                    local function FindSafe(name)
-                        if not name then return nil end
-                        local t = workspace:FindFirstChild(name, true) 
-                        if not t then
-                            for _,v in pairs(workspace:GetChildren()) do
-                                if string.find(v.Name, name) then return v end
-                            end
-                        end
-                        return t
-                    end
-
-                    Target = FindSafe(EvtPrimary)
-                    if not Target then Target = FindSafe(EvtSecondary) end
-
-                    if Target then
-                        local tCF = nil
-                        if Target:IsA("Model") then tCF = Target:GetPivot() 
-                        elseif Target:IsA("BasePart") then tCF = Target.CFrame end
-                        
-                        if tCF and (HRP.Position - tCF.Position).Magnitude > 50 then
-                            HRP.CFrame = tCF + Vector3.new(0, 15, 0)
-                            StarterGui:SetCore("SendNotification", {Title="Teleported", Text="Menuju: "..Target.Name})
-                        end
-                    end
-                end)
-            end
-
-            -- Update Stats Panel
-            if States.Panel then
-                pcall(function()
-                    local ls = Player:FindFirstChild("leaderstats")
-                    local c = ls and ls:FindFirstChild("Caught")
-                    LblFish.Text = c and tostring(c.Value) or "0"
-                    
-                    local bp = Player:FindFirstChild("Backpack")
-                    LblBag.Text = bp and tostring(#bp:GetChildren()) or "0"
-                end)
-            end
-        end
-    end)
-
-    -- Noclip Loop
-    RunService.Stepped:Connect(function()
-        if States.Noclip and Player.Character then
-            for _, v in pairs(Player.Character:GetChildren()) do
-                if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end
-            end
-        end
-    end)
-
-    -- Water Walk Height Control
-    RunService.Heartbeat:Connect(function()
-        if States.WoW and HRP then
-            local vel = HRP.AssemblyLinearVelocity
-            HRP.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
-        end
-    end)
-
-    -- Notif Sukses
-    StarterGui:SetCore("SendNotification", {Title="Fixed", Text="Seraphin Loaded!", Duration=3})
+    local LblTitle = Instance.new("TextLabel", Block)
+    LblTitle.Name = "Title"
+    LblTitle.Size = UDim2.new(1, 0, 0, 12)
+    LblTitle.Position = UDim2.new(0, 0, 0, 0)
+    LblTitle.BackgroundTransparency = 1
+    LblTitle.Text = string.upper(titleText)
+    LblTitle.TextColor3 = UI_THEME.SubTextColor
+    LblTitle.Font = Enum.Font.GothamBold
+    LblTitle.TextSize = 9
+    
+    local LblValue = Instance.new("TextLabel", Block)
+    LblValue.Name = "Value"
+    LblValue.Size = UDim2.new(1, 0, 0, 20)
+    LblValue.Position = UDim2.new(0, 0, 0, 14)
+    LblValue.BackgroundTransparency = 1
+    LblValue.Text = defaultVal
+    LblValue.TextColor3 = UI_THEME.TextColor
+    LblValue.Font = Enum.Font.GothamBold
+    LblValue.TextSize = 16 
+    
+    return LblValue 
 end
 
--- Menjalankan dengan aman
-local s, e = pcall(SafeLoad)
-if not s then warn("Script Error: " .. tostring(e)) end
+local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...", 3) 
+local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)     
+
+
+-- ====================================================
+-- [2] MAIN MENU UI
+-- ====================================================
+local Main = Instance.new("Frame", ScreenGui)
+Main.Name = "Main"
+Main.Size = UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height)
+Main.Position = UDim2.new(0.5, -UI_THEME.Width/2, 0.4, 0)
+Main.BackgroundColor3 = UI_THEME.Color
+Main.BackgroundTransparency = 0.05
+Main.Active = true
+Main.Draggable = true
+Main.ClipsDescendants = true 
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
+
+local MainStroke = Instance.new("UIStroke", Main)
+MainStroke.Color = UI_THEME.Accent
+MainStroke.Thickness = 1.2
+MainStroke.Transparency = 0.3
+
+-- // HEADER
+local Header = Instance.new("Frame", Main)
+Header.Size = UDim2.new(1, 0, 0, 32) 
+Header.BackgroundColor3 = UI_THEME.HeaderColor
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
+
+local HeaderFiller = Instance.new("Frame", Header)
+HeaderFiller.Size = UDim2.new(1, 0, 0, 5)
+HeaderFiller.Position = UDim2.new(0, 0, 1, -5)
+HeaderFiller.BackgroundColor3 = UI_THEME.HeaderColor
+HeaderFiller.BorderSizePixel = 0
+
+-- // TITLE
+local Title = Instance.new("TextLabel", Header)
+Title.Size = UDim2.new(1, -60, 1, 0) 
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
+Title.RichText = true
+Title.TextColor3 = Color3.new(1,1,1)
+Title.Font = UI_THEME.Font
+Title.TextSize = 12
+Title.BackgroundTransparency = 1
+Title.TextXAlignment = Enum.TextXAlignment.Left 
+
+-- // HIDE BUTTON
+local HideBtn = Instance.new("TextButton", Header)
+HideBtn.Size = UDim2.new(0, 45, 0, 20) 
+HideBtn.Position = UDim2.new(1, -50, 0.5, -10)
+HideBtn.Text = "Hide" 
+HideBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+HideBtn.TextColor3 = UI_THEME.Accent
+HideBtn.Font = Enum.Font.GothamBold
+HideBtn.TextSize = 10
+HideBtn.AutoButtonColor = true
+Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
+
+-- // CONTAINER
+local Container = Instance.new("Frame", Main)
+Container.Name = "Container"
+Container.Size = UDim2.new(1, -16, 1, -40) 
+Container.Position = UDim2.new(0, 8, 0, 38)
+Container.BackgroundTransparency = 1
+
+local Grid = Instance.new("UIGridLayout", Container)
+Grid.CellSize = UDim2.new(0, 114, 0, 28) 
+Grid.CellPadding = UDim2.new(0, 6, 0, 5) 
+Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- ====================================================
+-- [3] LOGIC & VARIABLES
+-- ====================================================
+local IsMinimized = false
+
+HideBtn.MouseButton1Click:Connect(function() 
+    IsMinimized = not IsMinimized 
+    if IsMinimized then
+        Container.Visible = false
+        Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, 32), "Out", "Quad", 0.3, true) 
+        HideBtn.Text = "Show" 
+        HideBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    else
+        Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height), "Out", "Back", 0.3, true) 
+        HideBtn.Text = "Hide" 
+        HideBtn.TextColor3 = UI_THEME.Accent
+        task.delay(0.2, function() if not IsMinimized then Container.Visible = true end end)
+    end
+end)
+
+local function MakeBtn(text)
+    local b = Instance.new("TextButton", Container)
+    b.Text = text
+    b.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
+    b.TextColor3 = Color3.fromRGB(200, 200, 200)
+    b.Font = UI_THEME.BtnFont 
+    b.TextSize = 10 
+    b.AutoButtonColor = true
+    b.ClipsDescendants = true
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
+    local s = Instance.new("UIStroke", b)
+    s.Color = Color3.fromRGB(45, 45, 50)
+    s.Thickness = 1
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    return b
+end
+
+local function ToggleVisual(btn, on)
+    if on then
+        btn.BackgroundColor3 = UI_THEME.Accent
+        btn.TextColor3 = Color3.fromRGB(10, 10, 12)
+        btn.UIStroke.Transparency = 1
+        btn.Font = Enum.Font.GothamBold
+    else
+        btn.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
+        btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        btn.UIStroke.Transparency = 0
+        btn.Font = UI_THEME.BtnFont
+    end
+end
+
+local function Notify(title, text)
+    game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
+end
+
+local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEvent=false}
+local SavedCFrame = nil 
+local Connections = {}
+local BodyV = nil
+
+-- EVENT LIST (Bisa ditambahkan sendiri)
+local EventList = {"None", "Merchant", "Megalodon", "Isonade", "Whale", "Meteor", "Kraken"}
+local PrioIndex = 1
+local SecIndex = 1
+
+-- Membuat Tombol
+local BtnFreeze = MakeBtn("Freeze: OFF")
+local BtnWow    = MakeBtn("Water Walk: OFF")
+local BtnNoclip = MakeBtn("No Clip: OFF")
+local BtnBoost  = MakeBtn("Boost: OFF")
+local BtnRender = MakeBtn("3D Render: ON") 
+local BtnFps    = MakeBtn("FPS: Unli") 
+local BtnSave   = MakeBtn("Save Pos")
+local BtnLoad   = MakeBtn("Load Pos")
+local BtnRejoin = MakeBtn("Rejoin Server")
+local BtnPanel  = MakeBtn("Panel Info: ON")
+
+-- [NEW] BUTTONS FOR EVENTS
+local BtnPrioEvent = MakeBtn("Prio: None")
+local BtnSecEvent = MakeBtn("Sec: None")
+local BtnAutoEvent = MakeBtn("Auto Event: OFF")
+
+-- FPS Counter
+local fpsT = 0
+RunService.RenderStepped:Connect(function(dt)
+    fpsT = fpsT + (1/dt - fpsT) * 0.1 
+    local currentFps = math.floor(fpsT)
+    Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
+end)
+
+-- LOGIC TOMBOL
+BtnFps.MouseButton1Click:Connect(function()
+    local caps = {30, 60, 144, 999}
+    _G.fpsIndex = ((_G.fpsIndex or 4) % #caps) + 1
+    local v = caps[_G.fpsIndex]
+    if setfpscap then setfpscap(v) end
+    BtnFps.Text = "FPS: " .. (v > 900 and "Unlim" or v)
+    ToggleVisual(BtnFps, true)
+    wait(0.1)
+    ToggleVisual(BtnFps, false)
+end)
+
+ToggleVisual(BtnPanel, true)
+BtnPanel.MouseButton1Click:Connect(function()
+    States.Panel = not States.Panel
+    FloatHUD.Visible = States.Panel
+    BtnPanel.Text = "Panel Info: " .. (States.Panel and "ON" or "OFF")
+    ToggleVisual(BtnPanel, States.Panel)
+end)
+
+-- [NEW] LOGIC FOR EVENT SELECTION
+BtnPrioEvent.MouseButton1Click:Connect(function()
+    PrioIndex = PrioIndex + 1
+    if PrioIndex > #EventList then PrioIndex = 1 end
+    BtnPrioEvent.Text = "Prio: " .. EventList[PrioIndex]
+    -- Visual Feedback
+    BtnPrioEvent.TextColor3 = UI_THEME.Accent
+    task.wait(0.1)
+    BtnPrioEvent.TextColor3 = Color3.fromRGB(200, 200, 200)
+end)
+
+BtnSecEvent.MouseButton1Click:Connect(function()
+    SecIndex = SecIndex + 1
+    if SecIndex > #EventList then SecIndex = 1 end
+    BtnSecEvent.Text = "Sec: " .. EventList[SecIndex]
+    -- Visual Feedback
+    BtnSecEvent.TextColor3 = UI_THEME.Accent
+    task.wait(0.1)
+    BtnSecEvent.TextColor3 = Color3.fromRGB(200, 200, 200)
+end)
+
+BtnAutoEvent.MouseButton1Click:Connect(function()
+    States.AutoEvent = not States.AutoEvent
+    BtnAutoEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
+    ToggleVisual(BtnAutoEvent, States.AutoEvent)
+end)
+
+-- ====================================================
+-- [4] LOOPS & UPDATES
+-- ====================================================
+
+-- Loop Update HUD (Fish & Backpack)
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if not States.Panel then continue end
+        
+        pcall(function()
+            local ls = Player:FindFirstChild("leaderstats")
+            local caughtObj = ls and ls:FindFirstChild("Caught")
+            local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
+            local val = caughtObj and caughtObj.Value or 0
+            LblFishVal.Text = formatNum(val)
+
+            local pg = Player:FindFirstChild("PlayerGui")
+            local backpackGui = pg and pg:FindFirstChild("Backpack")
+            local bagText = "0/?"
+            if backpackGui then
+                for _, v in pairs(backpackGui:GetDescendants()) do
+                    if v:IsA("TextLabel") and string.find(v.Text, "/") then 
+                        bagText = v.Text 
+                        break 
+                    end
+                end
+            else 
+                local current = #Player.Backpack:GetChildren()
+                bagText = tostring(current)
+            end
+            LblInvVal.Text = bagText
+        end)
+    end
+end)
+
+-- [NEW] AUTO EVENT TELEPORT LOOP
+task.spawn(function()
+    while true do
+        task.wait(1.5) -- Cek setiap 1.5 detik agar tidak lag
+        if States.AutoEvent then
+            pcall(function()
+                local Props = workspace:FindFirstChild("Props") -- Folder target
+                if not Props then return end
+
+                local TargetName = nil
+                local PrioName = EventList[PrioIndex]
+                local SecName = EventList[SecIndex]
+
+                -- Cek Prioritas Utama
+                if PrioName ~= "None" then
+                    for _, v in pairs(Props:GetChildren()) do
+                        if string.find(v.Name:lower(), PrioName:lower()) then
+                            TargetName = v
+                            break
+                        end
+                    end
+                end
+
+                -- Jika Prioritas Utama tidak ketemu, Cek Secondary
+                if not TargetName and SecName ~= "None" then
+                    for _, v in pairs(Props:GetChildren()) do
+                        if string.find(v.Name:lower(), SecName:lower()) then
+                            TargetName = v
+                            break
+                        end
+                    end
+                end
+
+                -- Eksekusi Teleport
+                if TargetName and HRP then
+                    -- Cari bagian yang aman untuk teleport (BasePart)
+                    local SafePart = TargetName:IsA("BasePart") and TargetName or TargetName:FindFirstChildWhichIsA("BasePart", true)
+                    
+                    if SafePart then
+                        local dist = (HRP.Position - SafePart.Position).Magnitude
+                        if dist > 50 then -- Hanya TP jika jaraknya jauh
+                            HRP.CFrame = SafePart.CFrame + Vector3.new(0, 10, 0) -- TP 10 stud di atas objek
+                            Notify("Event Found!", "Teleporting to: " .. TargetName.Name)
+                            
+                            -- Mengaktifkan Water Walk otomatis agar tidak tenggelam jika di laut
+                            if not States.WoW then
+                                BtnWow.MouseButton1Click:Fire() 
+                            end
+                            
+                            task.wait(3) -- Cooldown setelah TP
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Functional Logic Buttons Lainnya
+BtnFreeze.MouseButton1Click:Connect(function() 
+    States.Freeze = not States.Freeze 
+    if HRP then HRP.Anchored = States.Freeze end 
+    BtnFreeze.Text = "Freeze: " .. (States.Freeze and "ON" or "OFF")
+    ToggleVisual(BtnFreeze, States.Freeze) 
+end)
+
+BtnWow.MouseButton1Click:Connect(function() 
+    States.WoW = not States.WoW 
+    BtnWow.Text = "Water Walk: " .. (States.WoW and "ON" or "OFF")
+    ToggleVisual(BtnWow, States.WoW) 
+    if States.WoW then 
+        BodyV = Instance.new("BodyVelocity", HRP) 
+        BodyV.MaxForce = Vector3.new(0,1e6,0) 
+        BodyV.Velocity = Vector3.zero 
+        Connections["WoW"] = RunService.Heartbeat:Connect(function() 
+            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X,0,HRP.AssemblyLinearVelocity.Z) end 
+        end) 
+    else 
+        if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
+        if BodyV then BodyV:Destroy() end 
+    end 
+end)
+
+BtnNoclip.MouseButton1Click:Connect(function() 
+    States.Noclip = not States.Noclip 
+    BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") 
+    ToggleVisual(BtnNoclip, States.Noclip) 
+    if States.Noclip then 
+        Connections["Noclip"] = RunService.Stepped:Connect(function() 
+            if Player.Character then 
+                for _,v in pairs(Player.Character:GetDescendants()) do 
+                    if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end 
+                end 
+            end 
+        end) 
+    else 
+        if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end 
+    end 
+end)
+
+BtnBoost.MouseButton1Click:Connect(function() 
+    States.Boost = not States.Boost 
+    ToggleVisual(BtnBoost, States.Boost) 
+    BtnBoost.Text = "Boost: " .. (States.Boost and "ON" or "OFF")
+    Lighting.GlobalShadows = not States.Boost 
+    if States.Boost then
+        local function CleanVisuals(folder)
+            if not folder then return end
+            for _, v in pairs(folder:GetDescendants()) do
+                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") or v:IsA("Explosion") then v.Enabled = false end
+            end
+        end
+        CleanVisuals(workspace:FindFirstChild("Islands"))
+        CleanVisuals(ReplicatedStorage:FindFirstChild("Assets"))
+    end
+end)
+
+BtnRender.MouseButton1Click:Connect(function() 
+    States.NoRender = not States.NoRender 
+    RunService:Set3dRenderingEnabled(not States.NoRender) 
+    BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
+    ToggleVisual(BtnRender, States.NoRender) 
+end)
+
+BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
+
+BtnSave.MouseButton1Click:Connect(function() 
+    if HRP then 
+        SavedCFrame = HRP.CFrame 
+        BtnSave.Text="SAVED" 
+        BtnSave.TextColor3 = Color3.fromRGB(100, 255, 100)
+        Notify("Posisi Disimpan", "Lokasi Anda saat ini telah disimpan.")
+        task.delay(1, function()
+            BtnSave.Text="Save Pos" 
+            BtnSave.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end)
+    end 
+end)
+
+BtnLoad.MouseButton1Click:Connect(function() 
+    if SavedCFrame and HRP then 
+        HRP.CFrame = SavedCFrame 
+        ToggleVisual(BtnLoad,true) 
+        Notify("Posisi Dimuat", "Teleportasi ke lokasi yang disimpan...")
+        wait(0.2) 
+        ToggleVisual(BtnLoad,false) 
+    else
+        Notify("Gagal", "Belum ada posisi yang disimpan!")
+    end 
+end)
