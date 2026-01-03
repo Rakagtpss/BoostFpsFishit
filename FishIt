@@ -2,12 +2,12 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = " Loading Sayang",
+        Text = " Loading Sayang...",
         Duration = 2,
     })
 end)
 
-task.wait(3)
+task.wait(3.5)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -29,7 +29,7 @@ end)
 -- // Konfigurasi Visual
 local UI_THEME = {
     Width = 260,
-    Height = 210, -- Tinggi UI diatur menjadi 210
+    Height = 210,
     Color = Color3.fromRGB(14, 14, 18), 
     HeaderColor = Color3.fromRGB(20, 20, 25),
     Accent = Color3.fromRGB(0, 255, 170),
@@ -50,7 +50,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [1] MINI FLOATING HUD (Updated)
+-- [1] MINI FLOATING HUD (PANEL SERAPHIN)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
@@ -71,26 +71,26 @@ HudStroke.Transparency = 0.3
 -- Corner Rounding
 Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
 
--- Layout List (Mengatur agar Judul otomatis di paling atas)
+-- Layout
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
 ListLayout.FillDirection = Enum.FillDirection.Vertical
 ListLayout.Padding = UDim.new(0, 6) 
 ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 ListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-ListLayout.SortOrder = Enum.SortOrder.LayoutOrder -- Penting agar urutan rapi
+ListLayout.SortOrder = Enum.SortOrder.LayoutOrder 
 
 local Padding = Instance.new("UIPadding", FloatHUD)
-Padding.PaddingTop = UDim.new(0, 10) -- Jarak sedikit dari atas
+Padding.PaddingTop = UDim.new(0, 10) 
 Padding.PaddingBottom = UDim.new(0, 8)
 Padding.PaddingLeft = UDim.new(0, 5)
 Padding.PaddingRight = UDim.new(0, 5)
 
--- >> Header Panel Floating (JUDUL DI ATAS)
+-- >> JUDUL PANEL (REQUEST: PANEL SERAPHIN)
 local TitleLabel = Instance.new("TextLabel", FloatHUD)
-TitleLabel.LayoutOrder = 1 -- Urutan Pertama
+TitleLabel.LayoutOrder = 1
 TitleLabel.Size = UDim2.new(1, 0, 0, 15)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "SERAPHIN PANEL" -- Text Diubah Sesuai Request
+TitleLabel.Text = "PANEL SERAPHIN" -- Diubah sesuai request
 TitleLabel.TextColor3 = UI_THEME.Accent
 TitleLabel.Font = Enum.Font.GothamBlack
 TitleLabel.TextSize = 12
@@ -98,20 +98,19 @@ TitleLabel.TextStrokeTransparency = 0.8
 
 -- Garis Pembatas
 local Div = Instance.new("Frame", FloatHUD)
-Div.LayoutOrder = 2 -- Urutan Kedua
+Div.LayoutOrder = 2
 Div.Size = UDim2.new(0.8, 0, 0, 1)
 Div.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 Div.BorderSizePixel = 0
 
--- >> FUNGSI STATISTIK (Block Data)
+-- >> FUNGSI STATISTIK
 local function CreateStatBlock(titleText, defaultVal, order)
     local Block = Instance.new("Frame", FloatHUD)
     Block.Name = titleText.."Block"
-    Block.LayoutOrder = order -- Menentukan urutan block
+    Block.LayoutOrder = order
     Block.Size = UDim2.new(1, 0, 0, 35) 
     Block.BackgroundTransparency = 1
     
-    -- LABEL JUDUL (DI ATAS DATA)
     local LblTitle = Instance.new("TextLabel", Block)
     LblTitle.Name = "Title"
     LblTitle.Size = UDim2.new(1, 0, 0, 12)
@@ -122,7 +121,6 @@ local function CreateStatBlock(titleText, defaultVal, order)
     LblTitle.Font = Enum.Font.GothamBold
     LblTitle.TextSize = 9
     
-    -- LABEL ANGKA (DI BAWAH JUDUL)
     local LblValue = Instance.new("TextLabel", Block)
     LblValue.Name = "Value"
     LblValue.Size = UDim2.new(1, 0, 0, 20)
@@ -136,7 +134,6 @@ local function CreateStatBlock(titleText, defaultVal, order)
     return LblValue 
 end
 
--- >> MEMBUAT LABEL STATISTIK
 local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...", 3) 
 local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)     
 
@@ -146,7 +143,7 @@ local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
-Main.Size = UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height) -- Ukuran 260x210
+Main.Size = UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height)
 Main.Position = UDim2.new(0.5, -UI_THEME.Width/2, 0.4, 0)
 Main.BackgroundColor3 = UI_THEME.Color
 Main.BackgroundTransparency = 0.05
@@ -211,7 +208,6 @@ Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 -- ====================================================
 -- [3] LOGIC
 -- ====================================================
-
 local IsMinimized = false
 
 HideBtn.MouseButton1Click:Connect(function() 
@@ -235,7 +231,7 @@ local function MakeBtn(text)
     b.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
     b.TextColor3 = Color3.fromRGB(200, 200, 200)
     b.Font = UI_THEME.BtnFont 
-    b.TextSize = 11
+    b.TextSize = 10 -- Sedikit diperkecil agar muat text ON/OFF
     b.AutoButtonColor = true
     b.ClipsDescendants = true
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
@@ -269,12 +265,12 @@ local SavedCFrame = nil
 local Connections = {}
 local BodyV = nil
 
--- Tombol
-local BtnFreeze = MakeBtn("Freeze Player")
-local BtnWow    = MakeBtn("Walk On Water")
+-- Membuat Tombol dengan Status Awal
+local BtnFreeze = MakeBtn("Freeze: OFF")
+local BtnWow    = MakeBtn("Water Walk: OFF")
 local BtnNoclip = MakeBtn("No Clip: OFF")
-local BtnBoost  = MakeBtn("Booster Mode")
-local BtnRender = MakeBtn("3D Render: OFF")
+local BtnBoost  = MakeBtn("Boost: OFF")
+local BtnRender = MakeBtn("3D Render: ON") -- Logic terbalik (NoRender = false, jadi Render ON)
 local BtnFps    = MakeBtn("FPS: Unli") 
 local BtnSave   = MakeBtn("Save Pos")
 local BtnLoad   = MakeBtn("Load Pos")
@@ -304,20 +300,26 @@ ToggleVisual(BtnPanel, true)
 BtnPanel.MouseButton1Click:Connect(function()
     States.Panel = not States.Panel
     FloatHUD.Visible = States.Panel
+    -- Update Text ON/OFF
     BtnPanel.Text = "Panel Info: " .. (States.Panel and "ON" or "OFF")
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
 -- ====================================================
--- [4] UPDATE DATA
+-- [4] UPDATE DATA (BERHENTI JIKA PANEL OFF)
 -- ====================================================
 task.spawn(function()
-    while task.wait(0.5) do
-        if not States.Panel then continue end
+    while true do
+        task.wait(0.5)
+        -- Jika Panel OFF, loop hanya menunggu (idle) dan tidak menjalankan logika berat
+        if not States.Panel then 
+            continue 
+        end
+        
         pcall(function()
             -- [1] FISH CAUGHT
             local ls = Player:FindFirstChild("leaderstats")
-            local caughtObj = ls and ls:FindFirstChild("Caught") -- Cari Leaderstats 'Caught'
+            local caughtObj = ls and ls:FindFirstChild("Caught")
             local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
             local val = caughtObj and caughtObj.Value or 0
             LblFishVal.Text = formatNum(val)
@@ -342,11 +344,18 @@ task.spawn(function()
     end
 end)
 
--- Functional Logic Buttons
-BtnFreeze.MouseButton1Click:Connect(function() States.Freeze = not States.Freeze if HRP then HRP.Anchored = States.Freeze end ToggleVisual(BtnFreeze, States.Freeze) end)
+-- Functional Logic Buttons dengan Teks ON/OFF
+
+BtnFreeze.MouseButton1Click:Connect(function() 
+    States.Freeze = not States.Freeze 
+    if HRP then HRP.Anchored = States.Freeze end 
+    BtnFreeze.Text = "Freeze: " .. (States.Freeze and "ON" or "OFF")
+    ToggleVisual(BtnFreeze, States.Freeze) 
+end)
 
 BtnWow.MouseButton1Click:Connect(function() 
     States.WoW = not States.WoW 
+    BtnWow.Text = "Water Walk: " .. (States.WoW and "ON" or "OFF")
     ToggleVisual(BtnWow, States.WoW) 
     if States.WoW then 
         BodyV = Instance.new("BodyVelocity", HRP) 
@@ -381,7 +390,7 @@ end)
 BtnBoost.MouseButton1Click:Connect(function() 
     States.Boost = not States.Boost 
     ToggleVisual(BtnBoost, States.Boost) 
-    BtnBoost.Text = States.Boost and "Boost: ON" or "Booster Mode" 
+    BtnBoost.Text = "Boost: " .. (States.Boost and "ON" or "OFF")
     Lighting.GlobalShadows = not States.Boost 
     if States.Boost then
         local function CleanVisuals(folder)
@@ -398,6 +407,7 @@ end)
 BtnRender.MouseButton1Click:Connect(function() 
     States.NoRender = not States.NoRender 
     RunService:Set3dRenderingEnabled(not States.NoRender) 
+    -- Jika NoRender = true, maka Render = OFF
     BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
     ToggleVisual(BtnRender, States.NoRender) 
 end)
