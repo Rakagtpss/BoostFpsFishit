@@ -1,14 +1,14 @@
 --[[ 
-    SERAPHIN HELPER: REVISED EDITION
-    - Layout: Fixed Stacked Stats (Value below Title)
-    - Feature: Save/Load Notifications included
+    SERAPHIN HELPER: FINAL FIXED LAYOUT
+    - Label: FISH CAUGHT & BACKPACK
+    - Layout: Judul Di Atas, Angka Di Bawah
 ]]--
 
 -- [1] Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Loading Script",
+        Text = "Sedang Loading",
         Duration = 2,
     })
 end)
@@ -35,13 +35,13 @@ end)
 -- // Konfigurasi Visual
 local UI_THEME = {
     Width = 250,
-    Height = 220,
+    Height = 200,
     Color = Color3.fromRGB(14, 14, 18), 
     HeaderColor = Color3.fromRGB(20, 20, 25),
     Accent = Color3.fromRGB(0, 255, 170),
     StatsColor = Color3.fromRGB(12, 12, 15),
     TextColor = Color3.fromRGB(255, 255, 255),
-    SubTextColor = Color3.fromRGB(150, 150, 160), -- Warna teks judul (abu-abu)
+    SubTextColor = Color3.fromRGB(150, 150, 160), -- Warna Judul (Abu-abu)
     Font = Enum.Font.GothamBold,
     BtnFont = Enum.Font.GothamMedium 
 }
@@ -56,11 +56,10 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [1] MODIFIED FLOATING HUD (Panel Fish)
+-- [1] MINI FLOATING HUD (Updated Labels)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
--- Sedikit dipertinggi agar angka muat (Height 120)
 FloatHUD.Size = UDim2.new(0, 140, 0, 125) 
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
 FloatHUD.BackgroundColor3 = UI_THEME.StatsColor
@@ -107,45 +106,45 @@ Div.Size = UDim2.new(0.8, 0, 0, 1)
 Div.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 Div.BorderSizePixel = 0
 
--- >> FUNGSI BARU UNTUK MEMBUAT STATISTIK BERTUMPUK (Atas/Bawah)
+-- >> FUNGSI STATISTIK BERTUMPUK (Judul Atas, Angka Bawah)
 local function CreateStatBlock(titleText, defaultVal)
     local Block = Instance.new("Frame", FloatHUD)
     Block.Name = titleText.."Block"
-    Block.Size = UDim2.new(1, 0, 0, 35) -- Tinggi block untuk 2 baris teks
+    Block.Size = UDim2.new(1, 0, 0, 35) -- Tinggi block pas untuk 2 baris
     Block.BackgroundTransparency = 1
     
-    -- Label Judul (Kecil, Abu-abu, Di Atas)
+    -- LABEL JUDUL (DI ATAS)
     local LblTitle = Instance.new("TextLabel", Block)
     LblTitle.Name = "Title"
     LblTitle.Size = UDim2.new(1, 0, 0, 12)
     LblTitle.Position = UDim2.new(0, 0, 0, 0)
     LblTitle.BackgroundTransparency = 1
-    LblTitle.Text = string.upper(titleText)
+    LblTitle.Text = string.upper(titleText) -- Otomatis Huruf Besar
     LblTitle.TextColor3 = UI_THEME.SubTextColor
     LblTitle.Font = Enum.Font.GothamBold
     LblTitle.TextSize = 9
     
-    -- Label Nilai (Besar, Putih, Di Bawah)
+    -- LABEL ANGKA (DI BAWAH)
     local LblValue = Instance.new("TextLabel", Block)
     LblValue.Name = "Value"
     LblValue.Size = UDim2.new(1, 0, 0, 20)
-    LblValue.Position = UDim2.new(0, 0, 0, 14) -- Geser ke bawah
+    LblValue.Position = UDim2.new(0, 0, 0, 14) -- Geser ke bawah judul
     LblValue.BackgroundTransparency = 1
     LblValue.Text = defaultVal
     LblValue.TextColor3 = UI_THEME.TextColor
     LblValue.Font = Enum.Font.GothamBold
-    LblValue.TextSize = 16 -- Ukuran font lebih besar
+    LblValue.TextSize = 16 
     
-    return LblValue -- Mengembalikan objek Value agar bisa diupdate
+    return LblValue 
 end
 
--- Membuat Stat Labels dengan Fungsi Baru
-local LblFishVal = CreateStatBlock("Total Caught", "Loading...")
-local LblInvVal  = CreateStatBlock("Backpack Size", "0 / 0")
+-- >> MEMBUAT LABEL SESUAI PERMINTAAN <<
+local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...") -- Judul 1
+local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0")     -- Judul 2
 
 
 -- ====================================================
--- [2] MAIN MENU (Sama seperti sebelumnya)
+-- [2] MAIN MENU (Tetap Sama)
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
@@ -175,7 +174,7 @@ HeaderFiller.Position = UDim2.new(0, 0, 1, -5)
 HeaderFiller.BackgroundColor3 = UI_THEME.HeaderColor
 HeaderFiller.BorderSizePixel = 0
 
--- // TITLE HEADER
+-- // TITLE
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0) 
 Title.Position = UDim2.new(0, 10, 0, 0)
@@ -187,7 +186,7 @@ Title.TextSize = 12
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left 
 
--- // TOMBOL SHOW/HIDE
+-- // HIDE BUTTON
 local HideBtn = Instance.new("TextButton", Header)
 HideBtn.Size = UDim2.new(0, 45, 0, 20) 
 HideBtn.Position = UDim2.new(1, -50, 0.5, -10)
@@ -199,7 +198,7 @@ HideBtn.TextSize = 10
 HideBtn.AutoButtonColor = true
 Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
 
--- // GRID CONTAINER
+-- // CONTAINER
 local Container = Instance.new("Frame", Main)
 Container.Name = "Container"
 Container.Size = UDim2.new(1, -16, 1, -40) 
@@ -212,14 +211,13 @@ Grid.CellPadding = UDim2.new(0, 6, 0, 5)
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 -- ====================================================
--- [3] LOGIC HIDE & BUTTONS
+-- [3] LOGIC
 -- ====================================================
 
 local IsMinimized = false
 
 HideBtn.MouseButton1Click:Connect(function() 
     IsMinimized = not IsMinimized 
-    
     if IsMinimized then
         Container.Visible = false
         Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, 32), "Out", "Quad", 0.3, true) 
@@ -229,9 +227,7 @@ HideBtn.MouseButton1Click:Connect(function()
         Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height), "Out", "Back", 0.3, true) 
         HideBtn.Text = "Hide" 
         HideBtn.TextColor3 = UI_THEME.Accent
-        task.delay(0.2, function()
-            if not IsMinimized then Container.Visible = true end
-        end)
+        task.delay(0.2, function() if not IsMinimized then Container.Visible = true end end)
     end
 end)
 
@@ -267,11 +263,7 @@ local function ToggleVisual(btn, on)
 end
 
 local function Notify(title, text)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = title,
-        Text = text,
-        Duration = 3,
-    })
+    game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
 end
 
 local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true}
@@ -283,8 +275,8 @@ local BodyV = nil
 local BtnFreeze = MakeBtn("Freeze Player")
 local BtnWow    = MakeBtn("Walk On Water")
 local BtnNoclip = MakeBtn("No Clip: OFF")
-local BtnBoost  = MakeBtn("Mode Booster")
-local BtnRender = MakeBtn("3D Render: OFF")
+local BtnBoost  = MakeBtn("Booster Mode")
+local BtnRender = MakeBtn("3D Render: ON")
 local BtnFps    = MakeBtn("FPS: Unlim") 
 local BtnSave   = MakeBtn("Save Pos")
 local BtnLoad   = MakeBtn("Load Pos")
@@ -319,26 +311,23 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [4] UPDATE LOGIC FOR NEW PANEL
+-- [4] UPDATE DATA
 -- ====================================================
 task.spawn(function()
     while task.wait(0.5) do
         if not States.Panel then continue end
         pcall(function()
-            -- [1] Total Fish
+            -- [1] FISH CAUGHT
             local ls = Player:FindFirstChild("leaderstats")
-            local caughtObj = ls and ls:FindFirstChild("Caught")
+            local caughtObj = ls and ls:FindFirstChild("Caught") -- Cari Leaderstats 'Caught'
             local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
             local val = caughtObj and caughtObj.Value or 0
-            
-            -- UPDATE TEKS FISH (HANYA ANGKA)
             LblFishVal.Text = formatNum(val)
 
-            -- [2] Inventory
+            -- [2] BACKPACK
             local pg = Player:FindFirstChild("PlayerGui")
             local backpackGui = pg and pg:FindFirstChild("Backpack")
             local bagText = "0/?"
-            
             if backpackGui then
                 for _, v in pairs(backpackGui:GetDescendants()) do
                     if v:IsA("TextLabel") and string.find(v.Text, "/") then 
@@ -350,8 +339,6 @@ task.spawn(function()
                 local current = #Player.Backpack:GetChildren()
                 bagText = tostring(current)
             end
-            
-            -- UPDATE TEKS INVENTORY (HANYA ANGKA)
             LblInvVal.Text = bagText
         end)
     end
