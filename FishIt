@@ -1,18 +1,22 @@
 --[[ 
-    SERAPHIN HELPER: FINAL FIXED (NO FONT ERROR)
-    Fixed: Enum.Font.GothamSemiBold -> Enum.Font.GothamMedium
+    SERAPHIN HELPER: WIDE 2-COLUMN EDITION
+    Updates:
+    - Grid menjadi 2 Kolom (Tombol lebih lebar).
+    - Tinggi UI disesuaikan agar muat.
+    - Tombol Show/Hide diperbaiki.
+    - Font Fixed (GothamMedium).
 ]]--
 
 -- [1] Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "SERAPHIN HELPER",
-        Text = "Loading Script",
-        Duration = 3,
+        Text = "RakaGanteng",
+        Duration = 2,
     })
 end)
 
-task.wait(2)
+task.wait(3)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -20,7 +24,6 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
-local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage") 
 
@@ -33,17 +36,17 @@ Player.CharacterAdded:Connect(function(newChar)
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
 end)
 
--- // Konfigurasi Visual (FONT DIPERBAIKI)
+-- // Konfigurasi Visual
 local UI_CONFIG = {
-    Width = 430, 
-    Height = 180, 
+    Width = 440,        -- Sedikit lebih lebar
+    Height = 230,       -- Dipertinggi agar muat 5 baris tombol
     Color = Color3.fromRGB(14, 14, 18), 
     HeaderColor = Color3.fromRGB(20, 20, 25),
     Accent = Color3.fromRGB(0, 255, 170),
     StatsColor = Color3.fromRGB(10, 10, 12),
     TextColor = Color3.fromRGB(255, 255, 255),
-    Font = Enum.Font.GothamBold,        -- Tetap Bold untuk Header
-    BtnFont = Enum.Font.GothamMedium    -- [FIX] Diganti dari SemiBold ke Medium
+    Font = Enum.Font.GothamBold,
+    BtnFont = Enum.Font.GothamMedium -- FIXED FONT
 }
 
 -- Bersihkan UI Lama
@@ -56,7 +59,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [1] NEW FIXED FLOATING HUD (Stats)
+-- [1] FLOATING HUD (Stats)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
@@ -108,7 +111,7 @@ local function CreateRow(text, isHeader)
     return lbl
 end
 
-local LblTitle       = CreateRow("SERAPHIN STATS", true)
+local LblTitle       = CreateRow("SERAPHIN FISH", true)
 local Div            = Instance.new("Frame", FloatHUD) 
 Div.Size             = UDim2.new(0.6, 0, 0, 1) 
 Div.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
@@ -117,11 +120,12 @@ local LblInv         = CreateRow("Fish: ...", false)
 local LblCaught      = CreateRow("Caught: ...", false)
 
 -- ====================================================
--- [2] MAIN MENU WIDE
+-- [2] MAIN MENU WIDE (2 COLUMN)
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
-Main.Size = UDim2.new(0, UI_CONFIG.Width, 0, UI_CONFIG.Height)
+-- Ukuran disesuaikan dengan CONFIG
+Main.Size = UDim2.new(0, UI_CONFIG.Width, 0, UI_CONFIG.Height) 
 Main.Position = UDim2.new(0.5, -UI_CONFIG.Width/2, 0.4, 0)
 Main.BackgroundColor3 = UI_CONFIG.Color
 Main.BackgroundTransparency = 0.05
@@ -141,6 +145,7 @@ Header.Size = UDim2.new(1, 0, 0, 32)
 Header.BackgroundColor3 = UI_CONFIG.HeaderColor
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
+-- Filler untuk menutupi corner bawah header agar rata dengan body
 local HeaderFiller = Instance.new("Frame", Header)
 HeaderFiller.Size = UDim2.new(1, 0, 0, 5)
 HeaderFiller.Position = UDim2.new(0, 0, 1, -5)
@@ -148,19 +153,19 @@ HeaderFiller.BackgroundColor3 = UI_CONFIG.HeaderColor
 HeaderFiller.BorderSizePixel = 0
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0, 150, 1, 0)
+Title.Size = UDim2.new(0, 200, 1, 0)
 Title.Position = UDim2.new(0, 12, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font> <font size=\"10\" color=\"rgb(150,150,150)\">| WIDE</font>"
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font> <font size=\"11\" color=\"rgb(150,150,150)\">| 2.0</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = UI_CONFIG.Font
-Title.TextSize = 13
+Title.TextSize = 14
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local RealTimeFps = Instance.new("TextLabel", Header)
 RealTimeFps.Size = UDim2.new(0, 80, 1, 0)
-RealTimeFps.Position = UDim2.new(1, -140, 0, 0) 
+RealTimeFps.Position = UDim2.new(1, -145, 0, 0) 
 RealTimeFps.BackgroundTransparency = 1
 RealTimeFps.Text = "FPS: ..."
 RealTimeFps.TextColor3 = Color3.fromRGB(100, 255, 100) 
@@ -168,26 +173,32 @@ RealTimeFps.Font = Enum.Font.Code
 RealTimeFps.TextSize = 11
 RealTimeFps.TextXAlignment = Enum.TextXAlignment.Right
 
+-- // TOMBOL HIDE (MINIMIZE)
 local HideBtn = Instance.new("TextButton", Header)
-HideBtn.Size = UDim2.new(0, 45, 0, 20) 
-HideBtn.Position = UDim2.new(1, -55, 0.5, -10)
-HideBtn.Text = "_" 
+HideBtn.Size = UDim2.new(0, 50, 0, 20) 
+HideBtn.Position = UDim2.new(1, -60, 0.5, -10)
+HideBtn.Text = "-"  -- Default Text
 HideBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-HideBtn.TextColor3 = Color3.new(1,1,1)
-HideBtn.Font = UI_CONFIG.Font
-HideBtn.TextSize = 12
+HideBtn.TextColor3 = UI_CONFIG.Accent
+HideBtn.Font = Enum.Font.GothamBold
+HideBtn.TextSize = 14
 HideBtn.AutoButtonColor = true
 Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
+local HideStroke = Instance.new("UIStroke", HideBtn)
+HideStroke.Color = Color3.fromRGB(60,60,70)
+HideStroke.Thickness = 1
+HideStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
--- // GRID CONTAINER
+-- // GRID CONTAINER (2 KOLOM)
 local Container = Instance.new("Frame", Main)
-Container.Size = UDim2.new(1, -16, 1, -44) 
-Container.Position = UDim2.new(0, 8, 0, 38)
+Container.Size = UDim2.new(1, -20, 1, -44) 
+Container.Position = UDim2.new(0, 10, 0, 38)
 Container.BackgroundTransparency = 1
 
 local Grid = Instance.new("UIGridLayout", Container)
-Grid.CellSize = UDim2.new(0, 132, 0, 26) 
-Grid.CellPadding = UDim2.new(0, 6, 0, 6) 
+-- Ukuran Cell diatur agar muat 2 kolom. (Lebar Container ~420. Cell 205 x 2 + padding)
+Grid.CellSize = UDim2.new(0, 205, 0, 32) 
+Grid.CellPadding = UDim2.new(0, 8, 0, 8) 
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local function MakeBtn(text)
@@ -196,7 +207,7 @@ local function MakeBtn(text)
     b.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
     b.TextColor3 = Color3.fromRGB(200, 200, 200)
     b.Font = UI_CONFIG.BtnFont 
-    b.TextSize = 11
+    b.TextSize = 12
     b.AutoButtonColor = true
     b.ClipsDescendants = true
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
@@ -231,7 +242,7 @@ local BodyV = nil
 local BtnFreeze = MakeBtn("Freeze Player")
 local BtnWow    = MakeBtn("Walk On Water")
 local BtnNoclip = MakeBtn("No Clip: OFF")
-local BtnBoost  = MakeBtn("Booster Mode")
+local BtnBoost  = MakeBtn("Booster ")
 local BtnRender = MakeBtn("3D Render: OFF")
 local BtnFps    = MakeBtn("FPS Cap: Unlim") 
 local BtnSave   = MakeBtn("Save Pos")
@@ -294,12 +305,25 @@ task.spawn(function()
     end
 end)
 
+-- LOGIC SHOW / HIDE (MINIMIZE)
 local IsMin = false
 HideBtn.MouseButton1Click:Connect(function() 
     IsMin = not IsMin 
-    Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, IsMin and 32 or UI_CONFIG.Height), "Out", "Quad", 0.25, true) 
-    Container.Visible = not IsMin 
-    HideBtn.Text = IsMin and "Show" or "_" 
+    
+    if IsMin then
+        -- Animasi Menutup
+        Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, 32), "Out", "Quad", 0.3, true) 
+        Container.Visible = false
+        HideBtn.Text = "OPEN"
+        HideBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        -- Animasi Membuka
+        Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, UI_CONFIG.Height), "Out", "Back", 0.3, true) 
+        task.wait(0.2)
+        Container.Visible = true
+        HideBtn.Text = "-"
+        HideBtn.TextColor3 = UI_CONFIG.Accent
+    end
 end)
 
 BtnFreeze.MouseButton1Click:Connect(function() States.Freeze = not States.Freeze if HRP then HRP.Anchored = States.Freeze end ToggleVisual(BtnFreeze, States.Freeze) end)
@@ -383,5 +407,3 @@ BtnLoad.MouseButton1Click:Connect(function()
         ToggleVisual(BtnLoad,false) 
     end 
 end)
-
-print(":: SERAPHIN WIDE LOADED (FIXED) ::")
