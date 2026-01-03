@@ -1,8 +1,9 @@
---[[ SERAPHIN HELPER: WIDE DARK MODERN ]]--
+--[[ SERAPHIN HELPER: SAVE POSITION UPDATE ]]--
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
+local TeleportService = game:GetService("TeleportService")
 
 -- // Setup & Safety
 local Player = Players.LocalPlayer
@@ -10,15 +11,15 @@ local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 5)
 if not HRP then return end 
 
--- // Konfigurasi Tampilan (Modern Wide)
+-- // Konfigurasi Tampilan
 local UI_CONFIG = {
-    Width = 460,        -- Lebar (Wide)
-    Height = 160,       -- Tinggi Compact
-    Color = Color3.fromRGB(10, 10, 12), -- Darkest Grey (Hampir Hitam)
+    Width = 460,        
+    Height = 260,       -- [UPDATE] Tinggi ditambah untuk 4 baris tombol
+    Color = Color3.fromRGB(10, 10, 12), 
     HeaderColor = Color3.fromRGB(15, 15, 18),
-    Accent = Color3.fromRGB(0, 255, 170), -- Seraphin Cyan
+    Accent = Color3.fromRGB(0, 255, 170), -- Neon Cyan
     TextColor = Color3.fromRGB(240, 240, 240),
-    Font = Enum.Font.GothamBold, -- Modern Font
+    Font = Enum.Font.GothamBold,
     BtnFont = Enum.Font.GothamMedium
 }
 
@@ -40,12 +41,14 @@ Main.BackgroundTransparency = 0.05
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
+Main.ClipsDescendants = true 
 
--- Modern Styling (Rounded + Stroke)
+-- Style Modern (Neon Stroke)
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
 local MainStroke = Instance.new("UIStroke", Main)
-MainStroke.Color = Color3.fromRGB(40, 40, 45) -- Subtle Border
-MainStroke.Thickness = 1
+MainStroke.Color = UI_CONFIG.Accent
+MainStroke.Thickness = 1.5
+MainStroke.Transparency = 0.3
 
 -- // Header Section
 local Header = Instance.new("Frame", Main)
@@ -54,37 +57,37 @@ Header.BackgroundColor3 = UI_CONFIG.HeaderColor
 Header.BorderSizePixel = 0
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 
--- Fix corner bawah header agar rata
+-- Header Filler
 local HeaderFiller = Instance.new("Frame", Header)
 HeaderFiller.Size = UDim2.new(1, 0, 0.5, 0)
 HeaderFiller.Position = UDim2.new(0, 0, 0.5, 0)
 HeaderFiller.BackgroundColor3 = UI_CONFIG.HeaderColor
 HeaderFiller.BorderSizePixel = 0
 
--- JUDUL (Modern Left Align)
+-- JUDUL
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0.4, 0, 1, 0)
-Title.Position = UDim2.new(0.04, 0, 0, 0)
+Title.Size = UDim2.new(1, 0, 1, 0)
+Title.Position = UDim2.new(0, 0, 0, 0)
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = UI_CONFIG.Font
 Title.TextSize = 14
 Title.BackgroundTransparency = 1
-Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextXAlignment = Enum.TextXAlignment.Center
 
--- FPS Counter (Tengah-Kanan)
+-- FPS Counter
 local FpsLbl = Instance.new("TextLabel", Header)
 FpsLbl.Size = UDim2.new(0.2, 0, 1, 0)
-FpsLbl.Position = UDim2.new(0.65, 0, 0, 0)
+FpsLbl.Position = UDim2.new(0.03, 0, 0, 0)
 FpsLbl.Text = "60 FPS"
 FpsLbl.TextColor3 = Color3.fromRGB(150, 150, 160)
 FpsLbl.Font = Enum.Font.GothamMedium
-FpsLbl.TextSize = 12
+FpsLbl.TextSize = 11
 FpsLbl.BackgroundTransparency = 1
-FpsLbl.TextXAlignment = Enum.TextXAlignment.Right
+FpsLbl.TextXAlignment = Enum.TextXAlignment.Left
 
--- Hide Button (Modern Pill Shape)
+-- Hide Button
 local HideBtn = Instance.new("TextButton", Header)
 HideBtn.Size = UDim2.new(0, 50, 0, 24)
 HideBtn.Position = UDim2.new(0.87, 0, 0.5, -12)
@@ -94,30 +97,33 @@ HideBtn.TextColor3 = Color3.new(1,1,1)
 HideBtn.Font = UI_CONFIG.Font
 HideBtn.TextSize = 10
 Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 6)
+local HideStroke = Instance.new("UIStroke", HideBtn)
+HideStroke.Color = UI_CONFIG.Accent
+HideStroke.Thickness = 1
+HideStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
--- // Content Grid (2 Kolom)
+-- // Content Grid
 local Container = Instance.new("Frame", Main)
-Container.Size = UDim2.new(1, -24, 1, -55)
-Container.Position = UDim2.new(0, 12, 0, 50)
+Container.Size = UDim2.new(1, -24, 1, -45) 
+Container.Position = UDim2.new(0, 12, 0, 45)
 Container.BackgroundTransparency = 1
 
 local Grid = Instance.new("UIGridLayout", Container)
-Grid.CellSize = UDim2.new(0, 212, 0, 36) -- Tombol Lebar & Besar
-Grid.CellPadding = UDim2.new(0, 12, 0, 10)
+Grid.CellSize = UDim2.new(0, 210, 0, 38) 
+Grid.CellPadding = UDim2.new(0, 14, 0, 10)
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 -- // Fungsi Helper UI
 local function MakeBtn(text)
     local b = Instance.new("TextButton", Container)
     b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(20, 20, 24) -- Dark Button
+    b.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
     b.TextColor3 = Color3.fromRGB(200, 200, 200)
     b.Font = UI_CONFIG.BtnFont
     b.TextSize = 11
     b.BackgroundTransparency = 0
     b.AutoButtonColor = true
     
-    -- Styling Tombol
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
     local s = Instance.new("UIStroke", b)
     s.Color = Color3.fromRGB(50, 50, 55)
@@ -128,9 +134,9 @@ end
 
 local function ToggleVisual(btn, on)
     if on then
-        btn.BackgroundColor3 = Color3.fromRGB(0, 255, 170) -- Accent Active
-        btn.TextColor3 = Color3.new(0,0,0) -- Black Text on Active
-        btn.UIStroke.Transparency = 1 -- Hide stroke when active
+        btn.BackgroundColor3 = UI_CONFIG.Accent
+        btn.TextColor3 = Color3.new(0,0,0)
+        btn.UIStroke.Transparency = 1
     else
         btn.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
         btn.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -140,20 +146,19 @@ end
 
 -- // State & Connections
 local States = {Freeze=false, WoW=false, Boost=false, NoRender=false}
+local SavedCFrame = nil -- Variabel Penyimpan Posisi
 local Connections = {}
 local BodyV = nil
 
--- // TOMBOL UI (Wide Layout)
+-- // TOMBOL UI (8 Tombol Total)
 local BtnFreeze = MakeBtn("Freeze Player")
 local BtnWow = MakeBtn("Walk On Water")
 local BtnBoost = MakeBtn("Booster Mode")
 local BtnRender = MakeBtn("3D Rendering: ON")
 local BtnFps = MakeBtn("FPS Cap: Unlimited")
-
--- Tombol ke-6 (Placeholder agar simetris, atau Info)
-local BtnInfo = MakeBtn("Seraphin Ready")
-BtnInfo.TextColor3 = Color3.fromRGB(100, 100, 100)
-BtnInfo.Active = false
+local BtnRejoin = MakeBtn("Rejoin Server") -- [BARU]
+local BtnSave = MakeBtn("Save Position")   -- [BARU]
+local BtnLoad = MakeBtn("Teleport to Saved") -- [BARU]
 
 -- // LOGIKA FITUR
 
@@ -168,7 +173,6 @@ end)
 BtnWow.MouseButton1Click:Connect(function()
     States.WoW = not States.WoW
     ToggleVisual(BtnWow, States.WoW)
-    
     if States.WoW then
         BodyV = Instance.new("BodyVelocity", HRP)
         BodyV.MaxForce = Vector3.new(0, 1e6, 0)
@@ -182,24 +186,21 @@ BtnWow.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3. BOOSTER MODE (Full Target List)
+-- 3. BOOSTER MODE
 BtnBoost.MouseButton1Click:Connect(function()
     States.Boost = not States.Boost
     ToggleVisual(BtnBoost, States.Boost)
     BtnBoost.Text = States.Boost and "Booster: ACTIVE" or "Booster Mode"
 
     Lighting.GlobalShadows = not States.Boost
-    
     local targets = {}
     table.insert(targets, workspace)
-    
     local function AddIfExist(parent, name)
         local t = parent:FindFirstChild(name)
         if t then table.insert(targets, t) return t end
         return nil
     end
 
-    -- Target List (Termasuk TrainSystem)
     AddIfExist(workspace, "!!! EFFECTS")
     AddIfExist(workspace, "Machines")
     AddIfExist(workspace, "TrainSystem")
@@ -221,7 +222,6 @@ BtnBoost.MouseButton1Click:Connect(function()
 
     for _, root in pairs(targets) do
         local isHeavy = (root.Name == "!!! EFFECTS" or root.Name == "Snow" or root.Name == "ChristmasLightRopes")
-        
         for _, v in pairs(root:GetDescendants()) do
             if States.Boost then
                 if isHeavy then
@@ -265,6 +265,38 @@ BtnFps.MouseButton1Click:Connect(function()
     BtnFps.Text = "FPS Cap: " .. (val > 900 and "Unlimited" or val)
 end)
 
+-- 6. SAVE POSITION (FITUR BARU)
+BtnSave.MouseButton1Click:Connect(function()
+    if HRP then
+        SavedCFrame = HRP.CFrame
+        BtnSave.Text = "Position Saved!"
+        BtnLoad.Text = "Teleport to Saved (Ready)"
+        ToggleVisual(BtnSave, true)
+        wait(1)
+        ToggleVisual(BtnSave, false)
+        BtnSave.Text = "Save Position"
+    end
+end)
+
+-- 7. LOAD POSITION (FITUR BARU)
+BtnLoad.MouseButton1Click:Connect(function()
+    if SavedCFrame and HRP then
+        HRP.CFrame = SavedCFrame
+        ToggleVisual(BtnLoad, true)
+        wait(0.5)
+        ToggleVisual(BtnLoad, false)
+    else
+        BtnLoad.Text = "No Position Saved!"
+        wait(1)
+        BtnLoad.Text = "Teleport to Saved"
+    end
+end)
+
+-- 8. REJOIN SERVER (BONUS)
+BtnRejoin.MouseButton1Click:Connect(function()
+    TeleportService:Teleport(game.PlaceId, Player)
+end)
+
 -- // LOGIKA HIDE
 local IsMin = false
 HideBtn.MouseButton1Click:Connect(function()
@@ -274,7 +306,7 @@ HideBtn.MouseButton1Click:Connect(function()
     HideBtn.Text = IsMin and "SHOW" or "HIDE"
 end)
 
--- // FPS Loop
+-- FPS Loop
 local last, f = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     f += 1
@@ -284,4 +316,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-print(":: SERAPHIN LOADING ::")
+print(":: SERAPHIN HELPER + SAVE POS LOADED ::")
