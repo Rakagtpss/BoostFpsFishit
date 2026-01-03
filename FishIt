@@ -1,10 +1,11 @@
---[[ SERAPHIN HELPER: BOOSTER V2 (ISLANDS + ASSETS) ]]--
+--[[ SERAPHIN HELPER: COMPACT UI VERSION ]]--
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage") -- [NEW]
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local NetworkClient = game:GetService("NetworkClient")
 
 -- // Setup & Safety
 local Player = Players.LocalPlayer
@@ -18,7 +19,8 @@ end)
 
 -- // Konfigurasi UI
 local UI_CONFIG = {
-    Width = 460, Height = 320,       
+    Width = 460, 
+    Height = 290, -- [UBAH] Tinggi Panel dikurangi (Lebih pendek)
     Color = Color3.fromRGB(10, 10, 12), 
     HeaderColor = Color3.fromRGB(15, 15, 18),
     Accent = Color3.fromRGB(0, 255, 170),
@@ -88,8 +90,9 @@ local function CreateStatLabel(order, text)
     return lbl
 end
 
-local LblFish = CreateStatLabel(1, "🐟 Fish Caught : Loading...")
-local LblBag  = CreateStatLabel(2, "🎒 Inventory   : Loading...")
+local LblFish = CreateStatLabel(1, " Fish Caught : Loading...")
+
+local LblBag  = CreateStatLabel(2, " Inventory   : Loading...")
 
 -- ==========================================
 -- [2] MAIN MENU
@@ -109,7 +112,7 @@ MainStroke.Thickness = 1.5
 MainStroke.Transparency = 0.3
 
 local Header = Instance.new("Frame", Main)
-Header.Size = UDim2.new(1, 0, 0, 40)
+Header.Size = UDim2.new(1, 0, 0, 35) -- Header sedikit diperkecil
 Header.BackgroundColor3 = UI_CONFIG.HeaderColor
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 
@@ -120,28 +123,29 @@ Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font> | FPS : ..."
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = UI_CONFIG.Font
-Title.TextSize = 14
+Title.TextSize = 13 -- Text header sedikit lebih kecil
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local HideBtn = Instance.new("TextButton", Header)
-HideBtn.Size = UDim2.new(0, 50, 0, 24)
-HideBtn.Position = UDim2.new(1, -60, 0.5, -12)
+HideBtn.Size = UDim2.new(0, 45, 0, 22) -- Tombol Hide lebih kecil
+HideBtn.Position = UDim2.new(1, -55, 0.5, -11)
 HideBtn.Text = "HIDE"
 HideBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
 HideBtn.TextColor3 = Color3.new(1,1,1)
 HideBtn.Font = UI_CONFIG.Font
-HideBtn.TextSize = 10
+HideBtn.TextSize = 9
 Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 6)
 
 local Container = Instance.new("Frame", Main)
-Container.Size = UDim2.new(1, -24, 1, -45) 
-Container.Position = UDim2.new(0, 12, 0, 45)
+Container.Size = UDim2.new(1, -20, 1, -45) 
+Container.Position = UDim2.new(0, 10, 0, 40)
 Container.BackgroundTransparency = 1
 
 local Grid = Instance.new("UIGridLayout", Container)
-Grid.CellSize = UDim2.new(0, 210, 0, 38) 
-Grid.CellPadding = UDim2.new(0, 14, 0, 10)
+-- [UBAH] Ukuran Tombol Lebih Kecil (Tinggi 32)
+Grid.CellSize = UDim2.new(0, 215, 0, 32) 
+Grid.CellPadding = UDim2.new(0, 10, 0, 8) -- Jarak antar tombol lebih rapat
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local function MakeBtn(text)
@@ -150,9 +154,9 @@ local function MakeBtn(text)
     b.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
     b.TextColor3 = Color3.fromRGB(200, 200, 200)
     b.Font = UI_CONFIG.BtnFont 
-    b.TextSize = 11
+    b.TextSize = 10 -- [UBAH] Ukuran text tombol lebih kecil
     b.AutoButtonColor = true
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 5) -- Corner radius sedikit dikurangi
     local s = Instance.new("UIStroke", b)
     s.Color = Color3.fromRGB(50, 50, 55)
     s.Thickness = 1
@@ -185,6 +189,7 @@ local BtnNoclip = MakeBtn("No Clip: OFF")
 local BtnBoost = MakeBtn("Booster Mode")
 local BtnRender = MakeBtn("3D Rendering: ON")
 local BtnFps = MakeBtn("FPS Cap: Unlimited")
+local BtnNet = MakeBtn("Net Optimizer: OFF")
 local BtnRejoin = MakeBtn("Rejoin Server")
 local BtnSave = MakeBtn("Save Position")
 local BtnLoad = MakeBtn("Teleport to Saved")
@@ -198,7 +203,7 @@ BtnPanel.MouseButton1Click:Connect(function()
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
--- // LOOP UTAMA (Stats Only)
+-- // LOOP UTAMA
 task.spawn(function()
     while task.wait(0.5) do
         if not States.Panel then continue end 
@@ -232,21 +237,18 @@ end)
 
 -- // FITUR TOMBOL
 local IsMin = false
-HideBtn.MouseButton1Click:Connect(function() IsMin = not IsMin Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, IsMin and 40 or UI_CONFIG.Height), "Out", "Quad", 0.25, true) Container.Visible = not IsMin HideBtn.Text = IsMin and "SHOW" or "HIDE" end)
+HideBtn.MouseButton1Click:Connect(function() IsMin = not IsMin Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, IsMin and 35 or UI_CONFIG.Height), "Out", "Quad", 0.25, true) Container.Visible = not IsMin HideBtn.Text = IsMin and "SHOW" or "HIDE" end)
 BtnFreeze.MouseButton1Click:Connect(function() States.Freeze = not States.Freeze if HRP then HRP.Anchored = States.Freeze end ToggleVisual(BtnFreeze, States.Freeze) end)
 BtnWow.MouseButton1Click:Connect(function() States.WoW = not States.WoW ToggleVisual(BtnWow, States.WoW) if States.WoW then BodyV = Instance.new("BodyVelocity", HRP) BodyV.MaxForce = Vector3.new(0,1e6,0) BodyV.Velocity = Vector3.zero Connections["WoW"] = RunService.Heartbeat:Connect(function() if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X,0,HRP.AssemblyLinearVelocity.Z) end end) else if Connections["WoW"] then Connections["WoW"]:Disconnect() end if BodyV then BodyV:Destroy() end end end)
 BtnNoclip.MouseButton1Click:Connect(function() States.Noclip = not States.Noclip BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") ToggleVisual(BtnNoclip, States.Noclip) if States.Noclip then Connections["Noclip"] = RunService.Stepped:Connect(function() if Player.Character then for _,v in pairs(Player.Character:GetDescendants()) do if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end end end end) else if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end end end)
 
--- [UPDATED] BOOSTER BUTTON (Islands + ReplicatedStorage.Assets)
+-- [BOOSTER: Islands + Assets]
 BtnBoost.MouseButton1Click:Connect(function() 
     States.Boost = not States.Boost 
     ToggleVisual(BtnBoost, States.Boost) 
     BtnBoost.Text = States.Boost and "Booster: ACTIVE" or "Booster Mode" 
-    
     Lighting.GlobalShadows = not States.Boost 
-    
     if States.Boost then
-        -- Fungsi Helper untuk membersihkan folder
         local function CleanVisuals(folder)
             if not folder then return end
             for _, v in pairs(folder:GetDescendants()) do
@@ -255,20 +257,25 @@ BtnBoost.MouseButton1Click:Connect(function()
                 end
             end
         end
-
-        -- 1. Bersihkan workspace.Islands
         CleanVisuals(workspace:FindFirstChild("Islands"))
-
-        -- 2. Bersihkan ReplicatedStorage.Assets (Agar spawn masa depan lebih ringan)
         CleanVisuals(ReplicatedStorage:FindFirstChild("Assets"))
-        
-        print(":: Booster Applied to Islands & Assets ::")
     end
+end)
+
+-- [NET OPTIMIZER]
+BtnNet.MouseButton1Click:Connect(function()
+    ToggleVisual(BtnNet, true)
+    BtnNet.Text = "Optimizing..."
+    if settings().Network then settings().Network.IncomingReplicationLag = 0 end
+    pcall(function() if setfpscap then setfpscap(999) end end)
+    task.wait(0.5)
+    BtnNet.Text = "Net Optimized!"
+    task.wait(1)
+    BtnNet.Text = "Net Optimizer: ON"
 end)
 
 BtnRender.MouseButton1Click:Connect(function() States.NoRender = not States.NoRender RunService:Set3dRenderingEnabled(not States.NoRender) BtnRender.Text = "3D Rendering: "..(States.NoRender and "OFF" or "ON") ToggleVisual(BtnRender, States.NoRender) end)
 BtnFps.MouseButton1Click:Connect(function() local l={30,60,144,999} _G.l=((_G.l or 4)%#l)+1 local v=l[_G.l] if setfpscap then setfpscap(v) end BtnFps.Text="FPS Cap: "..(v>900 and "Unlimited" or v) end)
-
 BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
 BtnSave.MouseButton1Click:Connect(function() if HRP then SavedCFrame = HRP.CFrame BtnSave.Text="Pos Saved!" ToggleVisual(BtnSave,true) wait(1) ToggleVisual(BtnSave,false) BtnSave.Text="Save Position" end end)
 BtnLoad.MouseButton1Click:Connect(function() if SavedCFrame and HRP then HRP.CFrame = SavedCFrame ToggleVisual(BtnLoad,true) wait(0.5) ToggleVisual(BtnLoad,false) end end)
@@ -285,4 +292,4 @@ RunService.RenderStepped:Connect(function()
     end 
 end)
 
-print(":: SERAPHIN HELPER + RS ASSETS CLEANER LOADED ::")
+print(":: SERAPHIN HELPER LOADING ::")
