@@ -1,10 +1,10 @@
---[[ SERAPHIN HELPER: ULTRA COMPACT + DENSE BUTTONS ]]--
+--[[ SERAPHIN HELPER: CUSTOM DIMENSIONS (350x230 | 200x150) ]]--
 
 -- [1] Kirim Notifikasi Terlebih Dahulu
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "SERAPHIN HELPER",
-        Text = "Memuat Script ",
+        Text = "LOADING MENU ",
         Duration = 3,
     })
 end)
@@ -32,8 +32,8 @@ end)
 
 -- // Konfigurasi UI
 local UI_CONFIG = {
-    Width = 350,  
-    Height = 250, -- [UBAH] Tinggi Panel Utama dikurangi agar pas dengan tombol yang padat
+    Width = 350,   -- [UBAH] Lebar Main UI
+    Height = 230,  -- [UBAH] Tinggi Main UI
     Color = Color3.fromRGB(10, 10, 12), 
     HeaderColor = Color3.fromRGB(15, 15, 18),
     Accent = Color3.fromRGB(0, 255, 170),
@@ -50,12 +50,12 @@ ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 -- ==========================================
--- [1] FLOAT HUD (ULTRA SHORT VERSION)
+-- [1] FLOAT HUD (CUSTOM SIZE 200x150)
 -- ==========================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
--- [UBAH] Ukuran dipangkas habis (Tinggi hanya 110px)
-FloatHUD.Size = UDim2.new(0, 160, 0, 110) 
+-- [UBAH] Ukuran Mini Floating UI disesuaikan permintaan
+FloatHUD.Size = UDim2.new(0, 200, 0, 150) 
 FloatHUD.Position = UDim2.new(0.85, 0, 0.3, 0)
 FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
 FloatHUD.BackgroundTransparency = 0.1
@@ -71,18 +71,18 @@ HudStroke.Transparency = 0.1
 
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
 ListLayout.FillDirection = Enum.FillDirection.Vertical
-ListLayout.Padding = UDim.new(0, 0) -- Spasi sangat rapat (0)
+ListLayout.Padding = UDim.new(0, 4) -- Sedikit dilonggarkan karena tinggi bertambah
 ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center 
 ListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 
 local Padding = Instance.new("UIPadding", FloatHUD)
-Padding.PaddingTop = UDim.new(0, 8)
-Padding.PaddingBottom = UDim.new(0, 8)
+Padding.PaddingTop = UDim.new(0, 10)
+Padding.PaddingBottom = UDim.new(0, 10)
 
 -- // FUNGSI LABEL
 local function CreateLabel(text, size, color, font)
     local l = Instance.new("TextLabel", FloatHUD)
-    l.Size = UDim2.new(1, 0, 0, size + 4) -- Sedikit padding height
+    l.Size = UDim2.new(1, 0, 0, size + 4)
     l.BackgroundTransparency = 1
     l.Text = text
     l.TextColor3 = color
@@ -93,30 +93,28 @@ local function CreateLabel(text, size, color, font)
 end
 
 -- 1. JUDUL
-local LblTitle = CreateLabel("SERAPHIN PANEL", 13, UI_CONFIG.Accent, Enum.Font.GothamBlack)
+local LblTitle = CreateLabel("SERAPHIN PANEL", 14, UI_CONFIG.Accent, Enum.Font.GothamBlack)
 
--- SPASI KECIL
+-- SPASI
 local Spacer1 = Instance.new("Frame", FloatHUD)
-Spacer1.Size = UDim2.new(1,0,0,6)
+Spacer1.Size = UDim2.new(1,0,0,8)
 Spacer1.BackgroundTransparency = 1
 
 -- 2. INVENTORY (BOLD)
-local LblInvHeader = CreateLabel("INVENTORY COUNT:", 10, Color3.fromRGB(180,180,180), Enum.Font.GothamBold)
-local LblInvVal    = CreateLabel("Fish: ...", 12, UI_CONFIG.TextColor, Enum.Font.GothamBold) 
+local LblInvHeader = CreateLabel("INVENTORY COUNT:", 11, Color3.fromRGB(180,180,180), Enum.Font.GothamBold)
+local LblInvVal    = CreateLabel("Fish: ...", 13, UI_CONFIG.TextColor, Enum.Font.GothamBold) 
 
--- SPASI KECIL
+-- SPASI
 local Spacer2 = Instance.new("Frame", FloatHUD)
-Spacer2.Size = UDim2.new(1,0,0,4)
+Spacer2.Size = UDim2.new(1,0,0,8)
 Spacer2.BackgroundTransparency = 1
 
 -- 3. CAUGHT (BOLD)
-local LblCaughtHeader = CreateLabel("TOTAL FISH CAUGHT:", 10, Color3.fromRGB(180,180,180), Enum.Font.GothamBold)
-local LblCaughtVal    = CreateLabel("Value: ...", 12, UI_CONFIG.TextColor, Enum.Font.GothamBold)
-
--- [CATATAN] "FISHING NORMAL" SUDAH DIHAPUS
+local LblCaughtHeader = CreateLabel("TOTAL FISH CAUGHT:", 11, Color3.fromRGB(180,180,180), Enum.Font.GothamBold)
+local LblCaughtVal    = CreateLabel("Value: ...", 13, UI_CONFIG.TextColor, Enum.Font.GothamBold)
 
 -- ==========================================
--- [2] MAIN MENU (DENSE BUTTONS)
+-- [2] MAIN MENU (CUSTOM SIZE 350x230)
 -- ==========================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
@@ -164,9 +162,9 @@ Container.Position = UDim2.new(0, 5, 0, 35)
 Container.BackgroundTransparency = 1
 
 local Grid = Instance.new("UIGridLayout", Container)
--- [UBAH] CellSize Tinggi 24px (Tipis), Padding 3px (Rapat)
-Grid.CellSize = UDim2.new(0, 205, 0, 24) 
-Grid.CellPadding = UDim2.new(0, 5, 0, 3) 
+-- [UBAH] Ukuran Tombol dikecilkan lebarnya (160) agar muat di lebar UI 350
+Grid.CellSize = UDim2.new(0, 160, 0, 24) 
+Grid.CellPadding = UDim2.new(0, 5, 0, 5) 
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local function MakeBtn(text)
@@ -175,7 +173,7 @@ local function MakeBtn(text)
     b.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
     b.TextColor3 = Color3.fromRGB(200, 200, 200)
     b.Font = UI_CONFIG.BtnFont 
-    b.TextSize = 10 -- Font tetap ukuran 10 (Jelas)
+    b.TextSize = 10 
     b.AutoButtonColor = true
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
     local s = Instance.new("UIStroke", b)
@@ -308,4 +306,4 @@ RunService.RenderStepped:Connect(function()
     end 
 end)
 
-print(":: SERAPHIN HELPER ULTRA COMPACT LOADED ::")
+print(":: SERAPHIN HELPER CUSTOM SIZE LOADED ::")
