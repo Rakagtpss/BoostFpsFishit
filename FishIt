@@ -1,4 +1,4 @@
---[[ SERAPHIN HELPER: BOLD BUTTONS VERSION ]]--
+--[[ SERAPHIN HELPER: ISLAND CLEANER VERSION ]]--
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -23,8 +23,8 @@ local UI_CONFIG = {
     Accent = Color3.fromRGB(0, 255, 170),
     StatsColor = Color3.fromRGB(15, 15, 20),
     TextColor = Color3.fromRGB(255, 255, 255),
-    Font = Enum.Font.GothamBold,       -- Font untuk Header/Label
-    BtnFont = Enum.Font.GothamBold     -- [DIUBAH] Font Tombol jadi Bold (Lebih Tebal/Terang)
+    Font = Enum.Font.GothamBold,
+    BtnFont = Enum.Font.GothamBold
 }
 
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
@@ -34,36 +34,55 @@ ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 -- ==========================================
--- [1] FLOAT HUD (Hanya Stats)
+-- [1] FLOAT HUD (Stats + Draggable)
 -- ==========================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 240, 0, 75)
+FloatHUD.Size = UDim2.new(0, 240, 0, 95) 
 FloatHUD.Position = UDim2.new(0.75, 0, 0.2, 0)
 FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
 FloatHUD.BackgroundTransparency = 0.1
 FloatHUD.Visible = true 
+FloatHUD.Active = true
+FloatHUD.Draggable = true 
+
 Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
+
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_CONFIG.Accent
 HudStroke.Thickness = 2
-HudStroke.Transparency = 0.3
+HudStroke.Transparency = 0.1
+
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
 ListLayout.FillDirection = Enum.FillDirection.Vertical
-ListLayout.Padding = UDim.new(0, 5)
+ListLayout.Padding = UDim.new(0, 4)
+ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center 
+
 local Padding = Instance.new("UIPadding", FloatHUD)
-Padding.PaddingLeft = UDim.new(0, 12)
-Padding.PaddingTop = UDim.new(0, 10)
+Padding.PaddingLeft = UDim.new(0, 10)
+Padding.PaddingRight = UDim.new(0, 10)
+Padding.PaddingTop = UDim.new(0, 8)
+Padding.PaddingBottom = UDim.new(0, 8)
+
+-- Judul Mini Panel
+local TitleHUD = Instance.new("TextLabel", FloatHUD)
+TitleHUD.Size = UDim2.new(1, 0, 0, 20)
+TitleHUD.BackgroundTransparency = 1
+TitleHUD.Text = "SeraphinHelperPanel"
+TitleHUD.TextColor3 = UI_CONFIG.Accent 
+TitleHUD.Font = Enum.Font.GothamBlack 
+TitleHUD.TextSize = 14
+TitleHUD.LayoutOrder = 0
 
 local function CreateStatLabel(order, text)
     local lbl = Instance.new("TextLabel", FloatHUD)
-    lbl.Size = UDim2.new(1, -10, 0, 22)
+    lbl.Size = UDim2.new(1, -5, 0, 20)
     lbl.BackgroundTransparency = 1
     lbl.Text = text
     lbl.TextColor3 = UI_CONFIG.TextColor
     lbl.Font = UI_CONFIG.Font
-    lbl.TextSize = 14
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextSize = 13
+    lbl.TextXAlignment = Enum.TextXAlignment.Left 
     lbl.LayoutOrder = order
     lbl.RichText = true
     return lbl
@@ -94,7 +113,6 @@ Header.Size = UDim2.new(1, 0, 0, 40)
 Header.BackgroundColor3 = UI_CONFIG.HeaderColor
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 
--- TITLE DIGABUNG DENGAN FPS
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0)
 Title.Position = UDim2.new(0, 10, 0, 0)
@@ -131,7 +149,7 @@ local function MakeBtn(text)
     b.Text = text
     b.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
     b.TextColor3 = Color3.fromRGB(200, 200, 200)
-    b.Font = UI_CONFIG.BtnFont -- Menggunakan Font yang sudah di-Bold
+    b.Font = UI_CONFIG.BtnFont 
     b.TextSize = 11
     b.AutoButtonColor = true
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
@@ -180,12 +198,11 @@ BtnPanel.MouseButton1Click:Connect(function()
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
--- // LOOP UTAMA (Hanya Update Stats)
+-- // LOOP UTAMA
 task.spawn(function()
     while task.wait(0.5) do
         if not States.Panel then continue end 
         
-        -- Update Info Ikan & Inventory
         pcall(function()
             local ls = Player:FindFirstChild("leaderstats")
             local caughtObj = ls and ls:FindFirstChild("Caught")
@@ -213,20 +230,46 @@ task.spawn(function()
     end
 end)
 
--- // FITUR TOMBOL (Standard)
+-- // FITUR TOMBOL
 local IsMin = false
 HideBtn.MouseButton1Click:Connect(function() IsMin = not IsMin Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, IsMin and 40 or UI_CONFIG.Height), "Out", "Quad", 0.25, true) Container.Visible = not IsMin HideBtn.Text = IsMin and "SHOW" or "HIDE" end)
 BtnFreeze.MouseButton1Click:Connect(function() States.Freeze = not States.Freeze if HRP then HRP.Anchored = States.Freeze end ToggleVisual(BtnFreeze, States.Freeze) end)
 BtnWow.MouseButton1Click:Connect(function() States.WoW = not States.WoW ToggleVisual(BtnWow, States.WoW) if States.WoW then BodyV = Instance.new("BodyVelocity", HRP) BodyV.MaxForce = Vector3.new(0,1e6,0) BodyV.Velocity = Vector3.zero Connections["WoW"] = RunService.Heartbeat:Connect(function() if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X,0,HRP.AssemblyLinearVelocity.Z) end end) else if Connections["WoW"] then Connections["WoW"]:Disconnect() end if BodyV then BodyV:Destroy() end end end)
 BtnNoclip.MouseButton1Click:Connect(function() States.Noclip = not States.Noclip BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") ToggleVisual(BtnNoclip, States.Noclip) if States.Noclip then Connections["Noclip"] = RunService.Stepped:Connect(function() if Player.Character then for _,v in pairs(Player.Character:GetDescendants()) do if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end end end end) else if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end end end)
-BtnBoost.MouseButton1Click:Connect(function() States.Boost = not States.Boost ToggleVisual(BtnBoost, States.Boost) BtnBoost.Text = States.Boost and "Booster: ACTIVE" or "Booster Mode" Lighting.GlobalShadows = not States.Boost end)
+
+-- [UPDATED] BOOSTER BUTTON
+BtnBoost.MouseButton1Click:Connect(function() 
+    States.Boost = not States.Boost 
+    ToggleVisual(BtnBoost, States.Boost) 
+    BtnBoost.Text = States.Boost and "Booster: ACTIVE" or "Booster Mode" 
+    
+    -- 1. Global Shadows
+    Lighting.GlobalShadows = not States.Boost 
+    
+    -- 2. Clear Effects in workspace.Islands
+    if States.Boost then
+        local islands = workspace:FindFirstChild("Islands")
+        if islands then
+            local count = 0
+            for _, v in pairs(islands:GetDescendants()) do
+                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") or v:IsA("Explosion") then
+                    v.Enabled = false
+                    count = count + 1
+                end
+            end
+            -- Opsional: Print ke console (F9) untuk info
+            print("Seraphin Booster: Cleaned " .. count .. " effects from Islands.")
+        end
+    end
+end)
+
 BtnRender.MouseButton1Click:Connect(function() States.NoRender = not States.NoRender RunService:Set3dRenderingEnabled(not States.NoRender) BtnRender.Text = "3D Rendering: "..(States.NoRender and "OFF" or "ON") ToggleVisual(BtnRender, States.NoRender) end)
 BtnFps.MouseButton1Click:Connect(function() local l={30,60,144,999} _G.l=((_G.l or 4)%#l)+1 local v=l[_G.l] if setfpscap then setfpscap(v) end BtnFps.Text="FPS Cap: "..(v>900 and "Unlimited" or v) end)
 BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
 BtnSave.MouseButton1Click:Connect(function() if HRP then SavedCFrame = HRP.CFrame BtnSave.Text="Pos Saved!" ToggleVisual(BtnSave,true) wait(1) ToggleVisual(BtnSave,false) BtnSave.Text="Save Position" end end)
 BtnLoad.MouseButton1Click:Connect(function() if SavedCFrame and HRP then HRP.CFrame = SavedCFrame ToggleVisual(BtnLoad,true) wait(0.5) ToggleVisual(BtnLoad,false) end end)
 
--- // FPS LOOP UPDATER
+-- // FPS UPDATER
 local last, f = os.clock(), 0
 local BaseTitle = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 
@@ -238,4 +281,4 @@ RunService.RenderStepped:Connect(function()
     end 
 end)
 
-print(":: SERAPHIN HELPER LOADED ::")
+print(":: SERAPHIN HELPER + ISLAND CLEANER LOADED ::")
