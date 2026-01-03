@@ -32,8 +32,8 @@ end)
 
 -- // Konfigurasi UI
 local UI_CONFIG = {
-    Width = 430,  -- Lebar Panel Utama dikurangi sedikit
-    Height = 220, -- Tinggi Panel Utama dikurangi
+    Width = 380,  -- Lebar Panel Utama dikurangi sedikit
+    Height = 240, -- Tinggi Panel Utama dikurangi
     Color = Color3.fromRGB(10, 10, 12), 
     HeaderColor = Color3.fromRGB(15, 15, 18),
     Accent = Color3.fromRGB(0, 255, 170),
@@ -55,7 +55,7 @@ ScreenGui.ResetOnSpawn = false
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
 -- [UBAH] Ukuran diperpendek (155px) agar tidak kepanjangan
-FloatHUD.Size = UDim2.new(0, 180, 0, 155) 
+FloatHUD.Size = UDim2.new(0, 180, 0, 125) 
 FloatHUD.Position = UDim2.new(0.85, 0, 0.3, 0)
 FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
 FloatHUD.BackgroundTransparency = 0.1
@@ -215,7 +215,7 @@ local BtnFreeze = MakeBtn("Freeze Player")
 local BtnWow = MakeBtn("Walk On Water")
 local BtnNoclip = MakeBtn("No Clip: OFF")
 local BtnBoost = MakeBtn("Booster Mode")
-local BtnRender = MakeBtn("3D Rendering: ON")
+local BtnRender = MakeBtn("3D Rendering: OFF")
 local BtnFps = MakeBtn("FPS Cap: Unlimited")
 local BtnRejoin = MakeBtn("Rejoin Server")
 local BtnSave = MakeBtn("Save Position")
