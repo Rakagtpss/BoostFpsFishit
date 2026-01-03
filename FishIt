@@ -1,16 +1,16 @@
---[[ SERAPHIN HELPER: FINAL ADJUSTMENT (300x250 | NOTIF SAVE) ]]--
+--[[ SERAPHIN HELPER: FINAL FIXED (BRIGHT TEXT & HUD POSITION) ]]--
 
 -- [1] Kirim Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "SERAPHIN HELPER",
-        Text = "Memuat Script... Tunggu 3 Detik",
+        Text = "Script Dimuat...",
         Duration = 3,
     })
 end)
 
 -- [2] Delay
-task.wait(3)
+task.wait(2)
 
 -- [3] Mulai Script
 local Players = game:GetService("Players")
@@ -19,7 +19,7 @@ local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterGui = game:GetService("StarterGui") -- Service untuk Notif
+local StarterGui = game:GetService("StarterGui")
 
 -- // Setup
 local Player = Players.LocalPlayer
@@ -31,16 +31,16 @@ Player.CharacterAdded:Connect(function(newChar)
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
 end)
 
--- // Konfigurasi UI (UPDATED)
+-- // Konfigurasi UI
 local UI_CONFIG = {
-    Width = 300,   -- [UBAH] Lebar Main UI
-    Height = 250,  -- [UBAH] Tinggi Main UI
-    Color = Color3.fromRGB(10, 10, 12), 
-    HeaderColor = Color3.fromRGB(15, 15, 18),
+    Width = 300,
+    Height = 250,
+    Color = Color3.fromRGB(12, 12, 14), 
+    HeaderColor = Color3.fromRGB(18, 18, 22),
     Accent = Color3.fromRGB(0, 255, 170),
     StatsColor = Color3.fromRGB(15, 15, 20),
-    TextColor = Color3.fromRGB(255, 255, 255),
-    Font = Enum.Font.GothamBold,
+    TextColor = Color3.fromRGB(255, 255, 255), -- Putih Cerah Mutlak
+    Font = Enum.Font.GothamBold,               -- Font Bold
     BtnFont = Enum.Font.GothamBold
 }
 
@@ -51,32 +51,33 @@ ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 -- ==========================================
--- [1] FLOAT HUD (TITLE MOVED UP)
+-- [1] FLOAT HUD (Stats Mini)
 -- ==========================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 200, 0, 150) 
+FloatHUD.Size = UDim2.new(0, 200, 0, 160) -- Tinggi sedikit ditambah
 FloatHUD.Position = UDim2.new(0.85, 0, 0.3, 0)
 FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
-FloatHUD.BackgroundTransparency = 0.1
+FloatHUD.BackgroundTransparency = 0.15
 FloatHUD.Visible = true 
 FloatHUD.Active = true
 FloatHUD.Draggable = true 
 
-Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 12)
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_CONFIG.Accent
 HudStroke.Thickness = 2
-HudStroke.Transparency = 0.1
+HudStroke.Transparency = 0.2
 
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
 ListLayout.FillDirection = Enum.FillDirection.Vertical
 ListLayout.Padding = UDim.new(0, 4) 
 ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center 
-ListLayout.VerticalAlignment = Enum.VerticalAlignment.Top -- [UBAH] Align Top agar judul naik
+ListLayout.VerticalAlignment = Enum.VerticalAlignment.Top 
 
 local Padding = Instance.new("UIPadding", FloatHUD)
-Padding.PaddingTop = UDim.new(0, 8) -- [UBAH] Padding atas dikurangi agar judul naik
+-- [UBAH] Padding Top dinaikkan jadi 25 agar teks turun ke bawah
+Padding.PaddingTop = UDim.new(0, 25) 
 Padding.PaddingBottom = UDim.new(0, 10)
 
 -- // FUNGSI LABEL
@@ -89,29 +90,23 @@ local function CreateLabel(text, size, color, font)
     l.Font = font
     l.TextSize = size
     l.RichText = true
+    l.TextStrokeTransparency = 0.8 -- Sedikit outline agar makin jelas
     return l
 end
 
--- 1. JUDUL (Posisi lebih ke atas sekarang)
+-- Judul
 local LblTitle = CreateLabel("SERAPHIN PANEL", 14, UI_CONFIG.Accent, Enum.Font.GothamBlack)
+local Spacer1 = Instance.new("Frame", FloatHUD) Spacer1.Size = UDim2.new(1,0,0,10) Spacer1.BackgroundTransparency = 1
 
--- SPASI
-local Spacer1 = Instance.new("Frame", FloatHUD)
-Spacer1.Size = UDim2.new(1,0,0,10) -- Sedikit jarak setelah judul
-Spacer1.BackgroundTransparency = 1
+-- Inventory (Warna Putih Terang & Bold)
+local LblInvHeader = CreateLabel("INVENTORY COUNT:", 11, Color3.fromRGB(240, 240, 240), Enum.Font.GothamBold)
+local LblInvVal    = CreateLabel("Fish: ...", 13, UI_CONFIG.TextColor, Enum.Font.GothamBlack) 
 
--- 2. INVENTORY (BOLD)
-local LblInvHeader = CreateLabel("INVENTORY COUNT:", 11, Color3.fromRGB(180,180,180), Enum.Font.GothamBold)
-local LblInvVal    = CreateLabel("Fish: ...", 13, UI_CONFIG.TextColor, Enum.Font.GothamBold) 
+local Spacer2 = Instance.new("Frame", FloatHUD) Spacer2.Size = UDim2.new(1,0,0,8) Spacer2.BackgroundTransparency = 1
 
--- SPASI
-local Spacer2 = Instance.new("Frame", FloatHUD)
-Spacer2.Size = UDim2.new(1,0,0,8)
-Spacer2.BackgroundTransparency = 1
-
--- 3. CAUGHT (BOLD)
-local LblCaughtHeader = CreateLabel("TOTAL FISH CAUGHT:", 11, Color3.fromRGB(180,180,180), Enum.Font.GothamBold)
-local LblCaughtVal    = CreateLabel("Value: ...", 13, UI_CONFIG.TextColor, Enum.Font.GothamBold)
+-- Caught (Warna Putih Terang & Bold)
+local LblCaughtHeader = CreateLabel("TOTAL FISH CAUGHT:", 11, Color3.fromRGB(240, 240, 240), Enum.Font.GothamBold)
+local LblCaughtVal    = CreateLabel("Value: ...", 13, UI_CONFIG.TextColor, Enum.Font.GothamBlack)
 
 -- ==========================================
 -- [2] MAIN MENU (300x250)
@@ -130,13 +125,15 @@ MainStroke.Color = UI_CONFIG.Accent
 MainStroke.Thickness = 1.5
 MainStroke.Transparency = 0.3
 
+-- // HEADER
 local Header = Instance.new("Frame", Main)
 Header.Size = UDim2.new(1, 0, 0, 30) 
 Header.BackgroundColor3 = UI_CONFIG.HeaderColor
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 
+-- [HEADER] Judul Kiri
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Size = UDim2.new(0, 120, 1, 0)
 Title.Position = UDim2.new(0, 10, 0, 0)
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
@@ -146,23 +143,34 @@ Title.TextSize = 12
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
+-- [HEADER] FPS Button (Tengah / Center)
+local HeaderFpsBtn = Instance.new("TextButton", Header)
+HeaderFpsBtn.Size = UDim2.new(0, 100, 1, 0)
+HeaderFpsBtn.Position = UDim2.new(0.5, -50, 0, 0) 
+HeaderFpsBtn.BackgroundTransparency = 1
+HeaderFpsBtn.Text = "| FPS: Unlim"
+HeaderFpsBtn.TextColor3 = Color3.fromRGB(220, 220, 220) -- Putih terang
+HeaderFpsBtn.Font = UI_CONFIG.Font
+HeaderFpsBtn.TextSize = 11
+
+-- [HEADER] Tombol Hide Kanan
 local HideBtn = Instance.new("TextButton", Header)
 HideBtn.Size = UDim2.new(0, 40, 0, 18) 
 HideBtn.Position = UDim2.new(1, -45, 0.5, -9)
 HideBtn.Text = "HIDE"
-HideBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+HideBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 HideBtn.TextColor3 = Color3.new(1,1,1)
 HideBtn.Font = UI_CONFIG.Font
 HideBtn.TextSize = 9
 Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
 
+-- // CONTAINER GRID
 local Container = Instance.new("Frame", Main)
 Container.Size = UDim2.new(1, -10, 1, -35) 
 Container.Position = UDim2.new(0, 5, 0, 35)
 Container.BackgroundTransparency = 1
 
 local Grid = Instance.new("UIGridLayout", Container)
--- [UBAH] Tombol dikecilkan lebar (135) agar muat di lebar 300
 Grid.CellSize = UDim2.new(0, 135, 0, 24) 
 Grid.CellPadding = UDim2.new(0, 5, 0, 5) 
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -170,14 +178,14 @@ Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 local function MakeBtn(text)
     local b = Instance.new("TextButton", Container)
     b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
-    b.TextColor3 = Color3.fromRGB(200, 200, 200)
+    b.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    b.TextColor3 = Color3.fromRGB(220, 220, 220) -- Putih terang untuk teks tombol biasa
     b.Font = UI_CONFIG.BtnFont 
     b.TextSize = 10 
     b.AutoButtonColor = true
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
     local s = Instance.new("UIStroke", b)
-    s.Color = Color3.fromRGB(50, 50, 55)
+    s.Color = Color3.fromRGB(60, 60, 65)
     s.Thickness = 1
     s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     return b
@@ -189,8 +197,8 @@ local function ToggleVisual(btn, on)
         btn.TextColor3 = Color3.new(0,0,0)
         btn.UIStroke.Transparency = 1
     else
-        btn.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
-        btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        btn.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+        btn.TextColor3 = Color3.fromRGB(220, 220, 220)
         btn.UIStroke.Transparency = 0
     end
 end
@@ -201,18 +209,30 @@ local SavedCFrame = nil
 local Connections = {}
 local BodyV = nil
 
--- // TOMBOL UI
+-- // DAFTAR TOMBOL
 local BtnFreeze = MakeBtn("Freeze Player")
-local BtnWow = MakeBtn("Walk On Water")
+local BtnWow    = MakeBtn("Walk On Water")
 local BtnNoclip = MakeBtn("No Clip: OFF")
-local BtnBoost = MakeBtn("Booster Mode")
+local BtnBoost  = MakeBtn("Booster Mode")
 local BtnRender = MakeBtn("3D Rendering: ON")
-local BtnFps = MakeBtn("FPS Cap: Unlimited")
 local BtnRejoin = MakeBtn("Rejoin Server")
-local BtnSave = MakeBtn("Save Position")
-local BtnLoad = MakeBtn("Teleport to Saved")
-local BtnPanel = MakeBtn("Panel Info: ON")
+local BtnSave   = MakeBtn("Save Position")
+local BtnLoad   = MakeBtn("Teleport to Saved")
+local BtnPanel  = MakeBtn("Panel Info: ON")
 
+-- // LOGIC
+
+-- FPS Logic
+HeaderFpsBtn.MouseButton1Click:Connect(function()
+    local l = {30, 60, 144, 999}
+    _G.l = ((_G.l or 4) % #l) + 1
+    local v = l[_G.l]
+    if setfpscap then setfpscap(v) end
+    local txtVal = (v > 900 and "Unlim" or tostring(v))
+    HeaderFpsBtn.Text = "| FPS: " .. txtVal
+end)
+
+-- Panel Info Logic
 ToggleVisual(BtnPanel, true)
 BtnPanel.MouseButton1Click:Connect(function()
     States.Panel = not States.Panel
@@ -221,19 +241,14 @@ BtnPanel.MouseButton1Click:Connect(function()
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
--- // LOOP UTAMA
+-- Loop Stats
 task.spawn(function()
     while task.wait(0.5) do
         if not States.Panel then continue end 
-        
         pcall(function()
             local ls = Player:FindFirstChild("leaderstats")
             local caughtObj = ls and ls:FindFirstChild("Caught")
-            if caughtObj then 
-                LblCaughtVal.Text = "Value: " .. caughtObj.Value 
-            else
-                LblCaughtVal.Text = "Value: -"
-            end
+            LblCaughtVal.Text = caughtObj and ("Value: " .. caughtObj.Value) or "Value: -"
 
             local pg = Player:FindFirstChild("PlayerGui")
             local backpackGui = pg and pg:FindFirstChild("Backpack")
@@ -258,9 +273,15 @@ task.spawn(function()
     end
 end)
 
--- // FITUR TOMBOL
+-- Tombol Lain
 local IsMin = false
-HideBtn.MouseButton1Click:Connect(function() IsMin = not IsMin Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, IsMin and 30 or UI_CONFIG.Height), "Out", "Quad", 0.25, true) Container.Visible = not IsMin HideBtn.Text = IsMin and "SHOW" or "HIDE" end)
+HideBtn.MouseButton1Click:Connect(function() 
+    IsMin = not IsMin 
+    Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, IsMin and 30 or UI_CONFIG.Height), "Out", "Quad", 0.25, true) 
+    Container.Visible = not IsMin 
+    HideBtn.Text = IsMin and "SHOW" or "HIDE" 
+end)
+
 BtnFreeze.MouseButton1Click:Connect(function() States.Freeze = not States.Freeze if HRP then HRP.Anchored = States.Freeze end ToggleVisual(BtnFreeze, States.Freeze) end)
 BtnWow.MouseButton1Click:Connect(function() States.WoW = not States.WoW ToggleVisual(BtnWow, States.WoW) if States.WoW then BodyV = Instance.new("BodyVelocity", HRP) BodyV.MaxForce = Vector3.new(0,1e6,0) BodyV.Velocity = Vector3.zero Connections["WoW"] = RunService.Heartbeat:Connect(function() if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X,0,HRP.AssemblyLinearVelocity.Z) end end) else if Connections["WoW"] then Connections["WoW"]:Disconnect() end if BodyV then BodyV:Destroy() end end end)
 BtnNoclip.MouseButton1Click:Connect(function() States.Noclip = not States.Noclip BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") ToggleVisual(BtnNoclip, States.Noclip) if States.Noclip then Connections["Noclip"] = RunService.Stepped:Connect(function() if Player.Character then for _,v in pairs(Player.Character:GetDescendants()) do if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end end end end) else if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end end end)
@@ -274,9 +295,7 @@ BtnBoost.MouseButton1Click:Connect(function()
         local function CleanVisuals(folder)
             if not folder then return end
             for _, v in pairs(folder:GetDescendants()) do
-                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") or v:IsA("Explosion") then
-                    v.Enabled = false
-                end
+                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") or v:IsA("Explosion") then v.Enabled = false end
             end
         end
         CleanVisuals(workspace:FindFirstChild("Islands"))
@@ -285,26 +304,27 @@ BtnBoost.MouseButton1Click:Connect(function()
 end)
 
 BtnRender.MouseButton1Click:Connect(function() States.NoRender = not States.NoRender RunService:Set3dRenderingEnabled(not States.NoRender) BtnRender.Text = "3D Rendering: "..(States.NoRender and "OFF" or "ON") ToggleVisual(BtnRender, States.NoRender) end)
-BtnFps.MouseButton1Click:Connect(function() local l={30,60,144,999} _G.l=((_G.l or 4)%#l)+1 local v=l[_G.l] if setfpscap then setfpscap(v) end BtnFps.Text="FPS Cap: "..(v>900 and "Unlimited" or v) end)
 BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
 
--- [UPDATED] SAVE POSITION WITH NOTIFICATION
+-- SAVE & LOAD
 BtnSave.MouseButton1Click:Connect(function() 
     if HRP then 
         SavedCFrame = HRP.CFrame 
-        BtnSave.Text="Pos Saved!" 
-        ToggleVisual(BtnSave,true) 
+        -- Feedback Visual pada Tombol (Putih Cerah & Bold)
+        BtnSave.Text = "POS SAVED!"
+        BtnSave.TextColor3 = Color3.new(1,1,1)
+        BtnSave.BackgroundColor3 = Color3.fromRGB(0, 200, 100) -- Hijau terang
         
-        -- Kirim Notifikasi
+        -- Notifikasi System
         pcall(function()
             StarterGui:SetCore("SendNotification", {
-                Title = "Position Saved",
-                Text = "Lokasi Anda telah disimpan!",
+                Title = "SERAPHIN HELPER",
+                Text = "Lokasi Berhasil Disimpan.", -- Teks dibuat simple agar jelas
                 Duration = 2,
             })
         end)
         
-        wait(1) 
+        task.wait(1.5) 
         ToggleVisual(BtnSave,false) 
         BtnSave.Text="Save Position" 
     end 
