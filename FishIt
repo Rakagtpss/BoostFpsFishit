@@ -1,10 +1,10 @@
---[[ SERAPHIN HELPER: COMPACT VERTICAL + BOLD FONT + SMALL BTNS ]]--
+--[[ SERAPHIN HELPER: ULTRA COMPACT + DENSE BUTTONS ]]--
 
 -- [1] Kirim Notifikasi Terlebih Dahulu
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "SERAPHIN HELPER",
-        Text = "Loading Script",
+        Text = "Memuat Script ",
         Duration = 3,
     })
 end)
@@ -32,8 +32,8 @@ end)
 
 -- // Konfigurasi UI
 local UI_CONFIG = {
-    Width = 380,  -- Lebar Panel Utama dikurangi sedikit
-    Height = 240, -- Tinggi Panel Utama dikurangi
+    Width = 430,  
+    Height = 200, -- [UBAH] Tinggi Panel Utama dikurangi agar pas dengan tombol yang padat
     Color = Color3.fromRGB(10, 10, 12), 
     HeaderColor = Color3.fromRGB(15, 15, 18),
     Accent = Color3.fromRGB(0, 255, 170),
@@ -50,12 +50,12 @@ ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 -- ==========================================
--- [1] FLOAT HUD (SHORT VERSION + BOLD)
+-- [1] FLOAT HUD (ULTRA SHORT VERSION)
 -- ==========================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
--- [UBAH] Ukuran diperpendek (155px) agar tidak kepanjangan
-FloatHUD.Size = UDim2.new(0, 180, 0, 125) 
+-- [UBAH] Ukuran dipangkas habis (Tinggi hanya 110px)
+FloatHUD.Size = UDim2.new(0, 160, 0, 110) 
 FloatHUD.Position = UDim2.new(0.85, 0, 0.3, 0)
 FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
 FloatHUD.BackgroundTransparency = 0.1
@@ -71,38 +71,38 @@ HudStroke.Transparency = 0.1
 
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
 ListLayout.FillDirection = Enum.FillDirection.Vertical
-ListLayout.Padding = UDim.new(0, 2) -- Spasi sangat rapat
+ListLayout.Padding = UDim.new(0, 0) -- Spasi sangat rapat (0)
 ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center 
 ListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 
 local Padding = Instance.new("UIPadding", FloatHUD)
-Padding.PaddingTop = UDim.new(0, 10)
-Padding.PaddingBottom = UDim.new(0, 10)
+Padding.PaddingTop = UDim.new(0, 8)
+Padding.PaddingBottom = UDim.new(0, 8)
 
 -- // FUNGSI LABEL
 local function CreateLabel(text, size, color, font)
     local l = Instance.new("TextLabel", FloatHUD)
-    l.Size = UDim2.new(1, 0, 0, size)
+    l.Size = UDim2.new(1, 0, 0, size + 4) -- Sedikit padding height
     l.BackgroundTransparency = 1
     l.Text = text
     l.TextColor3 = color
     l.Font = font
-    l.TextSize = size - 2
+    l.TextSize = size
     l.RichText = true
     return l
 end
 
 -- 1. JUDUL
-local LblTitle = CreateLabel("SERAPHIN PANEL", 14, UI_CONFIG.Accent, Enum.Font.GothamBlack)
+local LblTitle = CreateLabel("SERAPHIN PANEL", 13, UI_CONFIG.Accent, Enum.Font.GothamBlack)
 
 -- SPASI KECIL
 local Spacer1 = Instance.new("Frame", FloatHUD)
-Spacer1.Size = UDim2.new(1,0,0,4)
+Spacer1.Size = UDim2.new(1,0,0,6)
 Spacer1.BackgroundTransparency = 1
 
 -- 2. INVENTORY (BOLD)
-local LblInvHeader = CreateLabel("INVENTORY COUNT:", 11, Color3.fromRGB(180,180,180), Enum.Font.GothamBold)
-local LblInvVal    = CreateLabel("Fish: ...", 13, UI_CONFIG.TextColor, Enum.Font.GothamBold) -- [BOLD]
+local LblInvHeader = CreateLabel("INVENTORY COUNT:", 10, Color3.fromRGB(180,180,180), Enum.Font.GothamBold)
+local LblInvVal    = CreateLabel("Fish: ...", 12, UI_CONFIG.TextColor, Enum.Font.GothamBold) 
 
 -- SPASI KECIL
 local Spacer2 = Instance.new("Frame", FloatHUD)
@@ -110,20 +110,13 @@ Spacer2.Size = UDim2.new(1,0,0,4)
 Spacer2.BackgroundTransparency = 1
 
 -- 3. CAUGHT (BOLD)
-local LblCaughtHeader = CreateLabel("TOTAL FISH CAUGHT:", 11, Color3.fromRGB(180,180,180), Enum.Font.GothamBold)
-local LblCaughtVal    = CreateLabel("Value: ...", 13, UI_CONFIG.TextColor, Enum.Font.GothamBold) -- [BOLD]
+local LblCaughtHeader = CreateLabel("TOTAL FISH CAUGHT:", 10, Color3.fromRGB(180,180,180), Enum.Font.GothamBold)
+local LblCaughtVal    = CreateLabel("Value: ...", 12, UI_CONFIG.TextColor, Enum.Font.GothamBold)
 
--- SPASI AGAK BESAR SEBELUM STATUS
-local Spacer3 = Instance.new("Frame", FloatHUD)
-Spacer3.Size = UDim2.new(1,0,0,8)
-Spacer3.BackgroundTransparency = 1
-
--- 4. STATUS
-local LblStatus = CreateLabel("FISHING NORMAL", 14, UI_CONFIG.Accent, Enum.Font.GothamBlack)
-
+-- [CATATAN] "FISHING NORMAL" SUDAH DIHAPUS
 
 -- ==========================================
--- [2] MAIN MENU (SMALL BUTTONS)
+-- [2] MAIN MENU (DENSE BUTTONS)
 -- ==========================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
@@ -140,7 +133,7 @@ MainStroke.Thickness = 1.5
 MainStroke.Transparency = 0.3
 
 local Header = Instance.new("Frame", Main)
-Header.Size = UDim2.new(1, 0, 0, 30) -- Header lebih kecil dikit
+Header.Size = UDim2.new(1, 0, 0, 30) 
 Header.BackgroundColor3 = UI_CONFIG.HeaderColor
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 
@@ -171,9 +164,9 @@ Container.Position = UDim2.new(0, 5, 0, 35)
 Container.BackgroundTransparency = 1
 
 local Grid = Instance.new("UIGridLayout", Container)
--- [UBAH] Tombol dibuat lebih kecil (Tinggi 25px) agar muat banyak & tidak makan tempat
-Grid.CellSize = UDim2.new(0, 205, 0, 25) 
-Grid.CellPadding = UDim2.new(0, 5, 0, 5) 
+-- [UBAH] CellSize Tinggi 24px (Tipis), Padding 3px (Rapat)
+Grid.CellSize = UDim2.new(0, 205, 0, 24) 
+Grid.CellPadding = UDim2.new(0, 5, 0, 3) 
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local function MakeBtn(text)
@@ -182,7 +175,7 @@ local function MakeBtn(text)
     b.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
     b.TextColor3 = Color3.fromRGB(200, 200, 200)
     b.Font = UI_CONFIG.BtnFont 
-    b.TextSize = 9 -- Ukuran text tombol disesuaikan
+    b.TextSize = 10 -- Font tetap ukuran 10 (Jelas)
     b.AutoButtonColor = true
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
     local s = Instance.new("UIStroke", b)
@@ -215,7 +208,7 @@ local BtnFreeze = MakeBtn("Freeze Player")
 local BtnWow = MakeBtn("Walk On Water")
 local BtnNoclip = MakeBtn("No Clip: OFF")
 local BtnBoost = MakeBtn("Booster Mode")
-local BtnRender = MakeBtn("3D Rendering: OFF")
+local BtnRender = MakeBtn("3D Rendering: ON")
 local BtnFps = MakeBtn("FPS Cap: Unlimited")
 local BtnRejoin = MakeBtn("Rejoin Server")
 local BtnSave = MakeBtn("Save Position")
@@ -315,4 +308,4 @@ RunService.RenderStepped:Connect(function()
     end 
 end)
 
-print(":: SERAPHIN HELPER LOADED ::")
+print(":: SERAPHIN HELPER ULTRA COMPACT LOADED ::")
