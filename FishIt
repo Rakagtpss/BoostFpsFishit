@@ -1,10 +1,9 @@
---[[ SERAPHIN HELPER: BOLD FPS EDITION ]]--
+--[[ SERAPHIN HELPER: FLOATING HUD + TOGGLE SWITCH ]]--
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- // Setup & Safety
 local Player = Players.LocalPlayer
@@ -15,10 +14,11 @@ if not HRP then return end
 -- // Konfigurasi Tampilan
 local UI_CONFIG = {
     Width = 460,        
-    Height = 290,       -- [UPDATE] Tinggi pas untuk 5 baris (10 tombol)
+    Height = 320,       -- [UPDATE] Tinggi pas untuk 5 Baris (10 Tombol)
     Color = Color3.fromRGB(10, 10, 12), 
     HeaderColor = Color3.fromRGB(15, 15, 18),
     Accent = Color3.fromRGB(0, 255, 170), -- Neon Cyan
+    StatsColor = Color3.fromRGB(20, 20, 25),
     TextColor = Color3.fromRGB(240, 240, 240),
     Font = Enum.Font.GothamBold,
     BtnFont = Enum.Font.GothamMedium
@@ -27,16 +27,59 @@ local UI_CONFIG = {
 -- // Cleanup UI Lama
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
--- // Main UI Container
+-- // Main ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SeraphinHelper"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
+-- ==========================================
+-- [1] FLOATING STATS PANEL (HUD)
+-- ==========================================
+local FloatHUD = Instance.new("Frame", ScreenGui)
+FloatHUD.Name = "FloatingStats"
+FloatHUD.Size = UDim2.new(0, 260, 0, 36)
+FloatHUD.Position = UDim2.new(0.5, -130, 0.1, 0)
+FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
+FloatHUD.BackgroundTransparency = 0.2
+FloatHUD.Active = true
+FloatHUD.Draggable = true 
+FloatHUD.Visible = true -- Default ON
+FloatHUD.BorderSizePixel = 0
+
+Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
+local HudStroke = Instance.new("UIStroke", FloatHUD)
+HudStroke.Color = UI_CONFIG.Accent
+HudStroke.Thickness = 1.5
+HudStroke.Transparency = 0.4
+
+local FishStat = Instance.new("TextLabel", FloatHUD)
+FishStat.Size = UDim2.new(0.5, -5, 1, 0)
+FishStat.Position = UDim2.new(0, 10, 0, 0)
+FishStat.BackgroundTransparency = 1
+FishStat.Text = "🐟: Loading..."
+FishStat.TextColor3 = UI_CONFIG.Accent
+FishStat.Font = Enum.Font.GothamBold
+FishStat.TextSize = 13
+FishStat.TextXAlignment = Enum.TextXAlignment.Left
+
+local BagStat = Instance.new("TextLabel", FloatHUD)
+BagStat.Size = UDim2.new(0.5, -10, 1, 0)
+BagStat.Position = UDim2.new(0.5, 0, 0, 0)
+BagStat.BackgroundTransparency = 1
+BagStat.Text = "🎒: Loading..."
+BagStat.TextColor3 = Color3.fromRGB(230, 230, 230)
+BagStat.Font = Enum.Font.GothamBold
+BagStat.TextSize = 13
+BagStat.TextXAlignment = Enum.TextXAlignment.Right
+
+-- ==========================================
+-- [2] MAIN MENU CONTAINER
+-- ==========================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
 Main.Size = UDim2.new(0, UI_CONFIG.Width, 0, UI_CONFIG.Height)
-Main.Position = UDim2.new(0.5, -UI_CONFIG.Width/2, 0.3, 0)
+Main.Position = UDim2.new(0.5, -UI_CONFIG.Width/2, 0.35, 0)
 Main.BackgroundColor3 = UI_CONFIG.Color
 Main.BackgroundTransparency = 0.05
 Main.BorderSizePixel = 0
@@ -44,7 +87,6 @@ Main.Active = true
 Main.Draggable = true
 Main.ClipsDescendants = true 
 
--- Style Modern (Neon Stroke)
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Color = UI_CONFIG.Accent
@@ -58,7 +100,6 @@ Header.BackgroundColor3 = UI_CONFIG.HeaderColor
 Header.BorderSizePixel = 0
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 
--- Header Filler
 local HeaderFiller = Instance.new("Frame", Header)
 HeaderFiller.Size = UDim2.new(1, 0, 0.5, 0)
 HeaderFiller.Position = UDim2.new(0, 0, 0.5, 0)
@@ -77,14 +118,14 @@ Title.TextSize = 14
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Center
 
--- FPS Counter [DIUBAH JADI BOLD & TERANG]
+-- FPS Counter
 local FpsLbl = Instance.new("TextLabel", Header)
 FpsLbl.Size = UDim2.new(0.2, 0, 1, 0)
 FpsLbl.Position = UDim2.new(0.03, 0, 0, 0)
 FpsLbl.Text = "60 FPS"
-FpsLbl.TextColor3 = UI_CONFIG.Accent -- Warna Cyan Neon
-FpsLbl.Font = Enum.Font.GothamBlack  -- Font Paling Tebal
-FpsLbl.TextSize = 13                 -- Ukuran sedikit diperbesar
+FpsLbl.TextColor3 = UI_CONFIG.Accent
+FpsLbl.Font = Enum.Font.GothamBlack
+FpsLbl.TextSize = 13
 FpsLbl.BackgroundTransparency = 1
 FpsLbl.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -146,12 +187,12 @@ local function ToggleVisual(btn, on)
 end
 
 -- // State & Connections
-local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false}
+local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true}
 local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
 
--- // TOMBOL UI (10 Tombol Total - Grid Rapi)
+-- // TOMBOL UI (10 Tombol Total - Grid Sempurna)
 local BtnFreeze = MakeBtn("Freeze Player")
 local BtnWow = MakeBtn("Walk On Water")
 local BtnNoclip = MakeBtn("No Clip: OFF")
@@ -161,18 +202,65 @@ local BtnFps = MakeBtn("FPS Cap: Unlimited")
 local BtnRejoin = MakeBtn("Rejoin Server")
 local BtnSave = MakeBtn("Save Position")
 local BtnLoad = MakeBtn("Teleport to Saved")
-local BtnSkin = MakeBtn("Eclipse Skin (Equip Rod)")
+local BtnPanel = MakeBtn("Panel Info: ON") -- [BARU]
 
--- // LOGIKA FITUR
+-- // LOGIKA BUTTON BARU: PANEL TOGGLE
+ToggleVisual(BtnPanel, true) -- Default Nyala
+BtnPanel.MouseButton1Click:Connect(function()
+    States.Panel = not States.Panel
+    FloatHUD.Visible = States.Panel -- Show/Hide Panel
+    BtnPanel.Text = "Panel Info: " .. (States.Panel and "ON" or "OFF")
+    ToggleVisual(BtnPanel, States.Panel)
+end)
 
--- 1. Freeze
+-- // LOGIKA STATS UPDATE
+task.spawn(function()
+    while task.wait(0.5) do
+        if not States.Panel then continue end -- Hemat resource kalau panel mati
+
+        -- 1. Update Fish Caught
+        pcall(function()
+            local leaderstats = Player:FindFirstChild("leaderstats")
+            local caught = leaderstats and leaderstats:FindFirstChild("Caught")
+            if caught then
+                FishStat.Text = "🐟: " .. caught.Value
+            else
+                FishStat.Text = "🐟: 0"
+            end
+        end)
+
+        -- 2. Update Backpack
+        pcall(function()
+            local pg = Player:WaitForChild("PlayerGui", 1)
+            local backpackGui = pg and pg:FindFirstChild("Backpack")
+            local foundBag = false
+            if backpackGui then
+                for _, v in pairs(backpackGui:GetDescendants()) do
+                    if v:IsA("TextLabel") and string.find(v.Text, "/") then
+                        BagStat.Text = "🎒: " .. v.Text
+                        foundBag = true
+                        break
+                    end
+                end
+            end
+            if not foundBag then
+                local count = #Player.Backpack:GetChildren()
+                BagStat.Text = "🎒: " .. count
+            end
+        end)
+    end
+end)
+
+-- // LOGIKA FITUR UTAMA LAINNYA
+
+-- Freeze
 BtnFreeze.MouseButton1Click:Connect(function()
     States.Freeze = not States.Freeze
     if HRP then HRP.Anchored = States.Freeze end
     ToggleVisual(BtnFreeze, States.Freeze)
 end)
 
--- 2. Walk On Water
+-- Walk On Water
 BtnWow.MouseButton1Click:Connect(function()
     States.WoW = not States.WoW
     ToggleVisual(BtnWow, States.WoW)
@@ -189,7 +277,7 @@ BtnWow.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3. NO CLIP
+-- No Clip
 BtnNoclip.MouseButton1Click:Connect(function()
     States.Noclip = not States.Noclip
     BtnNoclip.Text = "No Clip: " .. (States.Noclip and "ON" or "OFF")
@@ -210,40 +298,25 @@ BtnNoclip.MouseButton1Click:Connect(function()
     end
 end)
 
--- 4. BOOSTER MODE
+-- Booster Mode
 BtnBoost.MouseButton1Click:Connect(function()
     States.Boost = not States.Boost
     ToggleVisual(BtnBoost, States.Boost)
     BtnBoost.Text = States.Boost and "Booster: ACTIVE" or "Booster Mode"
-
     Lighting.GlobalShadows = not States.Boost
     local targets = {}
     table.insert(targets, workspace)
-    local function AddIfExist(parent, name)
-        local t = parent:FindFirstChild(name)
-        if t then table.insert(targets, t) return t end
-        return nil
-    end
-
+    local function AddIfExist(parent, name) local t = parent:FindFirstChild(name) if t then table.insert(targets, t) return t end end
     AddIfExist(workspace, "!!! EFFECTS")
     AddIfExist(workspace, "Machines")
     AddIfExist(workspace, "TrainSystem")
-    
     local islands = workspace:FindFirstChild("Islands")
     if islands then
         local decor = AddIfExist(islands, "ChristmasDecor [Fisheman Island]")
-        if decor then
-            AddIfExist(decor, "SnowBenchs")
-            AddIfExist(decor, "Snow")
-            AddIfExist(decor, "ChristmasLightRopes")
-        end
+        if decor then AddIfExist(decor, "SnowBenchs") AddIfExist(decor, "Snow") AddIfExist(decor, "ChristmasLightRopes") end
         local jungle = islands:FindFirstChild("Ancient Jungle")
-        if jungle then
-            local children = jungle:GetChildren()
-            if children[25] then table.insert(targets, children[25]) end
-        end
+        if jungle then local children = jungle:GetChildren() if children[25] then table.insert(targets, children[25]) end end
     end
-
     for _, root in pairs(targets) do
         local isHeavy = (root.Name == "!!! EFFECTS" or root.Name == "Snow" or root.Name == "ChristmasLightRopes")
         for _, v in pairs(root:GetDescendants()) do
@@ -272,7 +345,7 @@ BtnBoost.MouseButton1Click:Connect(function()
     end
 end)
 
--- 5. Render & FPS
+-- Render & FPS
 BtnRender.MouseButton1Click:Connect(function()
     States.NoRender = not States.NoRender
     RunService:Set3dRenderingEnabled(not States.NoRender)
@@ -288,7 +361,9 @@ BtnFps.MouseButton1Click:Connect(function()
     BtnFps.Text = "FPS Cap: " .. (val > 900 and "Unlimited" or val)
 end)
 
--- 6. Save/Load/Rejoin
+-- Rejoin & Teleport
+BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
+
 BtnSave.MouseButton1Click:Connect(function()
     if HRP then
         SavedCFrame = HRP.CFrame
@@ -309,61 +384,7 @@ BtnLoad.MouseButton1Click:Connect(function()
     end
 end)
 
-BtnRejoin.MouseButton1Click:Connect(function()
-    TeleportService:Teleport(game.PlaceId, Player)
-end)
-
--- 7. ECLIPSE SKIN ANIMATION
-BtnSkin.MouseButton1Click:Connect(function()
-    local char = Player.Character
-    local tool = char and char:FindFirstChildOfClass("Tool")
-    
-    if not tool then
-        BtnSkin.Text = "Hold Rod First!"
-        wait(1)
-        BtnSkin.Text = "Eclipse Skin (Equip Rod)"
-        return
-    end
-
-    local AnimPath = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Animations")
-    local Maps = {
-        {"Idle", "Eclipse Katana - EquipIdle"},
-        {"Cast", "Eclipse Katana - RodThrow"},
-        {"Throw", "Eclipse Katana - RodThrow"},
-        {"Reel", "Eclipse Katana - ReelingIdle"},
-        {"Caught", "Eclipse Katana - FishCaught"},
-        {"Fish", "Eclipse Katana - FishCaught"},
-        {"Pull", "Eclipse Katana - ReelStart"}
-    }
-
-    local count = 0
-    for _, mapping in pairs(Maps) do
-        local targetName = mapping[1]
-        local sourceName = mapping[2]
-        
-        local targetAnim = tool:FindFirstChild(targetName, true)
-        local sourceAnim = AnimPath:FindFirstChild(sourceName)
-        
-        if targetAnim and targetAnim:IsA("Animation") and sourceAnim and sourceAnim:IsA("Animation") then
-            targetAnim.AnimationId = sourceAnim.AnimationId
-            count = count + 1
-        end
-    end
-
-    if count > 0 then
-        BtnSkin.Text = "Eclipse Skin APPLIED!"
-        ToggleVisual(BtnSkin, true)
-        wait(1.5)
-        BtnSkin.Text = "Eclipse Skin (Equip Rod)"
-        ToggleVisual(BtnSkin, false)
-    else
-        BtnSkin.Text = "Animations Not Found!"
-        wait(1)
-        BtnSkin.Text = "Eclipse Skin (Equip Rod)"
-    end
-end)
-
--- // LOGIKA HIDE
+-- Logic Hide UI
 local IsMin = false
 HideBtn.MouseButton1Click:Connect(function()
     IsMin = not IsMin
@@ -382,4 +403,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-print(":: SERAPHIN HELPER LOADING::")
+print(":: SERAPHIN HELPER LOADING ::")
