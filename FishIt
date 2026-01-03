@@ -1,4 +1,4 @@
---[[ SERAPHIN HELPER: FLOATING HUD + TOGGLE SWITCH ]]--
+--[[ SERAPHIN HELPER: AUTO RESPAWN STUCK FIX ]]--
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -9,17 +9,22 @@ local TeleportService = game:GetService("TeleportService")
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 5)
-if not HRP then return end 
+
+-- Update Character Reference saat Respawn
+Player.CharacterAdded:Connect(function(newChar)
+    Char = newChar
+    HRP = newChar:WaitForChild("HumanoidRootPart", 10)
+end)
 
 -- // Konfigurasi Tampilan
 local UI_CONFIG = {
     Width = 460,        
-    Height = 320,       -- [UPDATE] Tinggi pas untuk 5 Baris (10 Tombol)
+    Height = 320,       
     Color = Color3.fromRGB(10, 10, 12), 
     HeaderColor = Color3.fromRGB(15, 15, 18),
     Accent = Color3.fromRGB(0, 255, 170), -- Neon Cyan
-    StatsColor = Color3.fromRGB(20, 20, 25),
-    TextColor = Color3.fromRGB(240, 240, 240),
+    StatsColor = Color3.fromRGB(15, 15, 20),
+    TextColor = Color3.fromRGB(255, 255, 255),
     Font = Enum.Font.GothamBold,
     BtnFont = Enum.Font.GothamMedium
 }
@@ -27,59 +32,68 @@ local UI_CONFIG = {
 -- // Cleanup UI Lama
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
--- // Main ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SeraphinHelper"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 -- ==========================================
--- [1] FLOATING STATS PANEL (HUD)
+-- [1] VERTICAL FLOATING PANEL (HUD)
 -- ==========================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 260, 0, 36)
-FloatHUD.Position = UDim2.new(0.5, -130, 0.1, 0)
+FloatHUD.Size = UDim2.new(0, 240, 0, 100) -- Agak lebar untuk teks status
+FloatHUD.Position = UDim2.new(0.75, 0, 0.2, 0)
 FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
-FloatHUD.BackgroundTransparency = 0.2
+FloatHUD.BackgroundTransparency = 0.1
 FloatHUD.Active = true
 FloatHUD.Draggable = true 
-FloatHUD.Visible = true -- Default ON
+FloatHUD.Visible = true 
 FloatHUD.BorderSizePixel = 0
 
 Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_CONFIG.Accent
-HudStroke.Thickness = 1.5
-HudStroke.Transparency = 0.4
+HudStroke.Thickness = 2
+HudStroke.Transparency = 0.3
 
-local FishStat = Instance.new("TextLabel", FloatHUD)
-FishStat.Size = UDim2.new(0.5, -5, 1, 0)
-FishStat.Position = UDim2.new(0, 10, 0, 0)
-FishStat.BackgroundTransparency = 1
-FishStat.Text = "🐟: Loading..."
-FishStat.TextColor3 = UI_CONFIG.Accent
-FishStat.Font = Enum.Font.GothamBold
-FishStat.TextSize = 13
-FishStat.TextXAlignment = Enum.TextXAlignment.Left
+-- Layout
+local ListLayout = Instance.new("UIListLayout", FloatHUD)
+ListLayout.FillDirection = Enum.FillDirection.Vertical
+ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+ListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+ListLayout.Padding = UDim.new(0, 5)
 
-local BagStat = Instance.new("TextLabel", FloatHUD)
-BagStat.Size = UDim2.new(0.5, -10, 1, 0)
-BagStat.Position = UDim2.new(0.5, 0, 0, 0)
-BagStat.BackgroundTransparency = 1
-BagStat.Text = "🎒: Loading..."
-BagStat.TextColor3 = Color3.fromRGB(230, 230, 230)
-BagStat.Font = Enum.Font.GothamBold
-BagStat.TextSize = 13
-BagStat.TextXAlignment = Enum.TextXAlignment.Right
+local Padding = Instance.new("UIPadding", FloatHUD)
+Padding.PaddingLeft = UDim.new(0, 12)
+Padding.PaddingTop = UDim.new(0, 10)
+
+-- Label Maker
+local function CreateStatLabel(order, text)
+    local lbl = Instance.new("TextLabel", FloatHUD)
+    lbl.Size = UDim2.new(1, -10, 0, 22)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = UI_CONFIG.TextColor
+    lbl.Font = UI_CONFIG.Font
+    lbl.TextSize = 15
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.LayoutOrder = order
+    lbl.RichText = true
+    return lbl
+end
+
+local LblFish = CreateStatLabel(1, "🐟 Fish Caught : Loading...")
+local LblBag  = CreateStatLabel(2, "🎒 Inventory   : Loading...")
+local LblStuck = CreateStatLabel(3, "🟢 Status      : Normal")
 
 -- ==========================================
--- [2] MAIN MENU CONTAINER
+-- [2] MAIN MENU UI
 -- ==========================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
 Main.Size = UDim2.new(0, UI_CONFIG.Width, 0, UI_CONFIG.Height)
-Main.Position = UDim2.new(0.5, -UI_CONFIG.Width/2, 0.35, 0)
+Main.Position = UDim2.new(0.5, -UI_CONFIG.Width/2, 0.4, 0)
 Main.BackgroundColor3 = UI_CONFIG.Color
 Main.BackgroundTransparency = 0.05
 Main.BorderSizePixel = 0
@@ -93,7 +107,7 @@ MainStroke.Color = UI_CONFIG.Accent
 MainStroke.Thickness = 1.5
 MainStroke.Transparency = 0.3
 
--- // Header Section
+-- Header
 local Header = Instance.new("Frame", Main)
 Header.Size = UDim2.new(1, 0, 0, 40)
 Header.BackgroundColor3 = UI_CONFIG.HeaderColor
@@ -165,7 +179,6 @@ local function MakeBtn(text)
     b.TextSize = 11
     b.BackgroundTransparency = 0
     b.AutoButtonColor = true
-    
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
     local s = Instance.new("UIStroke", b)
     s.Color = Color3.fromRGB(50, 50, 55)
@@ -191,8 +204,10 @@ local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=fal
 local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
+local StuckTime = 0     -- Menghitung durasi stuck
+local IsFixing = false  -- Mencegah loop respawn
 
--- // TOMBOL UI (10 Tombol Total - Grid Sempurna)
+-- // TOMBOL UI
 local BtnFreeze = MakeBtn("Freeze Player")
 local BtnWow = MakeBtn("Walk On Water")
 local BtnNoclip = MakeBtn("No Clip: OFF")
@@ -202,56 +217,116 @@ local BtnFps = MakeBtn("FPS Cap: Unlimited")
 local BtnRejoin = MakeBtn("Rejoin Server")
 local BtnSave = MakeBtn("Save Position")
 local BtnLoad = MakeBtn("Teleport to Saved")
-local BtnPanel = MakeBtn("Panel Info: ON") -- [BARU]
+local BtnPanel = MakeBtn("Panel Info: ON")
 
--- // LOGIKA BUTTON BARU: PANEL TOGGLE
-ToggleVisual(BtnPanel, true) -- Default Nyala
+-- // LOGIKA BUTTON PANEL
+ToggleVisual(BtnPanel, true)
 BtnPanel.MouseButton1Click:Connect(function()
     States.Panel = not States.Panel
-    FloatHUD.Visible = States.Panel -- Show/Hide Panel
+    FloatHUD.Visible = States.Panel
     BtnPanel.Text = "Panel Info: " .. (States.Panel and "ON" or "OFF")
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
--- // LOGIKA STATS UPDATE
+-- // LOGIKA UTAMA (Loop Check)
 task.spawn(function()
-    while task.wait(0.5) do
-        if not States.Panel then continue end -- Hemat resource kalau panel mati
-
-        -- 1. Update Fish Caught
+    while task.wait(0.2) do
+        if not States.Panel then continue end
+        if IsFixing then continue end -- Jangan update panel kalau lagi proses respawn
+        
+        -- 1. Fish Caught
         pcall(function()
-            local leaderstats = Player:FindFirstChild("leaderstats")
-            local caught = leaderstats and leaderstats:FindFirstChild("Caught")
-            if caught then
-                FishStat.Text = "🐟: " .. caught.Value
-            else
-                FishStat.Text = "🐟: 0"
-            end
+            local ls = Player:FindFirstChild("leaderstats")
+            local caught = ls and ls:FindFirstChild("Caught")
+            LblFish.Text = "🐟 Fish Caught : " .. (caught and caught.Value or "0")
         end)
 
-        -- 2. Update Backpack
+        -- 2. Inventory / Backpack
         pcall(function()
-            local pg = Player:WaitForChild("PlayerGui", 1)
+            local pg = Player:FindFirstChild("PlayerGui")
             local backpackGui = pg and pg:FindFirstChild("Backpack")
-            local foundBag = false
+            local bagText = "Unknown"
             if backpackGui then
                 for _, v in pairs(backpackGui:GetDescendants()) do
                     if v:IsA("TextLabel") and string.find(v.Text, "/") then
-                        BagStat.Text = "🎒: " .. v.Text
-                        foundBag = true
+                        bagText = v.Text
                         break
                     end
                 end
+            else
+                bagText = #Player.Backpack:GetChildren() 
             end
-            if not foundBag then
-                local count = #Player.Backpack:GetChildren()
-                BagStat.Text = "🎒: " .. count
+            LblBag.Text = "🎒 Inventory   : " .. bagText
+        end)
+
+        -- 3. AUTO STUCK DETECTOR & FIXER
+        pcall(function()
+            if not Char or not HRP then return end
+            local hum = Char:FindFirstChild("Humanoid")
+            
+            if hum and HRP then
+                local isTryingToMove = hum.MoveDirection.Magnitude > 0
+                local speed = HRP.AssemblyLinearVelocity.Magnitude
+                
+                -- LOGIKA STUCK
+                if isTryingToMove and speed < 1 then
+                    StuckTime = StuckTime + 0.2
+                    
+                    -- Update UI Warning
+                    local timeLeft = math.ceil(3 - StuckTime)
+                    LblStuck.Text = "🔴 Stuck! Auto Fix in: " .. timeLeft .. "s"
+                    LblStuck.TextColor3 = Color3.fromRGB(255, 50, 50)
+
+                    -- TRIGGER AUTO FIX (Jika stuck > 3 detik)
+                    if StuckTime >= 3 then
+                        IsFixing = true
+                        LblStuck.Text = "♻️ RESPAWNING..."
+                        
+                        -- Save Posisi Terakhir
+                        local LastPos = HRP.CFrame
+                        
+                        -- Kill Character (Reset)
+                        hum.Health = 0
+                        
+                        -- Wait Respawn
+                        local newChar = Player.CharacterAdded:Wait()
+                        local newHRP = newChar:WaitForChild("HumanoidRootPart")
+                        local newHum = newChar:WaitForChild("Humanoid")
+                        
+                        -- Update Variables Global
+                        Char = newChar
+                        HRP = newHRP
+                        
+                        LblStuck.Text = "🚀 TELEPORTING BACK..."
+                        task.wait(1) -- Tunggu loading sebentar
+                        
+                        -- Teleport Back
+                        newHRP.CFrame = LastPos
+                        
+                        -- Reset Logic
+                        StuckTime = 0
+                        IsFixing = false
+                        LblStuck.Text = "🟢 Status      : Recovered!"
+                        LblStuck.TextColor3 = Color3.fromRGB(0, 255, 100)
+                    end
+                    
+                elseif isTryingToMove then
+                    -- Normal Walking
+                    StuckTime = 0
+                    LblStuck.Text = "🟢 Status      : Moving"
+                    LblStuck.TextColor3 = UI_CONFIG.Accent
+                else
+                    -- Idle
+                    StuckTime = 0
+                    LblStuck.Text = "⚪ Status      : Idle"
+                    LblStuck.TextColor3 = Color3.fromRGB(200, 200, 200)
+                end
             end
         end)
     end
 end)
 
--- // LOGIKA FITUR UTAMA LAINNYA
+-- // FITUR TOMBOL (Tetap Sama)
 
 -- Freeze
 BtnFreeze.MouseButton1Click:Connect(function()
@@ -287,9 +362,7 @@ BtnNoclip.MouseButton1Click:Connect(function()
         Connections["Noclip"] = RunService.Stepped:Connect(function()
             if Player.Character then
                 for _, v in pairs(Player.Character:GetDescendants()) do
-                    if v:IsA("BasePart") and v.CanCollide == true then
-                        v.CanCollide = false
-                    end
+                    if v:IsA("BasePart") and v.CanCollide == true then v.CanCollide = false end
                 end
             end
         end)
@@ -307,9 +380,7 @@ BtnBoost.MouseButton1Click:Connect(function()
     local targets = {}
     table.insert(targets, workspace)
     local function AddIfExist(parent, name) local t = parent:FindFirstChild(name) if t then table.insert(targets, t) return t end end
-    AddIfExist(workspace, "!!! EFFECTS")
-    AddIfExist(workspace, "Machines")
-    AddIfExist(workspace, "TrainSystem")
+    AddIfExist(workspace, "!!! EFFECTS") AddIfExist(workspace, "Machines") AddIfExist(workspace, "TrainSystem")
     local islands = workspace:FindFirstChild("Islands")
     if islands then
         local decor = AddIfExist(islands, "ChristmasDecor [Fisheman Island]")
@@ -365,26 +436,14 @@ end)
 BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
 
 BtnSave.MouseButton1Click:Connect(function()
-    if HRP then
-        SavedCFrame = HRP.CFrame
-        BtnSave.Text = "Position Saved!"
-        ToggleVisual(BtnSave, true)
-        wait(1)
-        ToggleVisual(BtnSave, false)
-        BtnSave.Text = "Save Position"
-    end
+    if HRP then SavedCFrame = HRP.CFrame BtnSave.Text = "Position Saved!" ToggleVisual(BtnSave, true) wait(1) ToggleVisual(BtnSave, false) BtnSave.Text = "Save Position" end
 end)
 
 BtnLoad.MouseButton1Click:Connect(function()
-    if SavedCFrame and HRP then
-        HRP.CFrame = SavedCFrame
-        ToggleVisual(BtnLoad, true)
-        wait(0.5)
-        ToggleVisual(BtnLoad, false)
-    end
+    if SavedCFrame and HRP then HRP.CFrame = SavedCFrame ToggleVisual(BtnLoad, true) wait(0.5) ToggleVisual(BtnLoad, false) end
 end)
 
--- Logic Hide UI
+-- Hide Logic
 local IsMin = false
 HideBtn.MouseButton1Click:Connect(function()
     IsMin = not IsMin
@@ -397,10 +456,7 @@ end)
 local last, f = os.clock(), 0
 RunService.RenderStepped:Connect(function()
     f += 1
-    if os.clock() - last >= 1 then
-        FpsLbl.Text = f .. " FPS"
-        f, last = 0, os.clock()
-    end
+    if os.clock() - last >= 1 then FpsLbl.Text = f .. " FPS" f, last = 0, os.clock() end
 end)
 
-print(":: SERAPHIN HELPER LOADING ::")
+print(":: SERAPHIN HELPER + AUTO STUCK FIX LOADED ::")
