@@ -1,9 +1,10 @@
---[[ SERAPHIN HELPER: SAVE POSITION UPDATE ]]--
+--[[ SERAPHIN HELPER: BOLD FPS EDITION ]]--
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- // Setup & Safety
 local Player = Players.LocalPlayer
@@ -14,7 +15,7 @@ if not HRP then return end
 -- // Konfigurasi Tampilan
 local UI_CONFIG = {
     Width = 460,        
-    Height = 260,       -- [UPDATE] Tinggi ditambah untuk 4 baris tombol
+    Height = 290,       -- [UPDATE] Tinggi pas untuk 5 baris (10 tombol)
     Color = Color3.fromRGB(10, 10, 12), 
     HeaderColor = Color3.fromRGB(15, 15, 18),
     Accent = Color3.fromRGB(0, 255, 170), -- Neon Cyan
@@ -76,14 +77,14 @@ Title.TextSize = 14
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Center
 
--- FPS Counter
+-- FPS Counter [DIUBAH JADI BOLD & TERANG]
 local FpsLbl = Instance.new("TextLabel", Header)
 FpsLbl.Size = UDim2.new(0.2, 0, 1, 0)
 FpsLbl.Position = UDim2.new(0.03, 0, 0, 0)
 FpsLbl.Text = "60 FPS"
-FpsLbl.TextColor3 = Color3.fromRGB(150, 150, 160)
-FpsLbl.Font = Enum.Font.GothamMedium
-FpsLbl.TextSize = 11
+FpsLbl.TextColor3 = UI_CONFIG.Accent -- Warna Cyan Neon
+FpsLbl.Font = Enum.Font.GothamBlack  -- Font Paling Tebal
+FpsLbl.TextSize = 13                 -- Ukuran sedikit diperbesar
 FpsLbl.BackgroundTransparency = 1
 FpsLbl.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -145,20 +146,22 @@ local function ToggleVisual(btn, on)
 end
 
 -- // State & Connections
-local States = {Freeze=false, WoW=false, Boost=false, NoRender=false}
-local SavedCFrame = nil -- Variabel Penyimpan Posisi
+local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false}
+local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
 
--- // TOMBOL UI (8 Tombol Total)
+-- // TOMBOL UI (10 Tombol Total - Grid Rapi)
 local BtnFreeze = MakeBtn("Freeze Player")
 local BtnWow = MakeBtn("Walk On Water")
+local BtnNoclip = MakeBtn("No Clip: OFF")
 local BtnBoost = MakeBtn("Booster Mode")
 local BtnRender = MakeBtn("3D Rendering: ON")
 local BtnFps = MakeBtn("FPS Cap: Unlimited")
-local BtnRejoin = MakeBtn("Rejoin Server") -- [BARU]
-local BtnSave = MakeBtn("Save Position")   -- [BARU]
-local BtnLoad = MakeBtn("Teleport to Saved") -- [BARU]
+local BtnRejoin = MakeBtn("Rejoin Server")
+local BtnSave = MakeBtn("Save Position")
+local BtnLoad = MakeBtn("Teleport to Saved")
+local BtnSkin = MakeBtn("Eclipse Skin (Equip Rod)")
 
 -- // LOGIKA FITUR
 
@@ -186,7 +189,28 @@ BtnWow.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3. BOOSTER MODE
+-- 3. NO CLIP
+BtnNoclip.MouseButton1Click:Connect(function()
+    States.Noclip = not States.Noclip
+    BtnNoclip.Text = "No Clip: " .. (States.Noclip and "ON" or "OFF")
+    ToggleVisual(BtnNoclip, States.Noclip)
+    
+    if States.Noclip then
+        Connections["Noclip"] = RunService.Stepped:Connect(function()
+            if Player.Character then
+                for _, v in pairs(Player.Character:GetDescendants()) do
+                    if v:IsA("BasePart") and v.CanCollide == true then
+                        v.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end
+    end
+end)
+
+-- 4. BOOSTER MODE
 BtnBoost.MouseButton1Click:Connect(function()
     States.Boost = not States.Boost
     ToggleVisual(BtnBoost, States.Boost)
@@ -248,7 +272,7 @@ BtnBoost.MouseButton1Click:Connect(function()
     end
 end)
 
--- 4. No Render
+-- 5. Render & FPS
 BtnRender.MouseButton1Click:Connect(function()
     States.NoRender = not States.NoRender
     RunService:Set3dRenderingEnabled(not States.NoRender)
@@ -256,7 +280,6 @@ BtnRender.MouseButton1Click:Connect(function()
     ToggleVisual(BtnRender, States.NoRender)
 end)
 
--- 5. FPS Cap
 BtnFps.MouseButton1Click:Connect(function()
     local limits = {30, 60, 144, 999}
     _G.limitIdx = ((_G.limitIdx or 4) % #limits) + 1
@@ -265,12 +288,11 @@ BtnFps.MouseButton1Click:Connect(function()
     BtnFps.Text = "FPS Cap: " .. (val > 900 and "Unlimited" or val)
 end)
 
--- 6. SAVE POSITION (FITUR BARU)
+-- 6. Save/Load/Rejoin
 BtnSave.MouseButton1Click:Connect(function()
     if HRP then
         SavedCFrame = HRP.CFrame
         BtnSave.Text = "Position Saved!"
-        BtnLoad.Text = "Teleport to Saved (Ready)"
         ToggleVisual(BtnSave, true)
         wait(1)
         ToggleVisual(BtnSave, false)
@@ -278,23 +300,67 @@ BtnSave.MouseButton1Click:Connect(function()
     end
 end)
 
--- 7. LOAD POSITION (FITUR BARU)
 BtnLoad.MouseButton1Click:Connect(function()
     if SavedCFrame and HRP then
         HRP.CFrame = SavedCFrame
         ToggleVisual(BtnLoad, true)
         wait(0.5)
         ToggleVisual(BtnLoad, false)
-    else
-        BtnLoad.Text = "No Position Saved!"
-        wait(1)
-        BtnLoad.Text = "Teleport to Saved"
     end
 end)
 
--- 8. REJOIN SERVER (BONUS)
 BtnRejoin.MouseButton1Click:Connect(function()
     TeleportService:Teleport(game.PlaceId, Player)
+end)
+
+-- 7. ECLIPSE SKIN ANIMATION
+BtnSkin.MouseButton1Click:Connect(function()
+    local char = Player.Character
+    local tool = char and char:FindFirstChildOfClass("Tool")
+    
+    if not tool then
+        BtnSkin.Text = "Hold Rod First!"
+        wait(1)
+        BtnSkin.Text = "Eclipse Skin (Equip Rod)"
+        return
+    end
+
+    local AnimPath = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Animations")
+    local Maps = {
+        {"Idle", "Eclipse Katana - EquipIdle"},
+        {"Cast", "Eclipse Katana - RodThrow"},
+        {"Throw", "Eclipse Katana - RodThrow"},
+        {"Reel", "Eclipse Katana - ReelingIdle"},
+        {"Caught", "Eclipse Katana - FishCaught"},
+        {"Fish", "Eclipse Katana - FishCaught"},
+        {"Pull", "Eclipse Katana - ReelStart"}
+    }
+
+    local count = 0
+    for _, mapping in pairs(Maps) do
+        local targetName = mapping[1]
+        local sourceName = mapping[2]
+        
+        local targetAnim = tool:FindFirstChild(targetName, true)
+        local sourceAnim = AnimPath:FindFirstChild(sourceName)
+        
+        if targetAnim and targetAnim:IsA("Animation") and sourceAnim and sourceAnim:IsA("Animation") then
+            targetAnim.AnimationId = sourceAnim.AnimationId
+            count = count + 1
+        end
+    end
+
+    if count > 0 then
+        BtnSkin.Text = "Eclipse Skin APPLIED!"
+        ToggleVisual(BtnSkin, true)
+        wait(1.5)
+        BtnSkin.Text = "Eclipse Skin (Equip Rod)"
+        ToggleVisual(BtnSkin, false)
+    else
+        BtnSkin.Text = "Animations Not Found!"
+        wait(1)
+        BtnSkin.Text = "Eclipse Skin (Equip Rod)"
+    end
 end)
 
 -- // LOGIKA HIDE
@@ -316,4 +382,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-print(":: SERAPHIN HELPER + SAVE POS LOADED ::")
+print(":: SERAPHIN HELPER LOADING::")
