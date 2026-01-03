@@ -1,14 +1,8 @@
---[[ 
-    SERAPHIN HELPER: FINAL FIXED LAYOUT
-    - Label: FISH CAUGHT & BACKPACK
-    - Layout: Judul Di Atas, Angka Di Bawah
-]]--
-
 -- [1] Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Sedang Loading",
+        Text = " Loading Sayang",
         Duration = 2,
     })
 end)
@@ -34,8 +28,8 @@ end)
 
 -- // Konfigurasi Visual
 local UI_THEME = {
-    Width = 250,
-    Height = 200,
+    Width = 260,
+    Height = 210,
     Color = Color3.fromRGB(14, 14, 18), 
     HeaderColor = Color3.fromRGB(20, 20, 25),
     Accent = Color3.fromRGB(0, 255, 170),
@@ -94,7 +88,7 @@ Padding.PaddingRight = UDim.new(0, 5)
 local TitleLabel = Instance.new("TextLabel", FloatHUD)
 TitleLabel.Size = UDim2.new(1, 0, 0, 15)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "STATUS PANEL"
+TitleLabel.Text = "SERAPHINE PANEL"
 TitleLabel.TextColor3 = UI_THEME.Accent
 TitleLabel.Font = Enum.Font.GothamBlack
 TitleLabel.TextSize = 11
@@ -276,8 +270,8 @@ local BtnFreeze = MakeBtn("Freeze Player")
 local BtnWow    = MakeBtn("Walk On Water")
 local BtnNoclip = MakeBtn("No Clip: OFF")
 local BtnBoost  = MakeBtn("Booster Mode")
-local BtnRender = MakeBtn("3D Render: ON")
-local BtnFps    = MakeBtn("FPS: Unlim") 
+local BtnRender = MakeBtn("3D Render: OFF")
+local BtnFps    = MakeBtn("FPS: Unli") 
 local BtnSave   = MakeBtn("Save Pos")
 local BtnLoad   = MakeBtn("Load Pos")
 local BtnRejoin = MakeBtn("Rejoin Server")
