@@ -29,13 +29,13 @@ end)
 -- // Konfigurasi Visual
 local UI_THEME = {
     Width = 260,
-    Height = 210,
+    Height = 210, -- Tinggi UI diatur menjadi 210
     Color = Color3.fromRGB(14, 14, 18), 
     HeaderColor = Color3.fromRGB(20, 20, 25),
     Accent = Color3.fromRGB(0, 255, 170),
     StatsColor = Color3.fromRGB(12, 12, 15),
     TextColor = Color3.fromRGB(255, 255, 255),
-    SubTextColor = Color3.fromRGB(150, 150, 160), -- Warna Judul (Abu-abu)
+    SubTextColor = Color3.fromRGB(150, 150, 160),
     Font = Enum.Font.GothamBold,
     BtnFont = Enum.Font.GothamMedium 
 }
@@ -50,7 +50,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [1] MINI FLOATING HUD (Updated Labels)
+-- [1] MINI FLOATING HUD (Updated)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
@@ -71,58 +71,62 @@ HudStroke.Transparency = 0.3
 -- Corner Rounding
 Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
 
--- Layout List
+-- Layout List (Mengatur agar Judul otomatis di paling atas)
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
 ListLayout.FillDirection = Enum.FillDirection.Vertical
 ListLayout.Padding = UDim.new(0, 6) 
 ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 ListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+ListLayout.SortOrder = Enum.SortOrder.LayoutOrder -- Penting agar urutan rapi
 
 local Padding = Instance.new("UIPadding", FloatHUD)
-Padding.PaddingTop = UDim.new(0, 8)
+Padding.PaddingTop = UDim.new(0, 10) -- Jarak sedikit dari atas
 Padding.PaddingBottom = UDim.new(0, 8)
 Padding.PaddingLeft = UDim.new(0, 5)
 Padding.PaddingRight = UDim.new(0, 5)
 
--- >> Header Panel Floating
+-- >> Header Panel Floating (JUDUL DI ATAS)
 local TitleLabel = Instance.new("TextLabel", FloatHUD)
+TitleLabel.LayoutOrder = 1 -- Urutan Pertama
 TitleLabel.Size = UDim2.new(1, 0, 0, 15)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "SERAPHINE PANEL"
+TitleLabel.Text = "SERAPHIN PANEL" -- Text Diubah Sesuai Request
 TitleLabel.TextColor3 = UI_THEME.Accent
 TitleLabel.Font = Enum.Font.GothamBlack
-TitleLabel.TextSize = 11
+TitleLabel.TextSize = 12
 TitleLabel.TextStrokeTransparency = 0.8
 
 -- Garis Pembatas
 local Div = Instance.new("Frame", FloatHUD)
+Div.LayoutOrder = 2 -- Urutan Kedua
 Div.Size = UDim2.new(0.8, 0, 0, 1)
 Div.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 Div.BorderSizePixel = 0
 
--- >> FUNGSI STATISTIK BERTUMPUK (Judul Atas, Angka Bawah)
-local function CreateStatBlock(titleText, defaultVal)
+-- >> FUNGSI STATISTIK (Block Data)
+local function CreateStatBlock(titleText, defaultVal, order)
     local Block = Instance.new("Frame", FloatHUD)
     Block.Name = titleText.."Block"
-    Block.Size = UDim2.new(1, 0, 0, 35) -- Tinggi block pas untuk 2 baris
+    Block.LayoutOrder = order -- Menentukan urutan block
+    Block.Size = UDim2.new(1, 0, 0, 35) 
     Block.BackgroundTransparency = 1
     
-    -- LABEL JUDUL (DI ATAS)
+    -- LABEL JUDUL (DI ATAS DATA)
     local LblTitle = Instance.new("TextLabel", Block)
     LblTitle.Name = "Title"
     LblTitle.Size = UDim2.new(1, 0, 0, 12)
     LblTitle.Position = UDim2.new(0, 0, 0, 0)
     LblTitle.BackgroundTransparency = 1
-    LblTitle.Text = string.upper(titleText) -- Otomatis Huruf Besar
+    LblTitle.Text = string.upper(titleText)
     LblTitle.TextColor3 = UI_THEME.SubTextColor
     LblTitle.Font = Enum.Font.GothamBold
     LblTitle.TextSize = 9
     
-    -- LABEL ANGKA (DI BAWAH)
+    -- LABEL ANGKA (DI BAWAH JUDUL)
     local LblValue = Instance.new("TextLabel", Block)
     LblValue.Name = "Value"
     LblValue.Size = UDim2.new(1, 0, 0, 20)
-    LblValue.Position = UDim2.new(0, 0, 0, 14) -- Geser ke bawah judul
+    LblValue.Position = UDim2.new(0, 0, 0, 14)
     LblValue.BackgroundTransparency = 1
     LblValue.Text = defaultVal
     LblValue.TextColor3 = UI_THEME.TextColor
@@ -132,17 +136,17 @@ local function CreateStatBlock(titleText, defaultVal)
     return LblValue 
 end
 
--- >> MEMBUAT LABEL SESUAI PERMINTAAN <<
-local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...") -- Judul 1
-local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0")     -- Judul 2
+-- >> MEMBUAT LABEL STATISTIK
+local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...", 3) 
+local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)     
 
 
 -- ====================================================
--- [2] MAIN MENU (Tetap Sama)
+-- [2] MAIN MENU UI
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
-Main.Size = UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height) 
+Main.Size = UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height) -- Ukuran 260x210
 Main.Position = UDim2.new(0.5, -UI_THEME.Width/2, 0.4, 0)
 Main.BackgroundColor3 = UI_THEME.Color
 Main.BackgroundTransparency = 0.05
@@ -338,6 +342,7 @@ task.spawn(function()
     end
 end)
 
+-- Functional Logic Buttons
 BtnFreeze.MouseButton1Click:Connect(function() States.Freeze = not States.Freeze if HRP then HRP.Anchored = States.Freeze end ToggleVisual(BtnFreeze, States.Freeze) end)
 
 BtnWow.MouseButton1Click:Connect(function() 
