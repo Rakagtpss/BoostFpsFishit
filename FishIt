@@ -1,4 +1,4 @@
---[[ SERAPHIN HELPER: CLEAN VERSION (NO DETECTOR) ]]--
+--[[ SERAPHIN HELPER: BOLD BUTTONS VERSION ]]--
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -23,8 +23,8 @@ local UI_CONFIG = {
     Accent = Color3.fromRGB(0, 255, 170),
     StatsColor = Color3.fromRGB(15, 15, 20),
     TextColor = Color3.fromRGB(255, 255, 255),
-    Font = Enum.Font.GothamBold,
-    BtnFont = Enum.Font.GothamMedium
+    Font = Enum.Font.GothamBold,       -- Font untuk Header/Label
+    BtnFont = Enum.Font.GothamBold     -- [DIUBAH] Font Tombol jadi Bold (Lebih Tebal/Terang)
 }
 
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
@@ -38,7 +38,7 @@ ScreenGui.ResetOnSpawn = false
 -- ==========================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 240, 0, 75) -- Ukuran diperkecil karena label berkurang
+FloatHUD.Size = UDim2.new(0, 240, 0, 75)
 FloatHUD.Position = UDim2.new(0.75, 0, 0.2, 0)
 FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
 FloatHUD.BackgroundTransparency = 0.1
@@ -69,7 +69,6 @@ local function CreateStatLabel(order, text)
     return lbl
 end
 
--- Label Stuck Dihapus, hanya sisa Fish & Bag
 local LblFish = CreateStatLabel(1, "🐟 Fish Caught : Loading...")
 local LblBag  = CreateStatLabel(2, "🎒 Inventory   : Loading...")
 
@@ -95,27 +94,21 @@ Header.Size = UDim2.new(1, 0, 0, 40)
 Header.BackgroundColor3 = UI_CONFIG.HeaderColor
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
 
+-- TITLE DIGABUNG DENGAN FPS
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1, 0, 1, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
+Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font> | FPS : ..."
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = UI_CONFIG.Font
 Title.TextSize = 14
 Title.BackgroundTransparency = 1
-
-local FpsLbl = Instance.new("TextLabel", Header)
-FpsLbl.Size = UDim2.new(0.2, 0, 1, 0)
-FpsLbl.Position = UDim2.new(0.03, 0, 0, 0)
-FpsLbl.Text = "60 FPS"
-FpsLbl.TextColor3 = UI_CONFIG.Accent
-FpsLbl.Font = Enum.Font.GothamBlack
-FpsLbl.TextSize = 13
-FpsLbl.BackgroundTransparency = 1
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local HideBtn = Instance.new("TextButton", Header)
 HideBtn.Size = UDim2.new(0, 50, 0, 24)
-HideBtn.Position = UDim2.new(0.87, 0, 0.5, -12)
+HideBtn.Position = UDim2.new(1, -60, 0.5, -12)
 HideBtn.Text = "HIDE"
 HideBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
 HideBtn.TextColor3 = Color3.new(1,1,1)
@@ -138,7 +131,7 @@ local function MakeBtn(text)
     b.Text = text
     b.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
     b.TextColor3 = Color3.fromRGB(200, 200, 200)
-    b.Font = UI_CONFIG.BtnFont
+    b.Font = UI_CONFIG.BtnFont -- Menggunakan Font yang sudah di-Bold
     b.TextSize = 11
     b.AutoButtonColor = true
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
@@ -233,7 +226,16 @@ BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.Pla
 BtnSave.MouseButton1Click:Connect(function() if HRP then SavedCFrame = HRP.CFrame BtnSave.Text="Pos Saved!" ToggleVisual(BtnSave,true) wait(1) ToggleVisual(BtnSave,false) BtnSave.Text="Save Position" end end)
 BtnLoad.MouseButton1Click:Connect(function() if SavedCFrame and HRP then HRP.CFrame = SavedCFrame ToggleVisual(BtnLoad,true) wait(0.5) ToggleVisual(BtnLoad,false) end end)
 
+-- // FPS LOOP UPDATER
 local last, f = os.clock(), 0
-RunService.RenderStepped:Connect(function() f+=1 if os.clock()-last>=1 then FpsLbl.Text=f.." FPS" f,last=0,os.clock() end end)
+local BaseTitle = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 
-print(":: SERAPHIN HELPER ::")
+RunService.RenderStepped:Connect(function() 
+    f += 1 
+    if os.clock() - last >= 1 then 
+        Title.Text = BaseTitle .. " <font color=\"rgb(150,150,150)\">|</font> FPS : <font color=\"rgb(0,255,170)\">" .. f .. "</font>"
+        f, last = 0, os.clock() 
+    end 
+end)
+
+print(":: SERAPHIN HELPER LOADED ::")
