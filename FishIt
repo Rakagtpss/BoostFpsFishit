@@ -1,6 +1,6 @@
 --[[ 
-    SERAPHIN HELPER: WIDE & FIXED HUD EDITION 
-    Updated: UI Wider (3 Columns) + Fixed Floating Text
+    SERAPHIN HELPER: FINAL FIXED (NO FONT ERROR)
+    Fixed: Enum.Font.GothamSemiBold -> Enum.Font.GothamMedium
 ]]--
 
 -- [1] Notifikasi Awal
@@ -12,7 +12,7 @@ pcall(function()
     })
 end)
 
-task.wait(1)
+task.wait(2)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -22,7 +22,7 @@ local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage") -- Added for safety
+local ReplicatedStorage = game:GetService("ReplicatedStorage") 
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
@@ -33,17 +33,17 @@ Player.CharacterAdded:Connect(function(newChar)
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
 end)
 
--- // Konfigurasi Visual Baru
+-- // Konfigurasi Visual (FONT DIPERBAIKI)
 local UI_CONFIG = {
-    Width = 430, -- Dibuat lebih lebar (Wide)
-    Height = 180, -- Tinggi dikurangi agar compact
+    Width = 430, 
+    Height = 180, 
     Color = Color3.fromRGB(14, 14, 18), 
     HeaderColor = Color3.fromRGB(20, 20, 25),
     Accent = Color3.fromRGB(0, 255, 170),
     StatsColor = Color3.fromRGB(10, 10, 12),
     TextColor = Color3.fromRGB(255, 255, 255),
-    Font = Enum.Font.GothamBold,
-    BtnFont = Enum.Font.GothamSemiBold
+    Font = Enum.Font.GothamBold,        -- Tetap Bold untuk Header
+    BtnFont = Enum.Font.GothamMedium    -- [FIX] Diganti dari SemiBold ke Medium
 }
 
 -- Bersihkan UI Lama
@@ -59,8 +59,7 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 -- [1] NEW FIXED FLOATING HUD (Stats)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
-FloatHUD.Name = "FloatingFish"
--- Ukuran diperlebar sedikit agar teks muat (210px)
+FloatHUD.Name = "FloatingStats"
 FloatHUD.Size = UDim2.new(0, 210, 0, 85) 
 FloatHUD.Position = UDim2.new(0.82, 0, 0.3, 0)
 FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
@@ -69,30 +68,25 @@ FloatHUD.Visible = true
 FloatHUD.Active = true
 FloatHUD.Draggable = true 
 
--- Stroke Outline HUD
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_CONFIG.Accent
 HudStroke.Thickness = 1.2
 HudStroke.Transparency = 0.4
 
--- Rounded Corner
 Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 6)
 
--- Layout List
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
 ListLayout.FillDirection = Enum.FillDirection.Vertical
 ListLayout.Padding = UDim.new(0, 2) 
-ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left -- Rata Kiri biar rapi
+ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left 
 ListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 
--- Padding Internal Container (Penting agar teks tidak nempel pinggir)
 local Padding = Instance.new("UIPadding", FloatHUD)
 Padding.PaddingTop = UDim.new(0, 8)
 Padding.PaddingBottom = UDim.new(0, 8)
-Padding.PaddingLeft = UDim.new(0, 12) -- Jarak dari kiri
+Padding.PaddingLeft = UDim.new(0, 12) 
 Padding.PaddingRight = UDim.new(0, 5)
 
--- FUNGSI PEMBUAT BARIS (ROW) DIPERBAIKI
 local function CreateRow(text, isHeader)
     local lbl = Instance.new("TextLabel", FloatHUD)
     lbl.Size = UDim2.new(1, 0, 0, isHeader and 20 or 18) 
@@ -100,7 +94,7 @@ local function CreateRow(text, isHeader)
     lbl.Text = text
     lbl.Font = UI_CONFIG.Font
     lbl.RichText = true
-    lbl.TextXAlignment = Enum.TextXAlignment.Left -- Teks Rata Kiri
+    lbl.TextXAlignment = Enum.TextXAlignment.Left 
     
     if isHeader then
         lbl.TextColor3 = UI_CONFIG.Accent
@@ -114,17 +108,16 @@ local function CreateRow(text, isHeader)
     return lbl
 end
 
--- ISI HUD
 local LblTitle       = CreateRow("SERAPHIN STATS", true)
-local Div            = Instance.new("Frame", FloatHUD) -- Garis Pemisah
-Div.Size             = UDim2.new(0.6, 0, 0, 1) -- Panjang garis 60%
+local Div            = Instance.new("Frame", FloatHUD) 
+Div.Size             = UDim2.new(0.6, 0, 0, 1) 
 Div.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 Div.BorderSizePixel  = 0
 local LblInv         = CreateRow("Fish: ...", false)
 local LblCaught      = CreateRow("Caught: ...", false)
 
 -- ====================================================
--- [2] MAIN MENU WIDE (430px Width)
+-- [2] MAIN MENU WIDE
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
@@ -148,14 +141,12 @@ Header.Size = UDim2.new(1, 0, 0, 32)
 Header.BackgroundColor3 = UI_CONFIG.HeaderColor
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
--- Fix Corner bawah header agar rata
 local HeaderFiller = Instance.new("Frame", Header)
 HeaderFiller.Size = UDim2.new(1, 0, 0, 5)
 HeaderFiller.Position = UDim2.new(0, 0, 1, -5)
 HeaderFiller.BackgroundColor3 = UI_CONFIG.HeaderColor
 HeaderFiller.BorderSizePixel = 0
 
--- JUDUL KIRI
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0, 150, 1, 0)
 Title.Position = UDim2.new(0, 12, 0, 0)
@@ -167,7 +158,6 @@ Title.TextSize = 13
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- REAL-TIME FPS MONITOR DI HEADER (KANAN)
 local RealTimeFps = Instance.new("TextLabel", Header)
 RealTimeFps.Size = UDim2.new(0, 80, 1, 0)
 RealTimeFps.Position = UDim2.new(1, -140, 0, 0) 
@@ -178,11 +168,10 @@ RealTimeFps.Font = Enum.Font.Code
 RealTimeFps.TextSize = 11
 RealTimeFps.TextXAlignment = Enum.TextXAlignment.Right
 
--- TOMBOL HIDE
 local HideBtn = Instance.new("TextButton", Header)
 HideBtn.Size = UDim2.new(0, 45, 0, 20) 
 HideBtn.Position = UDim2.new(1, -55, 0.5, -10)
-HideBtn.Text = "_" -- Icon minimize simple
+HideBtn.Text = "_" 
 HideBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 HideBtn.TextColor3 = Color3.new(1,1,1)
 HideBtn.Font = UI_CONFIG.Font
@@ -190,14 +179,13 @@ HideBtn.TextSize = 12
 HideBtn.AutoButtonColor = true
 Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
 
--- // GRID CONTAINER (3 KOLOM)
+-- // GRID CONTAINER
 local Container = Instance.new("Frame", Main)
 Container.Size = UDim2.new(1, -16, 1, -44) 
 Container.Position = UDim2.new(0, 8, 0, 38)
 Container.BackgroundTransparency = 1
 
 local Grid = Instance.new("UIGridLayout", Container)
--- Lebar tombol disesuaikan untuk 3 kolom: (430px - padding) / 3
 Grid.CellSize = UDim2.new(0, 132, 0, 26) 
 Grid.CellPadding = UDim2.new(0, 6, 0, 6) 
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -239,40 +227,29 @@ local SavedCFrame = nil
 local Connections = {}
 local BodyV = nil
 
--- // DAFTAR TOMBOL (Susunan 3 Kolom)
--- Baris 1
+-- // DAFTAR TOMBOL
 local BtnFreeze = MakeBtn("Freeze Player")
 local BtnWow    = MakeBtn("Walk On Water")
 local BtnNoclip = MakeBtn("No Clip: OFF")
--- Baris 2
 local BtnBoost  = MakeBtn("Booster Mode")
 local BtnRender = MakeBtn("3D Render: OFF")
 local BtnFps    = MakeBtn("FPS Cap: Unlim") 
--- Baris 3
 local BtnSave   = MakeBtn("Save Pos")
 local BtnLoad   = MakeBtn("Load Pos")
 local BtnRejoin = MakeBtn("Rejoin Server")
--- Baris 4 (Tengah)
-local BtnPanel  = MakeBtn("Panel Fishing: ON")
-
--- Layout Logic: Agar baris terakhir tombol Panel ada di tengah/lebar penuh
--- Kita biarkan Grid mengatur, Panel akan masuk ke slot grid berikutnya.
+local BtnPanel  = MakeBtn("Panel Info: ON")
 
 -- // LOGIC FITUR
-
--- 1. REAL TIME FPS MONITOR
 local fpsT = 0
 RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     RealTimeFps.Text = "FPS: " .. math.floor(fpsT)
 end)
 
--- 2. TOMBOL FPS CAP
 BtnFps.MouseButton1Click:Connect(function()
     local caps = {30, 60, 144, 999}
     _G.fpsIndex = ((_G.fpsIndex or 4) % #caps) + 1
     local v = caps[_G.fpsIndex]
-    
     if setfpscap then setfpscap(v) end
     BtnFps.Text = "FPS Cap: " .. (v > 900 and "Unlim" or v)
     ToggleVisual(BtnFps, true)
@@ -280,7 +257,6 @@ BtnFps.MouseButton1Click:Connect(function()
     ToggleVisual(BtnFps, false)
 end)
 
--- 3. PANEL UPDATE LOGIC (FIXED TEXT FIT)
 ToggleVisual(BtnPanel, true)
 BtnPanel.MouseButton1Click:Connect(function()
     States.Panel = not States.Panel
@@ -293,20 +269,15 @@ task.spawn(function()
     while task.wait(0.5) do
         if not States.Panel then continue end
         pcall(function()
-            -- Update Caught
             local ls = Player:FindFirstChild("leaderstats")
             local caughtObj = ls and ls:FindFirstChild("Caught")
-            -- Format angka dengan koma (cth: 1,000)
             local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
-            
             local val = caughtObj and caughtObj.Value or 0
             LblCaught.Text = "Caught: " .. formatNum(val)
 
-            -- Update Inventory
             local pg = Player:FindFirstChild("PlayerGui")
             local backpackGui = pg and pg:FindFirstChild("Backpack")
             local bagText = "0"
-            
             if backpackGui then
                 for _, v in pairs(backpackGui:GetDescendants()) do
                     if v:IsA("TextLabel") and string.find(v.Text, "/") then 
@@ -318,17 +289,14 @@ task.spawn(function()
                 local current = #Player.Backpack:GetChildren()
                 bagText = tostring(current) .. "/?"
             end
-            
             LblInv.Text = "Fish: " .. bagText
         end)
     end
 end)
 
--- 4. LOGIC LAINNYA
 local IsMin = false
 HideBtn.MouseButton1Click:Connect(function() 
     IsMin = not IsMin 
-    -- Tween Height Main UI
     Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, IsMin and 32 or UI_CONFIG.Height), "Out", "Quad", 0.25, true) 
     Container.Visible = not IsMin 
     HideBtn.Text = IsMin and "Show" or "_" 
@@ -395,7 +363,6 @@ end)
 
 BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
 
--- SAVE POS LOGIC
 BtnSave.MouseButton1Click:Connect(function() 
     if HRP then 
         SavedCFrame = HRP.CFrame 
@@ -416,3 +383,5 @@ BtnLoad.MouseButton1Click:Connect(function()
         ToggleVisual(BtnLoad,false) 
     end 
 end)
+
+print(":: SERAPHIN WIDE LOADED (FIXED) ::")
