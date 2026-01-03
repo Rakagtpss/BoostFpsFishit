@@ -2,7 +2,7 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = " Loading Sayang... (Updated)",
+        Text = " Loading Sayang... (Auto Equip Added)",
         Duration = 2,
     })
 end)
@@ -29,7 +29,7 @@ end)
 -- // Konfigurasi Visual
 local UI_THEME = {
     Width = 260,
-    Height = 285, -- Diperbesar agar muat tombol Event
+    Height = 285, 
     Color = Color3.fromRGB(14, 14, 18), 
     HeaderColor = Color3.fromRGB(20, 20, 25),
     Accent = Color3.fromRGB(0, 255, 170),
@@ -265,7 +265,7 @@ local SavedCFrame = nil
 local Connections = {}
 local BodyV = nil
 
--- EVENT LIST (Bisa ditambahkan sendiri)
+-- EVENT LIST
 local EventList = {"None", "Merchant", "Megalodon", "Isonade", "Whale", "Meteor", "Kraken"}
 local PrioIndex = 1
 local SecIndex = 1
@@ -282,7 +282,7 @@ local BtnLoad   = MakeBtn("Load Pos")
 local BtnRejoin = MakeBtn("Rejoin Server")
 local BtnPanel  = MakeBtn("Panel Info: ON")
 
--- [NEW] BUTTONS FOR EVENTS
+-- BUTTONS FOR EVENTS
 local BtnPrioEvent = MakeBtn("Prio: None")
 local BtnSecEvent = MakeBtn("Sec: None")
 local BtnAutoEvent = MakeBtn("Auto Event: OFF")
@@ -315,12 +315,11 @@ BtnPanel.MouseButton1Click:Connect(function()
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
--- [NEW] LOGIC FOR EVENT SELECTION
+-- LOGIC EVENT SELECTION
 BtnPrioEvent.MouseButton1Click:Connect(function()
     PrioIndex = PrioIndex + 1
     if PrioIndex > #EventList then PrioIndex = 1 end
     BtnPrioEvent.Text = "Prio: " .. EventList[PrioIndex]
-    -- Visual Feedback
     BtnPrioEvent.TextColor3 = UI_THEME.Accent
     task.wait(0.1)
     BtnPrioEvent.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -330,7 +329,6 @@ BtnSecEvent.MouseButton1Click:Connect(function()
     SecIndex = SecIndex + 1
     if SecIndex > #EventList then SecIndex = 1 end
     BtnSecEvent.Text = "Sec: " .. EventList[SecIndex]
-    -- Visual Feedback
     BtnSecEvent.TextColor3 = UI_THEME.Accent
     task.wait(0.1)
     BtnSecEvent.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -378,13 +376,13 @@ task.spawn(function()
     end
 end)
 
--- [NEW] AUTO EVENT TELEPORT LOOP
+-- [NEW] AUTO EVENT TELEPORT LOOP + AUTO EQUIP
 task.spawn(function()
     while true do
-        task.wait(1.5) -- Cek setiap 1.5 detik agar tidak lag
+        task.wait(1.5)
         if States.AutoEvent then
             pcall(function()
-                local Props = workspace:FindFirstChild("Props") -- Folder target
+                local Props = workspace:FindFirstChild("Props")
                 if not Props then return end
 
                 local TargetName = nil
@@ -411,23 +409,37 @@ task.spawn(function()
                     end
                 end
 
-                -- Eksekusi Teleport
+                -- Eksekusi Teleport & Equip
                 if TargetName and HRP then
-                    -- Cari bagian yang aman untuk teleport (BasePart)
                     local SafePart = TargetName:IsA("BasePart") and TargetName or TargetName:FindFirstChildWhichIsA("BasePart", true)
                     
                     if SafePart then
                         local dist = (HRP.Position - SafePart.Position).Magnitude
-                        if dist > 50 then -- Hanya TP jika jaraknya jauh
-                            HRP.CFrame = SafePart.CFrame + Vector3.new(0, 10, 0) -- TP 10 stud di atas objek
+                        if dist > 50 then 
+                            -- [1] CANCEL FISHING & UNEQUIP
+                            pcall(function()
+                                local Net = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
+                                Net["RF/CancelFishingInputs"]:InvokeServer()
+                                Net["RE/UnequipToolFromHotbar"]:FireServer()
+                            end)
+
+                            -- [2] TELEPORT
+                            HRP.CFrame = SafePart.CFrame + Vector3.new(0, 10, 0)
                             Notify("Event Found!", "Teleporting to: " .. TargetName.Name)
                             
-                            -- Mengaktifkan Water Walk otomatis agar tidak tenggelam jika di laut
+                            -- Mengaktifkan Water Walk
                             if not States.WoW then
                                 BtnWow.MouseButton1Click:Fire() 
                             end
                             
-                            task.wait(3) -- Cooldown setelah TP
+                            -- [3] WAIT & EQUIP ROD
+                            task.wait(0.7) -- Delay agar server memproses posisi
+                            pcall(function()
+                                local Net = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
+                                Net["RE/EquipToolFromHotbar"]:FireServer(unpack({[1] = 1}))
+                            end)
+                            
+                            task.wait(3) -- Cooldown
                         end
                     end
                 end
