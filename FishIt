@@ -1,317 +1,281 @@
---[[ SERAPHIN HELPER: PHYSICAL STUCK -> AUTO RECAST ]]--
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
-local Lighting = game:GetService("Lighting")
-local VirtualInputManager = game:GetService("VirtualInputManager") -- Service untuk Klik
+--[[ 
+    SERAPHIN HELPER: OPTIMIZED CORE 
+    Rewritten for Maximum Performance & Minimalism
+]]
 
--- // Setup & Safety
-local Player = Players.LocalPlayer
-local Char = Player.Character or Player.CharacterAdded:Wait()
-local HRP = Char:WaitForChild("HumanoidRootPart", 5)
-
-Player.CharacterAdded:Connect(function(newChar)
-    Char = newChar
-    HRP = newChar:WaitForChild("HumanoidRootPart", 10)
-end)
-
--- // Konfigurasi
-local UI_CONFIG = {
-    Width = 460, Height = 320,       
-    Color = Color3.fromRGB(10, 10, 12), 
-    HeaderColor = Color3.fromRGB(15, 15, 18),
-    Accent = Color3.fromRGB(0, 255, 170),
-    StatsColor = Color3.fromRGB(15, 15, 20),
-    TextColor = Color3.fromRGB(255, 255, 255),
-    Font = Enum.Font.GothamBold,
-    BtnFont = Enum.Font.GothamMedium
+-- [1] SERVICES & VARIABLES
+local Services = {
+    Players = game:GetService("Players"),
+    RunService = game:GetService("RunService"),
+    CoreGui = game:GetService("CoreGui"),
+    Lighting = game:GetService("Lighting"),
+    Teleport = game:GetService("TeleportService")
 }
 
-local STUCK_THRESHOLD = 3 -- Detik sebelum Recast
+local LocalPlayer = Services.Players.LocalPlayer
+local Character, RootPart
 
-if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SeraphinHelper"
-ScreenGui.Parent = CoreGui
-ScreenGui.ResetOnSpawn = false
-
--- ==========================================
--- [1] FLOAT HUD
--- ==========================================
-local FloatHUD = Instance.new("Frame", ScreenGui)
-FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 240, 0, 100)
-FloatHUD.Position = UDim2.new(0.75, 0, 0.2, 0)
-FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
-FloatHUD.BackgroundTransparency = 0.1
-FloatHUD.Visible = true 
-Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
-local HudStroke = Instance.new("UIStroke", FloatHUD)
-HudStroke.Color = UI_CONFIG.Accent
-HudStroke.Thickness = 2
-HudStroke.Transparency = 0.3
-local ListLayout = Instance.new("UIListLayout", FloatHUD)
-ListLayout.FillDirection = Enum.FillDirection.Vertical
-ListLayout.Padding = UDim.new(0, 5)
-local Padding = Instance.new("UIPadding", FloatHUD)
-Padding.PaddingLeft = UDim.new(0, 12)
-Padding.PaddingTop = UDim.new(0, 10)
-
-local function CreateStatLabel(order, text)
-    local lbl = Instance.new("TextLabel", FloatHUD)
-    lbl.Size = UDim2.new(1, -10, 0, 22)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = text
-    lbl.TextColor3 = UI_CONFIG.TextColor
-    lbl.Font = UI_CONFIG.Font
-    lbl.TextSize = 14
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.LayoutOrder = order
-    lbl.RichText = true
-    return lbl
+-- Update Character otomatis tanpa loop berat
+local function UpdateChar(char)
+    Character = char
+    RootPart = char:WaitForChild("HumanoidRootPart", 5)
 end
+if LocalPlayer.Character then UpdateChar(LocalPlayer.Character) end
+LocalPlayer.CharacterAdded:Connect(UpdateChar)
 
-local LblFish = CreateStatLabel(1, "🐟 Fish Caught : Loading...")
-local LblBag  = CreateStatLabel(2, "🎒 Inventory   : Loading...")
-local LblStuck = CreateStatLabel(3, "🟢 Status      : Normal")
+-- [2] THEME CONFIGURATION (Dark Glass)
+local Theme = {
+    MainColor = Color3.fromRGB(0, 0, 0),         -- Hitam Pekat
+    Transp    = 0.55,                            -- Transparansi Kaca
+    Accent    = Color3.fromRGB(0, 255, 170),     -- Hijau Neon
+    Text      = Color3.fromRGB(255, 255, 255),   -- Putih
+    Gray      = Color3.fromRGB(40, 40, 40),      -- Abu Gelap (Tombol)
+    Font      = Enum.Font.Gotham,                -- Font Ringan
+    Bold      = Enum.Font.GothamBold
+}
 
--- ==========================================
--- [2] MAIN MENU
--- ==========================================
-local Main = Instance.new("Frame", ScreenGui)
+-- [3] UI CONSTRUCTION (Clean & Fast)
+if Services.CoreGui:FindFirstChild("SeraphinOpt") then Services.CoreGui.SeraphinOpt:Destroy() end
+local Screen = Instance.new("ScreenGui")
+Screen.Name = "SeraphinOpt"
+Screen.Parent = Services.CoreGui
+Screen.ResetOnSpawn = false
+
+-- > Floating HUD
+local HUD = Instance.new("Frame", Screen)
+HUD.Name = "HUD"
+HUD.Size = UDim2.new(0, 180, 0, 50)
+HUD.Position = UDim2.new(0.85, -90, 0.2, 0)
+HUD.BackgroundColor3 = Theme.MainColor
+HUD.BackgroundTransparency = 0.5
+HUD.Active = true
+HUD.Draggable = true
+Instance.new("UICorner", HUD).CornerRadius = UDim.new(0, 6)
+Instance.new("UIStroke", HUD).Color = Theme.Accent
+HUD.UIStroke.Transparency = 0.7
+
+local function AddLabel(parent, text, yPos)
+    local l = Instance.new("TextLabel", parent)
+    l.Size = UDim2.new(1, -10, 0, 20)
+    l.Position = UDim2.new(0, 8, 0, yPos)
+    l.BackgroundTransparency = 1
+    l.Text = text
+    l.TextColor3 = Theme.Text
+    l.Font = Theme.Font
+    l.TextSize = 12
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.RichText = true
+    return l
+end
+local StatFish = AddLabel(HUD, "Fetching...", 4)
+local StatBag  = AddLabel(HUD, "Fetching...", 24)
+
+-- > Main Window
+local Main = Instance.new("Frame", Screen)
 Main.Name = "Main"
-Main.Size = UDim2.new(0, UI_CONFIG.Width, 0, UI_CONFIG.Height)
-Main.Position = UDim2.new(0.5, -UI_CONFIG.Width/2, 0.4, 0)
-Main.BackgroundColor3 = UI_CONFIG.Color
-Main.BackgroundTransparency = 0.05
+Main.Size = UDim2.new(0, 400, 0, 260)
+Main.Position = UDim2.new(0.5, -200, 0.4, 0)
+Main.BackgroundColor3 = Theme.MainColor
+Main.BackgroundTransparency = Theme.Transp
 Main.Active = true
 Main.Draggable = true
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
-local MainStroke = Instance.new("UIStroke", Main)
-MainStroke.Color = UI_CONFIG.Accent
-MainStroke.Thickness = 1.5
-MainStroke.Transparency = 0.3
+Main.ClipsDescendants = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
+-- > Header
 local Header = Instance.new("Frame", Main)
-Header.Size = UDim2.new(1, 0, 0, 40)
-Header.BackgroundColor3 = UI_CONFIG.HeaderColor
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
+Header.Size = UDim2.new(1, 0, 0, 32)
+Header.BackgroundColor3 = Color3.new(1,1,1)
+Header.BackgroundTransparency = 0.95
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1, 0, 1, 0)
+Title.Size = UDim2.new(0, 200, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
 Title.RichText = true
-Title.TextColor3 = Color3.new(1,1,1)
-Title.Font = UI_CONFIG.Font
-Title.TextSize = 14
+Title.TextColor3 = Theme.Text
+Title.Font = Theme.Bold
+Title.TextSize = 13
+Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.BackgroundTransparency = 1
 
-local FpsLbl = Instance.new("TextLabel", Header)
-FpsLbl.Size = UDim2.new(0.2, 0, 1, 0)
-FpsLbl.Position = UDim2.new(0.03, 0, 0, 0)
-FpsLbl.Text = "60 FPS"
-FpsLbl.TextColor3 = UI_CONFIG.Accent
-FpsLbl.Font = Enum.Font.GothamBlack
-FpsLbl.TextSize = 13
-FpsLbl.BackgroundTransparency = 1
+local FPSLabel = Instance.new("TextLabel", Header)
+FPSLabel.Size = UDim2.new(0, 60, 1, 0)
+FPSLabel.Position = UDim2.new(1, -60, 0, 0)
+FPSLabel.Text = "60 FPS"
+FPSLabel.TextColor3 = Theme.Accent
+FPSLabel.Font = Theme.Bold
+FPSLabel.TextSize = 11
+FPSLabel.BackgroundTransparency = 1
 
-local HideBtn = Instance.new("TextButton", Header)
-HideBtn.Size = UDim2.new(0, 50, 0, 24)
-HideBtn.Position = UDim2.new(0.87, 0, 0.5, -12)
-HideBtn.Text = "HIDE"
-HideBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-HideBtn.TextColor3 = Color3.new(1,1,1)
-HideBtn.Font = UI_CONFIG.Font
-HideBtn.TextSize = 10
-Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 6)
-
-local Container = Instance.new("Frame", Main)
-Container.Size = UDim2.new(1, -24, 1, -45) 
-Container.Position = UDim2.new(0, 12, 0, 45)
-Container.BackgroundTransparency = 1
-
-local Grid = Instance.new("UIGridLayout", Container)
-Grid.CellSize = UDim2.new(0, 210, 0, 38) 
-Grid.CellPadding = UDim2.new(0, 14, 0, 10)
+-- > Button Container
+local Grid = Instance.new("UIGridLayout", Instance.new("Frame", Main))
+Grid.Parent.Size = UDim2.new(1, -20, 1, -45)
+Grid.Parent.Position = UDim2.new(0, 10, 0, 40)
+Grid.Parent.BackgroundTransparency = 1
+Grid.CellSize = UDim2.new(0, 185, 0, 30)
+Grid.CellPadding = UDim2.new(0, 10, 0, 8)
 Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-local function MakeBtn(text)
-    local b = Instance.new("TextButton", Container)
+-- [4] FEATURE LOGIC & STATE
+local State = { Noclip = false, WoW = false, Boost = false, Render = true, Panel = true }
+local Connections = {}
+local SavedPos = nil
+
+local function ToggleBtn(btn, isActive)
+    if isActive then
+        btn.BackgroundColor3 = Theme.Accent
+        btn.TextColor3 = Color3.new(0,0,0)
+        btn.BackgroundTransparency = 0.2
+    else
+        btn.BackgroundColor3 = Theme.Gray
+        btn.TextColor3 = Theme.Text
+        btn.BackgroundTransparency = 0.4
+    end
+end
+
+local function CreateButton(text, onClick)
+    local b = Instance.new("TextButton", Grid.Parent)
     b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
-    b.TextColor3 = Color3.fromRGB(200, 200, 200)
-    b.Font = UI_CONFIG.BtnFont
+    b.Font = Theme.Font
     b.TextSize = 11
     b.AutoButtonColor = true
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
-    local s = Instance.new("UIStroke", b)
-    s.Color = Color3.fromRGB(50, 50, 55)
-    s.Thickness = 1
-    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
+    ToggleBtn(b, false) -- Set default visual
+    
+    b.MouseButton1Click:Connect(function()
+        local newState = onClick()
+        if newState ~= nil then ToggleBtn(b, newState) end
+    end)
     return b
 end
 
-local function ToggleVisual(btn, on)
-    if on then
-        btn.BackgroundColor3 = UI_CONFIG.Accent
-        btn.TextColor3 = Color3.new(0,0,0)
-        btn.UIStroke.Transparency = 1
-    else
-        btn.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
-        btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        btn.UIStroke.Transparency = 0
-    end
-end
-
--- // State
-local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true}
-local SavedCFrame = nil 
-local Connections = {}
-local BodyV = nil
-local PhysicalStuckTime = 0     
-local IsFixing = false  
-
-local BtnFreeze = MakeBtn("Freeze Player")
-local BtnWow = MakeBtn("Walk On Water")
-local BtnNoclip = MakeBtn("No Clip: OFF")
-local BtnBoost = MakeBtn("Booster Mode")
-local BtnRender = MakeBtn("3D Rendering: ON")
-local BtnFps = MakeBtn("FPS Cap: Unlimited")
-local BtnRejoin = MakeBtn("Rejoin Server")
-local BtnSave = MakeBtn("Save Position")
-local BtnLoad = MakeBtn("Teleport to Saved")
-local BtnPanel = MakeBtn("Panel Info: ON")
-
-ToggleVisual(BtnPanel, true)
-BtnPanel.MouseButton1Click:Connect(function()
-    States.Panel = not States.Panel
-    FloatHUD.Visible = States.Panel
-    BtnPanel.Text = "Panel Info: " .. (States.Panel and "ON" or "OFF")
-    ToggleVisual(BtnPanel, States.Panel)
+-- [5] BUTTON IMPLEMENTATION
+CreateButton("Freeze Player", function()
+    if RootPart then RootPart.Anchored = not RootPart.Anchored end
+    return RootPart and RootPart.Anchored
 end)
 
--- // FUNGSI AUTO RECAST (FIX TANPA RESPAWN)
-local function PerformRecastFix()
-    IsFixing = true
-    LblStuck.Text = "🎣 RECASTING..."
-    LblStuck.TextColor3 = Color3.fromRGB(255, 150, 0)
-    
-    local char = Player.Character
-    local backpack = Player.Backpack
-    local Rod = nil
-    
-    -- 1. Cari Rod (Pancingan)
-    if char then 
-        Rod = char:FindFirstChildWhichIsA("Tool") 
-    end
-    
-    if not Rod then
-        -- Jika tidak dipegang, cari di tas
-        for _, t in pairs(backpack:GetChildren()) do
-            if t:IsA("Tool") and (string.find(t.Name:lower(), "rod") or string.find(t.Name:lower(), "fish")) then
-                Rod = t
-                break
+CreateButton("Walk On Water", function()
+    State.WoW = not State.WoW
+    if State.WoW then
+        Connections.WoW = Services.RunService.Heartbeat:Connect(function()
+            if RootPart then 
+                local vel = RootPart.AssemblyLinearVelocity
+                RootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z) -- Kunci Y axis
             end
-        end
-    end
-    
-    if Rod then
-        -- 2. Unequip (Lepas) untuk reset animasi
-        Rod.Parent = backpack
-        task.wait(0.3)
-        
-        -- 3. Equip (Pegang) Ulang
-        Rod.Parent = char
-        task.wait(0.5)
-        
-        -- 4. Auto Click (Cast)
-        -- Menggunakan VirtualInputManager agar aman
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-        task.wait(0.1)
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-        
-        LblStuck.Text = "✅ RECAST DONE!"
-        LblStuck.TextColor3 = Color3.fromRGB(0, 255, 100)
+        end)
     else
-        LblStuck.Text = "⚠️ NO ROD FOUND!"
-        LblStuck.TextColor3 = Color3.fromRGB(255, 50, 50)
+        if Connections.WoW then Connections.WoW:Disconnect() end
     end
+    return State.WoW
+end)
 
-    task.wait(1)
+local BtnNoclip = CreateButton("No Clip: OFF", function() end) -- Placeholder logic below
+BtnNoclip.MouseButton1Click:Connect(function()
+    State.Noclip = not State.Noclip
+    BtnNoclip.Text = "No Clip: " .. (State.Noclip and "ON" or "OFF")
+    ToggleBtn(BtnNoclip, State.Noclip)
     
-    -- Reset Variables
-    IsFixing = false
-    PhysicalStuckTime = 0
-    LblStuck.Text = "🟢 Status      : Normal"
-    LblStuck.TextColor3 = UI_CONFIG.Accent
-end
+    if State.Noclip then
+        Connections.Noclip = Services.RunService.Stepped:Connect(function()
+            if Character then
+                for _, v in pairs(Character:GetDescendants()) do
+                    if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end
+                end
+            end
+        end)
+    else
+        if Connections.Noclip then Connections.Noclip:Disconnect() end
+    end
+end)
 
--- // LOOP UTAMA MONITORING
+CreateButton("Booster Mode", function()
+    State.Boost = not State.Boost
+    Services.Lighting.GlobalShadows = not State.Boost
+    return State.Boost
+end)
+
+local BtnRender = CreateButton("3D Render: ON", function()
+    State.Render = not State.Render
+    Services.RunService:Set3dRenderingEnabled(State.Render)
+    BtnRender.Text = "3D Render: " .. (State.Render and "ON" or "OFF")
+    return not State.Render -- Visual invert (Active = Red/Off logic differs here but sticking to toggle style)
+end)
+
+local BtnFps = CreateButton("FPS: Unlimited", function() end)
+BtnFps.MouseButton1Click:Connect(function()
+    local caps = {30, 60, 144, 999}
+    _G.fpsIndex = ((_G.fpsIndex or 4) % 4) + 1
+    local cap = caps[_G.fpsIndex]
+    if setfpscap then setfpscap(cap) end
+    BtnFps.Text = "FPS: " .. (cap > 900 and "Unlimited" or cap)
+end)
+
+CreateButton("Rejoin Server", function()
+    Services.Teleport:Teleport(game.PlaceId, LocalPlayer)
+end)
+
+local BtnSave = CreateButton("Save Position", function()
+    if RootPart then SavedPos = RootPart.CFrame end
+    BtnSave.Text = "Pos Saved!" 
+    task.delay(1, function() BtnSave.Text = "Save Position" end)
+    return true
+end)
+
+local BtnLoad = CreateButton("Teleport Saved", function()
+    if SavedPos and RootPart then RootPart.CFrame = SavedPos end
+    return true
+end)
+
+CreateButton("Toggle Panel", function()
+    State.Panel = not State.Panel
+    HUD.Visible = State.Panel
+    return State.Panel
+end)
+
+-- [6] OPTIMIZED LOOPS (HEARTBEAT)
+-- Satu loop untuk FPS counter, Satu loop lambat untuk stats
+
+-- FPS Counter (Ringan)
+local lastClock = os.clock()
+local frameCount = 0
+Services.RunService.RenderStepped:Connect(function()
+    frameCount += 1
+    local now = os.clock()
+    if now - lastClock >= 1 then
+        FPSLabel.Text = frameCount .. " FPS"
+        frameCount = 0
+        lastClock = now
+    end
+end)
+
+-- Stats Updater (Jalan tiap 1 detik saja, tidak perlu real-time extrim)
 task.spawn(function()
-    while task.wait(0.25) do
-        if not States.Panel or IsFixing then continue end 
+    while task.wait(1) do
+        if not State.Panel then continue end
         
-        -- Update Info
-        pcall(function()
-            local ls = Player:FindFirstChild("leaderstats")
-            local caughtObj = ls and ls:FindFirstChild("Caught")
-            if caughtObj then LblFish.Text = "🐟 Fish Caught : " .. caughtObj.Value end
-            local pg = Player:FindFirstChild("PlayerGui")
-            local backpackGui = pg and pg:FindFirstChild("Backpack")
-            local bagText = "Unknown"
-            if backpackGui then
-                for _, v in pairs(backpackGui:GetDescendants()) do
-                    if v:IsA("TextLabel") and string.find(v.Text, "/") then bagText = v.Text break end
-                end
-            else bagText = #Player.Backpack:GetChildren() end
-            LblBag.Text = "🎒 Inventory   : " .. bagText
-        end)
-
-        -- STUCK DETECTOR
-        pcall(function()
-            if not Char or not HRP then return end
+        -- Safe Data Fetch
+        local s, err = pcall(function()
+            -- Fish
+            local ls = LocalPlayer:FindFirstChild("leaderstats")
+            local fish = ls and ls:FindFirstChild("Caught")
+            StatFish.Text = "🐟 Fish: <b>" .. (fish and fish.Value or "-") .. "</b>"
             
-            local hum = Char:FindFirstChild("Humanoid")
-            local isTryingToMove = hum and hum.MoveDirection.Magnitude > 0
-            local speed = HRP.AssemblyLinearVelocity.Magnitude
-            
-            -- Jika mencoba jalan tapi speed 0 (Macet/Bug Animasi)
-            if isTryingToMove and speed < 1 then
-                PhysicalStuckTime = PhysicalStuckTime + 0.25
-                LblStuck.Text = "🟠 Stuck detected: " .. math.ceil(STUCK_THRESHOLD - PhysicalStuckTime) .. "s"
-                LblStuck.TextColor3 = Color3.fromRGB(255, 120, 0)
-                
-                if PhysicalStuckTime >= STUCK_THRESHOLD then
-                    PerformRecastFix() -- PANGGIL RECAST
-                    return
+            -- Bag
+            local pg = LocalPlayer:FindFirstChild("PlayerGui")
+            local bagLbl = nil
+            if pg and pg:FindFirstChild("Backpack") then
+                 -- Cari label yang punya format "x/y"
+                for _, v in pairs(pg.Backpack:GetDescendants()) do
+                    if v:IsA("TextLabel") and v.Text:find("/") then bagLbl = v.Text break end
                 end
-            elseif isTryingToMove then
-                PhysicalStuckTime = 0
-                LblStuck.Text = "🟢 Status      : Moving"
-                LblStuck.TextColor3 = UI_CONFIG.Accent
-            else
-                PhysicalStuckTime = 0
-                LblStuck.Text = "⚪ Status      : Idle"
-                LblStuck.TextColor3 = Color3.fromRGB(200, 200, 200)
             end
+            local count = bagLbl or (#LocalPlayer.Backpack:GetChildren() .. " Items")
+            StatBag.Text = "🎒 Bag: <b>" .. count .. "</b>"
         end)
     end
 end)
 
--- // BUTTONS (Standard)
-local IsMin = false
-HideBtn.MouseButton1Click:Connect(function() IsMin = not IsMin Main:TweenSize(UDim2.new(0, UI_CONFIG.Width, 0, IsMin and 40 or UI_CONFIG.Height), "Out", "Quad", 0.25, true) Container.Visible = not IsMin HideBtn.Text = IsMin and "SHOW" or "HIDE" end)
-BtnFreeze.MouseButton1Click:Connect(function() States.Freeze = not States.Freeze if HRP then HRP.Anchored = States.Freeze end ToggleVisual(BtnFreeze, States.Freeze) end)
-BtnWow.MouseButton1Click:Connect(function() States.WoW = not States.WoW ToggleVisual(BtnWow, States.WoW) if States.WoW then BodyV = Instance.new("BodyVelocity", HRP) BodyV.MaxForce = Vector3.new(0,1e6,0) BodyV.Velocity = Vector3.zero Connections["WoW"] = RunService.Heartbeat:Connect(function() if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X,0,HRP.AssemblyLinearVelocity.Z) end end) else if Connections["WoW"] then Connections["WoW"]:Disconnect() end if BodyV then BodyV:Destroy() end end end)
-BtnNoclip.MouseButton1Click:Connect(function() States.Noclip = not States.Noclip BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") ToggleVisual(BtnNoclip, States.Noclip) if States.Noclip then Connections["Noclip"] = RunService.Stepped:Connect(function() if Player.Character then for _,v in pairs(Player.Character:GetDescendants()) do if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end end end end) else if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end end end)
-BtnBoost.MouseButton1Click:Connect(function() States.Boost = not States.Boost ToggleVisual(BtnBoost, States.Boost) BtnBoost.Text = States.Boost and "Booster: ACTIVE" or "Booster Mode" Lighting.GlobalShadows = not States.Boost end)
-BtnRender.MouseButton1Click:Connect(function() States.NoRender = not States.NoRender RunService:Set3dRenderingEnabled(not States.NoRender) BtnRender.Text = "3D Rendering: "..(States.NoRender and "OFF" or "ON") ToggleVisual(BtnRender, States.NoRender) end)
-BtnFps.MouseButton1Click:Connect(function() local l={30,60,144,999} _G.l=((_G.l or 4)%#l)+1 local v=l[_G.l] if setfpscap then setfpscap(v) end BtnFps.Text="FPS Cap: "..(v>900 and "Unlimited" or v) end)
-BtnRejoin.MouseButton1Click:Connect(function() game:GetService("TeleportService"):Teleport(game.PlaceId, Player) end)
-BtnSave.MouseButton1Click:Connect(function() if HRP then SavedCFrame = HRP.CFrame BtnSave.Text="Pos Saved!" ToggleVisual(BtnSave,true) wait(1) ToggleVisual(BtnSave,false) BtnSave.Text="Save Position" end end)
-BtnLoad.MouseButton1Click:Connect(function() if SavedCFrame and HRP then HRP.CFrame = SavedCFrame ToggleVisual(BtnLoad,true) wait(0.5) ToggleVisual(BtnLoad,false) end end)
-
-local last, f = os.clock(), 0
-RunService.RenderStepped:Connect(function() f+=1 if os.clock()-last>=1 then FpsLbl.Text=f.." FPS" f,last=0,os.clock() end end)
-
-print(":: SERAPHIN HELPER + AUTO RECAST STUCK FIX ::")
+print(":: SERAPHIN OPTIMIZED LOADED ::")
