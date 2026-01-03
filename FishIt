@@ -1,10 +1,10 @@
---[[ SERAPHIN HELPER: DELAY + NOTIF VERSION ]]--
+--[[ SERAPHIN HELPER: VERTICAL HUD STYLE (DELAY + NOTIF) ]]--
 
 -- [1] Kirim Notifikasi Terlebih Dahulu
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "SERAPHIN HELPER",
-        Text = "Memuat Script... ",
+        Text = "LOADING SCRIPT",
         Duration = 3,
     })
 end)
@@ -30,13 +30,13 @@ Player.CharacterAdded:Connect(function(newChar)
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
 end)
 
--- // Konfigurasi UI
+-- // Konfigurasi UI (Warna Lama)
 local UI_CONFIG = {
     Width = 460, 
     Height = 250, 
     Color = Color3.fromRGB(10, 10, 12), 
     HeaderColor = Color3.fromRGB(15, 15, 18),
-    Accent = Color3.fromRGB(0, 255, 170),
+    Accent = Color3.fromRGB(0, 255, 170), -- Warna Hijau/Teal Lama
     StatsColor = Color3.fromRGB(15, 15, 20),
     TextColor = Color3.fromRGB(255, 255, 255),
     Font = Enum.Font.GothamBold,
@@ -50,19 +50,20 @@ ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
 -- ==========================================
--- [1] FLOAT HUD (Stats - NO EMOJI)
+-- [1] FLOAT HUD (REMASTERED LIKE IMAGE)
 -- ==========================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 240, 0, 95) 
-FloatHUD.Position = UDim2.new(0.75, 0, 0.2, 0)
+-- [UBAH] Ukuran dibuat memanjang ke bawah (Vertikal) seperti gambar
+FloatHUD.Size = UDim2.new(0, 200, 0, 220) 
+FloatHUD.Position = UDim2.new(0.8, 0, 0.3, 0)
 FloatHUD.BackgroundColor3 = UI_CONFIG.StatsColor
 FloatHUD.BackgroundTransparency = 0.1
 FloatHUD.Visible = true 
 FloatHUD.Active = true
 FloatHUD.Draggable = true 
 
-Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 12)
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_CONFIG.Accent
 HudStroke.Thickness = 2
@@ -70,44 +71,61 @@ HudStroke.Transparency = 0.1
 
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
 ListLayout.FillDirection = Enum.FillDirection.Vertical
-ListLayout.Padding = UDim.new(0, 6)
+ListLayout.Padding = UDim.new(0, 5) -- Jarak antar elemen
 ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center 
+ListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 
 local Padding = Instance.new("UIPadding", FloatHUD)
-Padding.PaddingLeft = UDim.new(0, 15)
+Padding.PaddingTop = UDim.new(0, 15)
+Padding.PaddingBottom = UDim.new(0, 15)
+Padding.PaddingLeft = UDim.new(0, 10)
 Padding.PaddingRight = UDim.new(0, 10)
-Padding.PaddingTop = UDim.new(0, 12)
-Padding.PaddingBottom = UDim.new(0, 10)
 
--- Judul Mini Panel
-local TitleHUD = Instance.new("TextLabel", FloatHUD)
-TitleHUD.Size = UDim2.new(1, 0, 0, 20)
-TitleHUD.BackgroundTransparency = 1
-TitleHUD.Text = "SeraphinHelperPanel"
-TitleHUD.TextColor3 = UI_CONFIG.Accent 
-TitleHUD.Font = Enum.Font.GothamBlack 
-TitleHUD.TextSize = 14
-TitleHUD.LayoutOrder = 0
-
-local function CreateStatLabel(order, text)
-    local lbl = Instance.new("TextLabel", FloatHUD)
-    lbl.Size = UDim2.new(1, -5, 0, 20)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = text
-    lbl.TextColor3 = UI_CONFIG.TextColor
-    lbl.Font = UI_CONFIG.Font
-    lbl.TextSize = 13
-    lbl.TextXAlignment = Enum.TextXAlignment.Left 
-    lbl.LayoutOrder = order
-    lbl.RichText = true
-    return lbl
+-- // FUNGSI PEMBUAT LABEL //
+local function CreateLabel(text, size, color, font)
+    local l = Instance.new("TextLabel", FloatHUD)
+    l.Size = UDim2.new(1, 0, 0, size)
+    l.BackgroundTransparency = 1
+    l.Text = text
+    l.TextColor3 = color
+    l.Font = font
+    l.TextSize = size - 2
+    l.RichText = true
+    return l
 end
 
-local LblFish = CreateStatLabel(1, "Fish Caught : Loading...")
-local LblBag  = CreateStatLabel(2, "Inventory   : Loading...")
+-- 1. JUDUL PANEL (Sisi Kanan di Gambar, tapi kita taruh di Atas agar rapi)
+local LblTitle = CreateLabel("SERAPHIN PANEL", 16, UI_CONFIG.Accent, Enum.Font.GothamBlack)
+
+-- SPASI
+local Spacer1 = Instance.new("Frame", FloatHUD)
+Spacer1.Size = UDim2.new(1,0,0,10)
+Spacer1.BackgroundTransparency = 1
+
+-- 2. INVENTORY SECTION
+local LblInvHeader = CreateLabel("INVENTORY COUNT:", 14, UI_CONFIG.TextColor, Enum.Font.GothamBold)
+local LblInvVal    = CreateLabel("Fish: Loading...", 14, Color3.fromRGB(200, 200, 200), Enum.Font.Gotham)
+
+-- SPASI
+local Spacer2 = Instance.new("Frame", FloatHUD)
+Spacer2.Size = UDim2.new(1,0,0,10)
+Spacer2.BackgroundTransparency = 1
+
+-- 3. CAUGHT SECTION
+local LblCaughtHeader = CreateLabel("TOTAL FISH CAUGHT:", 14, UI_CONFIG.TextColor, Enum.Font.GothamBold)
+local LblCaughtVal    = CreateLabel("Value: Loading...", 14, Color3.fromRGB(200, 200, 200), Enum.Font.Gotham)
+
+-- SPASI
+local Spacer3 = Instance.new("Frame", FloatHUD)
+Spacer3.Size = UDim2.new(1,0,0,15)
+Spacer3.BackgroundTransparency = 1
+
+-- 4. STATUS (Hijau Besar di Bawah)
+local LblStatus = CreateLabel("FISHING NORMAL", 18, UI_CONFIG.Accent, Enum.Font.GothamBlack)
+
 
 -- ==========================================
--- [2] MAIN MENU
+-- [2] MAIN MENU (COMPACT)
 -- ==========================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
@@ -213,23 +231,25 @@ BtnPanel.MouseButton1Click:Connect(function()
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
--- // LOOP UTAMA
+-- // LOOP UTAMA (UPDATER)
 task.spawn(function()
     while task.wait(0.5) do
         if not States.Panel then continue end 
         
         pcall(function()
+            -- Update Caught
             local ls = Player:FindFirstChild("leaderstats")
             local caughtObj = ls and ls:FindFirstChild("Caught")
             if caughtObj then 
-                LblFish.Text = "Fish Caught : " .. caughtObj.Value 
+                LblCaughtVal.Text = "Value: " .. caughtObj.Value 
             else
-                LblFish.Text = "Fish Caught : -"
+                LblCaughtVal.Text = "Value: -"
             end
 
+            -- Update Inventory
             local pg = Player:FindFirstChild("PlayerGui")
             local backpackGui = pg and pg:FindFirstChild("Backpack")
-            local bagText = "Unknown"
+            local bagText = "0"
             if backpackGui then
                 for _, v in pairs(backpackGui:GetDescendants()) do
                     if v:IsA("TextLabel") and string.find(v.Text, "/") then 
@@ -240,7 +260,13 @@ task.spawn(function()
             else 
                 bagText = #Player.Backpack:GetChildren() 
             end
-            LblBag.Text = "Inventory   : " .. bagText
+            
+            -- Format sesuai gambar
+            if string.find(bagText, "/") then
+                LblInvVal.Text = "Fish: " .. bagText
+            else
+                LblInvVal.Text = "Fish: " .. bagText .. "/?"
+            end
         end)
     end
 end)
