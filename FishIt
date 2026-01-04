@@ -573,5 +573,3 @@ BtnLoad.MouseButton1Click:Connect(function()
     end 
 end)
 
-
-Untuk Tombolnya Tambahkan Warna Hanya Pada sisinta
