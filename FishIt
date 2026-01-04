@@ -2,257 +2,544 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Sistem Save/Load & Show/Hide Diperbarui!",
-        Duration = 3,
+        Text = "Loading Interface...",
+        Duration = 2,
     })
 end)
+
+task.wait(1)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage") 
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
-local HRP = Char:WaitForChild("HumanoidRootPart", 10)
+local HRP = Char:WaitForChild("HumanoidRootPart", 5)
 
--- // Konfigurasi Visual
+Player.CharacterAdded:Connect(function(newChar)
+    Char = newChar
+    HRP = newChar:WaitForChild("HumanoidRootPart", 10)
+end)
+
+-- // Konfigurasi Visual (Update: Dark Transparent)
 local UI_THEME = {
-    Width = 280,
-    Height = 300, 
-    MainColor = Color3.fromRGB(10, 10, 12),
-    MainTransparency = 0.25,
-    HeaderColor = Color3.fromRGB(15, 15, 20),
+    Width = 280, -- Sedikit diperlebar untuk Tab
+    Height = 230,
+    Color = Color3.fromRGB(10, 10, 12), -- Lebih gelap
+    Transparency = 0.25, -- Transparan (0 = Solid, 1 = Invisible)
+    HeaderColor = Color3.fromRGB(15, 15, 18),
     Accent = Color3.fromRGB(0, 255, 170),
-    Font = Enum.Font.GothamBold
+    TabOff = Color3.fromRGB(100, 100, 110),
+    TabOn = Color3.fromRGB(0, 255, 170),
+    TextColor = Color3.fromRGB(255, 255, 255),
+    SubTextColor = Color3.fromRGB(150, 150, 160),
+    Font = Enum.Font.GothamBold,
+    BtnFont = Enum.Font.GothamMedium 
 }
 
 -- Bersihkan UI Lama
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
-local ScreenGui = Instance.new("ScreenGui", CoreGui)
+local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SeraphinHelper"
+ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
-
--- // Fungsi Notifikasi Custom
-local function Notify(title, text)
-    pcall(function()
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = title,
-            Text = text,
-            Duration = 2,
-        })
-    end)
-end
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [1] MINI FLOATING HUD
+-- [1] MINI FLOATING HUD (PANEL SERAPHIN)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 140, 0, 110) 
+FloatHUD.Size = UDim2.new(0, 140, 0, 125) 
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
-FloatHUD.BackgroundColor3 = UI_THEME.MainColor
-FloatHUD.BackgroundTransparency = UI_THEME.MainTransparency
+FloatHUD.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
+FloatHUD.BackgroundTransparency = 0.3
+FloatHUD.Visible = true
 FloatHUD.Active = true
 FloatHUD.Draggable = true 
+
+-- Stroke/Border HUD
+local HudStroke = Instance.new("UIStroke", FloatHUD)
+HudStroke.Color = UI_THEME.Accent
+HudStroke.Thickness = 1
+HudStroke.Transparency = 0.5
+
 Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", FloatHUD).Color = UI_THEME.Accent
 
-local FloatLayout = Instance.new("UIListLayout", FloatHUD)
-FloatLayout.Padding = UDim.new(0, 5)
-FloatLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+-- Layout HUD
+local ListLayout = Instance.new("UIListLayout", FloatHUD)
+ListLayout.FillDirection = Enum.FillDirection.Vertical
+ListLayout.Padding = UDim.new(0, 6) 
+ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+ListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+ListLayout.SortOrder = Enum.SortOrder.LayoutOrder 
 
-local FloatPadding = Instance.new("UIPadding", FloatHUD)
-FloatPadding.PaddingTop = UDim.new(0, 8)
+local Padding = Instance.new("UIPadding", FloatHUD)
+Padding.PaddingTop = UDim.new(0, 10) 
+Padding.PaddingBottom = UDim.new(0, 8)
+Padding.PaddingLeft = UDim.new(0, 5)
+Padding.PaddingRight = UDim.new(0, 5)
 
-local function CreateStat(title, val)
-    local Label = Instance.new("TextLabel", FloatHUD)
-    Label.Size = UDim2.new(1, 0, 0, 15); Label.BackgroundTransparency = 1; Label.Text = title
-    Label.TextColor3 = Color3.fromRGB(150, 150, 160); Label.Font = Enum.Font.GothamBold; Label.TextSize = 9
-    local Value = Instance.new("TextLabel", FloatHUD)
-    Value.Size = UDim2.new(1, 0, 0, 20); Value.BackgroundTransparency = 1; Value.Text = val
-    Value.TextColor3 = Color3.new(1,1,1); Value.Font = Enum.Font.GothamBold; Value.TextSize = 14
-    return Value
+-- >> JUDUL PANEL
+local TitleLabel = Instance.new("TextLabel", FloatHUD)
+TitleLabel.LayoutOrder = 1
+TitleLabel.Size = UDim2.new(1, 0, 0, 15)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "PANEL SERAPHIN"
+TitleLabel.TextColor3 = UI_THEME.Accent
+TitleLabel.Font = Enum.Font.GothamBlack
+TitleLabel.TextSize = 12
+TitleLabel.TextStrokeTransparency = 0.8
+
+-- Garis Pembatas HUD
+local Div = Instance.new("Frame", FloatHUD)
+Div.LayoutOrder = 2
+Div.Size = UDim2.new(0.8, 0, 0, 1)
+Div.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+Div.BorderSizePixel = 0
+
+-- >> FUNGSI STATISTIK HUD
+local function CreateStatBlock(titleText, defaultVal, order)
+    local Block = Instance.new("Frame", FloatHUD)
+    Block.Name = titleText.."Block"
+    Block.LayoutOrder = order
+    Block.Size = UDim2.new(1, 0, 0, 35) 
+    Block.BackgroundTransparency = 1
+    
+    local LblTitle = Instance.new("TextLabel", Block)
+    LblTitle.Name = "Title"
+    LblTitle.Size = UDim2.new(1, 0, 0, 12)
+    LblTitle.Position = UDim2.new(0, 0, 0, 0)
+    LblTitle.BackgroundTransparency = 1
+    LblTitle.Text = string.upper(titleText)
+    LblTitle.TextColor3 = UI_THEME.SubTextColor
+    LblTitle.Font = Enum.Font.GothamBold
+    LblTitle.TextSize = 9
+    
+    local LblValue = Instance.new("TextLabel", Block)
+    LblValue.Name = "Value"
+    LblValue.Size = UDim2.new(1, 0, 0, 20)
+    LblValue.Position = UDim2.new(0, 0, 0, 14)
+    LblValue.BackgroundTransparency = 1
+    LblValue.Text = defaultVal
+    LblValue.TextColor3 = UI_THEME.TextColor
+    LblValue.Font = Enum.Font.GothamBold
+    LblValue.TextSize = 16 
+    
+    return LblValue 
 end
-local LblFishVal = CreateStat("FISH CAUGHT", "0")
-local LblInvVal = CreateStat("BACKPACK", "0/0")
+
+local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...", 3) 
+local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)     
+
 
 -- ====================================================
--- [2] MAIN WINDOW
+-- [2] MAIN MENU UI (TABBED & DARK TRANSPARENT)
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
-Main.Name = "MainFrame"
+Main.Name = "Main"
 Main.Size = UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height)
 Main.Position = UDim2.new(0.5, -UI_THEME.Width/2, 0.4, 0)
-Main.BackgroundColor3 = UI_THEME.MainColor
-Main.BackgroundTransparency = UI_THEME.MainTransparency
+Main.BackgroundColor3 = UI_THEME.Color
+Main.BackgroundTransparency = UI_THEME.Transparency -- Dark Transparan
 Main.Active = true
 Main.Draggable = true
+Main.ClipsDescendants = true 
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", Main).Color = UI_THEME.Accent
+
+local MainStroke = Instance.new("UIStroke", Main)
+MainStroke.Color = UI_THEME.Accent
+MainStroke.Thickness = 1.2
+MainStroke.Transparency = 0.4
 
 -- // HEADER
 local Header = Instance.new("Frame", Main)
-Header.Size = UDim2.new(1, 0, 0, 35)
+Header.Name = "Header"
+Header.Size = UDim2.new(1, 0, 0, 32) 
 Header.BackgroundColor3 = UI_THEME.HeaderColor
+Header.BackgroundTransparency = 0.5 -- Header juga agak transparan
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
+-- Filler untuk menutupi corner bawah header
+local HeaderFiller = Instance.new("Frame", Header)
+HeaderFiller.Size = UDim2.new(1, 0, 0, 5)
+HeaderFiller.Position = UDim2.new(0, 0, 1, -5)
+HeaderFiller.BackgroundColor3 = UI_THEME.HeaderColor
+HeaderFiller.BackgroundTransparency = 0.5
+HeaderFiller.BorderSizePixel = 0
+
+-- // TITLE
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1, 0, 1, 0); Title.Position = UDim2.new(0, 10, 0, 0)
-Title.Text = "SERAPHIN <font color='#00FFAA'>HELPER</font>"; Title.RichText = true
-Title.TextColor3 = Color3.new(1,1,1); Title.Font = UI_THEME.Font; Title.TextSize = 14
-Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Size = UDim2.new(1, -60, 1, 0) 
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>"
+Title.RichText = true
+Title.TextColor3 = Color3.new(1,1,1)
+Title.Font = UI_THEME.Font
+Title.TextSize = 12
+Title.BackgroundTransparency = 1
+Title.TextXAlignment = Enum.TextXAlignment.Left 
 
--- // TOMBOL SHOW/HIDE (TEXT VERSION)
-local ToggleBtn = Instance.new("TextButton", Header)
-ToggleBtn.Size = UDim2.new(0, 60, 0, 25)
-ToggleBtn.Position = UDim2.new(1, -65, 0, 5)
-ToggleBtn.Text = "HIDE"
-ToggleBtn.TextColor3 = UI_THEME.Accent
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.TextSize = 10
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 4)
+-- // HIDE BUTTON
+local HideBtn = Instance.new("TextButton", Header)
+HideBtn.Size = UDim2.new(0, 45, 0, 20) 
+HideBtn.Position = UDim2.new(1, -50, 0.5, -10)
+HideBtn.Text = "Hide" 
+HideBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+HideBtn.BackgroundTransparency = 0.5
+HideBtn.TextColor3 = UI_THEME.Accent
+HideBtn.Font = Enum.Font.GothamBold
+HideBtn.TextSize = 10
+HideBtn.AutoButtonColor = true
+Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
+local HideStroke = Instance.new("UIStroke", HideBtn)
+HideStroke.Color = UI_THEME.Accent
+HideStroke.Transparency = 0.7
 
-local IsHidden = false
-local ContentContainer = Instance.new("Frame", Main)
-ContentContainer.Size = UDim2.new(1, 0, 1, -35)
-ContentContainer.Position = UDim2.new(0, 0, 0, 35)
-ContentContainer.BackgroundTransparency = 1
+-- ====================================================
+-- [3] TAB SYSTEM
+-- ====================================================
+local TabHolder = Instance.new("Frame", Main)
+TabHolder.Name = "TabHolder"
+TabHolder.Size = UDim2.new(1, 0, 0, 25)
+TabHolder.Position = UDim2.new(0, 0, 0, 32)
+TabHolder.BackgroundTransparency = 1
 
-ToggleBtn.MouseButton1Click:Connect(function()
-    IsHidden = not IsHidden
-    if IsHidden then
-        ContentContainer.Visible = false
-        Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, 35), "Out", "Quad", 0.3, true)
-        ToggleBtn.Text = "SHOW"
+local TabMainBtn = Instance.new("TextButton", TabHolder)
+TabMainBtn.Name = "MainTab"
+TabMainBtn.Size = UDim2.new(0.5, 0, 1, 0)
+TabMainBtn.BackgroundTransparency = 1
+TabMainBtn.Text = "MAIN"
+TabMainBtn.Font = Enum.Font.GothamBold
+TabMainBtn.TextSize = 11
+TabMainBtn.TextColor3 = UI_THEME.TabOn
+
+local TabMiscBtn = Instance.new("TextButton", TabHolder)
+TabMiscBtn.Name = "MiscTab"
+TabMiscBtn.Size = UDim2.new(0.5, 0, 1, 0)
+TabMiscBtn.Position = UDim2.new(0.5, 0, 0, 0)
+TabMiscBtn.BackgroundTransparency = 1
+TabMiscBtn.Text = "MISC"
+TabMiscBtn.Font = Enum.Font.GothamBold
+TabMiscBtn.TextSize = 11
+TabMiscBtn.TextColor3 = UI_THEME.TabOff
+
+local TabIndicator = Instance.new("Frame", TabHolder)
+TabIndicator.Size = UDim2.new(0.5, 0, 0, 2)
+TabIndicator.Position = UDim2.new(0, 0, 1, -2)
+TabIndicator.BackgroundColor3 = UI_THEME.Accent
+TabIndicator.BorderSizePixel = 0
+
+-- // PAGES CONTAINER
+local PageContainer = Instance.new("Frame", Main)
+PageContainer.Name = "PageContainer"
+PageContainer.Size = UDim2.new(1, -16, 1, -65) -- Sisa ruang di bawah Tab
+PageContainer.Position = UDim2.new(0, 8, 0, 60)
+PageContainer.BackgroundTransparency = 1
+
+-- Page 1: Main
+local PageMain = Instance.new("Frame", PageContainer)
+PageMain.Name = "PageMain"
+PageMain.Size = UDim2.new(1, 0, 1, 0)
+PageMain.BackgroundTransparency = 1
+PageMain.Visible = true
+
+local GridMain = Instance.new("UIGridLayout", PageMain)
+GridMain.CellSize = UDim2.new(0, 128, 0, 28) 
+GridMain.CellPadding = UDim2.new(0, 8, 0, 6) 
+GridMain.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- Page 2: Misc
+local PageMisc = Instance.new("Frame", PageContainer)
+PageMisc.Name = "PageMisc"
+PageMisc.Size = UDim2.new(1, 0, 1, 0)
+PageMisc.BackgroundTransparency = 1
+PageMisc.Visible = false
+
+local GridMisc = Instance.new("UIGridLayout", PageMisc)
+GridMisc.CellSize = UDim2.new(0, 128, 0, 28) 
+GridMisc.CellPadding = UDim2.new(0, 8, 0, 6) 
+GridMisc.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- Logic Tab Switching
+local function SwitchTab(tabName)
+    if tabName == "Main" then
+        PageMain.Visible = true
+        PageMisc.Visible = false
+        TabMainBtn.TextColor3 = UI_THEME.TabOn
+        TabMiscBtn.TextColor3 = UI_THEME.TabOff
+        TabIndicator:TweenPosition(UDim2.new(0, 0, 1, -2), "Out", "Quad", 0.2)
+    elseif tabName == "Misc" then
+        PageMain.Visible = false
+        PageMisc.Visible = true
+        TabMainBtn.TextColor3 = UI_THEME.TabOff
+        TabMiscBtn.TextColor3 = UI_THEME.TabOn
+        TabIndicator:TweenPosition(UDim2.new(0.5, 0, 1, -2), "Out", "Quad", 0.2)
+    end
+end
+
+TabMainBtn.MouseButton1Click:Connect(function() SwitchTab("Main") end)
+TabMiscBtn.MouseButton1Click:Connect(function() SwitchTab("Misc") end)
+
+-- ====================================================
+-- [4] LOGIC UI & FUNCTIONS
+-- ====================================================
+local IsMinimized = false
+
+HideBtn.MouseButton1Click:Connect(function() 
+    IsMinimized = not IsMinimized 
+    if IsMinimized then
+        PageContainer.Visible = false
+        TabHolder.Visible = false
+        Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, 32), "Out", "Quad", 0.3, true) 
+        HideBtn.Text = "Show" 
+        HideBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     else
-        Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height), "Out", "Back", 0.3, true)
-        task.wait(0.3)
-        ContentContainer.Visible = true
-        ToggleBtn.Text = "HIDE"
+        Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height), "Out", "Back", 0.3, true) 
+        HideBtn.Text = "Hide" 
+        HideBtn.TextColor3 = UI_THEME.Accent
+        task.delay(0.2, function() 
+            if not IsMinimized then 
+                PageContainer.Visible = true 
+                TabHolder.Visible = true
+            end 
+        end)
     end
 end)
 
--- // TAB SYSTEM
-local TabContainer = Instance.new("Frame", ContentContainer)
-TabContainer.Size = UDim2.new(1, -20, 0, 30); TabContainer.Position = UDim2.new(0, 10, 0, 10)
-TabContainer.BackgroundTransparency = 1
-
-local function CreatePage(name, visible)
-    local p = Instance.new("ScrollingFrame", ContentContainer)
-    p.Name = name; p.Size = UDim2.new(1, -20, 1, -60); p.Position = UDim2.new(0, 10, 0, 50)
-    p.BackgroundTransparency = 1; p.Visible = visible; p.ScrollBarThickness = 0
-    local layout = Instance.new("UIGridLayout", p)
-    layout.CellSize = UDim2.new(0, 125, 0, 35)
-    return p
-end
-local PageMain = CreatePage("PageMain", true)
-local PageMisc = CreatePage("PageMisc", false)
-
-local TabMainBtn = Instance.new("TextButton", TabContainer)
-TabMainBtn.Size = UDim2.new(0.5, -5, 1, 0); TabMainBtn.Text = "MAIN"
-TabMainBtn.BackgroundColor3 = UI_THEME.Accent; TabMainBtn.TextColor3 = Color3.new(0,0,0)
-TabMainBtn.Font = UI_THEME.Font; Instance.new("UICorner", TabMainBtn)
-
-local TabMiscBtn = Instance.new("TextButton", TabContainer)
-TabMiscBtn.Size = UDim2.new(0.5, -5, 1, 0); TabMiscBtn.Position = UDim2.new(0.5, 5, 0, 0)
-TabMiscBtn.Text = "MISC"; TabMiscBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-TabMiscBtn.TextColor3 = Color3.fromRGB(200, 200, 200); TabMiscBtn.Font = UI_THEME.Font; Instance.new("UICorner", TabMiscBtn)
-
--- ====================================================
--- [3] LOGIC & PERBAIKAN SAVE/LOAD
--- ====================================================
-local States = {Freeze = false, WoW = false, Panel = true}
-local SavedCFrame = nil -- Penyimpanan koordinat
-
-local function MakeBtn(text, parent)
+local function MakeBtn(parent, text)
     local b = Instance.new("TextButton", parent)
-    b.Text = text; b.BackgroundColor3 = Color3.fromRGB(20, 20, 25); b.BackgroundTransparency = 0.2
-    b.TextColor3 = Color3.fromRGB(200, 200, 200); b.Font = Enum.Font.GothamMedium; b.TextSize = 11
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
-    Instance.new("UIStroke", b).Color = Color3.fromRGB(60, 60, 70)
+    b.Text = text
+    b.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    b.BackgroundTransparency = 0.6
+    b.TextColor3 = Color3.fromRGB(200, 200, 200)
+    b.Font = UI_THEME.BtnFont 
+    b.TextSize = 10 
+    b.AutoButtonColor = true
+    b.ClipsDescendants = true
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
+    local s = Instance.new("UIStroke", b)
+    s.Color = Color3.fromRGB(60, 60, 70)
+    s.Thickness = 1
+    s.Transparency = 0.5
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     return b
 end
 
 local function ToggleVisual(btn, on)
-    btn.BackgroundColor3 = on and UI_THEME.Accent or Color3.fromRGB(20, 20, 25)
-    btn.TextColor3 = on and Color3.new(0,0,0) or Color3.fromRGB(200, 200, 200)
+    if on then
+        btn.BackgroundColor3 = UI_THEME.Accent
+        btn.BackgroundTransparency = 0.2
+        btn.TextColor3 = Color3.fromRGB(10, 10, 12)
+        btn.UIStroke.Transparency = 1
+        btn.Font = Enum.Font.GothamBold
+    else
+        btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        btn.BackgroundTransparency = 0.6
+        btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        btn.UIStroke.Transparency = 0.5
+        btn.Font = UI_THEME.BtnFont
+    end
 end
 
--- Tab Switching
-TabMainBtn.MouseButton1Click:Connect(function()
-    PageMain.Visible = true; PageMisc.Visible = false
-    ToggleVisual(TabMainBtn, true); ToggleVisual(TabMiscBtn, false)
-end)
-TabMiscBtn.MouseButton1Click:Connect(function()
-    PageMain.Visible = false; PageMisc.Visible = true
-    ToggleVisual(TabMiscBtn, true); ToggleVisual(TabMainBtn, false)
-end)
+local function Notify(title, text)
+    game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
+end
 
--- Main Fitur
-local BtnFreeze = MakeBtn("Freeze: OFF", PageMain)
-BtnFreeze.MouseButton1Click:Connect(function()
-    local Character = Player.Character
-    local HumRoot = Character and Character:FindFirstChild("HumanoidRootPart")
-    if HumRoot then
-        States.Freeze = not States.Freeze
-        HumRoot.Anchored = States.Freeze
-        ToggleVisual(BtnFreeze, States.Freeze)
-        BtnFreeze.Text = "Freeze: "..(States.Freeze and "ON" or "OFF")
-    end
-end)
+local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true}
+local SavedCFrame = nil 
+local Connections = {}
+local BodyV = nil
 
--- PERBAIKAN SAVE/LOAD POSISI
-local BtnSave = MakeBtn("Save Position", PageMain)
-local BtnLoad = MakeBtn("Load Position", PageMain)
+-- >> MEMBUAT TOMBOL SESUAI TAB
 
-BtnSave.MouseButton1Click:Connect(function()
-    local Character = Player.Character
-    local HumRoot = Character and Character:FindFirstChild("HumanoidRootPart")
-    if HumRoot then
-        SavedCFrame = HumRoot.CFrame
-        Notify("Position System", "Posisi berhasil disimpan!")
-        BtnSave.TextColor3 = UI_THEME.Accent
-        task.wait(0.5)
-        BtnSave.TextColor3 = Color3.new(1,1,1)
-    end
+-- TAB MAIN
+local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
+local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
+local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
+local BtnBoost  = MakeBtn(PageMain, "Boost: OFF")
+local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
+local BtnFps    = MakeBtn(PageMain, "FPS: Unli") 
+
+-- TAB MISC
+local BtnSave   = MakeBtn(PageMisc, "Save Pos")
+local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
+local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
+local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
+
+-- FPS Counter Header
+local fpsT = 0
+RunService.RenderStepped:Connect(function(dt)
+    fpsT = fpsT + (1/dt - fpsT) * 0.1 
+    local currentFps = math.floor(fpsT)
+    Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
 end)
 
-BtnLoad.MouseButton1Click:Connect(function()
-    local Character = Player.Character
-    local HumRoot = Character and Character:FindFirstChild("HumanoidRootPart")
-    if SavedCFrame and HumRoot then
-        HumRoot.CFrame = SavedCFrame
-        Notify("Position System", "Teleport ke posisi tersimpan!")
-        BtnLoad.TextColor3 = UI_THEME.Accent
-        task.wait(0.5)
-        BtnLoad.TextColor3 = Color3.new(1,1,1)
-    else
-        Notify("Error", "Simpan posisi dulu!")
-    end
+-- FPS Button Logic
+BtnFps.MouseButton1Click:Connect(function()
+    local caps = {30, 60, 144, 999}
+    _G.fpsIndex = ((_G.fpsIndex or 4) % #caps) + 1
+    local v = caps[_G.fpsIndex]
+    if setfpscap then setfpscap(v) end
+    BtnFps.Text = "FPS: " .. (v > 900 and "Unlim" or v)
+    ToggleVisual(BtnFps, true)
+    wait(0.1)
+    ToggleVisual(BtnFps, false)
 end)
 
--- Misc Fitur
-local BtnPanel = MakeBtn("Panel Info: ON", PageMisc)
+-- Panel Logic
+ToggleVisual(BtnPanel, true)
 BtnPanel.MouseButton1Click:Connect(function()
-    States.Panel = not States.Panel; FloatHUD.Visible = States.Panel
+    States.Panel = not States.Panel
+    FloatHUD.Visible = States.Panel
+    BtnPanel.Text = "Panel Info: " .. (States.Panel and "ON" or "OFF")
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
-local BtnRejoin = MakeBtn("Rejoin Server", PageMisc)
-BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
-
--- Loop Update (FPS & Stats)
-RunService.RenderStepped:Connect(function()
-    local fps = math.floor(1/RunService.RenderStepped:Wait())
-    Title.Text = "SERAPHIN <font color='#00FFAA'>HELPER</font> | FPS: "..fps
-    if States.Panel then
+-- ====================================================
+-- [5] UPDATE DATA (BERHENTI JIKA PANEL OFF)
+-- ====================================================
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if not States.Panel then 
+            continue 
+        end
+        
         pcall(function()
+            -- [1] FISH CAUGHT
             local ls = Player:FindFirstChild("leaderstats")
-            if ls and ls:FindFirstChild("Caught") then LblFishVal.Text = tostring(ls.Caught.Value) end
+            local caughtObj = ls and ls:FindFirstChild("Caught")
+            local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
+            local val = caughtObj and caughtObj.Value or 0
+            LblFishVal.Text = formatNum(val)
+
+            -- [2] BACKPACK
+            local pg = Player:FindFirstChild("PlayerGui")
+            local backpackGui = pg and pg:FindFirstChild("Backpack")
+            local bagText = "0/?"
+            if backpackGui then
+                for _, v in pairs(backpackGui:GetDescendants()) do
+                    if v:IsA("TextLabel") and string.find(v.Text, "/") then 
+                        bagText = v.Text 
+                        break 
+                    end
+                end
+            else 
+                local current = #Player.Backpack:GetChildren()
+                bagText = tostring(current)
+            end
+            LblInvVal.Text = bagText
         end)
     end
+end)
+
+-- ====================================================
+-- [6] FUNCTION BUTTON LOGIC
+-- ====================================================
+
+-- Freeze
+BtnFreeze.MouseButton1Click:Connect(function() 
+    States.Freeze = not States.Freeze 
+    if HRP then HRP.Anchored = States.Freeze end 
+    BtnFreeze.Text = "Freeze: " .. (States.Freeze and "ON" or "OFF")
+    ToggleVisual(BtnFreeze, States.Freeze) 
+end)
+
+-- Water Walk
+BtnWow.MouseButton1Click:Connect(function() 
+    States.WoW = not States.WoW 
+    BtnWow.Text = "Water Walk: " .. (States.WoW and "ON" or "OFF")
+    ToggleVisual(BtnWow, States.WoW) 
+    if States.WoW then 
+        BodyV = Instance.new("BodyVelocity", HRP) 
+        BodyV.MaxForce = Vector3.new(0,1e6,0) 
+        BodyV.Velocity = Vector3.zero 
+        Connections["WoW"] = RunService.Heartbeat:Connect(function() 
+            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X,0,HRP.AssemblyLinearVelocity.Z) end 
+        end) 
+    else 
+        if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
+        if BodyV then BodyV:Destroy() end 
+    end 
+end)
+
+-- Noclip
+BtnNoclip.MouseButton1Click:Connect(function() 
+    States.Noclip = not States.Noclip 
+    BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") 
+    ToggleVisual(BtnNoclip, States.Noclip) 
+    if States.Noclip then 
+        Connections["Noclip"] = RunService.Stepped:Connect(function() 
+            if Player.Character then 
+                for _,v in pairs(Player.Character:GetDescendants()) do 
+                    if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end 
+                end 
+            end 
+        end) 
+    else 
+        if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end 
+    end 
+end)
+
+-- Boost
+BtnBoost.MouseButton1Click:Connect(function() 
+    States.Boost = not States.Boost 
+    ToggleVisual(BtnBoost, States.Boost) 
+    BtnBoost.Text = "Boost: " .. (States.Boost and "ON" or "OFF")
+    Lighting.GlobalShadows = not States.Boost 
+    if States.Boost then
+        local function CleanVisuals(folder)
+            if not folder then return end
+            for _, v in pairs(folder:GetDescendants()) do
+                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") or v:IsA("Explosion") then v.Enabled = false end
+            end
+        end
+        CleanVisuals(workspace:FindFirstChild("Islands"))
+        CleanVisuals(ReplicatedStorage:FindFirstChild("Assets"))
+    end
+end)
+
+-- 3D Render
+BtnRender.MouseButton1Click:Connect(function() 
+    States.NoRender = not States.NoRender 
+    RunService:Set3dRenderingEnabled(not States.NoRender) 
+    BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
+    ToggleVisual(BtnRender, States.NoRender) 
+end)
+
+-- Rejoin
+BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
+
+-- Save Pos
+BtnSave.MouseButton1Click:Connect(function() 
+    if HRP then 
+        SavedCFrame = HRP.CFrame 
+        BtnSave.Text="SAVED" 
+        BtnSave.TextColor3 = Color3.fromRGB(100, 255, 100)
+        Notify("Posisi Disimpan", "Lokasi Anda saat ini telah disimpan.")
+        task.delay(1, function()
+            BtnSave.Text="Save Pos" 
+            BtnSave.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end)
+    end 
+end)
+
+-- Load Pos
+BtnLoad.MouseButton1Click:Connect(function() 
+    if SavedCFrame and HRP then 
+        HRP.CFrame = SavedCFrame 
+        ToggleVisual(BtnLoad,true) 
+        Notify("Posisi Dimuat", "Teleportasi ke lokasi yang disimpan...")
+        wait(0.2) 
+        ToggleVisual(BtnLoad,false) 
+    else
+        Notify("Gagal", "Belum ada posisi yang disimpan!")
+    end 
 end)
