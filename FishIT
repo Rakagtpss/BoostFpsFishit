@@ -520,8 +520,8 @@ task.spawn(function()
                 if FoundEvent then
                     -- 1. JIKA EVENT DITEMUKAN
                     local targetCF = FoundEvent:IsA("Model") and FoundEvent:GetPivot() or FoundEvent.CFrame
-                    -- [EDIT 1] Ketinggian Teleport +0.2
-                    local targetPos = targetCF.Position + Vector3.new(0, 0.2, 0)
+                    -- [EDIT 1] Ketinggian Teleport +2.5 (Lebih Tinggi)
+                    local targetPos = targetCF.Position + Vector3.new(0, 2.5, 0)
                     
                     if not CurrentlyAtEvent then
                         if HRP then EventReturnPos = HRP.CFrame end
@@ -549,9 +549,10 @@ task.spawn(function()
                         local rayResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
                         
                         if rayResult and rayResult.Material == Enum.Material.Water then
-                            -- [EDIT 2] Jarak Deteksi Air < 7
-                            if rayResult.Distance < 7 then
-                                -- SUDAH DEKAT AIR -> AKTIFKAN WoW (MOVABLE)
+                            -- [EDIT 2] Jarak Deteksi Air < 3.5 
+                            -- (Hanya aktif jika sudah dekat target height 2.5, agar tidak on saat jatuh dari langit)
+                            if rayResult.Distance <= 3.5 then
+                                -- SUDAH SESUAI KETINGGIAN (DEKAT 2.5) -> AKTIFKAN WoW (MOVABLE)
                                 if not EventBodyV then
                                     EventBodyV = Instance.new("BodyVelocity", HRP)
                                     EventBodyV.MaxForce = Vector3.new(math.huge, math.huge, math.huge) 
@@ -560,11 +561,11 @@ task.spawn(function()
                                 -- >> UPDATE KECEPATAN BERDASARKAN INPUT PEMAIN <<
                                 local moveDir = Hum.MoveDirection
                                 local speed = Hum.WalkSpeed
-                                -- Set Velocity: X/Z ikut input, Y tetap 0 (ngambang)
+                                -- Set Velocity: X/Z ikut input, Y tetap 0 (ngambang di ketinggian tersebut)
                                 EventBodyV.Velocity = Vector3.new(moveDir.X * speed, 0, moveDir.Z * speed)
                                 
                             else
-                                -- MASIH DI UDARA -> BIARKAN JATUH
+                                -- MASIH DI UDARA/JAUH DARI TARGET -> BIARKAN JATUH
                                 if EventBodyV then 
                                     EventBodyV:Destroy() 
                                     EventBodyV = nil 
