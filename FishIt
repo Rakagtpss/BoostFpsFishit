@@ -2,7 +2,7 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = " Loading Sayang... (Auto Equip Added)",
+        Text = " Loading Sayang... (Auto Equip + Hide Rod Added)",
         Duration = 2,
     })
 end)
@@ -29,7 +29,7 @@ end)
 -- // Konfigurasi Visual
 local UI_THEME = {
     Width = 260,
-    Height = 285, 
+    Height = 315, -- Sedikit diperbesar agar muat tombol baru
     Color = Color3.fromRGB(14, 14, 18), 
     HeaderColor = Color3.fromRGB(20, 20, 25),
     Accent = Color3.fromRGB(0, 255, 170),
@@ -260,7 +260,8 @@ local function Notify(title, text)
     game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
 end
 
-local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEvent=false}
+-- Update States: Added HideRod
+local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEvent=false, HideRod=false}
 local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
@@ -276,6 +277,7 @@ local BtnWow    = MakeBtn("Water Walk: OFF")
 local BtnNoclip = MakeBtn("No Clip: OFF")
 local BtnBoost  = MakeBtn("Boost: OFF")
 local BtnRender = MakeBtn("3D Render: ON") 
+local BtnHideRod= MakeBtn("Hide Rod: OFF") -- [NEW BUTTON]
 local BtnFps    = MakeBtn("FPS: Unli") 
 local BtnSave   = MakeBtn("Save Pos")
 local BtnLoad   = MakeBtn("Load Pos")
@@ -513,6 +515,46 @@ BtnRender.MouseButton1Click:Connect(function()
     BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
     ToggleVisual(BtnRender, States.NoRender) 
 end)
+
+-- [NEW] HIDE ROD LOGIC
+BtnHideRod.MouseButton1Click:Connect(function()
+    States.HideRod = not States.HideRod
+    BtnHideRod.Text = "Hide Rod: "..(States.HideRod and "ON" or "OFF")
+    ToggleVisual(BtnHideRod, States.HideRod)
+    
+    -- Jika dimatikan, kembalikan visibilitas
+    if not States.HideRod then
+        local Char = Player.Character
+        if Char then
+            local Tool = Char:FindFirstChildWhichIsA("Tool")
+            if Tool then
+                for _, p in pairs(Tool:GetDescendants()) do
+                    if p:IsA("BasePart") or p:IsA("MeshPart") then
+                        p.Transparency = 0
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Loop Force Hide Rod
+RunService.RenderStepped:Connect(function()
+    if States.HideRod then
+        local Char = Player.Character
+        if Char then
+            local Tool = Char:FindFirstChildWhichIsA("Tool")
+            if Tool then
+                for _, p in pairs(Tool:GetDescendants()) do
+                    if (p:IsA("BasePart") or p:IsA("MeshPart")) and p.Transparency ~= 1 then
+                        p.Transparency = 1
+                    end
+                end
+            end
+        end
+    end
+end)
+-- [END NEW HIDE ROD LOGIC]
 
 BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
 
