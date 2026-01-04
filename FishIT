@@ -492,13 +492,13 @@ task.spawn(function()
     end
 end)
 
--- >> LOGIC AUTO EVENT (Stabilized & Smart Water)
+-- >> LOGIC AUTO EVENT (Smart Teleport & Anti-Bounce Water)
 local EventReturnPos = nil
 local CurrentlyAtEvent = false
 
 task.spawn(function()
     while true do
-        task.wait(1) 
+        task.wait(0.1) -- Loop sedikit lebih cepat agar responsif
         if States.AutoEvent then
             -- == KONDISI: FITUR AKTIF ==
             pcall(function()
@@ -527,16 +527,16 @@ task.spawn(function()
                     end
                     
                     if HRP then
-                        -- [PERBAIKAN NAIK TURUN] 
-                        -- Hanya teleport jika jarak > 20 studs. Jika sudah dekat, jangan teleport paksa.
+                        -- [TELEPORT LOGIC]
+                        -- Teleport hanya jika jauh (> 20 studs)
                         local dist = (HRP.Position - targetPos).Magnitude
                         if dist > 20 then
                             HRP.CFrame = CFrame.new(targetPos)
                         end
                         
-                        -- >> SMART WATER DETECTION <<
+                        -- >> SMART WATER DETECTION (ANTI BOUNCE) <<
                         local rayOrigin = HRP.Position
-                        local rayDirection = Vector3.new(0, -15, 0) 
+                        local rayDirection = Vector3.new(0, -20, 0) -- Cek 20 studs ke bawah
                         
                         local raycastParams = RaycastParams.new()
                         raycastParams.FilterDescendantsInstances = {Char}
@@ -545,17 +545,27 @@ task.spawn(function()
                         
                         local rayResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
                         
+                        -- LOGIKA BARU:
+                        -- Cek 1: Apakah itu Air?
+                        -- Cek 2: Apakah JARAK ke air sudah DEKAT (< 5 studs)?
                         if rayResult and rayResult.Material == Enum.Material.Water then
-                            -- ADA AIR DI BAWAH -> AKTIFKAN WoW
-                            if not EventBodyV then
-                                EventBodyV = Instance.new("BodyVelocity", HRP)
-                                EventBodyV.MaxForce = Vector3.new(0, 1e6, 0)
-                                EventBodyV.Velocity = Vector3.zero
+                            if rayResult.Distance < 5 then
+                                -- SUDAH DEKAT AIR -> AKTIFKAN WoW (Agar mengapung)
+                                if not EventBodyV then
+                                    EventBodyV = Instance.new("BodyVelocity", HRP)
+                                    EventBodyV.MaxForce = Vector3.new(0, 1e6, 0)
+                                    EventBodyV.Velocity = Vector3.zero
+                                end
+                                HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
+                            else
+                                -- MASIH TINGGI DI ATAS AIR -> MATIKAN WoW (Biarkan Jatuh Dulu)
+                                if EventBodyV then 
+                                    EventBodyV:Destroy() 
+                                    EventBodyV = nil 
+                                end
                             end
-                            -- Jaga agar tidak jatuh ke air
-                            HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
                         else
-                            -- TIDAK ADA AIR (DARATAN) -> MATIKAN WoW AGAR BISA JALAN NORMAL
+                            -- BUKAN AIR (DARATAN/UDARA KOSONG) -> MATIKAN WoW
                             if EventBodyV then 
                                 EventBodyV:Destroy() 
                                 EventBodyV = nil 
