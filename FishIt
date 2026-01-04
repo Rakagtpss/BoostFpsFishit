@@ -29,7 +29,7 @@ end)
 -- // Konfigurasi Visual (Dark Transparent)
 local UI_THEME = {
     Width = 280, 
-    Height = 250, -- Sedikit dipertinggi untuk tombol baru
+    Height = 250, 
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -50,6 +50,27 @@ ScreenGui.Name = "SeraphinHelper"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.IgnoreGuiInset = true -- PENTING: Agar layar hitam menutupi Top Bar
+
+-- ====================================================
+-- [BARU] BLACK OVERLAY (LAYAR HITAM)
+-- ====================================================
+local BlackOverlay = Instance.new("Frame", ScreenGui)
+BlackOverlay.Name = "BlackScreen"
+BlackOverlay.Size = UDim2.new(1, 0, 1, 0) -- Full Screen
+BlackOverlay.BackgroundColor3 = Color3.new(0, 0, 0) -- Hitam Pekat
+BlackOverlay.ZIndex = 99999 -- Pastikan di paling atas
+BlackOverlay.Visible = false -- Default mati
+BlackOverlay.BorderSizePixel = 0
+
+-- Tambahkan Text agar tau script masih jalan saat hitam
+local AFKLabel = Instance.new("TextLabel", BlackOverlay)
+AFKLabel.Size = UDim2.new(1, 0, 1, 0)
+AFKLabel.BackgroundTransparency = 1
+AFKLabel.Text = "NO RENDER MODE (AFK)\nKlik Layar / Tombol Render untuk kembali"
+AFKLabel.TextColor3 = Color3.fromRGB(100, 100, 100)
+AFKLabel.Font = Enum.Font.GothamBold
+AFKLabel.TextSize = 14
 
 -- ====================================================
 -- [1] MINI FLOATING HUD (PANEL SERAPHIN)
@@ -148,6 +169,9 @@ Main.Active = true
 Main.Draggable = true
 Main.ClipsDescendants = true 
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
+
+-- Pastikan Main UI ada di atas overlay hitam agar tombol masih bisa ditekan
+Main.ZIndex = 100000 
 
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Color = UI_THEME.Accent
@@ -354,7 +378,7 @@ local BodyV = nil
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
-local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF") -- [NEW]
+local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
@@ -399,17 +423,16 @@ end)
 -- [5] BACKGROUND LOOPS (AUTO EQUIP, STATS)
 -- ====================================================
 
--- >> LOGIC AUTO EQUIP (BARU) <<
+-- >> LOGIC AUTO EQUIP
 task.spawn(function()
     while true do
-        task.wait(1.5) -- Cek setiap 1.5 detik
+        task.wait(1.5)
         if States.AutoEquip then
             pcall(function()
                 local char = Player.Character
                 if char then
-                    -- Cek jika tidak memegang tool apapun
                     if not char:FindFirstChildWhichIsA("Tool") then
-                        local args = { [1] = 1 } -- Equip Slot 1
+                        local args = { [1] = 1 } 
                         local remote = game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0")
                         if remote then
                             remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
@@ -429,14 +452,12 @@ task.spawn(function()
             continue 
         end
         pcall(function()
-            -- [1] FISH CAUGHT
             local ls = Player:FindFirstChild("leaderstats")
             local caughtObj = ls and ls:FindFirstChild("Caught")
             local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
             local val = caughtObj and caughtObj.Value or 0
             LblFishVal.Text = formatNum(val)
 
-            -- [2] BACKPACK
             local pg = Player:FindFirstChild("PlayerGui")
             local backpackGui = pg and pg:FindFirstChild("Backpack")
             local bagText = "0/?"
@@ -460,7 +481,7 @@ end)
 -- [6] FUNCTION BUTTONS LOGIC
 -- ====================================================
 
--- Auto Equip Button
+-- Auto Equip
 BtnEquip.MouseButton1Click:Connect(function()
     States.AutoEquip = not States.AutoEquip
     BtnEquip.Text = "Auto Equip: " .. (States.AutoEquip and "ON" or "OFF")
@@ -529,10 +550,19 @@ BtnBoost.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3D Render
+-- 3D Render (MODIFIED TO BLACK SCREEN)
 BtnRender.MouseButton1Click:Connect(function() 
     States.NoRender = not States.NoRender 
+    
+    -- 1. Tampilkan Black Screen jika NoRender aktif
+    BlackOverlay.Visible = States.NoRender
+    
+    -- 2. Tunggu sebentar (1 frame) agar UI Hitam ter-render sebelum mematikan 3D
+    RunService.RenderStepped:Wait()
+    
+    -- 3. Matikan 3D Render (GPU Usage 0%)
     RunService:Set3dRenderingEnabled(not States.NoRender) 
+    
     BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
     ToggleVisual(BtnRender, States.NoRender) 
 end)
