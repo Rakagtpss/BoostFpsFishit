@@ -2,12 +2,12 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Loading Sayang",
+        Text = "Memuat Interface (Net Boost Added)...",
         Duration = 2,
     })
 end)
 
-task.wait(3.5)
+task.wait(1)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -16,6 +16,7 @@ local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage") 
+local NetworkClient = game:GetService("NetworkClient")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
@@ -29,7 +30,7 @@ end)
 -- // Konfigurasi Visual (Dark Transparent)
 local UI_THEME = {
     Width = 280, 
-    Height = 200, 
+    Height = 280, -- Dipertinggi sedikit untuk tombol tambahan
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -346,7 +347,7 @@ local function Notify(title, text)
     game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
 end
 
-local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEquip=false}
+local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEquip=false, NetBoost=false}
 local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
@@ -359,6 +360,7 @@ local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
 local BtnBoost  = MakeBtn(PageMain, "Boost: OFF")
+local BtnNet    = MakeBtn(PageMain, "Net Boost: OFF") -- [NEW]
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli") 
 
@@ -376,16 +378,14 @@ RunService.RenderStepped:Connect(function(dt)
     Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
 end)
 
--- [MODIFIED] FPS BUTTON LOGIC
+-- FPS BUTTON LOGIC (60 -> 90 -> 144 -> 240 -> 340 -> Max)
 BtnFps.MouseButton1Click:Connect(function()
-    -- Pilihan FPS yang diminta: 60, 90, 144, 240, 340, Max (9999)
     local caps = {60, 90, 144, 240, 340, 9999} 
     _G.fpsIndex = ((_G.fpsIndex or #caps) % #caps) + 1
     local v = caps[_G.fpsIndex]
     
     if setfpscap then setfpscap(v) end
     
-    -- Teks tampilan tombol
     local textLabel = (v >= 9999) and "Max" or tostring(v)
     BtnFps.Text = "FPS: " .. textLabel
     
@@ -403,8 +403,24 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [5] BACKGROUND LOOPS (AUTO EQUIP, STATS)
+-- [5] BACKGROUND LOOPS (AUTO EQUIP, STATS, NET BOOST)
 -- ====================================================
+
+-- >> LOGIC NET BOOST (BARU)
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if States.NetBoost then
+            -- Optimasi Network Client (Mencoba membuka limit bandwidth & mengurangi lag buatan)
+            pcall(function()
+                settings().Network.IncomingReplicationLag = 0
+                if NetworkClient then
+                    NetworkClient:SetOutgoingKBPSLimit(math.huge)
+                end
+            end)
+        end
+    end
+end)
 
 -- >> LOGIC AUTO EQUIP
 task.spawn(function()
@@ -465,6 +481,16 @@ end)
 -- ====================================================
 -- [6] FUNCTION BUTTONS LOGIC
 -- ====================================================
+
+-- Network Booster (BARU)
+BtnNet.MouseButton1Click:Connect(function()
+    States.NetBoost = not States.NetBoost
+    BtnNet.Text = "Net Boost: " .. (States.NetBoost and "ON" or "OFF")
+    ToggleVisual(BtnNet, States.NetBoost)
+    if States.NetBoost then
+        Notify("Net Boost Aktif", "Mengoptimalkan koneksi & fisika...")
+    end
+end)
 
 -- Auto Equip Button
 BtnEquip.MouseButton1Click:Connect(function()
@@ -544,31 +570,4 @@ BtnRender.MouseButton1Click:Connect(function()
 end)
 
 -- Rejoin
-BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
-
--- Save Pos
-BtnSave.MouseButton1Click:Connect(function() 
-    if HRP then 
-        SavedCFrame = HRP.CFrame 
-        BtnSave.Text="SAVED" 
-        BtnSave.TextColor3 = Color3.fromRGB(100, 255, 100)
-        Notify("Posisi Disimpan", "Lokasi Anda saat ini telah disimpan.")
-        task.delay(1, function()
-            BtnSave.Text="Save Pos" 
-            BtnSave.TextColor3 = Color3.fromRGB(200, 200, 200)
-        end)
-    end 
-end)
-
--- Load Pos
-BtnLoad.MouseButton1Click:Connect(function() 
-    if SavedCFrame and HRP then 
-        HRP.CFrame = SavedCFrame 
-        ToggleVisual(BtnLoad,true) 
-        Notify("Posisi Dimuat", "Teleportasi ke lokasi yang disimpan...")
-        wait(0.2) 
-        ToggleVisual(BtnLoad,false) 
-    else
-        Notify("Gagal", "Belum ada posisi yang disimpan!")
-    end 
-end)
+BtnRejoin.MouseButton1Click:Connect
