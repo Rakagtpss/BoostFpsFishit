@@ -2,8 +2,8 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Loading Script",
-        Duration = 2,
+        Text = "Memuat Interface...",
+        Duration = 1.5,
     })
 end)
 
@@ -29,7 +29,7 @@ end)
 -- // Konfigurasi Visual (Dark Transparent)
 local UI_THEME = {
     Width = 280, 
-    Height = 250, 
+    Height = 250, -- Sedikit dipertinggi untuk tombol baru
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -354,7 +354,7 @@ local BodyV = nil
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
-local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF") 
+local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF") -- [NEW]
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
@@ -376,21 +376,14 @@ RunService.RenderStepped:Connect(function(dt)
     Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
 end)
 
--- [MODIFIED] FPS BUTTON LOGIC
 BtnFps.MouseButton1Click:Connect(function()
-    -- Pilihan FPS yang diminta: 60, 90, 144, 240, 340, Max (9999)
-    local caps = {60, 90, 144, 240, 340, 9999} 
-    _G.fpsIndex = ((_G.fpsIndex or #caps) % #caps) + 1
+    local caps = {30, 60, 144, 999}
+    _G.fpsIndex = ((_G.fpsIndex or 4) % #caps) + 1
     local v = caps[_G.fpsIndex]
-    
     if setfpscap then setfpscap(v) end
-    
-    -- Teks tampilan tombol
-    local textLabel = (v >= 9999) and "Max" or tostring(v)
-    BtnFps.Text = "FPS: " .. textLabel
-    
+    BtnFps.Text = "FPS: " .. (v > 900 and "Unlim" or v)
     ToggleVisual(BtnFps, true)
-    task.wait(0.1)
+    wait(0.1)
     ToggleVisual(BtnFps, false)
 end)
 
@@ -406,16 +399,17 @@ end)
 -- [5] BACKGROUND LOOPS (AUTO EQUIP, STATS)
 -- ====================================================
 
--- >> LOGIC AUTO EQUIP
+-- >> LOGIC AUTO EQUIP (BARU) <<
 task.spawn(function()
     while true do
-        task.wait(1.5) 
+        task.wait(1.5) -- Cek setiap 1.5 detik
         if States.AutoEquip then
             pcall(function()
                 local char = Player.Character
                 if char then
+                    -- Cek jika tidak memegang tool apapun
                     if not char:FindFirstChildWhichIsA("Tool") then
-                        local args = { [1] = 1 } 
+                        local args = { [1] = 1 } -- Equip Slot 1
                         local remote = game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0")
                         if remote then
                             remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
