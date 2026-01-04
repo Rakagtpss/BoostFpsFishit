@@ -3,7 +3,7 @@ pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
         Text = "Loading Sayang",
-        Duration = 2.5,
+        Duration = 2,
     })
 end)
 
