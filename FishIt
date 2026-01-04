@@ -2,7 +2,7 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = " Loading Sayang... (Auto Cave Added)",
+        Text = "Loading Sayang",
         Duration = 2,
     })
 end)
@@ -29,9 +29,10 @@ end)
 -- // Konfigurasi Visual
 local UI_THEME = {
     Width = 260,
-    Height = 315, 
+    Height = 280, -- Tinggi disesuaikan karena pakai Tab
     Color = Color3.fromRGB(14, 14, 18), 
     HeaderColor = Color3.fromRGB(20, 20, 25),
+    TabColor = Color3.fromRGB(25, 25, 30),
     Accent = Color3.fromRGB(0, 255, 170),
     StatsColor = Color3.fromRGB(12, 12, 15),
     TextColor = Color3.fromRGB(255, 255, 255),
@@ -67,8 +68,6 @@ local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_THEME.Accent
 HudStroke.Thickness = 1.5
 HudStroke.Transparency = 0.3
-
--- Corner Rounding
 Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
 
 -- Layout
@@ -106,15 +105,12 @@ Div.BorderSizePixel = 0
 -- >> FUNGSI STATISTIK
 local function CreateStatBlock(titleText, defaultVal, order)
     local Block = Instance.new("Frame", FloatHUD)
-    Block.Name = titleText.."Block"
     Block.LayoutOrder = order
     Block.Size = UDim2.new(1, 0, 0, 35) 
     Block.BackgroundTransparency = 1
     
     local LblTitle = Instance.new("TextLabel", Block)
-    LblTitle.Name = "Title"
     LblTitle.Size = UDim2.new(1, 0, 0, 12)
-    LblTitle.Position = UDim2.new(0, 0, 0, 0)
     LblTitle.BackgroundTransparency = 1
     LblTitle.Text = string.upper(titleText)
     LblTitle.TextColor3 = UI_THEME.SubTextColor
@@ -122,7 +118,6 @@ local function CreateStatBlock(titleText, defaultVal, order)
     LblTitle.TextSize = 9
     
     local LblValue = Instance.new("TextLabel", Block)
-    LblValue.Name = "Value"
     LblValue.Size = UDim2.new(1, 0, 0, 20)
     LblValue.Position = UDim2.new(0, 0, 0, 14)
     LblValue.BackgroundTransparency = 1
@@ -139,7 +134,7 @@ local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)
 
 
 -- ====================================================
--- [2] MAIN MENU UI
+-- [2] MAIN MENU UI (TAB SYSTEM)
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
@@ -193,27 +188,75 @@ HideBtn.TextSize = 10
 HideBtn.AutoButtonColor = true
 Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
 
--- // CONTAINER
-local Container = Instance.new("Frame", Main)
-Container.Name = "Container"
-Container.Size = UDim2.new(1, -16, 1, -40) 
-Container.Position = UDim2.new(0, 8, 0, 38)
-Container.BackgroundTransparency = 1
+-- // TAB CONTAINER
+local TabHolder = Instance.new("Frame", Main)
+TabHolder.Name = "TabHolder"
+TabHolder.Size = UDim2.new(1, -16, 0, 25)
+TabHolder.Position = UDim2.new(0, 8, 0, 38)
+TabHolder.BackgroundTransparency = 1
 
-local Grid = Instance.new("UIGridLayout", Container)
-Grid.CellSize = UDim2.new(0, 114, 0, 28) 
-Grid.CellPadding = UDim2.new(0, 6, 0, 5) 
-Grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local TabGrid = Instance.new("UIGridLayout", TabHolder)
+TabGrid.CellSize = UDim2.new(0, 118, 0, 25)
+TabGrid.CellPadding = UDim2.new(0, 8, 0, 0)
+
+-- Function Create Tab Button
+local function CreateTabBtn(text)
+    local btn = Instance.new("TextButton", TabHolder)
+    btn.Text = text
+    btn.Font = UI_THEME.Font
+    btn.TextSize = 11
+    btn.BackgroundColor3 = UI_THEME.TabColor
+    btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+    btn.AutoButtonColor = false
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    return btn
+end
+
+local TabBtnMain = CreateTabBtn("MAIN")
+local TabBtnEvent = CreateTabBtn("EVENT")
+
+-- // PAGES CONTAINER
+local PageContainer = Instance.new("Frame", Main)
+PageContainer.Name = "PageContainer"
+PageContainer.Size = UDim2.new(1, -16, 1, -75) -- Sisa ruang
+PageContainer.Position = UDim2.new(0, 8, 0, 70)
+PageContainer.BackgroundTransparency = 1
+
+-- ** PAGE 1: MAIN **
+local PageMain = Instance.new("Frame", PageContainer)
+PageMain.Name = "PageMain"
+PageMain.Size = UDim2.new(1, 0, 1, 0)
+PageMain.BackgroundTransparency = 1
+PageMain.Visible = true
+
+local GridMain = Instance.new("UIGridLayout", PageMain)
+GridMain.CellSize = UDim2.new(0, 114, 0, 28) 
+GridMain.CellPadding = UDim2.new(0, 6, 0, 5) 
+GridMain.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- ** PAGE 2: EVENT **
+local PageEvent = Instance.new("Frame", PageContainer)
+PageEvent.Name = "PageEvent"
+PageEvent.Size = UDim2.new(1, 0, 1, 0)
+PageEvent.BackgroundTransparency = 1
+PageEvent.Visible = false
+
+local GridEvent = Instance.new("UIGridLayout", PageEvent)
+GridEvent.CellSize = UDim2.new(0, 114, 0, 28) 
+GridEvent.CellPadding = UDim2.new(0, 6, 0, 5) 
+GridEvent.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 -- ====================================================
 -- [3] LOGIC & VARIABLES
 -- ====================================================
 local IsMinimized = false
 
+-- Hide UI Logic
 HideBtn.MouseButton1Click:Connect(function() 
     IsMinimized = not IsMinimized 
     if IsMinimized then
-        Container.Visible = false
+        TabHolder.Visible = false
+        PageContainer.Visible = false
         Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, 32), "Out", "Quad", 0.3, true) 
         HideBtn.Text = "Show" 
         HideBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -221,12 +264,44 @@ HideBtn.MouseButton1Click:Connect(function()
         Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height), "Out", "Back", 0.3, true) 
         HideBtn.Text = "Hide" 
         HideBtn.TextColor3 = UI_THEME.Accent
-        task.delay(0.2, function() if not IsMinimized then Container.Visible = true end end)
+        task.delay(0.2, function() 
+            if not IsMinimized then 
+                TabHolder.Visible = true
+                PageContainer.Visible = true
+            end 
+        end)
     end
 end)
 
-local function MakeBtn(text)
-    local b = Instance.new("TextButton", Container)
+-- Tab Switching Logic
+local function SwitchTab(tabName)
+    if tabName == "Main" then
+        PageMain.Visible = true
+        PageEvent.Visible = false
+        
+        TabBtnMain.TextColor3 = UI_THEME.Accent
+        TabBtnMain.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        
+        TabBtnEvent.TextColor3 = Color3.fromRGB(150, 150, 150)
+        TabBtnEvent.BackgroundColor3 = UI_THEME.TabColor
+    else
+        PageMain.Visible = false
+        PageEvent.Visible = true
+        
+        TabBtnEvent.TextColor3 = UI_THEME.Accent
+        TabBtnEvent.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        
+        TabBtnMain.TextColor3 = Color3.fromRGB(150, 150, 150)
+        TabBtnMain.BackgroundColor3 = UI_THEME.TabColor
+    end
+end
+
+TabBtnMain.MouseButton1Click:Connect(function() SwitchTab("Main") end)
+TabBtnEvent.MouseButton1Click:Connect(function() SwitchTab("Event") end)
+SwitchTab("Main") -- Set default
+
+local function MakeBtn(parent, text)
+    local b = Instance.new("TextButton", parent)
     b.Text = text
     b.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
     b.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -260,34 +335,44 @@ local function Notify(title, text)
     game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
 end
 
--- Update States: Removed HideRod, Added AutoCave
-local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEvent=false, AutoCave=false}
+-- Update States
+local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEvent=false}
 local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
 
--- EVENT LIST
-local EventList = {"None", "Merchant", "Megalodon", "Isonade", "Whale", "Meteor", "Kraken"}
+-- [UPDATED] EVENT LIST
+local EventList = {
+    "None",
+    "Ghost Shark Hunt",
+    "Worm Hunt",
+    "Shark Hunt",
+    "Black Hole",
+    "Ghost Worm",
+    "Meteor Rain",
+    "Megalodon Hunt",
+    "Bloodmoon",
+    "Purple Bloodmoon"
+}
 local PrioIndex = 1
 local SecIndex = 1
 
--- Membuat Tombol
-local BtnFreeze = MakeBtn("Freeze: OFF")
-local BtnWow    = MakeBtn("Water Walk: OFF")
-local BtnNoclip = MakeBtn("No Clip: OFF")
-local BtnBoost  = MakeBtn("Boost: OFF")
-local BtnRender = MakeBtn("3D Render: ON") 
-local BtnAutoCave = MakeBtn("Auto Cave: OFF") -- [NEW BUTTON REPLACING HIDE ROD]
-local BtnFps    = MakeBtn("FPS: Unli") 
-local BtnSave   = MakeBtn("Save Pos")
-local BtnLoad   = MakeBtn("Load Pos")
-local BtnRejoin = MakeBtn("Rejoin Server")
-local BtnPanel  = MakeBtn("Panel Info: ON")
+-- >> BUTTONS: MAIN TAB
+local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
+local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
+local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
+local BtnBoost  = MakeBtn(PageMain, "Boost: OFF")
+local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
+local BtnFps    = MakeBtn(PageMain, "FPS: 60")
+local BtnSave   = MakeBtn(PageMain, "Save Pos")
+local BtnLoad   = MakeBtn(PageMain, "Load Pos")
+local BtnRejoin = MakeBtn(PageMain, "Rejoin Server")
+local BtnPanel  = MakeBtn(PageMain, "Panel Info: ON")
 
--- BUTTONS FOR EVENTS
-local BtnPrioEvent = MakeBtn("Prio: None")
-local BtnSecEvent = MakeBtn("Sec: None")
-local BtnAutoEvent = MakeBtn("Auto Event: OFF")
+-- >> BUTTONS: EVENT TAB
+local BtnPrioEvent = MakeBtn(PageEvent, "Prio: None")
+local BtnSecEvent  = MakeBtn(PageEvent, "Sec: None")
+local BtnAutoEvent = MakeBtn(PageEvent, "Auto Event: OFF")
 
 -- FPS Counter
 local fpsT = 0
@@ -297,15 +382,16 @@ RunService.RenderStepped:Connect(function(dt)
     Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
 end)
 
--- LOGIC TOMBOL
+-- LOGIC TOMBOL FPS (60, 90, 144, 240)
 BtnFps.MouseButton1Click:Connect(function()
-    local caps = {30, 60, 144, 999}
-    _G.fpsIndex = ((_G.fpsIndex or 4) % #caps) + 1
+    local caps = {60, 90, 144, 240}
+    _G.fpsIndex = ((_G.fpsIndex or 0) % #caps) + 1
     local v = caps[_G.fpsIndex]
+    
     if setfpscap then setfpscap(v) end
-    BtnFps.Text = "FPS: " .. (v > 900 and "Unlim" or v)
+    BtnFps.Text = "FPS: " .. v
     ToggleVisual(BtnFps, true)
-    wait(0.1)
+    task.wait(0.1)
     ToggleVisual(BtnFps, false)
 end)
 
@@ -378,7 +464,7 @@ task.spawn(function()
     end
 end)
 
--- AUTO EVENT TELEPORT LOOP + AUTO EQUIP (EXISTING)
+-- AUTO EVENT TELEPORT LOOP + AUTO EQUIP
 task.spawn(function()
     while true do
         task.wait(1.5)
@@ -391,41 +477,56 @@ task.spawn(function()
                 local PrioName = EventList[PrioIndex]
                 local SecName = EventList[SecIndex]
 
-                if PrioName ~= "None" then
+                -- Helper function to find partial match
+                local function findEvent(name)
+                    if name == "None" then return nil end
                     for _, v in pairs(Props:GetChildren()) do
-                        if string.find(v.Name:lower(), PrioName:lower()) then TargetName = v break end
+                        if string.find(v.Name:lower(), name:lower()) then
+                            return v
+                        end
                     end
+                    return nil
                 end
 
-                if not TargetName and SecName ~= "None" then
-                    for _, v in pairs(Props:GetChildren()) do
-                        if string.find(v.Name:lower(), SecName:lower()) then TargetName = v break end
-                    end
+                -- Cek Prioritas Utama
+                TargetName = findEvent(PrioName)
+                
+                -- Jika Prioritas Utama tidak ketemu, Cek Secondary
+                if not TargetName then
+                    TargetName = findEvent(SecName)
                 end
 
+                -- Eksekusi Teleport & Equip
                 if TargetName and HRP then
                     local SafePart = TargetName:IsA("BasePart") and TargetName or TargetName:FindFirstChildWhichIsA("BasePart", true)
                     
                     if SafePart then
                         local dist = (HRP.Position - SafePart.Position).Magnitude
                         if dist > 50 then 
+                            -- [1] CANCEL FISHING & UNEQUIP
                             pcall(function()
                                 local Net = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
                                 Net["RF/CancelFishingInputs"]:InvokeServer()
                                 Net["RE/UnequipToolFromHotbar"]:FireServer()
                             end)
 
+                            -- [2] TELEPORT
                             HRP.CFrame = SafePart.CFrame + Vector3.new(0, 10, 0)
                             Notify("Event Found!", "Teleporting to: " .. TargetName.Name)
                             
-                            if not States.WoW then BtnWow.MouseButton1Click:Fire() end
+                            -- Mengaktifkan Water Walk
+                            if not States.WoW then
+                                BtnWow.MouseButton1Click:Fire() 
+                            end
                             
-                            task.wait(0.7) 
+                            -- [3] WAIT & EQUIP ROD
+                            task.wait(0.7)
                             pcall(function()
                                 local Net = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
                                 Net["RE/EquipToolFromHotbar"]:FireServer(unpack({[1] = 1}))
                             end)
-                            task.wait(3) 
+                            
+                            task.wait(3) -- Cooldown
                         end
                     end
                 end
@@ -465,85 +566,4 @@ BtnNoclip.MouseButton1Click:Connect(function()
     ToggleVisual(BtnNoclip, States.Noclip) 
     if States.Noclip then 
         Connections["Noclip"] = RunService.Stepped:Connect(function() 
-            if Player.Character then 
-                for _,v in pairs(Player.Character:GetDescendants()) do 
-                    if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end 
-                end 
-            end 
-        end) 
-    else 
-        if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end 
-    end 
-end)
-
-BtnBoost.MouseButton1Click:Connect(function() 
-    States.Boost = not States.Boost 
-    ToggleVisual(BtnBoost, States.Boost) 
-    BtnBoost.Text = "Boost: " .. (States.Boost and "ON" or "OFF")
-    Lighting.GlobalShadows = not States.Boost 
-    if States.Boost then
-        local function CleanVisuals(folder)
-            if not folder then return end
-            for _, v in pairs(folder:GetDescendants()) do
-                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") or v:IsA("Explosion") then v.Enabled = false end
-            end
-        end
-        CleanVisuals(workspace:FindFirstChild("Islands"))
-        CleanVisuals(ReplicatedStorage:FindFirstChild("Assets"))
-    end
-end)
-
-BtnRender.MouseButton1Click:Connect(function() 
-    States.NoRender = not States.NoRender 
-    RunService:Set3dRenderingEnabled(not States.NoRender) 
-    BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
-    ToggleVisual(BtnRender, States.NoRender) 
-end)
-
--- [NEW] AUTO CAVE LOGIC (REPLACING HIDE ROD)
-local InCave = false
-local PreCavePos = nil
-
-BtnAutoCave.MouseButton1Click:Connect(function()
-    States.AutoCave = not States.AutoCave
-    BtnAutoCave.Text = "Auto Cave: "..(States.AutoCave and "ON" or "OFF")
-    ToggleVisual(BtnAutoCave, States.AutoCave)
-    
-    if not States.AutoCave then
-        InCave = false -- Reset status jika dimatikan manual
-    end
-end)
-
--- Loop Auto Cave
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if States.AutoCave and HRP then
-            pcall(function()
-                local Zones = workspace:FindFirstChild("Zones")
-                local Cave = Zones and Zones:FindFirstChild("Christmas Cave")
-                
-                if Cave then
-                    -- Cave Terbuka (Detected)
-                    if not InCave then
-                        -- Simpan Posisi Sebelum Masuk
-                        PreCavePos = HRP.CFrame
-                        InCave = true
-                        
-                        -- Teleport Masuk
-                        local TargetCF = Cave:IsA("Model") and Cave:GetPivot() or Cave.CFrame
-                        HRP.CFrame = TargetCF + Vector3.new(0, 5, 0)
-                        
-                        Notify("Cave Opened!", "Teleporting to Christmas Cave...")
-                        
-                        -- Optional: Auto Water Walk on jika di cave
-                        if not States.WoW then BtnWow.MouseButton1Click:Fire() end
-                    end
-                else
-                    -- Cave Tertutup/Hilang (Event Selesai)
-                    if InCave then
-                        InCave = false
-                        if PreCavePos then
-                            HRP.CFrame = PreCavePos
-                            Notify("Cave Closed", "Returning to previous position...")
-          
+            
