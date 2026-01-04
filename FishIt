@@ -22,7 +22,7 @@ local HRP = Char:WaitForChild("HumanoidRootPart", 10)
 -- // Konfigurasi Visual
 local UI_THEME = {
     Width = 280,
-    Height = 300, 
+    Height = 200, 
     MainColor = Color3.fromRGB(10, 10, 12), -- Warna Dark
     MainTransparency = 0.25,               -- Transparansi (0.0 - 1.0)
     HeaderColor = Color3.fromRGB(15, 15, 20),
