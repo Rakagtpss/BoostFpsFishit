@@ -2,7 +2,7 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = " Loading Sayang... (Auto Equip + Hide Rod Added)",
+        Text = " Loading Sayang... (Auto Cave Added)",
         Duration = 2,
     })
 end)
@@ -29,7 +29,7 @@ end)
 -- // Konfigurasi Visual
 local UI_THEME = {
     Width = 260,
-    Height = 315, -- Sedikit diperbesar agar muat tombol baru
+    Height = 315, 
     Color = Color3.fromRGB(14, 14, 18), 
     HeaderColor = Color3.fromRGB(20, 20, 25),
     Accent = Color3.fromRGB(0, 255, 170),
@@ -260,8 +260,8 @@ local function Notify(title, text)
     game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
 end
 
--- Update States: Added HideRod
-local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEvent=false, HideRod=false}
+-- Update States: Removed HideRod, Added AutoCave
+local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEvent=false, AutoCave=false}
 local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
@@ -277,7 +277,7 @@ local BtnWow    = MakeBtn("Water Walk: OFF")
 local BtnNoclip = MakeBtn("No Clip: OFF")
 local BtnBoost  = MakeBtn("Boost: OFF")
 local BtnRender = MakeBtn("3D Render: ON") 
-local BtnHideRod= MakeBtn("Hide Rod: OFF") -- [NEW BUTTON]
+local BtnAutoCave = MakeBtn("Auto Cave: OFF") -- [NEW BUTTON REPLACING HIDE ROD]
 local BtnFps    = MakeBtn("FPS: Unli") 
 local BtnSave   = MakeBtn("Save Pos")
 local BtnLoad   = MakeBtn("Load Pos")
@@ -378,7 +378,7 @@ task.spawn(function()
     end
 end)
 
--- [NEW] AUTO EVENT TELEPORT LOOP + AUTO EQUIP
+-- AUTO EVENT TELEPORT LOOP + AUTO EQUIP (EXISTING)
 task.spawn(function()
     while true do
         task.wait(1.5)
@@ -391,57 +391,41 @@ task.spawn(function()
                 local PrioName = EventList[PrioIndex]
                 local SecName = EventList[SecIndex]
 
-                -- Cek Prioritas Utama
                 if PrioName ~= "None" then
                     for _, v in pairs(Props:GetChildren()) do
-                        if string.find(v.Name:lower(), PrioName:lower()) then
-                            TargetName = v
-                            break
-                        end
+                        if string.find(v.Name:lower(), PrioName:lower()) then TargetName = v break end
                     end
                 end
 
-                -- Jika Prioritas Utama tidak ketemu, Cek Secondary
                 if not TargetName and SecName ~= "None" then
                     for _, v in pairs(Props:GetChildren()) do
-                        if string.find(v.Name:lower(), SecName:lower()) then
-                            TargetName = v
-                            break
-                        end
+                        if string.find(v.Name:lower(), SecName:lower()) then TargetName = v break end
                     end
                 end
 
-                -- Eksekusi Teleport & Equip
                 if TargetName and HRP then
                     local SafePart = TargetName:IsA("BasePart") and TargetName or TargetName:FindFirstChildWhichIsA("BasePart", true)
                     
                     if SafePart then
                         local dist = (HRP.Position - SafePart.Position).Magnitude
                         if dist > 50 then 
-                            -- [1] CANCEL FISHING & UNEQUIP
                             pcall(function()
                                 local Net = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
                                 Net["RF/CancelFishingInputs"]:InvokeServer()
                                 Net["RE/UnequipToolFromHotbar"]:FireServer()
                             end)
 
-                            -- [2] TELEPORT
                             HRP.CFrame = SafePart.CFrame + Vector3.new(0, 10, 0)
                             Notify("Event Found!", "Teleporting to: " .. TargetName.Name)
                             
-                            -- Mengaktifkan Water Walk
-                            if not States.WoW then
-                                BtnWow.MouseButton1Click:Fire() 
-                            end
+                            if not States.WoW then BtnWow.MouseButton1Click:Fire() end
                             
-                            -- [3] WAIT & EQUIP ROD
-                            task.wait(0.7) -- Delay agar server memproses posisi
+                            task.wait(0.7) 
                             pcall(function()
                                 local Net = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
                                 Net["RE/EquipToolFromHotbar"]:FireServer(unpack({[1] = 1}))
                             end)
-                            
-                            task.wait(3) -- Cooldown
+                            task.wait(3) 
                         end
                     end
                 end
@@ -516,69 +500,50 @@ BtnRender.MouseButton1Click:Connect(function()
     ToggleVisual(BtnRender, States.NoRender) 
 end)
 
--- [NEW] HIDE ROD LOGIC
-BtnHideRod.MouseButton1Click:Connect(function()
-    States.HideRod = not States.HideRod
-    BtnHideRod.Text = "Hide Rod: "..(States.HideRod and "ON" or "OFF")
-    ToggleVisual(BtnHideRod, States.HideRod)
+-- [NEW] AUTO CAVE LOGIC (REPLACING HIDE ROD)
+local InCave = false
+local PreCavePos = nil
+
+BtnAutoCave.MouseButton1Click:Connect(function()
+    States.AutoCave = not States.AutoCave
+    BtnAutoCave.Text = "Auto Cave: "..(States.AutoCave and "ON" or "OFF")
+    ToggleVisual(BtnAutoCave, States.AutoCave)
     
-    -- Jika dimatikan, kembalikan visibilitas
-    if not States.HideRod then
-        local Char = Player.Character
-        if Char then
-            local Tool = Char:FindFirstChildWhichIsA("Tool")
-            if Tool then
-                for _, p in pairs(Tool:GetDescendants()) do
-                    if p:IsA("BasePart") or p:IsA("MeshPart") then
-                        p.Transparency = 0
-                    end
-                end
-            end
-        end
+    if not States.AutoCave then
+        InCave = false -- Reset status jika dimatikan manual
     end
 end)
 
--- Loop Force Hide Rod
-RunService.RenderStepped:Connect(function()
-    if States.HideRod then
-        local Char = Player.Character
-        if Char then
-            local Tool = Char:FindFirstChildWhichIsA("Tool")
-            if Tool then
-                for _, p in pairs(Tool:GetDescendants()) do
-                    if (p:IsA("BasePart") or p:IsA("MeshPart")) and p.Transparency ~= 1 then
-                        p.Transparency = 1
+-- Loop Auto Cave
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if States.AutoCave and HRP then
+            pcall(function()
+                local Zones = workspace:FindFirstChild("Zones")
+                local Cave = Zones and Zones:FindFirstChild("Christmas Cave")
+                
+                if Cave then
+                    -- Cave Terbuka (Detected)
+                    if not InCave then
+                        -- Simpan Posisi Sebelum Masuk
+                        PreCavePos = HRP.CFrame
+                        InCave = true
+                        
+                        -- Teleport Masuk
+                        local TargetCF = Cave:IsA("Model") and Cave:GetPivot() or Cave.CFrame
+                        HRP.CFrame = TargetCF + Vector3.new(0, 5, 0)
+                        
+                        Notify("Cave Opened!", "Teleporting to Christmas Cave...")
+                        
+                        -- Optional: Auto Water Walk on jika di cave
+                        if not States.WoW then BtnWow.MouseButton1Click:Fire() end
                     end
-                end
-            end
-        end
-    end
-end)
--- [END NEW HIDE ROD LOGIC]
-
-BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
-
-BtnSave.MouseButton1Click:Connect(function() 
-    if HRP then 
-        SavedCFrame = HRP.CFrame 
-        BtnSave.Text="SAVED" 
-        BtnSave.TextColor3 = Color3.fromRGB(100, 255, 100)
-        Notify("Posisi Disimpan", "Lokasi Anda saat ini telah disimpan.")
-        task.delay(1, function()
-            BtnSave.Text="Save Pos" 
-            BtnSave.TextColor3 = Color3.fromRGB(200, 200, 200)
-        end)
-    end 
-end)
-
-BtnLoad.MouseButton1Click:Connect(function() 
-    if SavedCFrame and HRP then 
-        HRP.CFrame = SavedCFrame 
-        ToggleVisual(BtnLoad,true) 
-        Notify("Posisi Dimuat", "Teleportasi ke lokasi yang disimpan...")
-        wait(0.2) 
-        ToggleVisual(BtnLoad,false) 
-    else
-        Notify("Gagal", "Belum ada posisi yang disimpan!")
-    end 
-end)
+                else
+                    -- Cave Tertutup/Hilang (Event Selesai)
+                    if InCave then
+                        InCave = false
+                        if PreCavePos then
+                            HRP.CFrame = PreCavePos
+                            Notify("Cave Closed", "Returning to previous position...")
+          
