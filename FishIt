@@ -2,12 +2,12 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Memuat Interface (Outline Style)...",
+        Text = "Loading Script",
         Duration = 2,
     })
 end)
 
-task.wait(1)
+task.wait(3.5)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -33,7 +33,7 @@ local UI_THEME = {
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
-    Accent = Color3.fromRGB(0, 255, 170), -- Warna Hijau Neon
+    Accent = Color3.fromRGB(0, 255, 170),
     TabOff = Color3.fromRGB(100, 100, 110),
     TabOn = Color3.fromRGB(0, 255, 170),
     TextColor = Color3.fromRGB(255, 255, 255),
@@ -318,46 +318,26 @@ local function MakeBtn(parent, text)
     b.AutoButtonColor = true
     b.ClipsDescendants = true
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
-    
     local s = Instance.new("UIStroke", b)
     s.Color = Color3.fromRGB(60, 60, 70)
     s.Thickness = 1
     s.Transparency = 0.5
-    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border -- Pastikan mode Border
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     return b
 end
 
--- [UPDATE] FUNGSI VISUAL BARU (Hanya Warna di Sisi/Outline)
 local function ToggleVisual(btn, on)
     if on then
-        -- KONDISI AKTIF:
-        -- Background tetap hitam/gelap
-        btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
-        btn.BackgroundTransparency = 0.4 
-        
-        -- Text jadi warna Accent (Hijau)
-        btn.TextColor3 = UI_THEME.Accent 
-        
-        -- SISI/OUTLINE jadi menyala
-        btn.UIStroke.Color = UI_THEME.Accent
-        btn.UIStroke.Transparency = 0 
-        btn.UIStroke.Thickness = 1.2 -- Sedikit lebih tebal biar kelihatan jelas
-        
+        btn.BackgroundColor3 = UI_THEME.Accent
+        btn.BackgroundTransparency = 0.2
+        btn.TextColor3 = Color3.fromRGB(10, 10, 12)
+        btn.UIStroke.Transparency = 1
         btn.Font = Enum.Font.GothamBold
     else
-        -- KONDISI MATI:
-        -- Background gelap
         btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         btn.BackgroundTransparency = 0.6
-        
-        -- Text abu-abu
         btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        
-        -- SISI/OUTLINE redup
-        btn.UIStroke.Color = Color3.fromRGB(60, 60, 70)
         btn.UIStroke.Transparency = 0.5
-        btn.UIStroke.Thickness = 1
-        
         btn.Font = UI_THEME.BtnFont
     end
 end
@@ -409,9 +389,8 @@ BtnFps.MouseButton1Click:Connect(function()
     local textLabel = (v >= 9999) and "Max" or tostring(v)
     BtnFps.Text = "FPS: " .. textLabel
     
-    -- Efek Flash (Outline Only)
     ToggleVisual(BtnFps, true)
-    task.wait(0.15)
+    task.wait(0.1)
     ToggleVisual(BtnFps, false)
 end)
 
@@ -573,4 +552,26 @@ BtnSave.MouseButton1Click:Connect(function()
         SavedCFrame = HRP.CFrame 
         BtnSave.Text="SAVED" 
         BtnSave.TextColor3 = Color3.fromRGB(100, 255, 100)
-        -
+        Notify("Posisi Disimpan", "Lokasi Anda saat ini telah disimpan.")
+        task.delay(1, function()
+            BtnSave.Text="Save Pos" 
+            BtnSave.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end)
+    end 
+end)
+
+-- Load Pos
+BtnLoad.MouseButton1Click:Connect(function() 
+    if SavedCFrame and HRP then 
+        HRP.CFrame = SavedCFrame 
+        ToggleVisual(BtnLoad,true) 
+        Notify("Posisi Dimuat", "Teleportasi ke lokasi yang disimpan...")
+        wait(0.2) 
+        ToggleVisual(BtnLoad,false) 
+    else
+        Notify("Gagal", "Belum ada posisi yang disimpan!")
+    end 
+end)
+
+
+Untuk Tombolnya Tambahkan Warna Hanya Pada sisinta
