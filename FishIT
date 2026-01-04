@@ -492,13 +492,13 @@ task.spawn(function()
     end
 end)
 
--- >> LOGIC AUTO EVENT (Smart Teleport & Anti-Bounce Water)
+-- >> LOGIC AUTO EVENT (Smart Teleport & Precision Water Height)
 local EventReturnPos = nil
 local CurrentlyAtEvent = false
 
 task.spawn(function()
     while true do
-        task.wait(0.1) -- Loop sedikit lebih cepat agar responsif
+        task.wait(0.1) 
         if States.AutoEvent then
             -- == KONDISI: FITUR AKTIF ==
             pcall(function()
@@ -518,7 +518,8 @@ task.spawn(function()
                 if FoundEvent then
                     -- 1. JIKA EVENT DITEMUKAN
                     local targetCF = FoundEvent:IsA("Model") and FoundEvent:GetPivot() or FoundEvent.CFrame
-                    local targetPos = targetCF.Position + Vector3.new(0, 5, 0)
+                    -- [FIX] Turunkan posisi target. Hanya +0.5 studs dari pusat event.
+                    local targetPos = targetCF.Position + Vector3.new(0, 0.5, 0)
                     
                     if not CurrentlyAtEvent then
                         if HRP then EventReturnPos = HRP.CFrame end
@@ -534,9 +535,9 @@ task.spawn(function()
                             HRP.CFrame = CFrame.new(targetPos)
                         end
                         
-                        -- >> SMART WATER DETECTION (ANTI BOUNCE) <<
+                        -- >> SMART WATER DETECTION (LOW ALTITUDE) <<
                         local rayOrigin = HRP.Position
-                        local rayDirection = Vector3.new(0, -20, 0) -- Cek 20 studs ke bawah
+                        local rayDirection = Vector3.new(0, -20, 0) 
                         
                         local raycastParams = RaycastParams.new()
                         raycastParams.FilterDescendantsInstances = {Char}
@@ -545,12 +546,10 @@ task.spawn(function()
                         
                         local rayResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
                         
-                        -- LOGIKA BARU:
-                        -- Cek 1: Apakah itu Air?
-                        -- Cek 2: Apakah JARAK ke air sudah DEKAT (< 5 studs)?
+                        -- LOGIKA: Aktifkan WoW hanya jika jarak ke air SANGAT DEKAT (< 1.5 studs)
                         if rayResult and rayResult.Material == Enum.Material.Water then
-                            if rayResult.Distance < 5 then
-                                -- SUDAH DEKAT AIR -> AKTIFKAN WoW (Agar mengapung)
+                            if rayResult.Distance < 1.5 then
+                                -- SUDAH SANGAT DEKAT AIR -> AKTIFKAN WoW
                                 if not EventBodyV then
                                     EventBodyV = Instance.new("BodyVelocity", HRP)
                                     EventBodyV.MaxForce = Vector3.new(0, 1e6, 0)
@@ -558,7 +557,7 @@ task.spawn(function()
                                 end
                                 HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
                             else
-                                -- MASIH TINGGI DI ATAS AIR -> MATIKAN WoW (Biarkan Jatuh Dulu)
+                                -- MASIH DI UDARA (> 1.5 Studs) -> BIARKAN JATUH
                                 if EventBodyV then 
                                     EventBodyV:Destroy() 
                                     EventBodyV = nil 
