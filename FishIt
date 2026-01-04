@@ -2,7 +2,7 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Memuat Interface (v2)...",
+        Text = "Memuat Interface (v2.1)...", -- Update versi
         Duration = 2,
     })
 end)
@@ -16,6 +16,7 @@ local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage") 
+local StatsService = game:GetService("Stats") -- Service Stats ditambahkan
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
@@ -29,7 +30,7 @@ end)
 -- // Konfigurasi Visual (Dark Transparent)
 local UI_THEME = {
     Width = 280, 
-    Height = 210, -- [UPDATED] Tinggi diubah menjadi 210
+    Height = 210,
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -367,6 +368,7 @@ local BtnSave   = MakeBtn(PageMisc, "Save Pos")
 local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
 local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
+local BtnPing   = MakeBtn(PageMisc, "Ping Booster") -- [BARU] Tombol Ping Booster
 
 -- FPS Logic
 local fpsT = 0
@@ -378,7 +380,7 @@ end)
 
 -- [UPDATED] FPS BUTTON LOGIC
 BtnFps.MouseButton1Click:Connect(function()
-    local caps = {30, 60, 90, 144, 240, 9999} -- Pilihan Baru
+    local caps = {30, 60, 90, 144, 240, 9999} 
     _G.fpsIndex = ((_G.fpsIndex or #caps) % #caps) + 1
     local v = caps[_G.fpsIndex]
     
@@ -519,7 +521,7 @@ BtnNoclip.MouseButton1Click:Connect(function()
     end 
 end)
 
--- Boost
+-- Boost (Graphics)
 BtnBoost.MouseButton1Click:Connect(function() 
     States.Boost = not States.Boost 
     ToggleVisual(BtnBoost, States.Boost) 
@@ -569,9 +571,4 @@ BtnLoad.MouseButton1Click:Connect(function()
         ToggleVisual(BtnLoad,true) 
         Notify("Posisi Dimuat", "Teleportasi ke lokasi yang disimpan...")
         wait(0.2) 
-        ToggleVisual(BtnLoad,false) 
-    else
-        Notify("Gagal", "Belum ada posisi yang disimpan!")
-    end 
-end)
-
+    
