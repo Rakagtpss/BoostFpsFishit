@@ -2,7 +2,7 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Loading: Seraphin x Turbo Fishing",
+        Text = "Loading: HYPER FAST FISHING!",
         Duration = 2,
     })
 end)
@@ -31,7 +31,7 @@ Player.CharacterAdded:Connect(function(newChar)
     Hum = newChar:WaitForChild("Humanoid", 10)
 end)
 
--- // DEFINE REMOTES (UNTUK FISHING)
+-- // DEFINE REMOTES
 local net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
 local ChargeRod    = net["RF/ChargeFishingRod"]
 local RequestGame  = net["RF/RequestFishingMinigameStarted"]
@@ -41,16 +41,16 @@ local CancelInput  = net["RF/CancelFishingInputs"]
 -- // KONFIGURASI GLOBAL
 getgenv().fishingStart = false
 _G.FishSettings = {
-    DelayCharge = 1.15, -- Default Fishing Delay
-    DelayReset = 0.2,   -- Default Reset Delay
-    UseSuperInstant = true -- Default Mode Turbo
+    -- [UPGRADE] Default Delay dibuat lebih agresif
+    DelayCharge = 0.85, -- Waktu tunggu ikan (makin kecil makin cepat, tapi butuh ikan nyambar cepat)
+    DelayReset = 0.1,   -- Jeda antar lemparan
 }
 
--- Args Lemparan (Sesuai request)
+-- Args Lemparan
 local fishArgs = { -1.115296483039856, 0, 1763651451.636425 }
 
 -- =====================================================
--- 🛡️ FISHING BLOCKER & HOOK (LOGIKA BARU)
+-- 🛡️ FISHING BLOCKER (ANTI-FAIL SYSTEM)
 -- =====================================================
 local FishingBlocker = { Enabled = false, AutoGreat = true }
 local BLOCKED_REMOTES = {
@@ -63,10 +63,9 @@ local BLOCKED_REMOTES = {
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
-    -- Cek jika blocker aktif dan remote ada di daftar blacklist
     if FishingBlocker.Enabled and BLOCKED_REMOTES[self] and not checkcaller() then
         if method == "InvokeServer" then
-            return task.wait(9e9) -- Bekukan script game asli
+            return task.wait(9e9) -- Freeze script game asli
         elseif method == "FireServer" then
             return nil
         end
@@ -74,49 +73,43 @@ oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     return oldNamecall(self, ...)
 end)
 
-local MAX_PARALLEL = 4
-local activeSpawn = 0
-local function lightSpawn(fn)
-    if activeSpawn >= MAX_PARALLEL then return end
-    activeSpawn = activeSpawn + 1
-    task.spawn(function()
-        pcall(fn)
-        activeSpawn = activeSpawn - 1
-    end)
-end
-
 -- =====================================================
--- 🎣 FUNGSI LOOP FISHING
+-- 🎣 FUNGSI LOOP FISHING (HYPER FAST UPGRADE)
 -- =====================================================
-local function startFishingSuperInstantLoop()
-    -- Aktifkan Auto Great (Biar selalu perfect/great)
+local function startFishingHyperLoop()
+    -- Aktifkan Auto Great
     if FishingBlocker.AutoGreat then
         local agRemote = net:FindFirstChild("RF/UpdateAutoFishingState")
         if agRemote then agRemote:InvokeServer(true) end
     end
 
-    -- Reset awal
+    -- Reset Awal
     pcall(function() CancelInput:InvokeServer() end)
-    task.wait(0.055)
+    task.wait(0.05)
 
     while getgenv().fishingStart do
-        -- 1. Charge Rod
-        lightSpawn(function() ChargeRod:InvokeServer() end)
+        -- [UPGRADE] Menggunakan task.spawn murni tanpa limiter (Parallel Execution)
+        -- Langkah 1: Charge Rod & Request Game ditembak bersamaan
+        task.spawn(function() 
+            pcall(function() ChargeRod:InvokeServer() end) 
+        end)
         
-        -- 2. Lempar Kail
-        lightSpawn(function() RequestGame:InvokeServer(unpack(fishArgs)) end)
+        task.spawn(function() 
+            pcall(function() RequestGame:InvokeServer(unpack(fishArgs)) end) 
+        end)
         
-        -- 3. Tunggu Ikan (Delay Fishing)
-        task.wait(_G.FishSettings.DelayCharge) 
+        -- Langkah 2: Tunggu Ikan (Sesuai setting user)
+        -- Gunakan task.wait yang presisi
+        task.wait(_G.FishSettings.DelayCharge)
+        
         if not getgenv().fishingStart then break end
 
-        -- 4. Selesaikan Minigame
+        -- Langkah 3: INSTANT COMPLETE
+        -- FireServer lebih cepat dari InvokeServer (Fire & Forget)
         pcall(function() CompleteGame:FireServer() end)
         
-        -- 5. Tunggu Reset (Delay Reset)
-        task.wait(_G.FishSettings.DelayReset) 
-        
-        -- 6. Cancel Input (Siap loop lagi)
+        -- Langkah 4: Reset Cepat
+        task.wait(_G.FishSettings.DelayReset)
         pcall(function() CancelInput:InvokeServer() end)
     end
 end
@@ -488,8 +481,8 @@ local BodyV = nil
 
 -- TAB MAIN - FISHING SECTION
 local BtnAutoFish = MakeBtn(PageMain, "Auto Fish: OFF")
-local InputReel = MakeInput(PageMain, "Delay Fishing (1.15)", "1.15")
-local InputCast = MakeInput(PageMain, "Delay Reset (0.2)", "0.2")
+local InputReel = MakeInput(PageMain, "Delay Fishing (0.85)", "0.85")
+local InputCast = MakeInput(PageMain, "Delay Reset (0.1)", "0.1")
 
 -- TAB MAIN - UTILITY
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
@@ -639,7 +632,7 @@ end)
 -- [6] FUNCTION BUTTONS LOGIC
 -- ====================================================
 
--- Auto Fish Button (INTEGRATED NEW LOGIC)
+-- Auto Fish Button (INTEGRATED HYPER FAST LOGIC)
 BtnAutoFish.MouseButton1Click:Connect(function()
     States.AutoFish = not States.AutoFish
     BtnAutoFish.Text = "Auto Fish: " .. (States.AutoFish and "ON" or "OFF")
@@ -649,10 +642,10 @@ BtnAutoFish.MouseButton1Click:Connect(function()
         -- START FISHING
         getgenv().fishingStart = true
         FishingBlocker.Enabled = true -- Aktifkan Blocker
-        Notify("Auto Fish", "Started (Super Instant)")
+        Notify("Auto Fish", "Started (HYPER FAST)")
         
         -- Jalan loop
-        task.spawn(startFishingSuperInstantLoop)
+        task.spawn(startFishingHyperLoop)
     else
         -- STOP FISHING
         getgenv().fishingStart = false
