@@ -1,4 +1,3 @@
-
 -- [1] Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
@@ -32,7 +31,7 @@ end)
 -- // Konfigurasi Visual
 local UI_THEME = {
     MinWidth = 280,  
-    MinHeight = 240, -- Saya tambah sedikit tingginya agar tombol tidak terpotong
+    MinHeight = 240, 
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.35, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -392,7 +391,7 @@ local EventBodyV = nil
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
-local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") -- >> INI TOMBOLNYA
+local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
@@ -493,7 +492,7 @@ task.spawn(function()
     end
 end)
 
--- >> LOGIC AUTO EVENT (Props Detection)
+-- >> LOGIC AUTO EVENT (Props Detection & Return Logic)
 local EventReturnPos = nil
 local CurrentlyAtEvent = false
 
@@ -501,6 +500,7 @@ task.spawn(function()
     while true do
         task.wait(1) 
         if States.AutoEvent then
+            -- == KONDISI: FITUR AKTIF ==
             pcall(function()
                 local Props = workspace:FindFirstChild("Props")
                 local FoundEvent = nil
@@ -516,7 +516,7 @@ task.spawn(function()
                 end
 
                 if FoundEvent then
-                    -- JIKA EVENT DITEMUKAN
+                    -- 1. JIKA EVENT DITEMUKAN
                     if not CurrentlyAtEvent then
                         if HRP then EventReturnPos = HRP.CFrame end
                         CurrentlyAtEvent = true
@@ -536,7 +536,7 @@ task.spawn(function()
                         HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
                     end
                 else
-                    -- JIKA EVENT HILANG
+                    -- 2. JIKA EVENT HILANG (SELESAI)
                     if CurrentlyAtEvent then
                         CurrentlyAtEvent = false
                         if EventBodyV then EventBodyV:Destroy() EventBodyV = nil end
@@ -549,9 +549,18 @@ task.spawn(function()
                 end
             end)
         else
+            -- == KONDISI: FITUR DIMATIKAN MANUAL (OFF) ==
             if CurrentlyAtEvent then
                 CurrentlyAtEvent = false
+                
+                -- Bersihkan Fisika (WoW)
                 if EventBodyV then EventBodyV:Destroy() EventBodyV = nil end
+                
+                -- Balik ke posisi awal
+                if EventReturnPos and HRP then
+                    HRP.CFrame = EventReturnPos
+                    Notify("Auto Event OFF", "Kembali ke posisi semula")
+                end
             end
         end
     end
@@ -603,6 +612,7 @@ BtnEvent.MouseButton1Click:Connect(function()
         Notify("Auto Event ON", "Mendeteksi workspace.Props...")
     else
         Notify("Auto Event OFF", "Fitur dimatikan.")
+        -- Logika pengembalian sudah ditangani otomatis oleh loop
     end
 end)
 
@@ -712,4 +722,3 @@ BtnLoad.MouseButton1Click:Connect(function()
         Notify("Gagal", "Belum ada posisi yang disimpan ")
     end 
 end)
-
