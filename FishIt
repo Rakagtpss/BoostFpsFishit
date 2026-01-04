@@ -2,12 +2,12 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Memuat Interface (v2)...",
-        Duration = 2,
+        Text = "Loading Sayang",
+        Duration = 2.5,
     })
 end)
 
-task.wait(1)
+task.wait(3.5)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -29,7 +29,7 @@ end)
 -- // Konfigurasi Visual (Dark Transparent)
 local UI_THEME = {
     Width = 280, 
-    Height = 210, -- [UPDATED] Tinggi diubah menjadi 210
+    Height = 230, -- [UPDATED] Tinggi diubah sesuai request
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -360,11 +360,12 @@ local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
 local BtnBoost  = MakeBtn(PageMain, "Boost: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
-local BtnFps    = MakeBtn(PageMain, "FPS: Unli") 
+local BtnFps    = MakeBtn(PageMain, "FPS: Unli") -- Akan diupdate logicnya
 
 -- TAB MISC
 local BtnSave   = MakeBtn(PageMisc, "Save Pos")
 local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
+local BtnClean  = MakeBtn(PageMisc, "Clean RAM") -- [NEW]
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
 local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
 
@@ -376,22 +377,21 @@ RunService.RenderStepped:Connect(function(dt)
     Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
 end)
 
--- [UPDATED] FPS BUTTON LOGIC
+-- [UPDATED] FPS Selector Logic
 BtnFps.MouseButton1Click:Connect(function()
-    local caps = {30, 60, 90, 144, 240, 9999} -- Pilihan Baru
-    _G.fpsIndex = ((_G.fpsIndex or #caps) % #caps) + 1
+    local caps = {30, 60, 90, 144, 240, 9999} -- [NEW LIST]
+    _G.fpsIndex = ((_G.fpsIndex or 5) % #caps) + 1
     local v = caps[_G.fpsIndex]
     
-    if setfpscap then setfpscap(v) end
-    
-    if v > 1000 then
-        BtnFps.Text = "FPS: MaxFps"
-    else
-        BtnFps.Text = "FPS: " .. v
+    if setfpscap then 
+        setfpscap(v) 
     end
     
+    local txt = (v > 1000) and "Max" or tostring(v)
+    BtnFps.Text = "FPS: " .. txt
+    
     ToggleVisual(BtnFps, true)
-    task.wait(0.1)
+    wait(0.1)
     ToggleVisual(BtnFps, false)
 end)
 
@@ -404,20 +404,37 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [5] BACKGROUND LOOPS (AUTO EQUIP, STATS)
+-- [5] BACKGROUND LOOPS & CLEAN LOGIC
 -- ====================================================
+
+-- [NEW] CLEAN RAM FUNCTION
+BtnClean.MouseButton1Click:Connect(function()
+    ToggleVisual(BtnClean, true)
+    BtnClean.Text = "Cleaning..."
+    
+    -- Logic Garbage Collection
+    local before = gcinfo() -- Mengambil memory usage sebelum clean
+    collectgarbage("collect") -- Memaksa Lua membersihkan memory sampah
+    local after = gcinfo() -- Memory setelah clean
+    
+    -- Visual Feedback
+    Notify("RAM Cleaned", "Freed: " .. math.floor(before - after) .. " KB")
+    
+    task.wait(0.8)
+    BtnClean.Text = "Clean RAM"
+    ToggleVisual(BtnClean, false)
+end)
 
 -- >> LOGIC AUTO EQUIP
 task.spawn(function()
     while true do
-        task.wait(1.5) -- Cek setiap 1.5 detik
+        task.wait(1.5)
         if States.AutoEquip then
             pcall(function()
                 local char = Player.Character
                 if char then
-                    -- Cek jika tidak memegang tool apapun
                     if not char:FindFirstChildWhichIsA("Tool") then
-                        local args = { [1] = 1 } -- Equip Slot 1
+                        local args = { [1] = 1 }
                         local remote = game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0")
                         if remote then
                             remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
