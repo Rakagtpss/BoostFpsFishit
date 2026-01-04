@@ -492,7 +492,7 @@ task.spawn(function()
     end
 end)
 
--- >> LOGIC AUTO EVENT (Props Detection & Return Logic)
+-- >> LOGIC AUTO EVENT (Smart Water Detection & Return)
 local EventReturnPos = nil
 local CurrentlyAtEvent = false
 
@@ -523,17 +523,38 @@ task.spawn(function()
                         Notify("Event Detected!", "Teleport ke: " .. FoundEvent.Name)
                     end
                     
-                    -- Teleport + WoW
+                    -- Teleport Loop
                     if HRP then
                         local targetCF = FoundEvent:IsA("Model") and FoundEvent:GetPivot() or FoundEvent.CFrame
+                        -- Set posisi ke event
                         HRP.CFrame = targetCF + Vector3.new(0, 5, 0) 
                         
-                        if not EventBodyV then
-                            EventBodyV = Instance.new("BodyVelocity", HRP)
-                            EventBodyV.MaxForce = Vector3.new(0, 1e6, 0)
-                            EventBodyV.Velocity = Vector3.zero
+                        -- >> SMART WATER DETECTION <<
+                        local rayOrigin = HRP.Position
+                        local rayDirection = Vector3.new(0, -15, 0) -- Cek 15 studs ke bawah
+                        
+                        local raycastParams = RaycastParams.new()
+                        raycastParams.FilterDescendantsInstances = {Char}
+                        raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+                        raycastParams.IgnoreWater = false -- PENTING: Jangan abaikan air
+                        
+                        local rayResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+                        
+                        if rayResult and rayResult.Material == Enum.Material.Water then
+                            -- ADA AIR DI BAWAH -> AKTIFKAN WoW
+                            if not EventBodyV then
+                                EventBodyV = Instance.new("BodyVelocity", HRP)
+                                EventBodyV.MaxForce = Vector3.new(0, 1e6, 0)
+                                EventBodyV.Velocity = Vector3.zero
+                            end
+                            HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
+                        else
+                            -- TIDAK ADA AIR (DARATAN/UDARA) -> MATIKAN WoW
+                            if EventBodyV then 
+                                EventBodyV:Destroy() 
+                                EventBodyV = nil 
+                            end
                         end
-                        HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
                     end
                 else
                     -- 2. JIKA EVENT HILANG (SELESAI)
@@ -609,7 +630,7 @@ BtnEvent.MouseButton1Click:Connect(function()
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
     ToggleVisual(BtnEvent, States.AutoEvent)
     if States.AutoEvent then
-        Notify("Auto Event ON", "Mendeteksi workspace.Props...")
+        Notify("Auto Event ON", "Sedang Mencari Event...") -- >> NOTIFIKASI DIUBAH DISINI
     else
         Notify("Auto Event OFF", "Fitur dimatikan.")
         -- Logika pengembalian sudah ditangani otomatis oleh loop
