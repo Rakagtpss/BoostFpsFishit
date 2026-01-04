@@ -1,9 +1,22 @@
-
+Berikut adalah script yang telah diperbarui sesuai permintaan Anda.
+Perubahan yang dilakukan:
+ * Notifikasi Awal: Teks diubah menjadi "Loading Sayang !" dengan durasi 2 detik.
+ * Delay: Script menunggu 3.5 detik sebelum memuat UI utama.
+ * Resize Dihapus: Fitur tarik ujung (resize) pada UI telah dihilangkan sepenuhnya.
+ * Fitur Baru (Auto Event):
+   * Menambahkan tombol "Auto Event" di menu Main.
+   * Mendeteksi child di workspace.Props.
+   * Jika event muncul: Simpan posisi awal -> Teleport ke Event -> Aktifkan Anti-tenggelam (Walk on Water).
+   * Jika event hilang: Teleport kembali ke posisi awal.
+ * Optimasi:
+   * Auto Clean RAM: Loop diatur tepat 5 menit (300 detik).
+   * Auto Equip: Loop check diatur 0.5 detik.
+Updated Script
 -- [1] Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Script Loaded: Seraphin Helper Ultimate",
+        Text = "Loading Sayang !",
         Duration = 2,
     })
 end)
@@ -147,7 +160,7 @@ Main.BackgroundColor3 = UI_THEME.Color
 Main.BackgroundTransparency = UI_THEME.Transparency
 Main.Active = true
 Main.ClipsDescendants = true 
-Main.Draggable = false -- Matikan bawaan, pakai custom script
+Main.Draggable = false 
 
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
@@ -212,45 +225,6 @@ Title.Font = UI_THEME.Font
 Title.TextSize = 12
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left 
-
--- [CUSTOM RESIZE SCRIPT]
-local ResizeHandle = Instance.new("ImageButton", Main)
-ResizeHandle.Name = "ResizeHandle"
-ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
-ResizeHandle.Position = UDim2.new(1, -20, 1, -20)
-ResizeHandle.BackgroundTransparency = 1
-ResizeHandle.Image = "rbxassetid://6031091000"
-ResizeHandle.ImageColor3 = UI_THEME.Accent
-ResizeHandle.ImageTransparency = 0.3
-ResizeHandle.ZIndex = 20 
-
-local isResizing = false
-local resizeStartPos = nil
-local resizeStartSize = nil
-
-ResizeHandle.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        isResizing = true
-        resizeStartPos = input.Position
-        resizeStartSize = Main.AbsoluteSize
-    end
-end)
-
-ResizeHandle.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        isResizing = false
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if isResizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - resizeStartPos
-        local newX = math.max(UI_THEME.MinWidth, resizeStartSize.X + delta.X)
-        local newY = math.max(UI_THEME.MinHeight, resizeStartSize.Y + delta.Y)
-        
-        Main.Size = UDim2.new(0, newX, 0, newY)
-    end
-end)
 
 -- HIDE BUTTON
 local HideBtn = Instance.new("TextButton", Header)
@@ -362,7 +336,6 @@ HideBtn.MouseButton1Click:Connect(function()
     if IsMinimized then
         PageContainer.Visible = false
         TabHolder.Visible = false
-        ResizeHandle.Visible = false
         Main:TweenSize(UDim2.new(0, UI_THEME.MinWidth, 0, 32), "Out", "Quad", 0.3, true) 
         HideBtn.Text = "Show" 
         HideBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -374,7 +347,6 @@ HideBtn.MouseButton1Click:Connect(function()
             if not IsMinimized then 
                 PageContainer.Visible = true 
                 TabHolder.Visible = true
-                ResizeHandle.Visible = true
             end 
         end)
     end
@@ -422,18 +394,21 @@ end
 -- States
 local States = {
     Freeze=false, WoW=false, Boost=false, NoRender=false, 
-    Noclip=false, Panel=true, AutoEquip=false, AutoClean=false 
+    Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
+    AutoEvent=false 
 }
 local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
+local EventBodyV = nil -- BodyVelocity khusus untuk event
 
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
+local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") -- Tombol Baru
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
-local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
+local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
 local BtnBoost  = MakeBtn(PageMain, "Boost: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
@@ -484,13 +459,14 @@ end)
 -- [5] BACKGROUND LOOPS & AUTO LOGICS
 -- ====================================================
 
--- AUTO CLEAN RAM LOOP
+-- AUTO CLEAN RAM LOOP (5 Menit / 300 Detik)
 task.spawn(function()
     while true do
-        task.wait(300) -- Loop setiap 8 detik
+        task.wait(300) 
         if States.AutoClean then
             pcall(function()
                 collectgarbage("collect")
+                Notify("Auto Clean", "RAM Dibersihkan!")
             end)
         end
     end
@@ -499,18 +475,17 @@ end)
 -- Button Logic for Auto Clean
 BtnClean.MouseButton1Click:Connect(function()
     States.AutoClean = not States.AutoClean
-    
     BtnClean.Text = "Auto Clean: " .. (States.AutoClean and "ON" or "OFF")
     ToggleVisual(BtnClean, States.AutoClean)
     
     if States.AutoClean then
-        Notify("Auto Clean ON", "Membersihkan RAM setiap 5 menit (Beta)")
+        Notify("Auto Clean ON", "Membersihkan RAM setiap 5 menit")
     else
         Notify("Auto Clean OFF", "Pembersihan otomatis dimatikan.")
     end
 end)
 
--- >> LOGIC AUTO EQUIP
+-- >> LOGIC AUTO EQUIP (0.5 Detik)
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -527,6 +502,76 @@ task.spawn(function()
                     end
                 end
             end)
+        end
+    end
+end)
+
+-- >> LOGIC AUTO EVENT (Props Detection)
+local EventReturnPos = nil
+local CurrentlyAtEvent = false
+
+task.spawn(function()
+    while true do
+        task.wait(1) 
+        if States.AutoEvent then
+            pcall(function()
+                local Props = workspace:FindFirstChild("Props")
+                local FoundEvent = nil
+                
+                -- Deteksi child di Props (asumsi event muncul sebagai Model/Part di folder Props)
+                if Props then
+                    for _, v in pairs(Props:GetChildren()) do
+                        if v:IsA("Model") or v:IsA("BasePart") then
+                            FoundEvent = v
+                            break -- Ambil event pertama yang ketemu
+                        end
+                    end
+                end
+
+                if FoundEvent then
+                    -- JIKA EVENT DITEMUKAN
+                    if not CurrentlyAtEvent then
+                        -- Simpan posisi awal sebelum TP
+                        if HRP then EventReturnPos = HRP.CFrame end
+                        CurrentlyAtEvent = true
+                        Notify("Event Detected!", "Teleport ke: " .. FoundEvent.Name)
+                    end
+                    
+                    -- Teleport terus menerus ke event agar tidak ketinggalan (dan aktifkan WoW)
+                    if HRP then
+                        local targetCF = FoundEvent:IsA("Model") and FoundEvent:GetPivot() or FoundEvent.CFrame
+                        HRP.CFrame = targetCF + Vector3.new(0, 5, 0) -- Di atas sedikit biar aman
+                        
+                        -- Auto Walk On Water Logic (Biar tidak tenggelam saat event)
+                        if not EventBodyV then
+                            EventBodyV = Instance.new("BodyVelocity", HRP)
+                            EventBodyV.MaxForce = Vector3.new(0, 1e6, 0)
+                            EventBodyV.Velocity = Vector3.zero
+                        end
+                        -- Stabilkan Y velocity
+                        HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
+                    end
+                else
+                    -- JIKA EVENT HILANG / TIDAK ADA
+                    if CurrentlyAtEvent then
+                        CurrentlyAtEvent = false
+                        -- Hapus BodyVelocity Event
+                        if EventBodyV then EventBodyV:Destroy() EventBodyV = nil end
+                        
+                        -- Balik ke posisi awal
+                        if EventReturnPos and HRP then
+                            HRP.CFrame = EventReturnPos
+                            Notify("Event Selesai", "Kembali ke posisi semula")
+                        end
+                    end
+                end
+            end)
+        else
+            -- Jika fitur dimatikan, bersihkan variabel
+            if CurrentlyAtEvent then
+                CurrentlyAtEvent = false
+                if EventBodyV then EventBodyV:Destroy() EventBodyV = nil end
+            end
         end
     end
 end)
@@ -570,6 +615,18 @@ end)
 -- [6] FUNCTION BUTTONS LOGIC
 -- ====================================================
 
+-- Auto Event Button
+BtnEvent.MouseButton1Click:Connect(function()
+    States.AutoEvent = not States.AutoEvent
+    BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
+    ToggleVisual(BtnEvent, States.AutoEvent)
+    if States.AutoEvent then
+        Notify("Auto Event ON", "Mendeteksi workspace.Props...")
+    else
+        Notify("Auto Event OFF", "Fitur dimatikan.")
+    end
+end)
+
 -- Auto Equip Button
 BtnEquip.MouseButton1Click:Connect(function()
     States.AutoEquip = not States.AutoEquip
@@ -585,7 +642,7 @@ BtnFreeze.MouseButton1Click:Connect(function()
     ToggleVisual(BtnFreeze, States.Freeze) 
 end)
 
--- Water Walk
+-- Water Walk (Manual)
 BtnWow.MouseButton1Click:Connect(function() 
     States.WoW = not States.WoW 
     BtnWow.Text = "Water Walk: " .. (States.WoW and "ON" or "OFF")
