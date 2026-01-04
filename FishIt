@@ -50,27 +50,6 @@ ScreenGui.Name = "SeraphinHelper"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.IgnoreGuiInset = true -- PENTING: Agar layar hitam menutupi Top Bar
-
--- ====================================================
--- [BARU] BLACK OVERLAY (LAYAR HITAM)
--- ====================================================
-local BlackOverlay = Instance.new("Frame", ScreenGui)
-BlackOverlay.Name = "BlackScreen"
-BlackOverlay.Size = UDim2.new(1, 0, 1, 0) -- Full Screen
-BlackOverlay.BackgroundColor3 = Color3.new(0, 0, 0) -- Hitam Pekat
-BlackOverlay.ZIndex = 99999 -- Pastikan di paling atas
-BlackOverlay.Visible = false -- Default mati
-BlackOverlay.BorderSizePixel = 0
-
--- Tambahkan Text agar tau script masih jalan saat hitam
-local AFKLabel = Instance.new("TextLabel", BlackOverlay)
-AFKLabel.Size = UDim2.new(1, 0, 1, 0)
-AFKLabel.BackgroundTransparency = 1
-AFKLabel.Text = "NO RENDER MODE (AFK)\nKlik Layar / Tombol Render untuk kembali"
-AFKLabel.TextColor3 = Color3.fromRGB(100, 100, 100)
-AFKLabel.Font = Enum.Font.GothamBold
-AFKLabel.TextSize = 14
 
 -- ====================================================
 -- [1] MINI FLOATING HUD (PANEL SERAPHIN)
@@ -169,9 +148,6 @@ Main.Active = true
 Main.Draggable = true
 Main.ClipsDescendants = true 
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
-
--- Pastikan Main UI ada di atas overlay hitam agar tombol masih bisa ditekan
-Main.ZIndex = 100000 
 
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Color = UI_THEME.Accent
@@ -378,7 +354,7 @@ local BodyV = nil
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
-local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
+local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF") 
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
@@ -400,14 +376,21 @@ RunService.RenderStepped:Connect(function(dt)
     Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
 end)
 
+-- [MODIFIED] FPS BUTTON LOGIC
 BtnFps.MouseButton1Click:Connect(function()
-    local caps = {30, 60, 144, 999}
-    _G.fpsIndex = ((_G.fpsIndex or 4) % #caps) + 1
+    -- Pilihan FPS yang diminta: 60, 90, 144, 240, 340, Max (9999)
+    local caps = {60, 90, 144, 240, 340, 9999} 
+    _G.fpsIndex = ((_G.fpsIndex or #caps) % #caps) + 1
     local v = caps[_G.fpsIndex]
+    
     if setfpscap then setfpscap(v) end
-    BtnFps.Text = "FPS: " .. (v > 900 and "Unlim" or v)
+    
+    -- Teks tampilan tombol
+    local textLabel = (v >= 9999) and "Max" or tostring(v)
+    BtnFps.Text = "FPS: " .. textLabel
+    
     ToggleVisual(BtnFps, true)
-    wait(0.1)
+    task.wait(0.1)
     ToggleVisual(BtnFps, false)
 end)
 
@@ -426,7 +409,7 @@ end)
 -- >> LOGIC AUTO EQUIP
 task.spawn(function()
     while true do
-        task.wait(1.5)
+        task.wait(1.5) 
         if States.AutoEquip then
             pcall(function()
                 local char = Player.Character
@@ -452,12 +435,14 @@ task.spawn(function()
             continue 
         end
         pcall(function()
+            -- [1] FISH CAUGHT
             local ls = Player:FindFirstChild("leaderstats")
             local caughtObj = ls and ls:FindFirstChild("Caught")
             local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
             local val = caughtObj and caughtObj.Value or 0
             LblFishVal.Text = formatNum(val)
 
+            -- [2] BACKPACK
             local pg = Player:FindFirstChild("PlayerGui")
             local backpackGui = pg and pg:FindFirstChild("Backpack")
             local bagText = "0/?"
@@ -481,7 +466,7 @@ end)
 -- [6] FUNCTION BUTTONS LOGIC
 -- ====================================================
 
--- Auto Equip
+-- Auto Equip Button
 BtnEquip.MouseButton1Click:Connect(function()
     States.AutoEquip = not States.AutoEquip
     BtnEquip.Text = "Auto Equip: " .. (States.AutoEquip and "ON" or "OFF")
@@ -550,17 +535,40 @@ BtnBoost.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3D Render (MODIFIED TO BLACK SCREEN)
+-- 3D Render
 BtnRender.MouseButton1Click:Connect(function() 
     States.NoRender = not States.NoRender 
-    
-    -- 1. Tampilkan Black Screen jika NoRender aktif
-    BlackOverlay.Visible = States.NoRender
-    
-    -- 2. Tunggu sebentar (1 frame) agar UI Hitam ter-render sebelum mematikan 3D
-    RunService.RenderStepped:Wait()
-    
-    -- 3. Matikan 3D Render (GPU Usage 0%)
     RunService:Set3dRenderingEnabled(not States.NoRender) 
-    
-    BtnRender.Text = "3D Render: "..(S
+    BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
+    ToggleVisual(BtnRender, States.NoRender) 
+end)
+
+-- Rejoin
+BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
+
+-- Save Pos
+BtnSave.MouseButton1Click:Connect(function() 
+    if HRP then 
+        SavedCFrame = HRP.CFrame 
+        BtnSave.Text="SAVED" 
+        BtnSave.TextColor3 = Color3.fromRGB(100, 255, 100)
+        Notify("Posisi Disimpan", "Lokasi Anda saat ini telah disimpan.")
+        task.delay(1, function()
+            BtnSave.Text="Save Pos" 
+            BtnSave.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end)
+    end 
+end)
+
+-- Load Pos
+BtnLoad.MouseButton1Click:Connect(function() 
+    if SavedCFrame and HRP then 
+        HRP.CFrame = SavedCFrame 
+        ToggleVisual(BtnLoad,true) 
+        Notify("Posisi Dimuat", "Teleportasi ke lokasi yang disimpan...")
+        wait(0.2) 
+        ToggleVisual(BtnLoad,false) 
+    else
+        Notify("Gagal", "Belum ada posisi yang disimpan!")
+    end 
+end)
