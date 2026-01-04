@@ -2,7 +2,7 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Loading Sayang... (FPS Options Updated)",
+        Text = "Loading Sayang... (Auto Equip Ready)", -- Teks diperbarui
         Duration = 2,
     })
 end)
@@ -260,7 +260,7 @@ local function Notify(title, text)
     game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
 end
 
--- Update States
+-- Update States: Removed HideRod
 local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEvent=false}
 local SavedCFrame = nil 
 local Connections = {}
@@ -271,13 +271,14 @@ local EventList = {"None", "Merchant", "Megalodon", "Isonade", "Whale", "Meteor"
 local PrioIndex = 1
 local SecIndex = 1
 
--- Membuat Tombol
+-- Membuat Tombol (Tombol Hide Rod Dihapus)
 local BtnFreeze = MakeBtn("Freeze: OFF")
 local BtnWow    = MakeBtn("Water Walk: OFF")
 local BtnNoclip = MakeBtn("No Clip: OFF")
 local BtnBoost  = MakeBtn("Boost: OFF")
 local BtnRender = MakeBtn("3D Render: ON") 
-local BtnFps    = MakeBtn("FPS: 60") -- Default Text
+-- BtnHideRod Removed
+local BtnFps    = MakeBtn("FPS: Unli") 
 local BtnSave   = MakeBtn("Save Pos")
 local BtnLoad   = MakeBtn("Load Pos")
 local BtnRejoin = MakeBtn("Rejoin Server")
@@ -296,19 +297,15 @@ RunService.RenderStepped:Connect(function(dt)
     Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
 end)
 
--- LOGIC TOMBOL FPS (UPDATED: 60, 90, 144, 240)
+-- LOGIC TOMBOL
 BtnFps.MouseButton1Click:Connect(function()
-    local caps = {60, 90, 144, 240}
-    _G.fpsIndex = ((_G.fpsIndex or 0) % #caps) + 1
+    local caps = {30, 60, 144, 999}
+    _G.fpsIndex = ((_G.fpsIndex or 4) % #caps) + 1
     local v = caps[_G.fpsIndex]
-    
-    if setfpscap then 
-        setfpscap(v) 
-    end
-    
-    BtnFps.Text = "FPS: " .. v
+    if setfpscap then setfpscap(v) end
+    BtnFps.Text = "FPS: " .. (v > 900 and "Unlim" or v)
     ToggleVisual(BtnFps, true)
-    task.wait(0.1)
+    wait(0.1)
     ToggleVisual(BtnFps, false)
 end)
 
@@ -519,6 +516,7 @@ BtnRender.MouseButton1Click:Connect(function()
     ToggleVisual(BtnRender, States.NoRender) 
 end)
 
+-- Tombol Save, Load, Rejoin (Karena tidak ada logika spesifik di script asli, dibiarkan sebagai button saja atau diisi jika perlu)
 BtnRejoin.MouseButton1Click:Connect(function()
     TeleportService:Teleport(game.PlaceId, Player)
 end)
