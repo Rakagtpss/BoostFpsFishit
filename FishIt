@@ -2,12 +2,12 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Memuat Interface (v2.2)...",
-        Duration = 2,
+        Text = "Sedang Loading...",
+        Duration = 2.5,
     })
 end)
 
-task.wait(1)
+task.wait(4)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -16,7 +16,6 @@ local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage") 
-local StatsService = game:GetService("Stats") 
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
@@ -27,10 +26,10 @@ Player.CharacterAdded:Connect(function(newChar)
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
 end)
 
--- // Konfigurasi Visual
+-- // Konfigurasi Visual (Dark Transparent)
 local UI_THEME = {
     Width = 280, 
-    Height = 240, -- [FIXED] Tinggi ditambah agar tombol Ping muat
+    Height = 220, -- [UPDATED] Sedikit ditinggikan untuk muat tombol
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -363,12 +362,12 @@ local BtnBoost  = MakeBtn(PageMain, "Boost: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli") 
 
--- TAB MISC (Pastikan Tombol Ping Ada Disini)
+-- TAB MISC
 local BtnSave   = MakeBtn(PageMisc, "Save Pos")
 local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
 local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
-local BtnPing   = MakeBtn(PageMisc, "Ping Booster") -- << TOMBOL PING
+local BtnClean  = MakeBtn(PageMisc, "Clean Memory") -- [NEW BUTTON]
 
 -- FPS Logic
 local fpsT = 0
@@ -380,7 +379,7 @@ end)
 
 -- [UPDATED] FPS BUTTON LOGIC
 BtnFps.MouseButton1Click:Connect(function()
-    local caps = {30, 60, 90, 144, 240, 9999} 
+    local caps = {30, 60, 90, 144, 240, 9999} -- Pilihan Baru
     _G.fpsIndex = ((_G.fpsIndex or #caps) % #caps) + 1
     local v = caps[_G.fpsIndex]
     
@@ -521,7 +520,7 @@ BtnNoclip.MouseButton1Click:Connect(function()
     end 
 end)
 
--- Boost (Graphics)
+-- Boost
 BtnBoost.MouseButton1Click:Connect(function() 
     States.Boost = not States.Boost 
     ToggleVisual(BtnBoost, States.Boost) 
@@ -573,31 +572,3 @@ BtnLoad.MouseButton1Click:Connect(function()
         wait(0.2) 
         ToggleVisual(BtnLoad,false) 
     else
-        Notify("Gagal", "Belum ada posisi yang disimpan!")
-    end 
-end)
-
--- [FIXED] PING BOOSTER LOGIC
-BtnPing.MouseButton1Click:Connect(function()
-    ToggleVisual(BtnPing, true)
-    
-    local success, currentPing = pcall(function()
-        return StatsService.Network.ServerStatsItem["Data Ping"]:GetValue()
-    end)
-    
-    if not success then currentPing = 0 end
-    
-    pcall(function()
-        settings().Network.IncomingReplicationLag = 0
-    end)
-    
-    Notify("Ping Booster", "Network Optimized! Ping: " .. math.floor(currentPing) .. "ms")
-    
-    BtnPing.Text = "Ping: " .. math.floor(currentPing) .. "ms"
-    
-    task.delay(0.5, function()
-        ToggleVisual(BtnPing, false)
-        BtnPing.Text = "Ping Booster"
-    end)
-end)
-
