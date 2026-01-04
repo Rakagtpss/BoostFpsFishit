@@ -2,8 +2,8 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Memuat Interface...",
-        Duration = 1.5,
+        Text = "Memuat Script",
+        Duration = 2,
     })
 end)
 
@@ -29,7 +29,7 @@ end)
 -- // Konfigurasi Visual (Dark Transparent)
 local UI_THEME = {
     Width = 280, 
-    Height = 250, -- Sedikit dipertinggi untuk tombol baru
+    Height = 210, -- [UPDATED] Tinggi diubah menjadi 210
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -354,7 +354,7 @@ local BodyV = nil
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
-local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF") -- [NEW]
+local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
@@ -376,14 +376,22 @@ RunService.RenderStepped:Connect(function(dt)
     Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
 end)
 
+-- [UPDATED] FPS BUTTON LOGIC
 BtnFps.MouseButton1Click:Connect(function()
-    local caps = {30, 60, 144, 999}
-    _G.fpsIndex = ((_G.fpsIndex or 4) % #caps) + 1
+    local caps = {30, 60, 90, 144, 240, 9999} -- Pilihan Baru
+    _G.fpsIndex = ((_G.fpsIndex or #caps) % #caps) + 1
     local v = caps[_G.fpsIndex]
+    
     if setfpscap then setfpscap(v) end
-    BtnFps.Text = "FPS: " .. (v > 900 and "Unlim" or v)
+    
+    if v > 1000 then
+        BtnFps.Text = "FPS: MaxFps"
+    else
+        BtnFps.Text = "FPS: " .. v
+    end
+    
     ToggleVisual(BtnFps, true)
-    wait(0.1)
+    task.wait(0.1)
     ToggleVisual(BtnFps, false)
 end)
 
@@ -399,7 +407,7 @@ end)
 -- [5] BACKGROUND LOOPS (AUTO EQUIP, STATS)
 -- ====================================================
 
--- >> LOGIC AUTO EQUIP (BARU) <<
+-- >> LOGIC AUTO EQUIP
 task.spawn(function()
     while true do
         task.wait(1.5) -- Cek setiap 1.5 detik
@@ -566,4 +574,3 @@ BtnLoad.MouseButton1Click:Connect(function()
         Notify("Gagal", "Belum ada posisi yang disimpan!")
     end 
 end)
-
