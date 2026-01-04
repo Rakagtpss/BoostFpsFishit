@@ -2,7 +2,7 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Memuat Interface (Black Mode)...",
+        Text = "Memuat Interface (v2)...",
         Duration = 2,
     })
 end)
@@ -29,7 +29,7 @@ end)
 -- // Konfigurasi Visual (Dark Transparent)
 local UI_THEME = {
     Width = 280, 
-    Height = 210, 
+    Height = 210, -- [UPDATED] Tinggi diubah menjadi 210
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -51,15 +51,6 @@ ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- [BARU] Black Screen Overlay (Lapisan Hitam)
-local BlackOverlay = Instance.new("Frame", ScreenGui)
-BlackOverlay.Name = "BlackScreenOverlay"
-BlackOverlay.Size = UDim2.new(1, 0, 1, 0)
-BlackOverlay.Position = UDim2.new(0, 0, 0, 0)
-BlackOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Warna Hitam Pekat
-BlackOverlay.Visible = false -- Default mati
-BlackOverlay.ZIndex = 0 -- Di belakang UI utama
-
 -- ====================================================
 -- [1] MINI FLOATING HUD (PANEL SERAPHIN)
 -- ====================================================
@@ -72,7 +63,6 @@ FloatHUD.BackgroundTransparency = 0.3
 FloatHUD.Visible = true
 FloatHUD.Active = true
 FloatHUD.Draggable = true 
-FloatHUD.ZIndex = 10 -- Supaya di atas layar hitam
 
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_THEME.Accent
@@ -104,14 +94,12 @@ TitleLabel.TextColor3 = UI_THEME.Accent
 TitleLabel.Font = Enum.Font.GothamBlack
 TitleLabel.TextSize = 12
 TitleLabel.TextStrokeTransparency = 0.8
-TitleLabel.ZIndex = 11
 
 local Div = Instance.new("Frame", FloatHUD)
 Div.LayoutOrder = 2
 Div.Size = UDim2.new(0.8, 0, 0, 1)
 Div.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 Div.BorderSizePixel = 0
-Div.ZIndex = 11
 
 local function CreateStatBlock(titleText, defaultVal, order)
     local Block = Instance.new("Frame", FloatHUD)
@@ -119,7 +107,6 @@ local function CreateStatBlock(titleText, defaultVal, order)
     Block.LayoutOrder = order
     Block.Size = UDim2.new(1, 0, 0, 35) 
     Block.BackgroundTransparency = 1
-    Block.ZIndex = 11
     
     local LblTitle = Instance.new("TextLabel", Block)
     LblTitle.Name = "Title"
@@ -130,7 +117,6 @@ local function CreateStatBlock(titleText, defaultVal, order)
     LblTitle.TextColor3 = UI_THEME.SubTextColor
     LblTitle.Font = Enum.Font.GothamBold
     LblTitle.TextSize = 9
-    LblTitle.ZIndex = 11
     
     local LblValue = Instance.new("TextLabel", Block)
     LblValue.Name = "Value"
@@ -141,7 +127,6 @@ local function CreateStatBlock(titleText, defaultVal, order)
     LblValue.TextColor3 = UI_THEME.TextColor
     LblValue.Font = Enum.Font.GothamBold
     LblValue.TextSize = 16 
-    LblValue.ZIndex = 11
     
     return LblValue 
 end
@@ -162,7 +147,6 @@ Main.BackgroundTransparency = UI_THEME.Transparency
 Main.Active = true
 Main.Draggable = true
 Main.ClipsDescendants = true 
-Main.ZIndex = 10 -- Di atas layar hitam
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
 local MainStroke = Instance.new("UIStroke", Main)
@@ -176,7 +160,6 @@ Header.Name = "Header"
 Header.Size = UDim2.new(1, 0, 0, 32) 
 Header.BackgroundColor3 = UI_THEME.HeaderColor
 Header.BackgroundTransparency = 0.5
-Header.ZIndex = 11
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local HeaderFiller = Instance.new("Frame", Header)
@@ -185,7 +168,6 @@ HeaderFiller.Position = UDim2.new(0, 0, 1, -5)
 HeaderFiller.BackgroundColor3 = UI_THEME.HeaderColor
 HeaderFiller.BackgroundTransparency = 0.5
 HeaderFiller.BorderSizePixel = 0
-HeaderFiller.ZIndex = 11
 
 -- TITLE
 local Title = Instance.new("TextLabel", Header)
@@ -198,7 +180,6 @@ Title.Font = UI_THEME.Font
 Title.TextSize = 12
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left 
-Title.ZIndex = 12
 
 -- HIDE BUTTON
 local HideBtn = Instance.new("TextButton", Header)
@@ -211,7 +192,6 @@ HideBtn.TextColor3 = UI_THEME.Accent
 HideBtn.Font = Enum.Font.GothamBold
 HideBtn.TextSize = 10
 HideBtn.AutoButtonColor = true
-HideBtn.ZIndex = 12
 Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
 local HideStroke = Instance.new("UIStroke", HideBtn)
 HideStroke.Color = UI_THEME.Accent
@@ -225,7 +205,6 @@ TabHolder.Name = "TabHolder"
 TabHolder.Size = UDim2.new(1, 0, 0, 25)
 TabHolder.Position = UDim2.new(0, 0, 0, 32)
 TabHolder.BackgroundTransparency = 1
-TabHolder.ZIndex = 11
 
 local TabMainBtn = Instance.new("TextButton", TabHolder)
 TabMainBtn.Name = "MainTab"
@@ -235,7 +214,6 @@ TabMainBtn.Text = "MAIN"
 TabMainBtn.Font = Enum.Font.GothamBold
 TabMainBtn.TextSize = 11
 TabMainBtn.TextColor3 = UI_THEME.TabOn
-TabMainBtn.ZIndex = 12
 
 local TabMiscBtn = Instance.new("TextButton", TabHolder)
 TabMiscBtn.Name = "MiscTab"
@@ -246,14 +224,12 @@ TabMiscBtn.Text = "MISC"
 TabMiscBtn.Font = Enum.Font.GothamBold
 TabMiscBtn.TextSize = 11
 TabMiscBtn.TextColor3 = UI_THEME.TabOff
-TabMiscBtn.ZIndex = 12
 
 local TabIndicator = Instance.new("Frame", TabHolder)
 TabIndicator.Size = UDim2.new(0.5, 0, 0, 2)
 TabIndicator.Position = UDim2.new(0, 0, 1, -2)
 TabIndicator.BackgroundColor3 = UI_THEME.Accent
 TabIndicator.BorderSizePixel = 0
-TabIndicator.ZIndex = 13
 
 -- PAGES CONTAINER
 local PageContainer = Instance.new("Frame", Main)
@@ -261,7 +237,6 @@ PageContainer.Name = "PageContainer"
 PageContainer.Size = UDim2.new(1, -16, 1, -65) 
 PageContainer.Position = UDim2.new(0, 8, 0, 60)
 PageContainer.BackgroundTransparency = 1
-PageContainer.ZIndex = 11
 
 -- Page 1: Main
 local PageMain = Instance.new("Frame", PageContainer)
@@ -269,7 +244,6 @@ PageMain.Name = "PageMain"
 PageMain.Size = UDim2.new(1, 0, 1, 0)
 PageMain.BackgroundTransparency = 1
 PageMain.Visible = true
-PageMain.ZIndex = 11
 
 local GridMain = Instance.new("UIGridLayout", PageMain)
 GridMain.CellSize = UDim2.new(0, 128, 0, 28) 
@@ -282,7 +256,6 @@ PageMisc.Name = "PageMisc"
 PageMisc.Size = UDim2.new(1, 0, 1, 0)
 PageMisc.BackgroundTransparency = 1
 PageMisc.Visible = false
-PageMisc.ZIndex = 11
 
 local GridMisc = Instance.new("UIGridLayout", PageMisc)
 GridMisc.CellSize = UDim2.new(0, 128, 0, 28) 
@@ -344,7 +317,6 @@ local function MakeBtn(parent, text)
     b.TextSize = 10 
     b.AutoButtonColor = true
     b.ClipsDescendants = true
-    b.ZIndex = 12
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
     local s = Instance.new("UIStroke", b)
     s.Color = Color3.fromRGB(60, 60, 70)
@@ -374,7 +346,7 @@ local function Notify(title, text)
     game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
 end
 
-local States = {Freeze=false, WoW=false, Boost=false, BlackScreen=false, Noclip=false, Panel=true, AutoEquip=false}
+local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEquip=false}
 local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
@@ -387,7 +359,7 @@ local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
 local BtnBoost  = MakeBtn(PageMain, "Boost: OFF")
-local BtnBlack  = MakeBtn(PageMain, "Black Mode: OFF") -- Ganti nama tombol
+local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli") 
 
 -- TAB MISC
@@ -406,7 +378,7 @@ end)
 
 -- [UPDATED] FPS BUTTON LOGIC
 BtnFps.MouseButton1Click:Connect(function()
-    local caps = {30, 60, 90, 144, 240, 9999} 
+    local caps = {30, 60, 90, 144, 240, 9999} -- Pilihan Baru
     _G.fpsIndex = ((_G.fpsIndex or #caps) % #caps) + 1
     local v = caps[_G.fpsIndex]
     
@@ -443,8 +415,9 @@ task.spawn(function()
             pcall(function()
                 local char = Player.Character
                 if char then
+                    -- Cek jika tidak memegang tool apapun
                     if not char:FindFirstChildWhichIsA("Tool") then
-                        local args = { [1] = 1 } 
+                        local args = { [1] = 1 } -- Equip Slot 1
                         local remote = game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0")
                         if remote then
                             remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
@@ -464,12 +437,14 @@ task.spawn(function()
             continue 
         end
         pcall(function()
+            -- [1] FISH CAUGHT
             local ls = Player:FindFirstChild("leaderstats")
             local caughtObj = ls and ls:FindFirstChild("Caught")
             local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
             local val = caughtObj and caughtObj.Value or 0
             LblFishVal.Text = formatNum(val)
 
+            -- [2] BACKPACK
             local pg = Player:FindFirstChild("PlayerGui")
             local backpackGui = pg and pg:FindFirstChild("Backpack")
             local bagText = "0/?"
@@ -562,12 +537,12 @@ BtnBoost.MouseButton1Click:Connect(function()
     end
 end)
 
--- [UPDATED] BLACK SCREEN (PENGGANTI 3D RENDER)
-BtnBlack.MouseButton1Click:Connect(function() 
-    States.BlackScreen = not States.BlackScreen 
-    BlackOverlay.Visible = States.BlackScreen
-    BtnBlack.Text = "Black Mode: "..(States.BlackScreen and "ON" or "OFF") 
-    ToggleVisual(BtnBlack, States.BlackScreen) 
+-- 3D Render
+BtnRender.MouseButton1Click:Connect(function() 
+    States.NoRender = not States.NoRender 
+    RunService:Set3dRenderingEnabled(not States.NoRender) 
+    BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
+    ToggleVisual(BtnRender, States.NoRender) 
 end)
 
 -- Rejoin
@@ -576,4 +551,27 @@ BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.Pla
 -- Save Pos
 BtnSave.MouseButton1Click:Connect(function() 
     if HRP then 
-     
+        SavedCFrame = HRP.CFrame 
+        BtnSave.Text="SAVED" 
+        BtnSave.TextColor3 = Color3.fromRGB(100, 255, 100)
+        Notify("Posisi Disimpan", "Lokasi Anda saat ini telah disimpan.")
+        task.delay(1, function()
+            BtnSave.Text="Save Pos" 
+            BtnSave.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end)
+    end 
+end)
+
+-- Load Pos
+BtnLoad.MouseButton1Click:Connect(function() 
+    if SavedCFrame and HRP then 
+        HRP.CFrame = SavedCFrame 
+        ToggleVisual(BtnLoad,true) 
+        Notify("Posisi Dimuat", "Teleportasi ke lokasi yang disimpan...")
+        wait(0.2) 
+        ToggleVisual(BtnLoad,false) 
+    else
+        Notify("Gagal", "Belum ada posisi yang disimpan!")
+    end 
+end)
+
