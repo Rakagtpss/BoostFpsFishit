@@ -2,12 +2,12 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Loading Sayang",
-        Duration = 2,
+        Text = "Sedang Loading Sayang!",
+        Duration = 2.5,
     })
 end)
 
-task.wait(3.5)
+task.wait(3.8)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -15,8 +15,9 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
-local UserInputService = game:GetService("UserInputService") -- [NEW] Service Input
+local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage") 
+local TweenService = game:GetService("TweenService")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
@@ -29,8 +30,8 @@ end)
 
 -- // Konfigurasi Visual
 local UI_THEME = {
-    MinWidth = 280,  -- Batas terkecil Lebar
-    MinHeight = 230, -- Batas terkecil Tinggi
+    MinWidth = 280,  
+    MinHeight = 230, 
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -53,7 +54,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [1] MINI FLOATING HUD (PANEL SERAPHIN)
+-- [1] MINI FLOATING HUD
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
@@ -63,7 +64,7 @@ FloatHUD.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 FloatHUD.BackgroundTransparency = 0.3
 FloatHUD.Visible = true
 FloatHUD.Active = true
-FloatHUD.Draggable = true 
+FloatHUD.Draggable = true -- FloatHUD tetap pakai draggable bawaan karena simpel
 
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_THEME.Accent
@@ -85,7 +86,7 @@ Padding.PaddingBottom = UDim.new(0, 8)
 Padding.PaddingLeft = UDim.new(0, 5)
 Padding.PaddingRight = UDim.new(0, 5)
 
--- JUDUL PANEL
+-- JUDUL PANEL HUD
 local TitleLabel = Instance.new("TextLabel", FloatHUD)
 TitleLabel.LayoutOrder = 1
 TitleLabel.Size = UDim2.new(1, 0, 0, 15)
@@ -128,27 +129,26 @@ local function CreateStatBlock(titleText, defaultVal, order)
     LblValue.TextColor3 = UI_THEME.TextColor
     LblValue.Font = Enum.Font.GothamBold
     LblValue.TextSize = 16 
-    
     return LblValue 
 end
 
 local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...", 3) 
 local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)     
 
-
 -- ====================================================
 -- [2] MAIN MENU UI
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
--- Ukuran awal
 Main.Size = UDim2.new(0, UI_THEME.MinWidth, 0, UI_THEME.MinHeight)
 Main.Position = UDim2.new(0.5, -UI_THEME.MinWidth/2, 0.4, 0)
 Main.BackgroundColor3 = UI_THEME.Color
 Main.BackgroundTransparency = UI_THEME.Transparency
 Main.Active = true
-Main.Draggable = true
 Main.ClipsDescendants = true 
+-- [FIX] Draggable dimatikan agar tidak bentrok dengan Resize
+Main.Draggable = false 
+
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
 local MainStroke = Instance.new("UIStroke", Main)
@@ -156,51 +156,7 @@ MainStroke.Color = UI_THEME.Accent
 MainStroke.Thickness = 1.2
 MainStroke.Transparency = 0.4
 
--- ====================================================
--- [NEW] RESIZE HANDLE (POJOK KANAN BAWAH)
--- ====================================================
-local ResizeHandle = Instance.new("TextButton", Main)
-ResizeHandle.Name = "ResizeHandle"
-ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
-ResizeHandle.Position = UDim2.new(1, -20, 1, -20)
-ResizeHandle.BackgroundTransparency = 1
-ResizeHandle.Text = "◢" -- Ikon segitiga pojok
-ResizeHandle.TextColor3 = UI_THEME.Accent
-ResizeHandle.TextSize = 14
-ResizeHandle.Font = Enum.Font.Gotham
-ResizeHandle.ZIndex = 10
-
-local dragging = false
-local dragStart = nil
-local startSize = nil
-
-ResizeHandle.MouseButton1Down:Connect(function(input)
-    dragging = true
-    dragStart = UserInputService:GetMouseLocation()
-    startSize = Main.AbsoluteSize
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local currentPos = UserInputService:GetMouseLocation()
-        local diff = currentPos - dragStart
-        
-        -- Hitung ukuran baru
-        local newX = math.max(UI_THEME.MinWidth, startSize.X + diff.X)
-        local newY = math.max(UI_THEME.MinHeight, startSize.Y + diff.Y)
-        
-        Main.Size = UDim2.new(0, newX, 0, newY)
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
-end)
--- ====================================================
-
--- HEADER
+-- HEADER (Drag Zone)
 local Header = Instance.new("Frame", Main)
 Header.Name = "Header"
 Header.Size = UDim2.new(1, 0, 0, 32) 
@@ -215,6 +171,36 @@ HeaderFiller.BackgroundColor3 = UI_THEME.HeaderColor
 HeaderFiller.BackgroundTransparency = 0.5
 HeaderFiller.BorderSizePixel = 0
 
+-- [NEW] CUSTOM DRAGGABLE SCRIPT (Menggantikan Main.Draggable)
+local dragToggle, dragInput, dragStart, startPos
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    local position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    Main.Position = position
+end
+Header.InputBegan:Connect(function(input)
+    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+        dragToggle = true
+        dragStart = input.Position
+        startPos = Main.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragToggle = false
+            end
+        end)
+    end
+end)
+Header.InputChanged:Connect(function(input)
+    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        dragInput = input
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragToggle then
+        updateInput(input)
+    end
+end)
+
 -- TITLE
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0) 
@@ -226,6 +212,45 @@ Title.Font = UI_THEME.Font
 Title.TextSize = 12
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left 
+
+-- [NEW] RESIZE HANDLE (POJOK KANAN BAWAH)
+local ResizeHandle = Instance.new("ImageButton", Main)
+ResizeHandle.Name = "ResizeHandle"
+ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
+ResizeHandle.Position = UDim2.new(1, -20, 1, -20)
+ResizeHandle.BackgroundTransparency = 1
+ResizeHandle.Image = "rbxassetid://6031091000" -- Image segitiga
+ResizeHandle.ImageColor3 = UI_THEME.Accent
+ResizeHandle.ImageTransparency = 0.3
+ResizeHandle.ZIndex = 20 -- Paling atas
+
+local isResizing = false
+local resizeStartPos = nil
+local resizeStartSize = nil
+
+ResizeHandle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isResizing = true
+        resizeStartPos = input.Position
+        resizeStartSize = Main.AbsoluteSize
+    end
+end)
+
+ResizeHandle.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isResizing = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if isResizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - resizeStartPos
+        local newX = math.max(UI_THEME.MinWidth, resizeStartSize.X + delta.X)
+        local newY = math.max(UI_THEME.MinHeight, resizeStartSize.Y + delta.Y)
+        
+        Main.Size = UDim2.new(0, newX, 0, newY)
+    end
+end)
 
 -- HIDE BUTTON
 local HideBtn = Instance.new("TextButton", Header)
@@ -337,7 +362,7 @@ HideBtn.MouseButton1Click:Connect(function()
     if IsMinimized then
         PageContainer.Visible = false
         TabHolder.Visible = false
-        ResizeHandle.Visible = false -- Sembunyikan handle saat minimize
+        ResizeHandle.Visible = false
         Main:TweenSize(UDim2.new(0, UI_THEME.MinWidth, 0, 32), "Out", "Quad", 0.3, true) 
         HideBtn.Text = "Show" 
         HideBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -412,7 +437,7 @@ local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
 local BtnBoost  = MakeBtn(PageMain, "Boost: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
-local BtnFps    = MakeBtn(PageMain, "FPS: Unli") 
+local BtnFps    = MakeBtn(PageMain, "FPS: Max") 
 
 -- TAB MISC
 local BtnSave   = MakeBtn(PageMisc, "Save Pos")
@@ -462,7 +487,7 @@ end)
 -- AUTO CLEAN RAM LOOP
 task.spawn(function()
     while true do
-        task.wait(300) -- Loop setiap 5 menit
+        task.wait(300) -- Loop setiap 5 Menit
         if States.AutoClean then
             pcall(function()
                 local before = gcinfo()
@@ -482,7 +507,7 @@ BtnClean.MouseButton1Click:Connect(function()
     if States.AutoClean then
         Notify("Auto Clean ON", "Membersihkan RAM setiap 5 Menit ")
     else
-        Notify("Auto Clean OFF", "Pembersihan otomatis dimatikan ")
+        Notify("Auto Clean OFF", "Pembersihan otomatis dimatikan")
     end
 end)
 
@@ -510,7 +535,7 @@ end)
 -- >> UPDATE STATS LOOP
 task.spawn(function()
     while true do
-        task.wait(0.4)
+        task.wait(0.5)
         if not States.Panel then 
             continue 
         end
@@ -554,101 +579,4 @@ BtnEquip.MouseButton1Click:Connect(function()
 end)
 
 -- Freeze
-BtnFreeze.MouseButton1Click:Connect(function() 
-    States.Freeze = not States.Freeze 
-    if HRP then HRP.Anchored = States.Freeze end 
-    BtnFreeze.Text = "Freeze: " .. (States.Freeze and "ON" or "OFF")
-    ToggleVisual(BtnFreeze, States.Freeze) 
-end)
-
--- Water Walk
-BtnWow.MouseButton1Click:Connect(function() 
-    States.WoW = not States.WoW 
-    BtnWow.Text = "Water Walk: " .. (States.WoW and "ON" or "OFF")
-    ToggleVisual(BtnWow, States.WoW) 
-    if States.WoW then 
-        BodyV = Instance.new("BodyVelocity", HRP) 
-        BodyV.MaxForce = Vector3.new(0,1e6,0) 
-        BodyV.Velocity = Vector3.zero 
-        Connections["WoW"] = RunService.Heartbeat:Connect(function() 
-            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X,0,HRP.AssemblyLinearVelocity.Z) end 
-        end) 
-    else 
-        if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
-        if BodyV then BodyV:Destroy() end 
-    end 
-end)
-
--- Noclip
-BtnNoclip.MouseButton1Click:Connect(function() 
-    States.Noclip = not States.Noclip 
-    BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") 
-    ToggleVisual(BtnNoclip, States.Noclip) 
-    if States.Noclip then 
-        Connections["Noclip"] = RunService.Stepped:Connect(function() 
-            if Player.Character then 
-                for _,v in pairs(Player.Character:GetDescendants()) do 
-                    if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end 
-                end 
-            end 
-        end) 
-    else 
-        if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end 
-    end 
-end)
-
--- Boost
-BtnBoost.MouseButton1Click:Connect(function() 
-    States.Boost = not States.Boost 
-    ToggleVisual(BtnBoost, States.Boost) 
-    BtnBoost.Text = "Boost: " .. (States.Boost and "ON" or "OFF")
-    Lighting.GlobalShadows = not States.Boost 
-    if States.Boost then
-        local function CleanVisuals(folder)
-            if not folder then return end
-            for _, v in pairs(folder:GetDescendants()) do
-                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") or v:IsA("Explosion") then v.Enabled = false end
-            end
-        end
-        CleanVisuals(workspace:FindFirstChild("Islands"))
-        CleanVisuals(ReplicatedStorage:FindFirstChild("Assets"))
-    end
-end)
-
--- 3D Render
-BtnRender.MouseButton1Click:Connect(function() 
-    States.NoRender = not States.NoRender 
-    RunService:Set3dRenderingEnabled(not States.NoRender) 
-    BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
-    ToggleVisual(BtnRender, States.NoRender) 
-end)
-
--- Rejoin
-BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
-
--- Save Pos
-BtnSave.MouseButton1Click:Connect(function() 
-    if HRP then 
-        SavedCFrame = HRP.CFrame 
-        BtnSave.Text="SAVED" 
-        BtnSave.TextColor3 = Color3.fromRGB(100, 255, 100)
-        Notify("Posisi Disimpan", "Lokasi Anda saat ini telah disimpan.")
-        task.delay(1, function()
-            BtnSave.Text="Save Pos" 
-            BtnSave.TextColor3 = Color3.fromRGB(200, 200, 200)
-        end)
-    end 
-end)
-
--- Load Pos
-BtnLoad.MouseButton1Click:Connect(function() 
-    if SavedCFrame and HRP then 
-        HRP.CFrame = SavedCFrame 
-        ToggleVisual(BtnLoad,true) 
-        Notify("Posisi Dimuat", "Teleportasi ke lokasi yang disimpan...")
-        wait(0.2) 
-        ToggleVisual(BtnLoad,false) 
-    else
-        Notify("Gagal", "Belum ada posisi yang disimpan!")
-    end 
-end)
+BtnFreeze.MouseButto
