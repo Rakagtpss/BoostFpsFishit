@@ -492,7 +492,7 @@ task.spawn(function()
     end
 end)
 
--- >> LOGIC AUTO EVENT (Smart Teleport & Precision Water Height)
+-- >> LOGIC AUTO EVENT (Ultra Precision)
 local EventReturnPos = nil
 local CurrentlyAtEvent = false
 
@@ -518,8 +518,8 @@ task.spawn(function()
                 if FoundEvent then
                     -- 1. JIKA EVENT DITEMUKAN
                     local targetCF = FoundEvent:IsA("Model") and FoundEvent:GetPivot() or FoundEvent.CFrame
-                    -- [FIX] Turunkan posisi target. Hanya +0.5 studs dari pusat event.
-                    local targetPos = targetCF.Position + Vector3.new(0, 0.5, 0)
+                    -- [FIX UPDATE] Ketinggian HAMPIR 0 (Menempel dengan event)
+                    local targetPos = targetCF.Position + Vector3.new(0, 0.1, 0)
                     
                     if not CurrentlyAtEvent then
                         if HRP then EventReturnPos = HRP.CFrame end
@@ -535,7 +535,7 @@ task.spawn(function()
                             HRP.CFrame = CFrame.new(targetPos)
                         end
                         
-                        -- >> SMART WATER DETECTION (LOW ALTITUDE) <<
+                        -- >> SMART WATER DETECTION (ULTRA LOW) <<
                         local rayOrigin = HRP.Position
                         local rayDirection = Vector3.new(0, -20, 0) 
                         
@@ -546,10 +546,10 @@ task.spawn(function()
                         
                         local rayResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
                         
-                        -- LOGIKA: Aktifkan WoW hanya jika jarak ke air SANGAT DEKAT (< 1.5 studs)
+                        -- [FIX UPDATE] Toleransi Jarak < 0.5 (Sangat Dekat)
                         if rayResult and rayResult.Material == Enum.Material.Water then
-                            if rayResult.Distance < 1.5 then
-                                -- SUDAH SANGAT DEKAT AIR -> AKTIFKAN WoW
+                            if rayResult.Distance < 0.5 then
+                                -- SUDAH SANGAT DEKAT AIR (0.5 Studs) -> AKTIFKAN WoW
                                 if not EventBodyV then
                                     EventBodyV = Instance.new("BodyVelocity", HRP)
                                     EventBodyV.MaxForce = Vector3.new(0, 1e6, 0)
@@ -557,7 +557,7 @@ task.spawn(function()
                                 end
                                 HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
                             else
-                                -- MASIH DI UDARA (> 1.5 Studs) -> BIARKAN JATUH
+                                -- MASIH DI UDARA -> BIARKAN JATUH
                                 if EventBodyV then 
                                     EventBodyV:Destroy() 
                                     EventBodyV = nil 
