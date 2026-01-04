@@ -29,7 +29,7 @@ end)
 -- // Konfigurasi Visual (Dark Transparent)
 local UI_THEME = {
     Width = 280, 
-    Height = 250, 
+    Height = 200, 
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -50,7 +50,7 @@ ScreenGui.Name = "SeraphinHelper"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.IgnoreGuiInset = true 
+ScreenGui.IgnoreGuiInset = true -- PENTING: Agar layar hitam menutupi Top Bar
 
 -- ====================================================
 -- [BARU] BLACK OVERLAY (LAYAR HITAM)
@@ -63,6 +63,7 @@ BlackOverlay.ZIndex = 99999 -- Pastikan di paling atas
 BlackOverlay.Visible = false -- Default mati
 BlackOverlay.BorderSizePixel = 0
 
+-- Tambahkan Text agar tau script masih jalan saat hitam
 local AFKLabel = Instance.new("TextLabel", BlackOverlay)
 AFKLabel.Size = UDim2.new(1, 0, 1, 0)
 AFKLabel.BackgroundTransparency = 1
@@ -169,7 +170,7 @@ Main.Draggable = true
 Main.ClipsDescendants = true 
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
--- Pastikan Main UI ada di atas overlay hitam
+-- Pastikan Main UI ada di atas overlay hitam agar tombol masih bisa ditekan
 Main.ZIndex = 100000 
 
 local MainStroke = Instance.new("UIStroke", Main)
@@ -328,7 +329,7 @@ HideBtn.MouseButton1Click:Connect(function()
             end 
         end)
     end
-end
+end)
 
 local function MakeBtn(parent, text)
     local b = Instance.new("TextButton", parent)
@@ -369,35 +370,21 @@ local function Notify(title, text)
     game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
 end
 
-local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEquip=false, HideEquip=false}
+local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEquip=false}
 local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
 
--- >> HELPER: GET NIL INSTANCE
-local function GetNilInstance(name, class)
-    -- Mengecek apakah executor support getnilinstances
-    if getnilinstances then
-        for _, v in next, getnilinstances() do 
-            if v.ClassName == class and v.Name == name then 
-                return v 
-            end 
-        end 
-    end
-    return nil
-end
-
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
-local BtnEquip    = MakeBtn(PageMain, "Auto Equip: OFF")
-local BtnHideItem = MakeBtn(PageMain, "Hide Item: OFF") -- [BARU]
-local BtnFreeze   = MakeBtn(PageMain, "Freeze: OFF")
-local BtnWow      = MakeBtn(PageMain, "Water Walk: OFF")
-local BtnNoclip   = MakeBtn(PageMain, "No Clip: OFF")
-local BtnBoost    = MakeBtn(PageMain, "Boost: OFF")
-local BtnRender   = MakeBtn(PageMain, "3D Render: ON") 
-local BtnFps      = MakeBtn(PageMain, "FPS: Unli") 
+local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
+local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
+local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
+local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
+local BtnBoost  = MakeBtn(PageMain, "Boost: OFF")
+local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
+local BtnFps    = MakeBtn(PageMain, "FPS: Unli") 
 
 -- TAB MISC
 local BtnSave   = MakeBtn(PageMisc, "Save Pos")
@@ -433,15 +420,13 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [5] BACKGROUND LOOPS 
+-- [5] BACKGROUND LOOPS (AUTO EQUIP, STATS)
 -- ====================================================
 
--- >> AUTO EQUIP & HIDE ITEM LOOP
+-- >> LOGIC AUTO EQUIP
 task.spawn(function()
     while true do
-        task.wait(1) -- Cek setiap 1 detik agar tidak lag
-        
-        -- Logic Auto Equip
+        task.wait(1.5)
         if States.AutoEquip then
             pcall(function()
                 local char = Player.Character
@@ -453,17 +438,6 @@ task.spawn(function()
                             remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
                         end
                     end
-                end
-            end)
-        end
-
-        -- Logic Hide Equip Item (BARU)
-        if States.HideEquip then
-            pcall(function()
-                -- Cari item di nil instance sesuai request
-                local nilModel = GetNilInstance("!!!EQUIPPED_TOOL!!!", "Model")
-                if nilModel then
-                    nilModel:Destroy() -- Hapus modelnya
                 end
             end)
         end
@@ -512,13 +486,6 @@ BtnEquip.MouseButton1Click:Connect(function()
     States.AutoEquip = not States.AutoEquip
     BtnEquip.Text = "Auto Equip: " .. (States.AutoEquip and "ON" or "OFF")
     ToggleVisual(BtnEquip, States.AutoEquip)
-end)
-
--- Hide Item Equip (BARU)
-BtnHideItem.MouseButton1Click:Connect(function()
-    States.HideEquip = not States.HideEquip
-    BtnHideItem.Text = "Hide Item: " .. (States.HideEquip and "ON" or "OFF")
-    ToggleVisual(BtnHideItem, States.HideEquip)
 end)
 
 -- Freeze
@@ -571,4 +538,29 @@ BtnBoost.MouseButton1Click:Connect(function()
     ToggleVisual(BtnBoost, States.Boost) 
     BtnBoost.Text = "Boost: " .. (States.Boost and "ON" or "OFF")
     Lighting.GlobalShadows = not States.Boost 
-    if States
+    if States.Boost then
+        local function CleanVisuals(folder)
+            if not folder then return end
+            for _, v in pairs(folder:GetDescendants()) do
+                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") or v:IsA("Explosion") then v.Enabled = false end
+            end
+        end
+        CleanVisuals(workspace:FindFirstChild("Islands"))
+        CleanVisuals(ReplicatedStorage:FindFirstChild("Assets"))
+    end
+end)
+
+-- 3D Render (MODIFIED TO BLACK SCREEN)
+BtnRender.MouseButton1Click:Connect(function() 
+    States.NoRender = not States.NoRender 
+    
+    -- 1. Tampilkan Black Screen jika NoRender aktif
+    BlackOverlay.Visible = States.NoRender
+    
+    -- 2. Tunggu sebentar (1 frame) agar UI Hitam ter-render sebelum mematikan 3D
+    RunService.RenderStepped:Wait()
+    
+    -- 3. Matikan 3D Render (GPU Usage 0%)
+    RunService:Set3dRenderingEnabled(not States.NoRender) 
+    
+    BtnRender.Text = "3D Render: "..(S
