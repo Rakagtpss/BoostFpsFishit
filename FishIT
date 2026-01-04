@@ -492,7 +492,7 @@ task.spawn(function()
     end
 end)
 
--- >> LOGIC AUTO EVENT (Smart Water Detection & Return)
+-- >> LOGIC AUTO EVENT (Stabilized & Smart Water)
 local EventReturnPos = nil
 local CurrentlyAtEvent = false
 
@@ -517,26 +517,31 @@ task.spawn(function()
 
                 if FoundEvent then
                     -- 1. JIKA EVENT DITEMUKAN
+                    local targetCF = FoundEvent:IsA("Model") and FoundEvent:GetPivot() or FoundEvent.CFrame
+                    local targetPos = targetCF.Position + Vector3.new(0, 5, 0)
+                    
                     if not CurrentlyAtEvent then
                         if HRP then EventReturnPos = HRP.CFrame end
                         CurrentlyAtEvent = true
                         Notify("Event Detected!", "Teleport ke: " .. FoundEvent.Name)
                     end
                     
-                    -- Teleport Loop
                     if HRP then
-                        local targetCF = FoundEvent:IsA("Model") and FoundEvent:GetPivot() or FoundEvent.CFrame
-                        -- Set posisi ke event
-                        HRP.CFrame = targetCF + Vector3.new(0, 5, 0) 
+                        -- [PERBAIKAN NAIK TURUN] 
+                        -- Hanya teleport jika jarak > 20 studs. Jika sudah dekat, jangan teleport paksa.
+                        local dist = (HRP.Position - targetPos).Magnitude
+                        if dist > 20 then
+                            HRP.CFrame = CFrame.new(targetPos)
+                        end
                         
                         -- >> SMART WATER DETECTION <<
                         local rayOrigin = HRP.Position
-                        local rayDirection = Vector3.new(0, -15, 0) -- Cek 15 studs ke bawah
+                        local rayDirection = Vector3.new(0, -15, 0) 
                         
                         local raycastParams = RaycastParams.new()
                         raycastParams.FilterDescendantsInstances = {Char}
                         raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-                        raycastParams.IgnoreWater = false -- PENTING: Jangan abaikan air
+                        raycastParams.IgnoreWater = false 
                         
                         local rayResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
                         
@@ -547,9 +552,10 @@ task.spawn(function()
                                 EventBodyV.MaxForce = Vector3.new(0, 1e6, 0)
                                 EventBodyV.Velocity = Vector3.zero
                             end
+                            -- Jaga agar tidak jatuh ke air
                             HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
                         else
-                            -- TIDAK ADA AIR (DARATAN/UDARA) -> MATIKAN WoW
+                            -- TIDAK ADA AIR (DARATAN) -> MATIKAN WoW AGAR BISA JALAN NORMAL
                             if EventBodyV then 
                                 EventBodyV:Destroy() 
                                 EventBodyV = nil 
@@ -630,10 +636,9 @@ BtnEvent.MouseButton1Click:Connect(function()
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
     ToggleVisual(BtnEvent, States.AutoEvent)
     if States.AutoEvent then
-        Notify("Auto Event ON", "Sedang Mencari Event...") -- >> NOTIFIKASI DIUBAH DISINI
+        Notify("Auto Event ON", "Sedang Mencari Event...") 
     else
         Notify("Auto Event OFF", "Fitur dimatikan.")
-        -- Logika pengembalian sudah ditangani otomatis oleh loop
     end
 end)
 
