@@ -2,12 +2,12 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Memuat Interface (Net Boost Added)...",
+        Text = "Memuat Interface (Stats Network Added)...",
         Duration = 2,
     })
 end)
 
-task.wait(1)
+task.wait(3.5)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -17,6 +17,7 @@ local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage") 
 local NetworkClient = game:GetService("NetworkClient")
+local StatsService = game:GetService("Stats") -- [NEW] Service Stats
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
@@ -30,7 +31,7 @@ end)
 -- // Konfigurasi Visual (Dark Transparent)
 local UI_THEME = {
     Width = 280, 
-    Height = 280, -- Dipertinggi sedikit untuk tombol tambahan
+    Height = 280, 
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -57,7 +58,7 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 140, 0, 125) 
+FloatHUD.Size = UDim2.new(0, 140, 0, 165) -- Dipertinggi untuk PING
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
 FloatHUD.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 FloatHUD.BackgroundTransparency = 0.3
@@ -132,8 +133,9 @@ local function CreateStatBlock(titleText, defaultVal, order)
     return LblValue 
 end
 
-local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...", 3) 
-local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)     
+local LblPingVal = CreateStatBlock("SERVER PING", "0 ms", 3) -- [NEW]
+local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...", 4) 
+local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 5)     
 
 
 -- ====================================================
@@ -360,7 +362,7 @@ local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
 local BtnBoost  = MakeBtn(PageMain, "Boost: OFF")
-local BtnNet    = MakeBtn(PageMain, "Net Boost: OFF") -- [NEW]
+local BtnNet    = MakeBtn(PageMain, "Net Boost: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli") 
 
@@ -406,14 +408,18 @@ end)
 -- [5] BACKGROUND LOOPS (AUTO EQUIP, STATS, NET BOOST)
 -- ====================================================
 
--- >> LOGIC NET BOOST (BARU)
+-- >> LOGIC NET BOOST (ADVANCED WITH STATS)
 task.spawn(function()
     while true do
         task.wait(1)
         if States.NetBoost then
-            -- Optimasi Network Client (Mencoba membuka limit bandwidth & mengurangi lag buatan)
             pcall(function()
-                settings().Network.IncomingReplicationLag = 0
+                -- 1. Menggunakan settings().Network (Writable) untuk optimasi
+                local setNet = settings().Network
+                setNet.IncomingReplicationLag = 0
+                setNet.PhysicsSendRate = 60 -- Mencoba mempercepat kiriman fisika client
+                
+                -- 2. Membuka Limit Bandwidth
                 if NetworkClient then
                     NetworkClient:SetOutgoingKBPSLimit(math.huge)
                 end
@@ -422,28 +428,7 @@ task.spawn(function()
     end
 end)
 
--- >> LOGIC AUTO EQUIP
-task.spawn(function()
-    while true do
-        task.wait(1.5) 
-        if States.AutoEquip then
-            pcall(function()
-                local char = Player.Character
-                if char then
-                    if not char:FindFirstChildWhichIsA("Tool") then
-                        local args = { [1] = 1 } 
-                        local remote = game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0")
-                        if remote then
-                            remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- >> UPDATE STATS LOOP
+-- >> UPDATE STATS LOOP (MENGGUNAKAN GETSERVICE STATS)
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -451,14 +436,36 @@ task.spawn(function()
             continue 
         end
         pcall(function()
-            -- [1] FISH CAUGHT
+            -- [1] PING MONITOR (Mengambil data dari Stats Service)
+            -- Ini adalah implementasi user request: game:GetService("Stats").Network
+            local pingVal = 0
+            local networkStats = StatsService:FindFirstChild("Network")
+            if networkStats then
+                local serverStats = networkStats:FindFirstChild("ServerStatsItem")
+                if serverStats then
+                    local pingProp = serverStats:FindFirstChild("Data Ping")
+                    if pingProp then
+                        pingVal = math.round(pingProp:GetValue())
+                    end
+                end
+            end
+            
+            -- Warnai text ping jika lag (Merah jika > 150ms)
+            LblPingVal.Text = tostring(pingVal) .. " ms"
+            if pingVal > 150 then
+                LblPingVal.TextColor3 = Color3.fromRGB(255, 50, 50)
+            else
+                LblPingVal.TextColor3 = UI_THEME.TextColor
+            end
+
+            -- [2] FISH CAUGHT
             local ls = Player:FindFirstChild("leaderstats")
             local caughtObj = ls and ls:FindFirstChild("Caught")
             local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
             local val = caughtObj and caughtObj.Value or 0
             LblFishVal.Text = formatNum(val)
 
-            -- [2] BACKPACK
+            -- [3] BACKPACK
             local pg = Player:FindFirstChild("PlayerGui")
             local backpackGui = pg and pg:FindFirstChild("Backpack")
             local bagText = "0/?"
@@ -482,13 +489,13 @@ end)
 -- [6] FUNCTION BUTTONS LOGIC
 -- ====================================================
 
--- Network Booster (BARU)
+-- Network Booster (UPDATED)
 BtnNet.MouseButton1Click:Connect(function()
     States.NetBoost = not States.NetBoost
     BtnNet.Text = "Net Boost: " .. (States.NetBoost and "ON" or "OFF")
     ToggleVisual(BtnNet, States.NetBoost)
     if States.NetBoost then
-        Notify("Net Boost Aktif", "Mengoptimalkan koneksi & fisika...")
+        Notify("Network Optimized", "Lag comp & Physics rate boosted.")
     end
 end)
 
@@ -553,21 +560,4 @@ BtnBoost.MouseButton1Click:Connect(function()
         local function CleanVisuals(folder)
             if not folder then return end
             for _, v in pairs(folder:GetDescendants()) do
-                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") or v:IsA("Explosion") then v.Enabled = false end
-            end
-        end
-        CleanVisuals(workspace:FindFirstChild("Islands"))
-        CleanVisuals(ReplicatedStorage:FindFirstChild("Assets"))
-    end
-end)
-
--- 3D Render
-BtnRender.MouseButton1Click:Connect(function() 
-    States.NoRender = not States.NoRender 
-    RunService:Set3dRenderingEnabled(not States.NoRender) 
-    BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
-    ToggleVisual(BtnRender, States.NoRender) 
-end)
-
--- Rejoin
-BtnRejoin.MouseButton1Click:Connect
+                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:I
