@@ -15,6 +15,7 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
+local UserInputService = game:GetService("UserInputService") -- [NEW] Service Input
 local ReplicatedStorage = game:GetService("ReplicatedStorage") 
 
 local Player = Players.LocalPlayer
@@ -26,10 +27,10 @@ Player.CharacterAdded:Connect(function(newChar)
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
 end)
 
--- // Konfigurasi Visual (Dark Transparent)
+-- // Konfigurasi Visual
 local UI_THEME = {
-    Width = 280, 
-    Height = 230, -- [UPDATED] Tinggi diubah sesuai request
+    MinWidth = 280,  -- Batas terkecil Lebar
+    MinHeight = 230, -- Batas terkecil Tinggi
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -140,8 +141,9 @@ local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
-Main.Size = UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height)
-Main.Position = UDim2.new(0.5, -UI_THEME.Width/2, 0.4, 0)
+-- Ukuran awal
+Main.Size = UDim2.new(0, UI_THEME.MinWidth, 0, UI_THEME.MinHeight)
+Main.Position = UDim2.new(0.5, -UI_THEME.MinWidth/2, 0.4, 0)
 Main.BackgroundColor3 = UI_THEME.Color
 Main.BackgroundTransparency = UI_THEME.Transparency
 Main.Active = true
@@ -153,6 +155,50 @@ local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Color = UI_THEME.Accent
 MainStroke.Thickness = 1.2
 MainStroke.Transparency = 0.4
+
+-- ====================================================
+-- [NEW] RESIZE HANDLE (POJOK KANAN BAWAH)
+-- ====================================================
+local ResizeHandle = Instance.new("TextButton", Main)
+ResizeHandle.Name = "ResizeHandle"
+ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
+ResizeHandle.Position = UDim2.new(1, -20, 1, -20)
+ResizeHandle.BackgroundTransparency = 1
+ResizeHandle.Text = "◢" -- Ikon segitiga pojok
+ResizeHandle.TextColor3 = UI_THEME.Accent
+ResizeHandle.TextSize = 14
+ResizeHandle.Font = Enum.Font.Gotham
+ResizeHandle.ZIndex = 10
+
+local dragging = false
+local dragStart = nil
+local startSize = nil
+
+ResizeHandle.MouseButton1Down:Connect(function(input)
+    dragging = true
+    dragStart = UserInputService:GetMouseLocation()
+    startSize = Main.AbsoluteSize
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local currentPos = UserInputService:GetMouseLocation()
+        local diff = currentPos - dragStart
+        
+        -- Hitung ukuran baru
+        local newX = math.max(UI_THEME.MinWidth, startSize.X + diff.X)
+        local newY = math.max(UI_THEME.MinHeight, startSize.Y + diff.Y)
+        
+        Main.Size = UDim2.new(0, newX, 0, newY)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+-- ====================================================
 
 -- HEADER
 local Header = Instance.new("Frame", Main)
@@ -291,17 +337,19 @@ HideBtn.MouseButton1Click:Connect(function()
     if IsMinimized then
         PageContainer.Visible = false
         TabHolder.Visible = false
-        Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, 32), "Out", "Quad", 0.3, true) 
+        ResizeHandle.Visible = false -- Sembunyikan handle saat minimize
+        Main:TweenSize(UDim2.new(0, UI_THEME.MinWidth, 0, 32), "Out", "Quad", 0.3, true) 
         HideBtn.Text = "Show" 
         HideBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     else
-        Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height), "Out", "Back", 0.3, true) 
+        Main:TweenSize(UDim2.new(0, UI_THEME.MinWidth, 0, UI_THEME.MinHeight), "Out", "Back", 0.3, true) 
         HideBtn.Text = "Hide" 
         HideBtn.TextColor3 = UI_THEME.Accent
         task.delay(0.2, function() 
             if not IsMinimized then 
                 PageContainer.Visible = true 
                 TabHolder.Visible = true
+                ResizeHandle.Visible = true
             end 
         end)
     end
@@ -346,7 +394,11 @@ local function Notify(title, text)
     game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
 end
 
-local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEquip=false}
+-- States
+local States = {
+    Freeze=false, WoW=false, Boost=false, NoRender=false, 
+    Noclip=false, Panel=true, AutoEquip=false, AutoClean=false 
+}
 local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
@@ -360,12 +412,12 @@ local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
 local BtnBoost  = MakeBtn(PageMain, "Boost: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
-local BtnFps    = MakeBtn(PageMain, "FPS: Unli") -- Akan diupdate logicnya
+local BtnFps    = MakeBtn(PageMain, "FPS: Unli") 
 
 -- TAB MISC
 local BtnSave   = MakeBtn(PageMisc, "Save Pos")
 local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
-local BtnClean  = MakeBtn(PageMisc, "Clean RAM") -- [NEW]
+local BtnClean  = MakeBtn(PageMisc, "Auto Clean: OFF") 
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
 local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
 
@@ -377,9 +429,9 @@ RunService.RenderStepped:Connect(function(dt)
     Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
 end)
 
--- [UPDATED] FPS Selector Logic
+-- FPS Selector Logic
 BtnFps.MouseButton1Click:Connect(function()
-    local caps = {30, 60, 90, 144, 240, 9999} -- [NEW LIST]
+    local caps = {30, 60, 90, 144, 240, 9999}
     _G.fpsIndex = ((_G.fpsIndex or 5) % #caps) + 1
     local v = caps[_G.fpsIndex]
     
@@ -404,31 +456,40 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [5] BACKGROUND LOOPS & CLEAN LOGIC
+-- [5] BACKGROUND LOOPS & AUTO LOGICS
 -- ====================================================
 
--- [NEW] CLEAN RAM FUNCTION
+-- AUTO CLEAN RAM LOOP
+task.spawn(function()
+    while true do
+        task.wait(300) -- Loop setiap 5 menit
+        if States.AutoClean then
+            pcall(function()
+                local before = gcinfo()
+                collectgarbage("collect")
+            end)
+        end
+    end
+end)
+
+-- Button Logic for Auto Clean
 BtnClean.MouseButton1Click:Connect(function()
-    ToggleVisual(BtnClean, true)
-    BtnClean.Text = "Cleaning..."
+    States.AutoClean = not States.AutoClean
     
-    -- Logic Garbage Collection
-    local before = gcinfo() -- Mengambil memory usage sebelum clean
-    collectgarbage("collect") -- Memaksa Lua membersihkan memory sampah
-    local after = gcinfo() -- Memory setelah clean
+    BtnClean.Text = "Auto Clean: " .. (States.AutoClean and "ON" or "OFF")
+    ToggleVisual(BtnClean, States.AutoClean)
     
-    -- Visual Feedback
-    Notify("RAM Cleaned", "Freed: " .. math.floor(before - after) .. " KB")
-    
-    task.wait(0.8)
-    BtnClean.Text = "Clean RAM"
-    ToggleVisual(BtnClean, false)
+    if States.AutoClean then
+        Notify("Auto Clean ON", "Membersihkan RAM setiap 5 Menit ")
+    else
+        Notify("Auto Clean OFF", "Pembersihan otomatis dimatikan ")
+    end
 end)
 
 -- >> LOGIC AUTO EQUIP
 task.spawn(function()
     while true do
-        task.wait(1.5)
+        task.wait(0.5)
         if States.AutoEquip then
             pcall(function()
                 local char = Player.Character
@@ -449,7 +510,7 @@ end)
 -- >> UPDATE STATS LOOP
 task.spawn(function()
     while true do
-        task.wait(0.5)
+        task.wait(0.4)
         if not States.Panel then 
             continue 
         end
