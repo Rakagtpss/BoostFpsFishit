@@ -22,10 +22,12 @@ local TweenService = game:GetService("TweenService")
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 5)
+local Hum = Char:WaitForChild("Humanoid", 5)
 
 Player.CharacterAdded:Connect(function(newChar)
     Char = newChar
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
+    Hum = newChar:WaitForChild("Humanoid", 10)
 end)
 
 -- // Konfigurasi Visual
@@ -492,13 +494,13 @@ task.spawn(function()
     end
 end)
 
--- >> LOGIC AUTO EVENT (Ultra Precision)
+-- >> LOGIC AUTO EVENT (MOVABLE WOW + AUTO)
 local EventReturnPos = nil
 local CurrentlyAtEvent = false
 
 task.spawn(function()
     while true do
-        task.wait(0.1) 
+        task.wait(0.05) -- Loop lebih cepat agar pergerakan halus
         if States.AutoEvent then
             -- == KONDISI: FITUR AKTIF ==
             pcall(function()
@@ -518,8 +520,8 @@ task.spawn(function()
                 if FoundEvent then
                     -- 1. JIKA EVENT DITEMUKAN
                     local targetCF = FoundEvent:IsA("Model") and FoundEvent:GetPivot() or FoundEvent.CFrame
-                    -- [FIX UPDATE] Ketinggian HAMPIR 0 (Menempel dengan event)
-                    local targetPos = targetCF.Position + Vector3.new(0, 0.5, 0)
+                    -- [EDIT 1] Ketinggian Teleport +0.2
+                    local targetPos = targetCF.Position + Vector3.new(0, 0.2, 0)
                     
                     if not CurrentlyAtEvent then
                         if HRP then EventReturnPos = HRP.CFrame end
@@ -527,7 +529,7 @@ task.spawn(function()
                         Notify("Event Detected!", "Teleport ke: " .. FoundEvent.Name)
                     end
                     
-                    if HRP then
+                    if HRP and Hum then
                         -- [TELEPORT LOGIC]
                         -- Teleport hanya jika jauh (> 20 studs)
                         local dist = (HRP.Position - targetPos).Magnitude
@@ -535,7 +537,7 @@ task.spawn(function()
                             HRP.CFrame = CFrame.new(targetPos)
                         end
                         
-                        -- >> SMART WATER DETECTION (ULTRA LOW) <<
+                        -- >> SMART WATER DETECTION + MOVABLE CONTROLS <<
                         local rayOrigin = HRP.Position
                         local rayDirection = Vector3.new(0, -20, 0) 
                         
@@ -546,16 +548,21 @@ task.spawn(function()
                         
                         local rayResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
                         
-                        -- [FIX UPDATE] Toleransi Jarak < 0.5 (Sangat Dekat)
                         if rayResult and rayResult.Material == Enum.Material.Water then
-                            if rayResult.Distance < 1 then
-                                -- SUDAH SANGAT DEKAT AIR (0.5 Studs) -> AKTIFKAN WoW
+                            -- [EDIT 2] Jarak Deteksi Air < 7
+                            if rayResult.Distance < 7 then
+                                -- SUDAH DEKAT AIR -> AKTIFKAN WoW (MOVABLE)
                                 if not EventBodyV then
                                     EventBodyV = Instance.new("BodyVelocity", HRP)
-                                    EventBodyV.MaxForce = Vector3.new(0, 1e6, 0)
-                                    EventBodyV.Velocity = Vector3.zero
+                                    EventBodyV.MaxForce = Vector3.new(math.huge, math.huge, math.huge) 
                                 end
-                                HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
+                                
+                                -- >> UPDATE KECEPATAN BERDASARKAN INPUT PEMAIN <<
+                                local moveDir = Hum.MoveDirection
+                                local speed = Hum.WalkSpeed
+                                -- Set Velocity: X/Z ikut input, Y tetap 0 (ngambang)
+                                EventBodyV.Velocity = Vector3.new(moveDir.X * speed, 0, moveDir.Z * speed)
+                                
                             else
                                 -- MASIH DI UDARA -> BIARKAN JATUH
                                 if EventBodyV then 
@@ -564,7 +571,7 @@ task.spawn(function()
                                 end
                             end
                         else
-                            -- BUKAN AIR (DARATAN/UDARA KOSONG) -> MATIKAN WoW
+                            -- BUKAN AIR (DARATAN) -> MATIKAN WoW
                             if EventBodyV then 
                                 EventBodyV:Destroy() 
                                 EventBodyV = nil 
@@ -671,12 +678,19 @@ BtnWow.MouseButton1Click:Connect(function()
     States.WoW = not States.WoW 
     BtnWow.Text = "Water Walk: " .. (States.WoW and "ON" or "OFF")
     ToggleVisual(BtnWow, States.WoW) 
+    
     if States.WoW then 
+        -- Gunakan Logic BodyVelocity yang Sama (Movable)
         BodyV = Instance.new("BodyVelocity", HRP) 
-        BodyV.MaxForce = Vector3.new(0,1e6,0) 
+        BodyV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
         BodyV.Velocity = Vector3.zero 
-        Connections["WoW"] = RunService.Heartbeat:Connect(function() 
-            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X,0,HRP.AssemblyLinearVelocity.Z) end 
+        
+        Connections["WoW"] = RunService.RenderStepped:Connect(function() 
+            if HRP and Hum then
+                local moveDir = Hum.MoveDirection
+                local speed = Hum.WalkSpeed
+                BodyV.Velocity = Vector3.new(moveDir.X * speed, 0, moveDir.Z * speed)
+            end 
         end) 
     else 
         if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
@@ -757,4 +771,3 @@ BtnLoad.MouseButton1Click:Connect(function()
         Notify("Gagal", "Belum ada posisi yang disimpan ")
     end 
 end)
-
