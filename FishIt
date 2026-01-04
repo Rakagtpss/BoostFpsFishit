@@ -2,20 +2,18 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Tab System & Auto Event Ready!",
+        Text = "UI Update: Dark Transparent Mode",
         Duration = 3,
     })
 end)
 
-task.wait(1)
+task.wait(0.5)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
-local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage") 
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
@@ -24,13 +22,11 @@ local HRP = Char:WaitForChild("HumanoidRootPart", 10)
 -- // Konfigurasi Visual
 local UI_THEME = {
     Width = 280,
-    Height = 350, 
-    Color = Color3.fromRGB(14, 14, 18), 
-    HeaderColor = Color3.fromRGB(20, 20, 25),
+    Height = 300, 
+    MainColor = Color3.fromRGB(10, 10, 12), -- Warna Dark
+    MainTransparency = 0.25,               -- Transparansi (0.0 - 1.0)
+    HeaderColor = Color3.fromRGB(15, 15, 20),
     Accent = Color3.fromRGB(0, 255, 170),
-    StatsColor = Color3.fromRGB(12, 12, 15),
-    TextColor = Color3.fromRGB(255, 255, 255),
-    SubTextColor = Color3.fromRGB(150, 150, 160),
     Font = Enum.Font.GothamBold
 }
 
@@ -42,22 +38,29 @@ ScreenGui.Name = "SeraphinHelper"
 ScreenGui.ResetOnSpawn = false
 
 -- ====================================================
--- [1] MAIN WINDOW
+-- [1] MAIN WINDOW (DARK TRANSPARENT)
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "MainFrame"
 Main.Size = UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height)
 Main.Position = UDim2.new(0.5, -UI_THEME.Width/2, 0.4, 0)
-Main.BackgroundColor3 = UI_THEME.Color
+Main.BackgroundColor3 = UI_THEME.MainColor
+Main.BackgroundTransparency = UI_THEME.MainTransparency -- EFEK TRANSPARAN
 Main.Active = true
 Main.Draggable = true
+
+-- Corner & Stroke
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", Main).Color = UI_THEME.Accent
+local MainStroke = Instance.new("UIStroke", Main)
+MainStroke.Color = UI_THEME.Accent
+MainStroke.Thickness = 1.2
+MainStroke.Transparency = 0.2
 
 -- // HEADER
 local Header = Instance.new("Frame", Main)
 Header.Size = UDim2.new(1, 0, 0, 35)
 Header.BackgroundColor3 = UI_THEME.HeaderColor
+Header.BackgroundTransparency = 0.1
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", Header)
@@ -85,85 +88,87 @@ TabMainBtn.TextColor3 = Color3.fromRGB(0,0,0)
 TabMainBtn.Font = UI_THEME.Font
 Instance.new("UICorner", TabMainBtn)
 
-local TabEventBtn = Instance.new("TextButton", TabContainer)
-TabEventBtn.Size = UDim2.new(0.5, -5, 1, 0)
-TabEventBtn.Position = UDim2.new(0.5, 5, 0, 0)
-TabEventBtn.Text = "EVENT"
-TabEventBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-TabEventBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-TabEventBtn.Font = UI_THEME.Font
-Instance.new("UICorner", TabEventBtn)
+local TabMiscBtn = Instance.new("TextButton", TabContainer)
+TabMiscBtn.Size = UDim2.new(0.5, -5, 1, 0)
+TabMiscBtn.Position = UDim2.new(0.5, 5, 0, 0)
+TabMiscBtn.Text = "MISC"
+TabMiscBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+TabMiscBtn.BackgroundTransparency = 0.3
+TabMiscBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+TabMiscBtn.Font = UI_THEME.Font
+Instance.new("UICorner", TabMiscBtn)
 
--- // PAGES
-local PageMain = Instance.new("ScrollingFrame", Main)
-PageMain.Size = UDim2.new(1, -20, 1, -90)
-PageMain.Position = UDim2.new(0, 10, 0, 80)
-PageMain.BackgroundTransparency = 1
-PageMain.ScrollBarThickness = 2
-
-local PageEvent = Instance.new("ScrollingFrame", Main)
-PageEvent.Size = UDim2.new(1, -20, 1, -90)
-PageEvent.Position = UDim2.new(0, 10, 0, 80)
-PageEvent.BackgroundTransparency = 1
-PageEvent.Visible = false
-PageEvent.ScrollBarThickness = 2
-
-local function CreateLayout(parent)
-    local layout = Instance.new("UIGridLayout", parent)
-    layout.CellSize = UDim2.new(0, 125, 0, 32)
-    layout.CellPadding = UDim2.new(0, 10, 0, 8)
+-- // PAGES (Scrolling Frames)
+local function CreatePage(name, visible)
+    local p = Instance.new("ScrollingFrame", Main)
+    p.Name = name
+    p.Size = UDim2.new(1, -20, 1, -95)
+    p.Position = UDim2.new(0, 10, 0, 85)
+    p.BackgroundTransparency = 1
+    p.Visible = visible
+    p.ScrollBarThickness = 0
+    p.CanvasSize = UDim2.new(0, 0, 0, 0)
+    
+    local layout = Instance.new("UIGridLayout", p)
+    layout.CellSize = UDim2.new(0, 125, 0, 35)
+    layout.CellPadding = UDim2.new(0, 10, 0, 10)
     layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    return p
 end
-CreateLayout(PageMain)
-CreateLayout(PageEvent)
+
+local PageMain = CreatePage("PageMain", true)
+local PageMisc = CreatePage("PageMisc", false)
 
 -- ====================================================
--- [2] LOGIC & STATES
+-- [2] LOGIC & UTILS
 -- ====================================================
-local States = {Freeze=false, WoW=false, Noclip=false, Boost=false, Render=true, AutoEvent=false}
-local EventList = {"None", "Ghost Shark", "Worm Hunt", "Shark Hunt", "Black Hole", "Ghost Worm", "Meteor Rain", "Megalodon", "Bloodmoon", "Purple Bloodmoon", "Merchant", "Isonade", "Whale", "Kraken"}
-local PrioIndex, SecIndex = 1, 1
+local States = {Freeze = false, WoW = false, Noclip = false, Render = true}
 local Connections = {}
+local SavedPos = nil
 
 local function MakeBtn(text, parent)
     local b = Instance.new("TextButton", parent)
     b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    b.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+    b.BackgroundTransparency = 0.2 -- Tombol juga sedikit transparan
     b.TextColor3 = Color3.fromRGB(200, 200, 200)
-    b.Font = Enum.Font.Gotham
+    b.Font = Enum.Font.GothamMedium
     b.TextSize = 11
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
-    Instance.new("UIStroke", b).Color = Color3.fromRGB(45, 45, 50)
+    local s = Instance.new("UIStroke", b)
+    s.Color = Color3.fromRGB(60, 60, 70)
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     return b
 end
 
 local function ToggleVisual(btn, on)
-    btn.BackgroundColor3 = on and UI_THEME.Accent or Color3.fromRGB(25, 25, 30)
+    btn.BackgroundColor3 = on and UI_THEME.Accent or Color3.fromRGB(20, 20, 25)
+    btn.BackgroundTransparency = on and 0 or 0.2
     btn.TextColor3 = on and Color3.new(0,0,0) or Color3.fromRGB(200, 200, 200)
 end
 
 -- // TAB SWITCHING
 TabMainBtn.MouseButton1Click:Connect(function()
-    PageMain.Visible = true; PageEvent.Visible = false
-    TabMainBtn.BackgroundColor3 = UI_THEME.Accent; TabMainBtn.TextColor3 = Color3.new(0,0,0)
-    TabEventBtn.BackgroundColor3 = Color3.fromRGB(30,30,35); TabEventBtn.TextColor3 = Color3.new(1,1,1)
+    PageMain.Visible = true; PageMisc.Visible = false
+    TabMainBtn.BackgroundColor3 = UI_THEME.Accent; TabMainBtn.BackgroundTransparency = 0; TabMainBtn.TextColor3 = Color3.new(0,0,0)
+    TabMiscBtn.BackgroundColor3 = Color3.fromRGB(30,30,35); TabMiscBtn.BackgroundTransparency = 0.3; TabMiscBtn.TextColor3 = Color3.new(1,1,1)
 end)
 
-TabEventBtn.MouseButton1Click:Connect(function()
-    PageMain.Visible = false; PageEvent.Visible = true
-    TabEventBtn.BackgroundColor3 = UI_THEME.Accent; TabEventBtn.TextColor3 = Color3.new(0,0,0)
-    TabMainBtn.BackgroundColor3 = Color3.fromRGB(30,30,35); TabMainBtn.TextColor3 = Color3.new(1,1,1)
+TabMiscBtn.MouseButton1Click:Connect(function()
+    PageMain.Visible = false; PageMisc.Visible = true
+    TabMiscBtn.BackgroundColor3 = UI_THEME.Accent; TabMiscBtn.BackgroundTransparency = 0; TabMiscBtn.TextColor3 = Color3.new(0,0,0)
+    TabMainBtn.BackgroundColor3 = Color3.fromRGB(30,30,35); TabMainBtn.BackgroundTransparency = 0.3; TabMainBtn.TextColor3 = Color3.new(1,1,1)
 end)
 
 -- ====================================================
--- [3] MAIN PAGE BUTTONS
+-- [3] ACTIONS
 -- ====================================================
+
+-- MAIN PAGE
 local BtnFreeze = MakeBtn("Freeze: OFF", PageMain)
 local BtnWow = MakeBtn("Water Walk: OFF", PageMain)
 local BtnNoclip = MakeBtn("No Clip: OFF", PageMain)
-local BtnBoost = MakeBtn("FPS Boost: OFF", PageMain)
 local BtnRender = MakeBtn("3D Render: ON", PageMain)
-local BtnRejoin = MakeBtn("Rejoin Server", PageMain)
 
 BtnFreeze.MouseButton1Click:Connect(function()
     States.Freeze = not States.Freeze
@@ -175,13 +180,14 @@ end)
 BtnWow.MouseButton1Click:Connect(function()
     States.WoW = not States.WoW
     ToggleVisual(BtnWow, States.WoW)
+    BtnWow.Text = "Water Walk: "..(States.WoW and "ON" or "OFF")
     if States.WoW then
         local bv = Instance.new("BodyVelocity", HRP)
         bv.Name = "SeraphinWoW"
         bv.MaxForce = Vector3.new(0, 1e6, 0)
         bv.Velocity = Vector3.zero
         Connections["WoW"] = RunService.Heartbeat:Connect(function()
-            HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
+            if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z) end
         end)
     else
         if Connections["WoW"] then Connections["WoW"]:Disconnect() end
@@ -189,86 +195,59 @@ BtnWow.MouseButton1Click:Connect(function()
     end
 end)
 
+BtnNoclip.MouseButton1Click:Connect(function()
+    States.Noclip = not States.Noclip
+    ToggleVisual(BtnNoclip, States.Noclip)
+    BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF")
+    if States.Noclip then
+        Connections["Noclip"] = RunService.Stepped:Connect(function()
+            if Player.Character then
+                for _, v in pairs(Player.Character:GetDescendants()) do
+                    if v:IsA("BasePart") then v.CanCollide = false end
+                end
+            end
+        end)
+    else
+        if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end
+    end
+end)
+
 BtnRender.MouseButton1Click:Connect(function()
     States.Render = not States.Render
     RunService:Set3dRenderingEnabled(States.Render)
     ToggleVisual(BtnRender, not States.Render)
+    BtnRender.Text = "3D Render: "..(States.Render and "ON" or "OFF")
+end)
+
+-- MISC PAGE
+local BtnSave = MakeBtn("Save Position", PageMisc)
+local BtnLoad = MakeBtn("Load Position", PageMisc)
+local BtnRejoin = MakeBtn("Rejoin Server", PageMisc)
+local BtnFps = MakeBtn("FPS: 60", PageMisc)
+
+local fpsOptions = {60, 90, 144, 240}
+local fpsIndex = 1
+
+BtnFps.MouseButton1Click:Connect(function()
+    if setfpscap then
+        fpsIndex = (fpsIndex % #fpsOptions) + 1
+        setfpscap(fpsOptions[fpsIndex])
+        BtnFps.Text = "FPS: " .. fpsOptions[fpsIndex]
+    end
+end)
+
+BtnSave.MouseButton1Click:Connect(function()
+    if HRP then SavedPos = HRP.CFrame end
+end)
+
+BtnLoad.MouseButton1Click:Connect(function()
+    if SavedPos and HRP then HRP.CFrame = SavedPos end
 end)
 
 BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
 
--- ====================================================
--- [4] EVENT PAGE BUTTONS
--- ====================================================
-local BtnAutoEvent = MakeBtn("Auto Event: OFF", PageEvent)
-local BtnPrio = MakeBtn("Prio: None", PageEvent)
-local BtnSec = MakeBtn("Sec: None", PageEvent)
-
-BtnAutoEvent.MouseButton1Click:Connect(function()
-    States.AutoEvent = not States.AutoEvent
-    ToggleVisual(BtnAutoEvent, States.AutoEvent)
-    BtnAutoEvent.Text = "Auto Event: "..(States.AutoEvent and "ON" or "OFF")
-end)
-
-BtnPrio.MouseButton1Click:Connect(function()
-    PrioIndex = (PrioIndex % #EventList) + 1
-    BtnPrio.Text = "Prio: "..EventList[PrioIndex]
-end)
-
-BtnSec.MouseButton1Click:Connect(function()
-    SecIndex = (SecIndex % #EventList) + 1
-    BtnSec.Text = "Sec: "..EventList[SecIndex]
-end)
-
--- ====================================================
--- [5] CORE AUTO EVENT LOGIC
--- ====================================================
-task.spawn(function()
-    while true do
-        task.wait(1.5)
-        if States.AutoEvent then
-            pcall(function()
-                local Props = workspace:FindFirstChild("Props")
-                if not Props then return end
-
-                local Target = nil
-                local Prio = EventList[PrioIndex]:lower()
-                local Sec = EventList[SecIndex]:lower()
-
-                local function GetObj(name)
-                    if name == "none" then return nil end
-                    for _, v in pairs(Props:GetChildren()) do
-                        if string.find(v.Name:lower(), name) then return v end
-                    end
-                end
-
-                Target = GetObj(Prio) or GetObj(Sec)
-
-                if Target and HRP then
-                    local Part = Target:IsA("BasePart") and Target or Target:FindFirstChildWhichIsA("BasePart", true)
-                    if Part and (HRP.Position - Part.Position).Magnitude > 60 then
-                        -- Cancel Fishing
-                        local Net = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
-                        Net["RF/CancelFishingInputs"]:InvokeServer()
-                        Net["RE/UnequipToolFromHotbar"]:FireServer()
-                        
-                        task.wait(0.3)
-                        HRP.CFrame = Part.CFrame + Vector3.new(0, 20, 0)
-                        
-                        -- Auto Equip Rod
-                        task.wait(1)
-                        Net["RE/EquipToolFromHotbar"]:FireServer(1)
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- FPS Counter in Title
-task.spawn(function()
-    while task.wait(0.5) do
-        local fps = math.floor(1/RunService.RenderStepped:Wait())
-        Title.Text = "SERAPHIN <font color='#00FFAA'>HELPER</font> | FPS: "..fps
-    end
+-- FPS Title Monitor
+RunService.RenderStepped:Connect(function()
+    local fps = math.floor(1/RunService.RenderStepped:Wait())
+    Title.Text = "SERAPHIN <font color='#00FFAA'>HELPER</font> | FPS: "..fps
 end)
