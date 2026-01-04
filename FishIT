@@ -1,17 +1,4 @@
-Berikut adalah script yang telah diperbarui sesuai permintaan Anda.
-Perubahan yang dilakukan:
- * Notifikasi Awal: Teks diubah menjadi "Loading Sayang !" dengan durasi 2 detik.
- * Delay: Script menunggu 3.5 detik sebelum memuat UI utama.
- * Resize Dihapus: Fitur tarik ujung (resize) pada UI telah dihilangkan sepenuhnya.
- * Fitur Baru (Auto Event):
-   * Menambahkan tombol "Auto Event" di menu Main.
-   * Mendeteksi child di workspace.Props.
-   * Jika event muncul: Simpan posisi awal -> Teleport ke Event -> Aktifkan Anti-tenggelam (Walk on Water).
-   * Jika event hilang: Teleport kembali ke posisi awal.
- * Optimasi:
-   * Auto Clean RAM: Loop diatur tepat 5 menit (300 detik).
-   * Auto Equip: Loop check diatur 0.5 detik.
-Updated Script
+
 -- [1] Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
@@ -45,7 +32,7 @@ end)
 -- // Konfigurasi Visual
 local UI_THEME = {
     MinWidth = 280,  
-    MinHeight = 230, 
+    MinHeight = 240, -- Saya tambah sedikit tingginya agar tombol tidak terpotong
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.35, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
@@ -400,12 +387,12 @@ local States = {
 local SavedCFrame = nil 
 local Connections = {}
 local BodyV = nil
-local EventBodyV = nil -- BodyVelocity khusus untuk event
+local EventBodyV = nil 
 
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
-local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") -- Tombol Baru
+local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") -- >> INI TOMBOLNYA
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
@@ -459,7 +446,7 @@ end)
 -- [5] BACKGROUND LOOPS & AUTO LOGICS
 -- ====================================================
 
--- AUTO CLEAN RAM LOOP (5 Menit / 300 Detik)
+-- AUTO CLEAN RAM LOOP (5 Menit)
 task.spawn(function()
     while true do
         task.wait(300) 
@@ -518,12 +505,12 @@ task.spawn(function()
                 local Props = workspace:FindFirstChild("Props")
                 local FoundEvent = nil
                 
-                -- Deteksi child di Props (asumsi event muncul sebagai Model/Part di folder Props)
+                -- Deteksi child di Props
                 if Props then
                     for _, v in pairs(Props:GetChildren()) do
                         if v:IsA("Model") or v:IsA("BasePart") then
                             FoundEvent = v
-                            break -- Ambil event pertama yang ketemu
+                            break 
                         end
                     end
                 end
@@ -531,34 +518,29 @@ task.spawn(function()
                 if FoundEvent then
                     -- JIKA EVENT DITEMUKAN
                     if not CurrentlyAtEvent then
-                        -- Simpan posisi awal sebelum TP
                         if HRP then EventReturnPos = HRP.CFrame end
                         CurrentlyAtEvent = true
                         Notify("Event Detected!", "Teleport ke: " .. FoundEvent.Name)
                     end
                     
-                    -- Teleport terus menerus ke event agar tidak ketinggalan (dan aktifkan WoW)
+                    -- Teleport + WoW
                     if HRP then
                         local targetCF = FoundEvent:IsA("Model") and FoundEvent:GetPivot() or FoundEvent.CFrame
-                        HRP.CFrame = targetCF + Vector3.new(0, 5, 0) -- Di atas sedikit biar aman
+                        HRP.CFrame = targetCF + Vector3.new(0, 5, 0) 
                         
-                        -- Auto Walk On Water Logic (Biar tidak tenggelam saat event)
                         if not EventBodyV then
                             EventBodyV = Instance.new("BodyVelocity", HRP)
                             EventBodyV.MaxForce = Vector3.new(0, 1e6, 0)
                             EventBodyV.Velocity = Vector3.zero
                         end
-                        -- Stabilkan Y velocity
                         HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
                     end
                 else
-                    -- JIKA EVENT HILANG / TIDAK ADA
+                    -- JIKA EVENT HILANG
                     if CurrentlyAtEvent then
                         CurrentlyAtEvent = false
-                        -- Hapus BodyVelocity Event
                         if EventBodyV then EventBodyV:Destroy() EventBodyV = nil end
                         
-                        -- Balik ke posisi awal
                         if EventReturnPos and HRP then
                             HRP.CFrame = EventReturnPos
                             Notify("Event Selesai", "Kembali ke posisi semula")
@@ -567,7 +549,6 @@ task.spawn(function()
                 end
             end)
         else
-            -- Jika fitur dimatikan, bersihkan variabel
             if CurrentlyAtEvent then
                 CurrentlyAtEvent = false
                 if EventBodyV then EventBodyV:Destroy() EventBodyV = nil end
@@ -584,14 +565,12 @@ task.spawn(function()
             continue 
         end
         pcall(function()
-            -- [1] FISH CAUGHT
             local ls = Player:FindFirstChild("leaderstats")
             local caughtObj = ls and ls:FindFirstChild("Caught")
             local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
             local val = caughtObj and caughtObj.Value or 0
             LblFishVal.Text = formatNum(val)
 
-            -- [2] BACKPACK
             local pg = Player:FindFirstChild("PlayerGui")
             local backpackGui = pg and pg:FindFirstChild("Backpack")
             local bagText = "0/?"
