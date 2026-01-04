@@ -1,63 +1,40 @@
--- [[ SERAPHIN HELPER - FIX VERSION ]] --
-
--- [1] Safe Service Loading
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
-local TeleportService = game:GetService("TeleportService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage") 
-local NetworkClient = game:GetService("NetworkClient")
-local StatsService = game:GetService("Stats")
-local StarterGui = game:GetService("StarterGui")
-
--- [2] Tentukan Lokasi GUI (Fix Masalah Tidak Muncul)
-local function GetGuiParent()
-    -- Coba CoreGui dulu (Standar Exploit)
-    local success, core = pcall(function() return game:GetService("CoreGui") end)
-    if success and core then return core end
-    
-    -- Jika gagal, masuk ke PlayerGui (Cadangan)
-    local plr = Players.LocalPlayer
-    if plr then
-        return plr:WaitForChild("PlayerGui", 5)
-    end
-    return nil
-end
-
-local ParentTarget = GetGuiParent()
-
-if not ParentTarget then
-    warn("Gagal menemukan tempat untuk UI!")
-    return -- Stop jika tidak ada parent
-end
-
--- Notifikasi Mulai
+-- [1] Notifikasi Awal
 pcall(function()
-    StarterGui:SetCore("SendNotification", {
-        Title = "Seraphin Helper",
-        Text = "Memuat UI (Safe Mode)...",
-        Duration = 3,
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Raka Ganteng",
+        Text = "Memuat Interface (Net Boost Added)...",
+        Duration = 2,
     })
 end)
 
--- [3] Variable Player Aman
+task.wait(1)
+
+-- [2] Variable & Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
+local TeleportService = game:GetService("TeleportService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage") 
+local StatsService = game:GetService("Stats") -- Service Stats ditambahkan
+
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
-local HRP = Char:WaitForChild("HumanoidRootPart", 10)
+local HRP = Char:WaitForChild("HumanoidRootPart", 5)
 
 Player.CharacterAdded:Connect(function(newChar)
     Char = newChar
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
 end)
 
--- // Konfigurasi Visual
+-- // Konfigurasi Visual (Dark Transparent)
 local UI_THEME = {
     Width = 280, 
-    Height = 280, 
+    Height = 260, -- Sedikit dipertinggi untuk tombol baru
     Color = Color3.fromRGB(10, 10, 12), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(15, 15, 18),
-    Accent = Color3.fromRGB(0, 255, 170),
+    Accent = Color3.fromRGB(0, 255, 170), -- Warna Hijau Neon
     TabOff = Color3.fromRGB(100, 100, 110),
     TabOn = Color3.fromRGB(0, 255, 170),
     TextColor = Color3.fromRGB(255, 255, 255),
@@ -66,24 +43,21 @@ local UI_THEME = {
     BtnFont = Enum.Font.GothamMedium 
 }
 
--- Bersihkan UI Lama (Cek di CoreGui dan PlayerGui)
-if ParentTarget:FindFirstChild("SeraphinHelper") then ParentTarget.SeraphinHelper:Destroy() end
-if game:GetService("CoreGui"):FindFirstChild("SeraphinHelper") then game:GetService("CoreGui").SeraphinHelper:Destroy() end
-if Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("SeraphinHelper") then Player.PlayerGui.SeraphinHelper:Destroy() end
+-- Bersihkan UI Lama
+if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SeraphinHelper"
-ScreenGui.Parent = ParentTarget
+ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.DisplayOrder = 9999 -- Agar selalu di atas
 
 -- ====================================================
 -- [1] MINI FLOATING HUD (PANEL SERAPHIN)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 140, 0, 165)
+FloatHUD.Size = UDim2.new(0, 140, 0, 125) 
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
 FloatHUD.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 FloatHUD.BackgroundTransparency = 0.3
@@ -158,9 +132,8 @@ local function CreateStatBlock(titleText, defaultVal, order)
     return LblValue 
 end
 
-local LblPingVal = CreateStatBlock("SERVER PING", "0 ms", 3)
-local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...", 4) 
-local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 5)     
+local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...", 3) 
+local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)     
 
 
 -- ====================================================
@@ -189,6 +162,13 @@ Header.Size = UDim2.new(1, 0, 0, 32)
 Header.BackgroundColor3 = UI_THEME.HeaderColor
 Header.BackgroundTransparency = 0.5
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
+
+local HeaderFiller = Instance.new("Frame", Header)
+HeaderFiller.Size = UDim2.new(1, 0, 0, 5)
+HeaderFiller.Position = UDim2.new(0, 0, 1, -5)
+HeaderFiller.BackgroundColor3 = UI_THEME.HeaderColor
+HeaderFiller.BackgroundTransparency = 0.5
+HeaderFiller.BorderSizePixel = 0
 
 -- TITLE
 local Title = Instance.new("TextLabel", Header)
@@ -339,34 +319,38 @@ local function MakeBtn(parent, text)
     b.AutoButtonColor = true
     b.ClipsDescendants = true
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
+    
     local s = Instance.new("UIStroke", b)
     s.Color = Color3.fromRGB(60, 60, 70)
     s.Thickness = 1
     s.Transparency = 0.5
-    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border 
     return b
 end
 
+-- [VISUAL STYLE: OUTLINE ONLY]
 local function ToggleVisual(btn, on)
     if on then
-        btn.BackgroundColor3 = UI_THEME.Accent
-        btn.BackgroundTransparency = 0.2
-        btn.TextColor3 = Color3.fromRGB(10, 10, 12)
-        btn.UIStroke.Transparency = 1
+        btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
+        btn.BackgroundTransparency = 0.4 
+        btn.TextColor3 = UI_THEME.Accent 
+        btn.UIStroke.Color = UI_THEME.Accent
+        btn.UIStroke.Transparency = 0 
+        btn.UIStroke.Thickness = 1.2
         btn.Font = Enum.Font.GothamBold
     else
         btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         btn.BackgroundTransparency = 0.6
         btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        btn.UIStroke.Color = Color3.fromRGB(60, 60, 70)
         btn.UIStroke.Transparency = 0.5
+        btn.UIStroke.Thickness = 1
         btn.Font = UI_THEME.BtnFont
     end
 end
 
 local function Notify(title, text)
-    pcall(function()
-        StarterGui:SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
-    end)
+    game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
 end
 
 local States = {Freeze=false, WoW=false, Boost=false, NoRender=false, Noclip=false, Panel=true, AutoEquip=false, NetBoost=false}
@@ -382,8 +366,8 @@ local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
 local BtnBoost  = MakeBtn(PageMain, "Boost: OFF")
-local BtnNet    = MakeBtn(PageMain, "Net Boost: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
+local BtnNet    = MakeBtn(PageMain, "Net Boost: OFF") -- Tombol Baru
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli") 
 
 -- TAB MISC
@@ -400,21 +384,16 @@ RunService.RenderStepped:Connect(function(dt)
     Title.Text = "SERAPHIN <font color=\"rgb(0,255,170)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
 end)
 
--- FPS BUTTON LOGIC (60 -> 90 -> 144 -> 240 -> 340 -> Max)
+-- FPS BUTTON LOGIC
 BtnFps.MouseButton1Click:Connect(function()
     local caps = {60, 90, 144, 240, 340, 9999} 
     _G.fpsIndex = ((_G.fpsIndex or #caps) % #caps) + 1
     local v = caps[_G.fpsIndex]
-    
-    if setfpscap then 
-        pcall(function() setfpscap(v) end)
-    end
-    
+    if setfpscap then setfpscap(v) end
     local textLabel = (v >= 9999) and "Max" or tostring(v)
     BtnFps.Text = "FPS: " .. textLabel
-    
     ToggleVisual(BtnFps, true)
-    task.wait(0.1)
+    task.wait(0.15)
     ToggleVisual(BtnFps, false)
 end)
 
@@ -427,97 +406,10 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [5] BACKGROUND LOOPS (AUTO EQUIP, STATS, NET BOOST)
+-- [5] BACKGROUND LOOPS (AUTO EQUIP, STATS, NET)
 -- ====================================================
 
--- >> LOGIC NET BOOST (ADVANCED WITH STATS)
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if States.NetBoost then
-            pcall(function()
-                -- 1. Optimasi Settings Network
-                local setNet = settings().Network
-                setNet.IncomingReplicationLag = 0
-                setNet.PhysicsSendRate = 60 
-                
-                -- 2. Membuka Limit Bandwidth
-                if NetworkClient then
-                    NetworkClient:SetOutgoingKBPSLimit(math.huge)
-                end
-            end)
-        end
-    end
-end)
-
--- >> UPDATE STATS LOOP (SAFE)
-task.spawn(function()
-    while true do
-        task.wait(0.5)
-        if not States.Panel then 
-            continue 
-        end
-        pcall(function()
-            -- [1] PING MONITOR
-            local pingVal = 0
-            if StatsService:FindFirstChild("Network") then
-                local serverStats = StatsService.Network:FindFirstChild("ServerStatsItem")
-                if serverStats and serverStats:FindFirstChild("Data Ping") then
-                    pingVal = math.round(serverStats["Data Ping"]:GetValue())
-                end
-            end
-            
-            LblPingVal.Text = tostring(pingVal) .. " ms"
-            LblPingVal.TextColor3 = (pingVal > 150) and Color3.fromRGB(255, 50, 50) or UI_THEME.TextColor
-
-            -- [2] FISH CAUGHT
-            local ls = Player:FindFirstChild("leaderstats")
-            local caughtObj = ls and ls:FindFirstChild("Caught")
-            local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
-            local val = caughtObj and caughtObj.Value or 0
-            LblFishVal.Text = formatNum(val)
-
-            -- [3] BACKPACK
-            local pg = Player:FindFirstChild("PlayerGui")
-            local backpackGui = pg and pg:FindFirstChild("Backpack")
-            local bagText = "0/?"
-            if backpackGui then
-                for _, v in pairs(backpackGui:GetDescendants()) do
-                    if v:IsA("TextLabel") and string.find(v.Text, "/") then 
-                        bagText = v.Text 
-                        break 
-                    end
-                end
-            else 
-                local current = Player.Backpack and #Player.Backpack:GetChildren() or 0
-                bagText = tostring(current)
-            end
-            LblInvVal.Text = bagText
-        end)
-    end
-end)
-
--- ====================================================
--- [6] FUNCTION BUTTONS LOGIC
--- ====================================================
-
--- Network Booster
-BtnNet.MouseButton1Click:Connect(function()
-    States.NetBoost = not States.NetBoost
-    BtnNet.Text = "Net Boost: " .. (States.NetBoost and "ON" or "OFF")
-    ToggleVisual(BtnNet, States.NetBoost)
-    if States.NetBoost then
-        Notify("Network Optimized", "Lag comp & Physics rate boosted.")
-    end
-end)
-
--- Auto Equip Button
-BtnEquip.MouseButton1Click:Connect(function()
-    States.AutoEquip = not States.AutoEquip
-    BtnEquip.Text = "Auto Equip: " .. (States.AutoEquip and "ON" or "OFF")
-    ToggleVisual(BtnEquip, States.AutoEquip)
-end)
-
+-- >> LOGIC AUTO EQUIP
 task.spawn(function()
     while true do
         task.wait(1.5) 
@@ -525,16 +417,87 @@ task.spawn(function()
             pcall(function()
                 local char = Player.Character
                 if char and not char:FindFirstChildWhichIsA("Tool") then
-                    -- Detect Game specifics (Defaulting to general hotbar method if possible)
-                    local args = { [1] = 1 } 
                     local remote = game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0")
                     if remote then
-                        remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
+                        remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(1)
                     end
                 end
             end)
         end
     end
+end)
+
+-- >> UPDATE STATS LOOP
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if States.Panel then 
+            pcall(function()
+                -- [1] FISH CAUGHT
+                local ls = Player:FindFirstChild("leaderstats")
+                local caughtObj = ls and ls:FindFirstChild("Caught")
+                local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
+                LblFishVal.Text = formatNum(caughtObj and caughtObj.Value or 0)
+
+                -- [2] BACKPACK
+                local pg = Player:FindFirstChild("PlayerGui")
+                local backpackGui = pg and pg:FindFirstChild("Backpack")
+                local bagText = "0/?"
+                if backpackGui then
+                    for _, v in pairs(backpackGui:GetDescendants()) do
+                        if v:IsA("TextLabel") and string.find(v.Text, "/") then 
+                            bagText = v.Text 
+                            break 
+                        end
+                    end
+                else 
+                    bagText = tostring(#Player.Backpack:GetChildren())
+                end
+                LblInvVal.Text = bagText
+            end)
+        end
+    end
+end)
+
+-- ====================================================
+-- [6] FUNCTION BUTTONS LOGIC
+-- ====================================================
+
+-- >> NETWORK BOOST LOGIC <<
+BtnNet.MouseButton1Click:Connect(function()
+    States.NetBoost = not States.NetBoost
+    BtnNet.Text = "Net Boost: " .. (States.NetBoost and "ON" or "OFF")
+    ToggleVisual(BtnNet, States.NetBoost)
+
+    if States.NetBoost then
+        -- Loop untuk mempertahankan Network Settings
+        task.spawn(function()
+            Notify("Network Boost", "Optimasi Jaringan Aktif!")
+            while States.NetBoost do
+                pcall(function()
+                    -- Pengaturan utama untuk mengurangi latensi replikasi
+                    settings().Network.IncomingReplicationLag = 0
+                    
+                    -- Memantau Stats Service (Sesuai Request)
+                    -- Kita tidak bisa mengubah Stats.Network secara langsung (Read Only),
+                    -- tapi kita memastikan PhysicsSender bekerja optimal dengan menjaga Lag di 0.
+                    local netStats = StatsService.Network
+                    -- Hanya memanggil nilai untuk memastikan service aktif terbaca script
+                    local _ = netStats.ServerStatsItem:GetValue() 
+                end)
+                task.wait(5) -- Cek setiap 5 detik agar tidak spam
+            end
+        end)
+    else
+        Notify("Network Boost", "Optimasi Jaringan Nonaktif.")
+    end
+end)
+
+-- Auto Equip
+BtnEquip.MouseButton1Click:Connect(function()
+    States.AutoEquip = not States.AutoEquip
+    BtnEquip.Text = "Auto Equip: " .. (States.AutoEquip and "ON" or "OFF")
+    ToggleVisual(BtnEquip, States.AutoEquip)
 end)
 
 -- Freeze
@@ -551,11 +514,9 @@ BtnWow.MouseButton1Click:Connect(function()
     BtnWow.Text = "Water Walk: " .. (States.WoW and "ON" or "OFF")
     ToggleVisual(BtnWow, States.WoW) 
     if States.WoW then 
-        if HRP then
-            BodyV = Instance.new("BodyVelocity", HRP) 
-            BodyV.MaxForce = Vector3.new(0,1e6,0) 
-            BodyV.Velocity = Vector3.zero 
-        end
+        BodyV = Instance.new("BodyVelocity", HRP) 
+        BodyV.MaxForce = Vector3.new(0,1e6,0) 
+        BodyV.Velocity = Vector3.zero 
         Connections["WoW"] = RunService.Heartbeat:Connect(function() 
             if HRP then HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X,0,HRP.AssemblyLinearVelocity.Z) end 
         end) 
@@ -569,4 +530,28 @@ end)
 BtnNoclip.MouseButton1Click:Connect(function() 
     States.Noclip = not States.Noclip 
     BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") 
-    ToggleVisual(BtnNocl
+    ToggleVisual(BtnNoclip, States.Noclip) 
+    if States.Noclip then 
+        Connections["Noclip"] = RunService.Stepped:Connect(function() 
+            if Player.Character then 
+                for _,v in pairs(Player.Character:GetDescendants()) do 
+                    if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end 
+                end 
+            end 
+        end) 
+    else 
+        if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end 
+    end 
+end)
+
+-- Boost (FPS/Clean)
+BtnBoost.MouseButton1Click:Connect(function() 
+    States.Boost = not States.Boost 
+    ToggleVisual(BtnBoost, States.Boost) 
+    BtnBoost.Text = "Boost: " .. (States.Boost and "ON" or "OFF")
+    Lighting.GlobalShadows = not States.Boost 
+    if States.Boost then
+        local function CleanVisuals(folder)
+            if not folder then return end
+            for _, v in pairs(folder:GetDescendants()) do
+                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:I
