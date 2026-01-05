@@ -2,12 +2,12 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Seraphin Helper",
-        Text = "Loading Script",
+        Text = "LOADING SCRIPT,
         Duration = 2,
     })
 end)
 
-task.wait(3.8)
+task.wait(3.5)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -32,14 +32,14 @@ Player.CharacterAdded:Connect(function(newChar)
     Hum = newChar:WaitForChild("Humanoid", 10)
 end)
 
--- // Konfigurasi Visual
+-- // Konfigurasi Visual (TEMA CYAN & LIGHTWEIGHT)
 local UI_THEME = {
     MinWidth = 280,  
-    MinHeight = 270, 
-    Color = Color3.fromRGB(10, 10, 10), -- Darker Black
-    Transparency = 0.25, -- Sedikit lebih solid agar terlihat elegan
+    MinHeight = 280, -- Sedikit dipertinggi agar tombol muat dengan jarak baru
+    Color = Color3.fromRGB(10, 10, 10), 
+    Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(5, 5, 5),
-    Accent = Color3.fromRGB(0, 255, 255), -- Default Cyan (akan ditimpa RGB)
+    Accent = Color3.fromRGB(0, 255, 255), -- CYAN MURNI
     TabOff = Color3.fromRGB(120, 120, 120),
     TabOn = Color3.fromRGB(255, 255, 255),
     TextColor = Color3.fromRGB(255, 255, 255),
@@ -58,21 +58,6 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [RGB SYSTEM] - FUNGSI WARNA WARNI
--- ====================================================
-local function ApplyRainbow(strokeInstance)
-    task.spawn(function()
-        local hue = 0
-        while strokeInstance and strokeInstance.Parent do
-            hue = hue + 0.005 -- Kecepatan perubahan warna
-            if hue > 1 then hue = 0 end
-            strokeInstance.Color = Color3.fromHSV(hue, 1, 1)
-            task.wait(0.01)
-        end
-    end)
-end
-
--- ====================================================
 -- [1] MINI FLOATING HUD
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
@@ -86,10 +71,9 @@ FloatHUD.Active = true
 FloatHUD.Draggable = true 
 
 local HudStroke = Instance.new("UIStroke", FloatHUD)
-HudStroke.Color = UI_THEME.Accent 
-HudStroke.Thickness = 2 -- Sedikit lebih tebal agar RGB terlihat
+HudStroke.Color = UI_THEME.Accent -- Cyan Statis
+HudStroke.Thickness = 1.5
 HudStroke.Transparency = 0
-ApplyRainbow(HudStroke) -- Aktifkan RGB
 
 Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
 
@@ -116,15 +100,6 @@ TitleLabel.TextColor3 = UI_THEME.Accent
 TitleLabel.Font = Enum.Font.GothamBlack
 TitleLabel.TextSize = 14
 TitleLabel.TextStrokeTransparency = 0.8
--- Terapkan RGB ke Teks Judul juga
-task.spawn(function()
-    local h = 0
-    while TitleLabel.Parent do
-        h = h + 0.005; if h > 1 then h = 0 end
-        TitleLabel.TextColor3 = Color3.fromHSV(h, 0.7, 1)
-        task.wait(0.01)
-    end
-end)
 
 local Div = Instance.new("Frame", FloatHUD)
 Div.LayoutOrder = 2
@@ -180,10 +155,9 @@ Main.Draggable = false
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
 local MainStroke = Instance.new("UIStroke", Main)
-MainStroke.Color = UI_THEME.Accent
-MainStroke.Thickness = 2
+MainStroke.Color = UI_THEME.Accent -- Cyan Statis (Ringan)
+MainStroke.Thickness = 1.5
 MainStroke.Transparency = 0
-ApplyRainbow(MainStroke) -- Aktifkan RGB pada Main UI
 
 -- HEADER
 local Header = Instance.new("Frame", Main)
@@ -284,7 +258,6 @@ TabIndicator.Size = UDim2.new(0.5, 0, 0, 2)
 TabIndicator.Position = UDim2.new(0, 0, 1, -2)
 TabIndicator.BackgroundColor3 = UI_THEME.Accent
 TabIndicator.BorderSizePixel = 0
-ApplyRainbow(TabIndicator) -- Indikator tab juga RGB
 
 -- PAGES CONTAINER
 local PageContainer = Instance.new("Frame", Main)
@@ -301,7 +274,8 @@ PageMain.Visible = true
 
 local GridMain = Instance.new("UIGridLayout", PageMain)
 GridMain.CellSize = UDim2.new(0, 128, 0, 28) 
-GridMain.CellPadding = UDim2.new(0, 8, 0, 6) 
+-- JARAK ANTAR TOMBOL DIUBAH DISINI (0, 12) AGAR TIDAK MEPET
+GridMain.CellPadding = UDim2.new(0, 8, 0, 12) 
 GridMain.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local PageMisc = Instance.new("Frame", PageContainer)
@@ -312,7 +286,8 @@ PageMisc.Visible = false
 
 local GridMisc = Instance.new("UIGridLayout", PageMisc)
 GridMisc.CellSize = UDim2.new(0, 128, 0, 28) 
-GridMisc.CellPadding = UDim2.new(0, 8, 0, 6) 
+-- JARAK ANTAR TOMBOL MISC JUGA DIPERBESAR
+GridMisc.CellPadding = UDim2.new(0, 8, 0, 12) 
 GridMisc.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local function SwitchTab(tabName)
@@ -464,7 +439,7 @@ s2.Transparency = 0.6
 
 local BtnSave   = MakeBtn(PageMisc, "Save Pos")
 local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
-local BtnClean  = MakeBtn(PageMisc, "Full Bright & Clean")
+local BtnClean  = MakeBtn(PageMisc, "Full Bright: OFF") -- FIXED
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
 local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
 
@@ -826,9 +801,28 @@ BtnBoost.MouseButton1Click:Connect(function()
     end
 end)
 
+-- LOGIKA BARU UNTUK CLEAN / FULL BRIGHT
 BtnClean.MouseButton1Click:Connect(function()
-    local freed = PerformUltraClean(false) -- Mode Biasa (Hanya light)
-    Notify("Clean", "RAM Freed: " .. freed .. " KB")
+    States.AutoClean = not States.AutoClean
+    
+    BtnClean.Text = "Full Bright: " .. (States.AutoClean and "ON" or "OFF")
+    ToggleVisual(BtnClean, States.AutoClean) 
+    
+    if States.AutoClean then
+        local freed = PerformUltraClean(false) 
+        Notify("Full Bright", "Aktif! RAM Freed: " .. freed .. " KB")
+        task.spawn(function()
+            while States.AutoClean do
+                game:GetService("Lighting").Brightness = 2
+                game:GetService("Lighting").ClockTime = 14
+                game:GetService("Lighting").GlobalShadows = false
+                game:GetService("Lighting").FogEnd = 9e9
+                task.wait(1)
+            end
+        end)
+    else
+        Notify("Full Bright", "Dimatikan.")
+    end
 end)
 
 BtnRender.MouseButton1Click:Connect(function() 
