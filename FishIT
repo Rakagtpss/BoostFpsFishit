@@ -1,4 +1,4 @@
-h- [1] Notifikasi Awal
+--[1] Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
@@ -744,4 +744,5 @@ BtnLoad.MouseButton1Click:Connect(function()
         Notify("Gagal", "Belum ada posisi yang disimpan ")
     end 
 end)
+
 
