@@ -2,25 +2,27 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Seraphin Helper",
-        Text = "LOADING SCRIPT,
+        Text = "SCRIPT OPTIMIZED & LOADED",
         Duration = 2,
     })
 end)
 
-task.wait(3.5)
+task.wait(1)
 
--- [2] Variable & Services
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
-local Lighting = game:GetService("Lighting")
-local TeleportService = game:GetService("TeleportService")
-local UserInputService = game:GetService("UserInputService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage") 
-local TweenService = game:GetService("TweenService")
-local Workspace = game:GetService("Workspace")
+-- [2] Variable & Services (Cached for Performance)
+local Services = {
+    Players = game:GetService("Players"),
+    RunService = game:GetService("RunService"),
+    CoreGui = game:GetService("CoreGui"),
+    Lighting = game:GetService("Lighting"),
+    TeleportService = game:GetService("TeleportService"),
+    UserInputService = game:GetService("UserInputService"),
+    ReplicatedStorage = game:GetService("ReplicatedStorage"),
+    TweenService = game:GetService("TweenService"),
+    Workspace = game:GetService("Workspace")
+}
 
-local Player = Players.LocalPlayer
+local Player = Services.Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 10)
 local Hum = Char:WaitForChild("Humanoid", 10)
@@ -35,11 +37,11 @@ end)
 -- // Konfigurasi Visual (TEMA CYAN & LIGHTWEIGHT)
 local UI_THEME = {
     MinWidth = 280,  
-    MinHeight = 280, -- Sedikit dipertinggi agar tombol muat dengan jarak baru
+    MinHeight = 250, -- Adjusted height since one button is removed
     Color = Color3.fromRGB(10, 10, 10), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(5, 5, 5),
-    Accent = Color3.fromRGB(0, 255, 255), -- CYAN MURNI
+    Accent = Color3.fromRGB(0, 255, 255),
     TabOff = Color3.fromRGB(120, 120, 120),
     TabOn = Color3.fromRGB(255, 255, 255),
     TextColor = Color3.fromRGB(255, 255, 255),
@@ -49,16 +51,16 @@ local UI_THEME = {
 }
 
 -- Bersihkan UI Lama
-if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
+if Services.CoreGui:FindFirstChild("SeraphinHelper") then Services.CoreGui.SeraphinHelper:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SeraphinHelper"
-ScreenGui.Parent = CoreGui
+ScreenGui.Parent = Services.CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [1] MINI FLOATING HUD
+-- [1] MINI FLOATING HUD (Optimized)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
@@ -71,7 +73,7 @@ FloatHUD.Active = true
 FloatHUD.Draggable = true 
 
 local HudStroke = Instance.new("UIStroke", FloatHUD)
-HudStroke.Color = UI_THEME.Accent -- Cyan Statis
+HudStroke.Color = UI_THEME.Accent
 HudStroke.Thickness = 1.5
 HudStroke.Transparency = 0
 
@@ -155,7 +157,7 @@ Main.Draggable = false
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
 local MainStroke = Instance.new("UIStroke", Main)
-MainStroke.Color = UI_THEME.Accent -- Cyan Statis (Ringan)
+MainStroke.Color = UI_THEME.Accent
 MainStroke.Thickness = 1.5
 MainStroke.Transparency = 0
 
@@ -191,7 +193,7 @@ Header.InputChanged:Connect(function(input)
         dragInput = input
     end
 end)
-UserInputService.InputChanged:Connect(function(input)
+Services.UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragToggle then
         updateInput(input)
     end
@@ -274,7 +276,6 @@ PageMain.Visible = true
 
 local GridMain = Instance.new("UIGridLayout", PageMain)
 GridMain.CellSize = UDim2.new(0, 128, 0, 28) 
--- JARAK ANTAR TOMBOL DIUBAH DISINI (0, 12) AGAR TIDAK MEPET
 GridMain.CellPadding = UDim2.new(0, 8, 0, 12) 
 GridMain.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
@@ -286,7 +287,6 @@ PageMisc.Visible = false
 
 local GridMisc = Instance.new("UIGridLayout", PageMisc)
 GridMisc.CellSize = UDim2.new(0, 128, 0, 28) 
--- JARAK ANTAR TOMBOL MISC JUGA DIPERBESAR
 GridMisc.CellPadding = UDim2.new(0, 8, 0, 12) 
 GridMisc.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
@@ -371,13 +371,13 @@ local function ToggleVisual(btn, on)
 end
 
 local function Notify(title, text)
-    game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
+    Services.StarterGui:SetCore("SendNotification", { Title = title, Text = text, Duration = 3 })
 end
 
 -- States
 local States = {
     Freeze=false, WoW=false, Boost=false, NoRender=false, 
-    Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
+    Noclip=false, Panel=true, AutoEquip=false,
     AutoEvent=false, AntiStuck=false, StuckTimeout=60 
 }
 local SavedCFrame = nil 
@@ -400,7 +400,7 @@ local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Max") 
 
--- TAB MISC
+-- TAB MISC (Clean Button Removed)
 local StuckContainer = Instance.new("Frame", PageMisc)
 StuckContainer.Name = "StuckContainer"
 StuckContainer.BackgroundTransparency = 1
@@ -439,7 +439,6 @@ s2.Transparency = 0.6
 
 local BtnSave   = MakeBtn(PageMisc, "Save Pos")
 local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
-local BtnClean  = MakeBtn(PageMisc, "Full Bright: OFF") -- FIXED
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
 local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
 
@@ -464,7 +463,7 @@ local function SetWoW(bool)
         
         if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
         
-        Connections["WoW"] = RunService.RenderStepped:Connect(function() 
+        Connections["WoW"] = Services.RunService.RenderStepped:Connect(function() 
             if HRP and Hum and BodyV and BodyV.Parent then
                 local moveDir = Hum.MoveDirection
                 local speed = Hum.WalkSpeed
@@ -488,7 +487,7 @@ end
 local function ForceEquipRod()
     pcall(function()
         local args = { [1] = 1 }
-        local pkgs = ReplicatedStorage:FindFirstChild("Packages")
+        local pkgs = Services.ReplicatedStorage:FindFirstChild("Packages")
         if pkgs then
             local idx = pkgs:FindFirstChild("_Index")
             if idx then
@@ -502,66 +501,43 @@ local function ForceEquipRod()
 end
 
 -- ====================================================
--- [FUNCTION] IMPROVED ULTRA CLEAN / BOOSTER
+-- [FUNCTION] OPTIMIZED PERFORMANCE BOOSTER
 -- ====================================================
-local function PerformUltraClean(isBoosterMode)
-    local startMem = gcinfo() 
+local function OptimizePerformance()
+    local startMem = gcinfo()
     
-    -- 1. Garbage Collect Agresif
-    for i = 1, 5 do collectgarbage("collect") end
-
-    -- 2. Matikan Efek Lighting (Berat di GPU)
-    Lighting.GlobalShadows = false
-    Lighting.FogEnd = 9e9
-    Lighting.Brightness = 2
-    if isBoosterMode then
-        settings().Rendering.QualityLevel = "Level01"
-        Lighting.Technology = Enum.Technology.Compatibility
-    end
+    -- 1. Optimized Internal Settings (CPU & GPU Friendly)
+    Services.Lighting.GlobalShadows = false
+    Services.Lighting.FogEnd = 9e9
+    Services.Lighting.Technology = Enum.Technology.Compatibility
     
-    -- Hapus Efek Berat
-    for _, v in pairs(Lighting:GetChildren()) do
-        if v:IsA("PostEffect") or v:IsA("BlurEffect") or v:IsA("BloomEffect") or v:IsA("SunRaysEffect") or v:IsA("Atmosphere") or v:IsA("Sky") then
-            v:Destroy()
-        end
-    end
-
-    -- 3. Bersihkan Workspace & Ubah Material
     pcall(function()
-        -- Settingan Terrain
-        local T = Workspace:FindFirstChildOfClass("Terrain")
-        if T then
-            T.WaterWaveSize = 0
-            T.WaterReflectance = 0
-            T.WaterTransparency = 0 
-            if isBoosterMode then T.Decoration = false end
+        settings().Rendering.QualityLevel = "Level01"
+        settings().Rendering.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Level01
+    end)
+
+    -- 2. Clean Heavy Visuals (Safety Check Included)
+    pcall(function()
+        local Terrain = Services.Workspace:FindFirstChildOfClass("Terrain")
+        if Terrain then
+            Terrain.WaterWaveSize = 0
+            Terrain.WaterReflectance = 0
+            Terrain.WaterTransparency = 0
+            Terrain.Decoration = false
         end
 
-        for _, v in pairs(Workspace:GetDescendants()) do
-            if v:IsA("BasePart") then
-                -- Ubah semua part jadi smooth plastic agar ringan dirender
-                if isBoosterMode then
-                    v.Material = Enum.Material.SmoothPlastic
-                    v.Reflectance = 0
-                    v.CastShadow = false
-                end
-                
-                -- Hapus Decal/Texture di part
-                if isBoosterMode then
-                     for _, child in pairs(v:GetChildren()) do
-                        if child:IsA("Texture") or child:IsA("Decal") then child:Destroy() end
-                     end
-                end
-
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Explosion") or v:IsA("Sparkles") then
-                v:Destroy() -- Hapus partikel
-            elseif v:IsA("MeshPart") and isBoosterMode then
-                v.RenderFidelity = Enum.RenderFidelity.Performance
-                v.Material = Enum.Material.SmoothPlastic
-                v.TextureID = "" -- Hapus tekstur mesh
+        for _, v in pairs(Services.Workspace:GetDescendants()) do
+            -- Disable particles/trails instead of destroying (prevents nil errors)
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Smoke") or v:IsA("Fire") then
+                v.Enabled = false
+            elseif v:IsA("Texture") or v:IsA("Decal") then
+                v:Destroy() -- Safe to destroy textures
             end
         end
     end)
+    
+    -- 3. Force Garbage Collection
+    for i = 1, 3 do collectgarbage("collect") end
     
     local endMem = gcinfo()
     return math.floor(startMem - endMem)
@@ -571,7 +547,7 @@ end
 -- [FPS MONITOR]
 -- ====================================================
 local fpsT = 0
-RunService.RenderStepped:Connect(function(dt)
+Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
     if Title then
@@ -603,7 +579,7 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [5] BACKGROUND LOOPS
+-- [5] BACKGROUND LOOPS (Optimized)
 -- ====================================================
 
 -- ANTI STUCK LOOP
@@ -621,7 +597,7 @@ task.spawn(function()
                     LastFishCaughtTime = tick()
                 else
                     if (tick() - LastFishCaughtTime) > States.StuckTimeout then
-                        Notify("Anti-Stuck", "Stuck! Respawning...")
+                        Notify("Anti-Stuck", "Stuck detected! Respawning...")
                         local stuckPos = HRP.CFrame 
                         if Hum then Hum.Health = 0 end
                         Player.CharacterAdded:Wait()
@@ -638,9 +614,10 @@ task.spawn(function()
                 end
             end)
         else
-            LastFishCaughtTime = tick()
+            -- Sync count when off to prevent instant trigger when turned on
             local ls = Player:FindFirstChild("leaderstats")
             if ls and ls:FindFirstChild("Caught") then LastFishCount = ls.Caught.Value end
+            LastFishCaughtTime = tick()
         end
     end
 end)
@@ -652,8 +629,9 @@ task.spawn(function()
         if States.AutoEvent then
             pcall(function()
                 if not HRP or not HRP.Parent then return end
-                local Props = Workspace:FindFirstChild("Props")
+                local Props = Services.Workspace:FindFirstChild("Props")
                 local FoundEvent = nil
+                
                 if Props then
                     for _, v in pairs(Props:GetChildren()) do
                         if v:IsA("Model") or v:IsA("BasePart") then
@@ -693,7 +671,7 @@ end)
 
 task.spawn(function()
     while true do
-        task.wait(1.5)
+        task.wait(2) -- Check equip less frequently
         if States.AutoEquip then ForceEquipRod() end
     end
 end)
@@ -701,28 +679,37 @@ end)
 task.spawn(function()
     while true do
         task.wait(0.5)
-        if not States.Panel then continue end
-        pcall(function()
-            local ls = Player:FindFirstChild("leaderstats")
-            local caughtObj = ls and ls:FindFirstChild("Caught")
-            local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
-            LblFishVal.Text = formatNum(caughtObj and caughtObj.Value or 0)
-            
-            local pg = Player:FindFirstChild("PlayerGui")
-            local backpackGui = pg and pg:FindFirstChild("Backpack")
-            local bagText = "0/?"
-            if backpackGui then
-                for _, v in pairs(backpackGui:GetDescendants()) do
-                    if v:IsA("TextLabel") and string.find(v.Text, "/") then 
-                        bagText = v.Text 
-                        break 
+        if States.Panel then
+            pcall(function()
+                -- 1. Fish Count
+                local ls = Player:FindFirstChild("leaderstats")
+                local caughtObj = ls and ls:FindFirstChild("Caught")
+                local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
+                LblFishVal.Text = formatNum(caughtObj and caughtObj.Value or 0)
+                
+                -- 2. Backpack Count (Optimized)
+                local bagText = "0/?"
+                local backpackGui = Player.PlayerGui:FindFirstChild("Backpack")
+                
+                if backpackGui then
+                   -- Only scan if gui exists, otherwise fallback to standard backpack
+                   local foundLabel = false
+                   for _, v in pairs(backpackGui:GetDescendants()) do
+                        if v:IsA("TextLabel") and string.find(v.Text, "/") then 
+                            bagText = v.Text 
+                            foundLabel = true
+                            break 
+                        end
                     end
+                    if not foundLabel and Player:FindFirstChild("Backpack") then
+                        bagText = tostring(#Player.Backpack:GetChildren())
+                    end
+                else 
+                     bagText = tostring(#Player.Backpack:GetChildren())
                 end
-            else 
-                bagText = tostring(#Player.Backpack:GetChildren())
-            end
-            LblInvVal.Text = bagText
-        end)
+                LblInvVal.Text = bagText
+            end)
+        end
     end
 end)
 
@@ -777,7 +764,7 @@ BtnNoclip.MouseButton1Click:Connect(function()
     BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") 
     ToggleVisual(BtnNoclip, States.Noclip) 
     if States.Noclip then 
-        Connections["Noclip"] = RunService.Stepped:Connect(function() 
+        Connections["Noclip"] = Services.RunService.Stepped:Connect(function() 
             if Player.Character then 
                 for _,v in pairs(Player.Character:GetDescendants()) do 
                     if v:IsA("BasePart") then v.CanCollide = false end 
@@ -794,45 +781,21 @@ BtnBoost.MouseButton1Click:Connect(function()
     BtnBoost.Text = "CPU Booster: " .. (States.Boost and "ON" or "OFF")
     ToggleVisual(BtnBoost, States.Boost) 
     if States.Boost then
-        local freed = PerformUltraClean(true) -- Mode Booster: TRUE (Agresif)
-        Notify("CPU Boost", "Graphics NUKED! RAM Freed: " .. freed .. " KB")
+        local freed = OptimizePerformance()
+        Notify("CPU Boost", "Graphics Optimized! Memory Freed: " .. freed .. " KB")
     else
-        Notify("Info", "Rejoin to restore graphics")
-    end
-end)
-
--- LOGIKA BARU UNTUK CLEAN / FULL BRIGHT
-BtnClean.MouseButton1Click:Connect(function()
-    States.AutoClean = not States.AutoClean
-    
-    BtnClean.Text = "Full Bright: " .. (States.AutoClean and "ON" or "OFF")
-    ToggleVisual(BtnClean, States.AutoClean) 
-    
-    if States.AutoClean then
-        local freed = PerformUltraClean(false) 
-        Notify("Full Bright", "Aktif! RAM Freed: " .. freed .. " KB")
-        task.spawn(function()
-            while States.AutoClean do
-                game:GetService("Lighting").Brightness = 2
-                game:GetService("Lighting").ClockTime = 14
-                game:GetService("Lighting").GlobalShadows = false
-                game:GetService("Lighting").FogEnd = 9e9
-                task.wait(1)
-            end
-        end)
-    else
-        Notify("Full Bright", "Dimatikan.")
+        Notify("Info", "Settings saved (Rejoin to reset graphics)")
     end
 end)
 
 BtnRender.MouseButton1Click:Connect(function() 
     States.NoRender = not States.NoRender 
-    RunService:Set3dRenderingEnabled(not States.NoRender) 
+    Services.RunService:Set3dRenderingEnabled(not States.NoRender) 
     BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
     ToggleVisual(BtnRender, States.NoRender) 
 end)
 
-BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
+BtnRejoin.MouseButton1Click:Connect(function() Services.TeleportService:Teleport(game.PlaceId, Player) end)
 
 BtnSave.MouseButton1Click:Connect(function() 
     if HRP then 
