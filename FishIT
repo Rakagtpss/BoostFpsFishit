@@ -2,8 +2,8 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Seraphin Helper",
-        Text = "LOADING",
-        Duration = 2.5,
+        Text = "Loading ...",
+        Duration = 2,
     })
 end)
 
@@ -197,17 +197,17 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- TITLE (FPS & PING MONITOR)
+-- TITLE (FPS MONITOR - CENTERED & NO PING)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0) 
-Title.Position = UDim2.new(0, 10, 0, 0)
+Title.Position = UDim2.new(0, 0, 0, 0) -- CENTER POS
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>" 
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = UI_THEME.Font
 Title.TextSize = 11
 Title.BackgroundTransparency = 1
-Title.TextXAlignment = Enum.TextXAlignment.Left 
+Title.TextXAlignment = Enum.TextXAlignment.Center -- CENTER ALIGN
 
 -- HIDE BUTTON
 local HideBtn = Instance.new("TextButton", Header)
@@ -376,13 +376,17 @@ end
 local States = {
     Freeze=false, WoW=false, Boost=false, NoRender=false, 
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
-    AutoEvent=false
+    AutoEvent=false, AntiStuck=false, StuckTimeout=60 -- Default 60s
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
 local IsInEvent = false 
 local Connections = {}
 local BodyV = nil
+
+-- Anti Stuck Variables
+local LastFishCaughtTime = tick()
+local LastFishCount = 0
 
 -- >> TOMBOL UI <<
 
@@ -392,14 +396,52 @@ local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
-local BtnBoost  = MakeBtn(PageMain, "Ultra Boost: OFF") -- RENAMED
+local BtnBoost  = MakeBtn(PageMain, "Ultra Boost: OFF") 
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Max") 
 
--- TAB MISC
+-- TAB MISC (Modified for Custom Stuck Input)
+-- 1. Create Container for Stuck Button & Input
+local StuckContainer = Instance.new("Frame", PageMisc)
+StuckContainer.Name = "StuckContainer"
+StuckContainer.BackgroundTransparency = 1
+-- Size handled by Grid
+
+local BtnStuckToggle = Instance.new("TextButton", StuckContainer)
+BtnStuckToggle.Name = "Toggle"
+BtnStuckToggle.Size = UDim2.new(0.65, -4, 1, 0)
+BtnStuckToggle.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+BtnStuckToggle.BackgroundTransparency = 0.5
+BtnStuckToggle.Text = "Anti-Stuck: OFF"
+BtnStuckToggle.TextColor3 = UI_THEME.TextColor
+BtnStuckToggle.Font = UI_THEME.BtnFont
+BtnStuckToggle.TextSize = 10
+Instance.new("UICorner", BtnStuckToggle).CornerRadius = UDim.new(0, 4)
+local s1 = Instance.new("UIStroke", BtnStuckToggle)
+s1.Color = UI_THEME.Accent
+s1.Thickness = 1
+s1.Transparency = 0.6
+
+local BoxStuckInput = Instance.new("TextBox", StuckContainer)
+BoxStuckInput.Name = "Input"
+BoxStuckInput.Size = UDim2.new(0.35, 0, 1, 0)
+BoxStuckInput.Position = UDim2.new(0.65, 0, 0, 0)
+BoxStuckInput.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+BoxStuckInput.BackgroundTransparency = 0.5
+BoxStuckInput.Text = "60" -- Default
+BoxStuckInput.PlaceholderText = "Sec"
+BoxStuckInput.TextColor3 = UI_THEME.Accent
+BoxStuckInput.Font = Enum.Font.GothamBold
+BoxStuckInput.TextSize = 10
+Instance.new("UICorner", BoxStuckInput).CornerRadius = UDim.new(0, 4)
+local s2 = Instance.new("UIStroke", BoxStuckInput)
+s2.Color = UI_THEME.Accent
+s2.Thickness = 1
+s2.Transparency = 0.6
+
 local BtnSave   = MakeBtn(PageMisc, "Save Pos")
 local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
-local BtnClean  = MakeBtn(PageMisc, "Ultra Clean: OFF") -- RENAMED
+local BtnClean  = MakeBtn(PageMisc, "Ultra Clean: OFF")
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
 local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
 
@@ -446,19 +488,32 @@ local function SetAutoEquip(bool)
     end
 end
 
+-- [FUNCTION] FORCE EQUIP ROD (Digunakan di Anti-Stuck)
+local function ForceEquipRod()
+    pcall(function()
+        local args = { [1] = 1 }
+        local pkgs = ReplicatedStorage:FindFirstChild("Packages")
+        if pkgs then
+            local idx = pkgs:FindFirstChild("_Index")
+            if idx then
+                local remote = idx:FindFirstChild("sleitnick_net@0.2.0")
+                if remote then
+                    remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
+                end
+            end
+        end
+    end)
+end
+
 -- ====================================================
--- [FUNCTION] ULTRA CLEANING CPU BOOSTER (UPDATED)
+-- [FUNCTION] ULTRA CLEANING CPU BOOSTER
 -- ====================================================
 local function PerformUltraClean()
     local startMem = gcinfo() 
-    
-    -- 1. Garbage Collect Agresif
     for i = 1, 3 do
         collectgarbage("collect")
         task.wait(0.01)
     end
-
-    -- 2. Nuke Lighting (Remove Shadows, Fog, Effects)
     local L = game:GetService("Lighting")
     L.GlobalShadows = false
     L.FogEnd = 9e9
@@ -471,14 +526,12 @@ local function PerformUltraClean()
         end
     end
 
-    -- 3. Workspace Cleaner (Particles, Effects, Meshes)
     pcall(function()
-        -- Hapus Efek Berat
         for _, v in pairs(Workspace:GetDescendants()) do
             if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Explosion") or v:IsA("Sparkles") then
                 v:Destroy()
             elseif v:IsA("Decal") or v:IsA("Texture") then
-                v:Destroy() -- Hapus Total Tekstur
+                v:Destroy()
             elseif v:IsA("MeshPart") then
                 v.RenderFidelity = Enum.RenderFidelity.Performance
                 v.Material = Enum.Material.SmoothPlastic
@@ -489,17 +542,14 @@ local function PerformUltraClean()
                 v.Reflectance = 0
             end
         end
-        
-        -- Matikan Terrain Water
         local T = Workspace:FindFirstChildOfClass("Terrain")
         if T then
             T.WaterWaveSize = 0
             T.WaterReflectance = 0
-            T.WaterTransparency = 0 -- Air jadi solid (lebih ringan)
+            T.WaterTransparency = 0 
         end
     end)
     
-    -- 4. Entity Simplifier (Hapus Baju player lain)
     pcall(function()
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= Player and p.Character then
@@ -517,24 +567,18 @@ local function PerformUltraClean()
 end
 
 -- ====================================================
--- [FPS & PING MONITOR]
+-- [FPS MONITOR - NO PING]
 -- ====================================================
 local fpsT = 0
 RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
-    local ping = 0
-    pcall(function()
-        ping = math.floor(Player:GetNetworkPing() * 1000)
-    end)
-    local pingColor = "rgb(0,255,100)"
-    if ping > 200 then pingColor = "rgb(255,50,50)"
-    elseif ping > 100 then pingColor = "rgb(255,200,50)" end
-
+    
+    -- Hanya Menampilkan FPS, Ping dihapus
     if Title then
         Title.Text = string.format(
-            "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  |  FPS: <b>%d</b>  |  PING: <font color=\"%s\"><b>%d ms</b></font>", 
-            currentFps, pingColor, ping
+            "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  |  FPS: <b>%d</b>", 
+            currentFps
         )
     end
 end)
@@ -564,14 +608,75 @@ end)
 -- [5] BACKGROUND LOOPS & AUTO LOGICS
 -- ====================================================
 
--- AUTO CLEAN LOOP (UPDATED)
+-- >> ANTI STUCK SYSTEM LOGIC <<
 task.spawn(function()
     while true do
-        task.wait(60) -- Clean setiap 60 detik jika aktif
+        task.wait(1)
+        if States.AntiStuck then
+            pcall(function()
+                -- Cek jumlah ikan sekarang
+                local currentFish = 0
+                local ls = Player:FindFirstChild("leaderstats")
+                if ls and ls:FindFirstChild("Caught") then
+                    currentFish = ls.Caught.Value
+                end
+
+                -- Jika ikan bertambah, reset timer
+                if currentFish > LastFishCount then
+                    LastFishCount = currentFish
+                    LastFishCaughtTime = tick()
+                else
+                    -- Jika waktu tunggu habis (STUCK) menggunakan input user
+                    if (tick() - LastFishCaughtTime) > States.StuckTimeout then
+                        Notify("Anti-Stuck", "Stuck detected! (> " .. States.StuckTimeout .. "s)")
+                        
+                        -- 1. Save Posisi
+                        local stuckPos = HRP.CFrame 
+                        
+                        -- 2. Matikan Karakter (Respawn)
+                        if Hum then Hum.Health = 0 end
+                        
+                        -- 3. Tunggu Karakter Baru
+                        Player.CharacterAdded:Wait()
+                        local newChar = Player.Character or Player.CharacterAdded:Wait()
+                        local newHRP = newChar:WaitForChild("HumanoidRootPart", 10)
+                        task.wait(1) 
+                        
+                        -- 4. Teleport Balik
+                        if newHRP then 
+                            newHRP.CFrame = stuckPos 
+                        end
+                        
+                        task.wait(0.5)
+                        
+                        -- 5. Auto Equip Rod
+                        ForceEquipRod()
+                        Notify("Anti-Stuck", "Recovered!")
+                        
+                        -- Reset Timer
+                        LastFishCaughtTime = tick()
+                        LastFishCount = currentFish 
+                    end
+                end
+            end)
+        else
+            -- Jika fitur mati, selalu update timer agar tidak trigger instan saat dinyalakan
+            LastFishCaughtTime = tick()
+            local ls = Player:FindFirstChild("leaderstats")
+            if ls and ls:FindFirstChild("Caught") then
+                LastFishCount = ls.Caught.Value
+            end
+        end
+    end
+end)
+
+-- AUTO CLEAN LOOP
+task.spawn(function()
+    while true do
+        task.wait(60) 
         if States.AutoClean then
             pcall(function()
                 local freed = PerformUltraClean()
-                -- Notifikasi dihapus agar tidak spamming, hanya clean diam-diam
             end)
         end
     end
@@ -633,27 +738,12 @@ task.spawn(function()
     end
 end)
 
--- AUTO EQUIP
+-- AUTO EQUIP LOOP (Backup)
 task.spawn(function()
     while true do
         task.wait(1.5)
         if States.AutoEquip then
-            pcall(function()
-                local char = Player.Character
-                if char and not char:FindFirstChildWhichIsA("Tool") then
-                    local args = { [1] = 1 }
-                    local pkgs = ReplicatedStorage:FindFirstChild("Packages")
-                    if pkgs then
-                        local idx = pkgs:FindFirstChild("_Index")
-                        if idx then
-                            local remote = idx:FindFirstChild("sleitnick_net@0.2.0")
-                            if remote then
-                                remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
-                            end
-                        end
-                    end
-                end
-            end)
+            ForceEquipRod()
         end
     end
 end)
@@ -690,6 +780,38 @@ end)
 -- ====================================================
 -- [6] FUNCTION BUTTONS LOGIC
 -- ====================================================
+
+-- BUTTON ANTI STUCK (TOGGLE + INPUT)
+BtnStuckToggle.MouseButton1Click:Connect(function()
+    States.AntiStuck = not States.AntiStuck
+    if States.AntiStuck then
+        BtnStuckToggle.Text = "Anti-Stuck: ON"
+        ToggleVisual(BtnStuckToggle, true)
+        
+        -- Parse Input
+        local val = tonumber(BoxStuckInput.Text)
+        if not val or val < 10 then val = 60; BoxStuckInput.Text = "60" end
+        States.StuckTimeout = val
+        LastFishCaughtTime = tick() -- Reset timer
+        Notify("Anti-Stuck", "Enabled. Timeout: " .. val .. "s")
+    else
+        BtnStuckToggle.Text = "Anti-Stuck: OFF"
+        ToggleVisual(BtnStuckToggle, false)
+    end
+end)
+
+-- Validasi Input Box saat diubah
+BoxStuckInput.FocusLost:Connect(function(enterPressed)
+    local val = tonumber(BoxStuckInput.Text)
+    if val then
+        States.StuckTimeout = val
+        if States.AntiStuck then
+            Notify("Timer Update", "Timeout set to " .. val .. "s")
+        end
+    else
+        BoxStuckInput.Text = tostring(States.StuckTimeout) -- Revert jika bukan angka
+    end
+end)
 
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
@@ -735,7 +857,7 @@ BtnBoost.MouseButton1Click:Connect(function()
     ToggleVisual(BtnBoost, States.Boost) 
     BtnBoost.Text = "Ultra Boost: " .. (States.Boost and "ON" or "OFF")
     if States.Boost then
-        PerformUltraClean() -- TRIGGER CLEANER SEKALIGUS
+        PerformUltraClean() 
         Notify("CPU Boost", "Graphics NUKED for FPS")
     else
         Notify("Info", "Rejoin to restore graphics")
