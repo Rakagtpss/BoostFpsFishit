@@ -2,12 +2,12 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Seraphin Helper",
-        Text = "SCRIPT OPTIMIZED & LOADED",
+        Text = "SCRIPT LOADED",
         Duration = 2,
     })
 end)
 
-task.wait(1)
+task.wait(3.5)
 
 -- [2] Variable & Services (Cached for Performance)
 local Services = {
@@ -27,7 +27,7 @@ local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 10)
 local Hum = Char:WaitForChild("Humanoid", 10)
 
--- Auto Update Character saat Respawn
+-- Auto Update Character saat Respawn (Optimized Connection)
 Player.CharacterAdded:Connect(function(newChar)
     Char = newChar
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
@@ -37,7 +37,7 @@ end)
 -- // Konfigurasi Visual (TEMA CYAN & LIGHTWEIGHT)
 local UI_THEME = {
     MinWidth = 280,  
-    MinHeight = 250, -- Adjusted height since one button is removed
+    MinHeight = 250,
     Color = Color3.fromRGB(10, 10, 10), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(5, 5, 5),
@@ -69,8 +69,7 @@ FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
 FloatHUD.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 FloatHUD.BackgroundTransparency = 0.4
 FloatHUD.Visible = true
-FloatHUD.Active = true
-FloatHUD.Draggable = true 
+FloatHUD.Active = true -- Penting untuk drag script custom
 
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_THEME.Accent
@@ -152,7 +151,6 @@ Main.BackgroundColor3 = UI_THEME.Color
 Main.BackgroundTransparency = UI_THEME.Transparency
 Main.Active = true
 Main.ClipsDescendants = true 
-Main.Draggable = false 
 
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
@@ -169,35 +167,39 @@ Header.BackgroundColor3 = UI_THEME.HeaderColor
 Header.BackgroundTransparency = 0.5
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
--- [DRAG SCRIPT]
-local dragToggle, dragInput, dragStart, startPos
-local function updateInput(input)
-    local delta = input.Position - dragStart
-    local position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    Main.Position = position
+-- [OPTIMIZED DRAG SCRIPT]
+local function EnableDrag(frame, dragInputObj)
+    local dragToggle, dragStart, startPos
+    local function updateInput(input)
+        local delta = input.Position - dragStart
+        local position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        frame.Position = position
+    end
+    dragInputObj.InputBegan:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+            dragToggle = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragToggle = false
+                end
+            end)
+        end
+    end)
+    dragInputObj.InputChanged:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local dragInput = input
+            Services.UserInputService.InputChanged:Connect(function(inputCheck)
+                if inputCheck == dragInput and dragToggle then
+                    updateInput(inputCheck)
+                end
+            end)
+        end
+    end)
 end
-Header.InputBegan:Connect(function(input)
-    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-        dragToggle = true
-        dragStart = input.Position
-        startPos = Main.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragToggle = false
-            end
-        end)
-    end
-end)
-Header.InputChanged:Connect(function(input)
-    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        dragInput = input
-    end
-end)
-Services.UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragToggle then
-        updateInput(input)
-    end
-end)
+EnableDrag(Main, Header)
+EnableDrag(FloatHUD, FloatHUD) -- FloatHUD juga bisa digeser sekarang
 
 -- TITLE
 local Title = Instance.new("TextLabel", Header)
@@ -400,7 +402,7 @@ local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Max") 
 
--- TAB MISC (Clean Button Removed)
+-- TAB MISC
 local StuckContainer = Instance.new("Frame", PageMisc)
 StuckContainer.Name = "StuckContainer"
 StuckContainer.BackgroundTransparency = 1
@@ -466,8 +468,13 @@ local function SetWoW(bool)
         Connections["WoW"] = Services.RunService.RenderStepped:Connect(function() 
             if HRP and Hum and BodyV and BodyV.Parent then
                 local moveDir = Hum.MoveDirection
-                local speed = Hum.WalkSpeed
-                BodyV.Velocity = Vector3.new(moveDir.X * speed, 0, moveDir.Z * speed)
+                -- Optimization: Only apply velocity if moving
+                if moveDir.Magnitude > 0 then
+                    local speed = Hum.WalkSpeed
+                    BodyV.Velocity = Vector3.new(moveDir.X * speed, 0, moveDir.Z * speed)
+                else
+                    BodyV.Velocity = Vector3.zero
+                end
             end 
         end) 
     else 
@@ -501,14 +508,30 @@ local function ForceEquipRod()
 end
 
 -- ====================================================
--- [FUNCTION] OPTIMIZED PERFORMANCE BOOSTER
+-- [FUNCTION] DEEP OPTIMIZATION BOOSTER
 -- ====================================================
+local function CleanVisuals(parent)
+    -- Helper untuk menghapus efek visual saja tanpa merusak script game
+    for _, v in pairs(parent:GetDescendants()) do
+        if v:IsA("Texture") or v:IsA("Decal") or v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") then
+            v:Destroy()
+        elseif v:IsA("BasePart") or v:IsA("MeshPart") then
+            v.Material = Enum.Material.SmoothPlastic
+            v.Reflectance = 0
+            if v:IsA("MeshPart") then
+                v.RenderFidelity = Enum.RenderFidelity.Performance
+            end
+        end
+    end
+end
+
 local function OptimizePerformance()
     local startMem = gcinfo()
     
-    -- 1. Optimized Internal Settings (CPU & GPU Friendly)
+    -- 1. Optimized Internal Settings
     Services.Lighting.GlobalShadows = false
     Services.Lighting.FogEnd = 9e9
+    Services.Lighting.Brightness = 1
     Services.Lighting.Technology = Enum.Technology.Compatibility
     
     pcall(function()
@@ -516,27 +539,30 @@ local function OptimizePerformance()
         settings().Rendering.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Level01
     end)
 
-    -- 2. Clean Heavy Visuals (Safety Check Included)
-    pcall(function()
-        local Terrain = Services.Workspace:FindFirstChildOfClass("Terrain")
-        if Terrain then
-            Terrain.WaterWaveSize = 0
-            Terrain.WaterReflectance = 0
-            Terrain.WaterTransparency = 0
-            Terrain.Decoration = false
-        end
+    -- 2. Clean Specific Heavy Folders (Deep Scan Request)
+    -- Membersihkan ToyFactory dan NPC sesuai permintaan
+    local HeavyFolders = {
+        Services.Workspace:FindFirstChild("ToyFactory"),
+        Services.Workspace:FindFirstChild("NPC"),
+        Services.Workspace:FindFirstChild("Props") -- Optional: Seringkali berat
+    }
 
-        for _, v in pairs(Services.Workspace:GetDescendants()) do
-            -- Disable particles/trails instead of destroying (prevents nil errors)
-            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Smoke") or v:IsA("Fire") then
-                v.Enabled = false
-            elseif v:IsA("Texture") or v:IsA("Decal") then
-                v:Destroy() -- Safe to destroy textures
-            end
+    for _, folder in pairs(HeavyFolders) do
+        if folder then
+            CleanVisuals(folder) -- Bersihkan visual di dalam folder ini
         end
-    end)
+    end
+
+    -- 3. General Cleanup (Tanpa memindai seluruh workspace yang menyebabkan lag)
+    local Terrain = Services.Workspace:FindFirstChildOfClass("Terrain")
+    if Terrain then
+        Terrain.WaterWaveSize = 0
+        Terrain.WaterReflectance = 0
+        Terrain.WaterTransparency = 0
+        Terrain.Decoration = false
+    end
     
-    -- 3. Force Garbage Collection
+    -- 4. Force Garbage Collection
     for i = 1, 3 do collectgarbage("collect") end
     
     local endMem = gcinfo()
@@ -550,7 +576,8 @@ local fpsT = 0
 Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
-    if Title then
+    if Title and currentFps then
+        -- Update text hanya jika berubah drastis atau setiap beberapa frame agar ringan
         Title.Text = string.format(
             "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  |  FPS: <b>%d</b>", 
             currentFps
@@ -614,7 +641,6 @@ task.spawn(function()
                 end
             end)
         else
-            -- Sync count when off to prevent instant trigger when turned on
             local ls = Player:FindFirstChild("leaderstats")
             if ls and ls:FindFirstChild("Caught") then LastFishCount = ls.Caught.Value end
             LastFishCaughtTime = tick()
@@ -622,18 +648,21 @@ task.spawn(function()
     end
 end)
 
--- AUTO EVENT LOOP
+-- AUTO EVENT LOOP (Optimized)
 task.spawn(function()
     while true do
-        task.wait(1) 
+        task.wait(2) -- Check setiap 2 detik (lebih ringan dari 1)
         if States.AutoEvent then
             pcall(function()
                 if not HRP or not HRP.Parent then return end
                 local Props = Services.Workspace:FindFirstChild("Props")
                 local FoundEvent = nil
                 
+                -- Optimization: Jangan loop semua jika folder Props sangat besar
                 if Props then
-                    for _, v in pairs(Props:GetChildren()) do
+                    local children = Props:GetChildren()
+                    for i = 1, math.min(#children, 50) do -- Hanya cek 50 item pertama jika event spawn di awal
+                        local v = children[i]
                         if v:IsA("Model") or v:IsA("BasePart") then
                             FoundEvent = v
                             break 
@@ -669,16 +698,18 @@ task.spawn(function()
     end
 end)
 
+-- AUTO EQUIP LOOP
 task.spawn(function()
     while true do
-        task.wait(2) -- Check equip less frequently
+        task.wait(2) 
         if States.AutoEquip then ForceEquipRod() end
     end
 end)
 
+-- STATS UPDATE LOOP (Optimized for CPU)
 task.spawn(function()
     while true do
-        task.wait(0.5)
+        task.wait(0.8) -- Update UI kurang dari 1 detik sekali untuk meringankan CPU
         if States.Panel then
             pcall(function()
                 -- 1. Fish Count
@@ -687,13 +718,13 @@ task.spawn(function()
                 local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
                 LblFishVal.Text = formatNum(caughtObj and caughtObj.Value or 0)
                 
-                -- 2. Backpack Count (Optimized)
+                -- 2. Backpack Count
                 local bagText = "0/?"
-                local backpackGui = Player.PlayerGui:FindFirstChild("Backpack")
+                local backpackGui = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("Backpack")
                 
                 if backpackGui then
-                   -- Only scan if gui exists, otherwise fallback to standard backpack
                    local foundLabel = false
+                   -- Optimization: Limit depth scan
                    for _, v in pairs(backpackGui:GetDescendants()) do
                         if v:IsA("TextLabel") and string.find(v.Text, "/") then 
                             bagText = v.Text 
@@ -705,7 +736,7 @@ task.spawn(function()
                         bagText = tostring(#Player.Backpack:GetChildren())
                     end
                 else 
-                     bagText = tostring(#Player.Backpack:GetChildren())
+                     bagText = tostring(#Player:WaitForChild("Backpack"):GetChildren())
                 end
                 LblInvVal.Text = bagText
             end)
@@ -782,7 +813,7 @@ BtnBoost.MouseButton1Click:Connect(function()
     ToggleVisual(BtnBoost, States.Boost) 
     if States.Boost then
         local freed = OptimizePerformance()
-        Notify("CPU Boost", "Graphics Optimized! Memory Freed: " .. freed .. " KB")
+        Notify("CPU Boost", "Graphics Optimized! (ToyFactory/NPC Cleaned)")
     else
         Notify("Info", "Settings saved (Rejoin to reset graphics)")
     end
