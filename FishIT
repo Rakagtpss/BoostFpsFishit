@@ -2,7 +2,7 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
-        Text = "Loading: GOD MODE FISHING!",
+        Text = "Loading: SMOOTH AUTO FISHING!",
         Duration = 2,
     })
 end)
@@ -38,18 +38,19 @@ local RequestGame  = net["RF/RequestFishingMinigameStarted"]
 local CompleteGame = net["RE/FishingCompleted"]
 local CancelInput  = net["RF/CancelFishingInputs"]
 
--- // KONFIGURASI GLOBAL (GOD MODE SETTINGS)
+-- // KONFIGURASI GLOBAL (SETTINGAN ANTI-PUTUS)
 getgenv().fishingStart = false
 _G.FishSettings = {
-    DelayCharge = 0.45, -- [EXTREME] Kurang dari setengah detik!
-    DelayReset = 0.05,  -- [INSTANT RESET] Hampir 0
+    -- [PENTING] Settingan ini diubah agar Loop tidak putus-putus
+    DelayCharge = 0.6,  -- Waktu pas (0.6s) agar server sempat spawn ikan
+    DelayReset = 0.12,  -- Jeda dikit biar animasi reset lancar
 }
 
 -- Args Lemparan
 local fishArgs = { -1.115296483039856, 0, 1763651451.636425 }
 
 -- =====================================================
--- 🛡️ FISHING BLOCKER (ANTI-FAIL SYSTEM)
+-- 🛡️ FISHING BLOCKER
 -- =====================================================
 local FishingBlocker = { Enabled = false, AutoGreat = true }
 local BLOCKED_REMOTES = {
@@ -73,9 +74,9 @@ oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
 end)
 
 -- =====================================================
--- 🎣 FUNGSI LOOP FISHING (GOD MODE)
+-- 🎣 FUNGSI LOOP FISHING (SMOOTH LOOP)
 -- =====================================================
-local function startFishingGodLoop()
+local function startFishingSmoothLoop()
     -- Aktifkan Auto Great
     if FishingBlocker.AutoGreat then
         local agRemote = net:FindFirstChild("RF/UpdateAutoFishingState")
@@ -84,11 +85,9 @@ local function startFishingGodLoop()
 
     -- Reset Awal
     pcall(function() CancelInput:InvokeServer() end)
-    -- Hapus wait awal agar langsung start
-    -- task.wait(0.05) 
-
+    
     while getgenv().fishingStart do
-        -- 1. Charge & Request (Concurrent/Bersamaan)
+        -- 1. Charge & Request (Concurrent)
         task.spawn(function() 
             pcall(function() ChargeRod:InvokeServer() end) 
         end)
@@ -97,20 +96,18 @@ local function startFishingGodLoop()
             pcall(function() RequestGame:InvokeServer(unpack(fishArgs)) end) 
         end)
         
-        -- 2. Tunggu Ikan (GOD SPEED)
-        -- Ini adalah waktu kritis. Jika terlalu cepat (0.1), server belum spawn ikan.
+        -- 2. TUNGGU IKAN (KUNCI AGAR TIDAK PUTUS)
+        -- Kita pakai 0.6 detik. Jika terlalu cepat (0.45), loop akan gagal dan putus.
         task.wait(_G.FishSettings.DelayCharge)
         
         if not getgenv().fishingStart then break end
 
-        -- 3. INSTANT CLAIM
+        -- 3. TARIK HASIL
         pcall(function() CompleteGame:FireServer() end)
         
-        -- 4. INSTANT RESET
-        if _G.FishSettings.DelayReset > 0 then
-            task.wait(_G.FishSettings.DelayReset)
-        end
-        
+        -- 4. RESET LOOP
+        -- Jeda sedikit 0.12 detik agar server siap menerima lemparan baru
+        task.wait(_G.FishSettings.DelayReset)
         pcall(function() CancelInput:InvokeServer() end)
     end
 end
@@ -482,9 +479,9 @@ local BodyV = nil
 
 -- TAB MAIN - FISHING SECTION
 local BtnAutoFish = MakeBtn(PageMain, "Auto Fish: OFF")
--- [UPDATE] Default Delay diturunkan untuk Speed
-local InputReel = MakeInput(PageMain, "Delay Fishing (0.45)", "0.45")
-local InputCast = MakeInput(PageMain, "Delay Reset (0.05)", "0.05")
+-- [SMOOTH SETTING]
+local InputReel = MakeInput(PageMain, "Delay Fishing (0.6)", "0.6")
+local InputCast = MakeInput(PageMain, "Delay Reset (0.12)", "0.12")
 
 -- TAB MAIN - UTILITY
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
@@ -634,7 +631,7 @@ end)
 -- [6] FUNCTION BUTTONS LOGIC
 -- ====================================================
 
--- Auto Fish Button (INTEGRATED GOD MODE LOGIC)
+-- Auto Fish Button (INTEGRATED SMOOTH LOOP)
 BtnAutoFish.MouseButton1Click:Connect(function()
     States.AutoFish = not States.AutoFish
     BtnAutoFish.Text = "Auto Fish: " .. (States.AutoFish and "ON" or "OFF")
@@ -644,10 +641,10 @@ BtnAutoFish.MouseButton1Click:Connect(function()
         -- START FISHING
         getgenv().fishingStart = true
         FishingBlocker.Enabled = true -- Aktifkan Blocker
-        Notify("Auto Fish", "Started (GOD MODE)")
+        Notify("Auto Fish", "Started (SMOOTH MODE)")
         
         -- Jalan loop
-        task.spawn(startFishingGodLoop)
+        task.spawn(startFishingSmoothLoop)
     else
         -- STOP FISHING
         getgenv().fishingStart = false
