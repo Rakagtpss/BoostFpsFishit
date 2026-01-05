@@ -2,12 +2,12 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Seraphin Helper",
-        Text = "Loading ...",
+        Text = "Loading Script",
         Duration = 2,
     })
 end)
 
-task.wait(3.5)
+task.wait(3.8)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -32,18 +32,18 @@ Player.CharacterAdded:Connect(function(newChar)
     Hum = newChar:WaitForChild("Humanoid", 10)
 end)
 
--- // Konfigurasi Visual (TEMA BLACK & CYAN - FINAL)
+-- // Konfigurasi Visual
 local UI_THEME = {
     MinWidth = 280,  
     MinHeight = 270, 
-    Color = Color3.fromRGB(0, 0, 0), 
-    Transparency = 0.35, 
-    HeaderColor = Color3.fromRGB(15, 15, 15),
-    Accent = Color3.fromRGB(0, 255, 255), 
-    TabOff = Color3.fromRGB(100, 100, 100),
-    TabOn = Color3.fromRGB(0, 255, 255),
-    TextColor = Color3.fromRGB(240, 255, 255),
-    SubTextColor = Color3.fromRGB(150, 200, 200),
+    Color = Color3.fromRGB(10, 10, 10), -- Darker Black
+    Transparency = 0.25, -- Sedikit lebih solid agar terlihat elegan
+    HeaderColor = Color3.fromRGB(5, 5, 5),
+    Accent = Color3.fromRGB(0, 255, 255), -- Default Cyan (akan ditimpa RGB)
+    TabOff = Color3.fromRGB(120, 120, 120),
+    TabOn = Color3.fromRGB(255, 255, 255),
+    TextColor = Color3.fromRGB(255, 255, 255),
+    SubTextColor = Color3.fromRGB(180, 180, 180),
     Font = Enum.Font.GothamBold,
     BtnFont = Enum.Font.GothamMedium 
 }
@@ -56,6 +56,21 @@ ScreenGui.Name = "SeraphinHelper"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- ====================================================
+-- [RGB SYSTEM] - FUNGSI WARNA WARNI
+-- ====================================================
+local function ApplyRainbow(strokeInstance)
+    task.spawn(function()
+        local hue = 0
+        while strokeInstance and strokeInstance.Parent do
+            hue = hue + 0.005 -- Kecepatan perubahan warna
+            if hue > 1 then hue = 0 end
+            strokeInstance.Color = Color3.fromHSV(hue, 1, 1)
+            task.wait(0.01)
+        end
+    end)
+end
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -72,8 +87,9 @@ FloatHUD.Draggable = true
 
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_THEME.Accent 
-HudStroke.Thickness = 1.5
-HudStroke.Transparency = 0.2
+HudStroke.Thickness = 2 -- Sedikit lebih tebal agar RGB terlihat
+HudStroke.Transparency = 0
+ApplyRainbow(HudStroke) -- Aktifkan RGB
 
 Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
 
@@ -100,6 +116,15 @@ TitleLabel.TextColor3 = UI_THEME.Accent
 TitleLabel.Font = Enum.Font.GothamBlack
 TitleLabel.TextSize = 14
 TitleLabel.TextStrokeTransparency = 0.8
+-- Terapkan RGB ke Teks Judul juga
+task.spawn(function()
+    local h = 0
+    while TitleLabel.Parent do
+        h = h + 0.005; if h > 1 then h = 0 end
+        TitleLabel.TextColor3 = Color3.fromHSV(h, 0.7, 1)
+        task.wait(0.01)
+    end
+end)
 
 local Div = Instance.new("Frame", FloatHUD)
 Div.LayoutOrder = 2
@@ -156,8 +181,9 @@ Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Color = UI_THEME.Accent
-MainStroke.Thickness = 1.5
-MainStroke.Transparency = 0.2
+MainStroke.Thickness = 2
+MainStroke.Transparency = 0
+ApplyRainbow(MainStroke) -- Aktifkan RGB pada Main UI
 
 -- HEADER
 local Header = Instance.new("Frame", Main)
@@ -197,17 +223,17 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- TITLE (FPS MONITOR - CENTERED & NO PING)
+-- TITLE
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0) 
-Title.Position = UDim2.new(0, 0, 0, 0) -- CENTER POS
+Title.Position = UDim2.new(0, 0, 0, 0) 
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>" 
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = UI_THEME.Font
 Title.TextSize = 11
 Title.BackgroundTransparency = 1
-Title.TextXAlignment = Enum.TextXAlignment.Center -- CENTER ALIGN
+Title.TextXAlignment = Enum.TextXAlignment.Center 
 
 -- HIDE BUTTON
 local HideBtn = Instance.new("TextButton", Header)
@@ -258,6 +284,7 @@ TabIndicator.Size = UDim2.new(0.5, 0, 0, 2)
 TabIndicator.Position = UDim2.new(0, 0, 1, -2)
 TabIndicator.BackgroundColor3 = UI_THEME.Accent
 TabIndicator.BorderSizePixel = 0
+ApplyRainbow(TabIndicator) -- Indikator tab juga RGB
 
 -- PAGES CONTAINER
 local PageContainer = Instance.new("Frame", Main)
@@ -376,15 +403,13 @@ end
 local States = {
     Freeze=false, WoW=false, Boost=false, NoRender=false, 
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
-    AutoEvent=false, AntiStuck=false, StuckTimeout=60 -- Default 60s
+    AutoEvent=false, AntiStuck=false, StuckTimeout=60 
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
 local IsInEvent = false 
 local Connections = {}
 local BodyV = nil
-
--- Anti Stuck Variables
 local LastFishCaughtTime = tick()
 local LastFishCount = 0
 
@@ -396,16 +421,14 @@ local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
-local BtnBoost  = MakeBtn(PageMain, "Ultra Boost: OFF") 
+local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF") 
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Max") 
 
--- TAB MISC (Modified for Custom Stuck Input)
--- 1. Create Container for Stuck Button & Input
+-- TAB MISC
 local StuckContainer = Instance.new("Frame", PageMisc)
 StuckContainer.Name = "StuckContainer"
 StuckContainer.BackgroundTransparency = 1
--- Size handled by Grid
 
 local BtnStuckToggle = Instance.new("TextButton", StuckContainer)
 BtnStuckToggle.Name = "Toggle"
@@ -441,7 +464,7 @@ s2.Transparency = 0.6
 
 local BtnSave   = MakeBtn(PageMisc, "Save Pos")
 local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
-local BtnClean  = MakeBtn(PageMisc, "Ultra Clean: OFF")
+local BtnClean  = MakeBtn(PageMisc, "Full Bright & Clean")
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
 local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
 
@@ -479,7 +502,6 @@ local function SetWoW(bool)
     end 
 end
 
--- [FUNCTION] Update Auto Equip Visual
 local function SetAutoEquip(bool)
     States.AutoEquip = bool
     if typeof(BtnEquip) == "Instance" then
@@ -488,7 +510,6 @@ local function SetAutoEquip(bool)
     end
 end
 
--- [FUNCTION] FORCE EQUIP ROD (Digunakan di Anti-Stuck)
 local function ForceEquipRod()
     pcall(function()
         local args = { [1] = 1 }
@@ -506,75 +527,78 @@ local function ForceEquipRod()
 end
 
 -- ====================================================
--- [FUNCTION] ULTRA CLEANING CPU BOOSTER
+-- [FUNCTION] IMPROVED ULTRA CLEAN / BOOSTER
 -- ====================================================
-local function PerformUltraClean()
+local function PerformUltraClean(isBoosterMode)
     local startMem = gcinfo() 
-    for i = 1, 3 do
-        collectgarbage("collect")
-        task.wait(0.01)
-    end
-    local L = game:GetService("Lighting")
-    L.GlobalShadows = false
-    L.FogEnd = 9e9
-    L.Brightness = 2
-    settings().Rendering.QualityLevel = "Level01"
     
-    for _, v in pairs(L:GetChildren()) do
+    -- 1. Garbage Collect Agresif
+    for i = 1, 5 do collectgarbage("collect") end
+
+    -- 2. Matikan Efek Lighting (Berat di GPU)
+    Lighting.GlobalShadows = false
+    Lighting.FogEnd = 9e9
+    Lighting.Brightness = 2
+    if isBoosterMode then
+        settings().Rendering.QualityLevel = "Level01"
+        Lighting.Technology = Enum.Technology.Compatibility
+    end
+    
+    -- Hapus Efek Berat
+    for _, v in pairs(Lighting:GetChildren()) do
         if v:IsA("PostEffect") or v:IsA("BlurEffect") or v:IsA("BloomEffect") or v:IsA("SunRaysEffect") or v:IsA("Atmosphere") or v:IsA("Sky") then
             v:Destroy()
         end
     end
 
+    -- 3. Bersihkan Workspace & Ubah Material
     pcall(function()
-        for _, v in pairs(Workspace:GetDescendants()) do
-            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Explosion") or v:IsA("Sparkles") then
-                v:Destroy()
-            elseif v:IsA("Decal") or v:IsA("Texture") then
-                v:Destroy()
-            elseif v:IsA("MeshPart") then
-                v.RenderFidelity = Enum.RenderFidelity.Performance
-                v.Material = Enum.Material.SmoothPlastic
-                v.CastShadow = false
-            elseif v:IsA("BasePart") then
-                v.Material = Enum.Material.SmoothPlastic
-                v.CastShadow = false
-                v.Reflectance = 0
-            end
-        end
+        -- Settingan Terrain
         local T = Workspace:FindFirstChildOfClass("Terrain")
         if T then
             T.WaterWaveSize = 0
             T.WaterReflectance = 0
             T.WaterTransparency = 0 
+            if isBoosterMode then T.Decoration = false end
         end
-    end)
-    
-    pcall(function()
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= Player and p.Character then
-                for _, obj in pairs(p.Character:GetChildren()) do
-                    if obj:IsA("Shirt") or obj:IsA("Pants") or obj:IsA("Accessory") or obj:IsA("ShirtGraphic") then
-                        obj:Destroy()
-                    end
+
+        for _, v in pairs(Workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                -- Ubah semua part jadi smooth plastic agar ringan dirender
+                if isBoosterMode then
+                    v.Material = Enum.Material.SmoothPlastic
+                    v.Reflectance = 0
+                    v.CastShadow = false
                 end
+                
+                -- Hapus Decal/Texture di part
+                if isBoosterMode then
+                     for _, child in pairs(v:GetChildren()) do
+                        if child:IsA("Texture") or child:IsA("Decal") then child:Destroy() end
+                     end
+                end
+
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Explosion") or v:IsA("Sparkles") then
+                v:Destroy() -- Hapus partikel
+            elseif v:IsA("MeshPart") and isBoosterMode then
+                v.RenderFidelity = Enum.RenderFidelity.Performance
+                v.Material = Enum.Material.SmoothPlastic
+                v.TextureID = "" -- Hapus tekstur mesh
             end
         end
     end)
-
+    
     local endMem = gcinfo()
     return math.floor(startMem - endMem)
 end
 
 -- ====================================================
--- [FPS MONITOR - NO PING]
+-- [FPS MONITOR]
 -- ====================================================
 local fpsT = 0
 RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
-    
-    -- Hanya Menampilkan FPS, Ping dihapus
     if Title then
         Title.Text = string.format(
             "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  |  FPS: <b>%d</b>", 
@@ -583,7 +607,6 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
--- FPS Selector
 BtnFps.MouseButton1Click:Connect(function()
     local caps = {30, 60, 90, 144, 240, 99999}
     _G.fpsIndex = ((_G.fpsIndex or 5) % #caps) + 1
@@ -592,7 +615,7 @@ BtnFps.MouseButton1Click:Connect(function()
     local txt = (v > 1000) and "Max" or tostring(v)
     BtnFps.Text = "FPS: " .. txt
     ToggleVisual(BtnFps, true)
-    wait(0.1)
+    task.wait(0.1)
     ToggleVisual(BtnFps, false)
 end)
 
@@ -605,94 +628,49 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [5] BACKGROUND LOOPS & AUTO LOGICS
+-- [5] BACKGROUND LOOPS
 -- ====================================================
 
--- >> ANTI STUCK SYSTEM LOGIC <<
+-- ANTI STUCK LOOP
 task.spawn(function()
     while true do
         task.wait(1)
         if States.AntiStuck then
             pcall(function()
-                -- Cek jumlah ikan sekarang
                 local currentFish = 0
                 local ls = Player:FindFirstChild("leaderstats")
-                if ls and ls:FindFirstChild("Caught") then
-                    currentFish = ls.Caught.Value
-                end
+                if ls and ls:FindFirstChild("Caught") then currentFish = ls.Caught.Value end
 
-                -- Jika ikan bertambah, reset timer
                 if currentFish > LastFishCount then
                     LastFishCount = currentFish
                     LastFishCaughtTime = tick()
                 else
-                    -- Jika waktu tunggu habis (STUCK) menggunakan input user
                     if (tick() - LastFishCaughtTime) > States.StuckTimeout then
-                        Notify("Anti-Stuck", "Stuck detected! (> " .. States.StuckTimeout .. "s)")
-                        
-                        -- 1. Save Posisi
+                        Notify("Anti-Stuck", "Stuck! Respawning...")
                         local stuckPos = HRP.CFrame 
-                        
-                        -- 2. Matikan Karakter (Respawn)
                         if Hum then Hum.Health = 0 end
-                        
-                        -- 3. Tunggu Karakter Baru
                         Player.CharacterAdded:Wait()
                         local newChar = Player.Character or Player.CharacterAdded:Wait()
                         local newHRP = newChar:WaitForChild("HumanoidRootPart", 10)
                         task.wait(1) 
-                        
-                        -- 4. Teleport Balik
-                        if newHRP then 
-                            newHRP.CFrame = stuckPos 
-                        end
-                        
+                        if newHRP then newHRP.CFrame = stuckPos end
                         task.wait(0.5)
-                        
-                        -- 5. Auto Equip Rod
                         ForceEquipRod()
                         Notify("Anti-Stuck", "Recovered!")
-                        
-                        -- Reset Timer
                         LastFishCaughtTime = tick()
                         LastFishCount = currentFish 
                     end
                 end
             end)
         else
-            -- Jika fitur mati, selalu update timer agar tidak trigger instan saat dinyalakan
             LastFishCaughtTime = tick()
             local ls = Player:FindFirstChild("leaderstats")
-            if ls and ls:FindFirstChild("Caught") then
-                LastFishCount = ls.Caught.Value
-            end
+            if ls and ls:FindFirstChild("Caught") then LastFishCount = ls.Caught.Value end
         end
     end
 end)
 
--- AUTO CLEAN LOOP
-task.spawn(function()
-    while true do
-        task.wait(60) 
-        if States.AutoClean then
-            pcall(function()
-                local freed = PerformUltraClean()
-            end)
-        end
-    end
-end)
-
-BtnClean.MouseButton1Click:Connect(function()
-    States.AutoClean = not States.AutoClean
-    BtnClean.Text = "Ultra Clean: " .. (States.AutoClean and "ON" or "OFF")
-    ToggleVisual(BtnClean, States.AutoClean)
-    if States.AutoClean then
-        local freed = PerformUltraClean()
-        Notify("Ultra Clean", "RAM Freed: " .. freed .. " KB")
-    end
-end)
-
--- AUTO EVENT
+-- AUTO EVENT LOOP
 task.spawn(function()
     while true do
         task.wait(1) 
@@ -714,7 +692,7 @@ task.spawn(function()
                     if not IsInEvent then
                         EventStartCFrame = HRP.CFrame 
                         IsInEvent = true
-                        Notify("Auto Event", "Event Found! Teleporting...")
+                        Notify("Auto Event", "Event Found!")
                     end
                     local targetPos = FoundEvent:GetPivot().Position
                     local destPos = Vector3.new(targetPos.X, 3, targetPos.Z)
@@ -725,7 +703,7 @@ task.spawn(function()
                 else
                     if IsInEvent then
                         IsInEvent = false
-                        Notify("Auto Event", "Event Selesai. Returning...")
+                        Notify("Auto Event", "Event Done.")
                         if EventStartCFrame and HRP then 
                             HRP.CFrame = EventStartCFrame 
                             EventStartCFrame = nil 
@@ -738,17 +716,13 @@ task.spawn(function()
     end
 end)
 
--- AUTO EQUIP LOOP (Backup)
 task.spawn(function()
     while true do
         task.wait(1.5)
-        if States.AutoEquip then
-            ForceEquipRod()
-        end
+        if States.AutoEquip then ForceEquipRod() end
     end
 end)
 
--- UPDATE STATS LOOP
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -781,36 +755,24 @@ end)
 -- [6] FUNCTION BUTTONS LOGIC
 -- ====================================================
 
--- BUTTON ANTI STUCK (TOGGLE + INPUT)
 BtnStuckToggle.MouseButton1Click:Connect(function()
     States.AntiStuck = not States.AntiStuck
     if States.AntiStuck then
         BtnStuckToggle.Text = "Anti-Stuck: ON"
         ToggleVisual(BtnStuckToggle, true)
-        
-        -- Parse Input
         local val = tonumber(BoxStuckInput.Text)
         if not val or val < 10 then val = 60; BoxStuckInput.Text = "60" end
         States.StuckTimeout = val
-        LastFishCaughtTime = tick() -- Reset timer
-        Notify("Anti-Stuck", "Enabled. Timeout: " .. val .. "s")
+        LastFishCaughtTime = tick()
     else
         BtnStuckToggle.Text = "Anti-Stuck: OFF"
         ToggleVisual(BtnStuckToggle, false)
     end
 end)
 
--- Validasi Input Box saat diubah
-BoxStuckInput.FocusLost:Connect(function(enterPressed)
+BoxStuckInput.FocusLost:Connect(function()
     local val = tonumber(BoxStuckInput.Text)
-    if val then
-        States.StuckTimeout = val
-        if States.AntiStuck then
-            Notify("Timer Update", "Timeout set to " .. val .. "s")
-        end
-    else
-        BoxStuckInput.Text = tostring(States.StuckTimeout) -- Revert jika bukan angka
-    end
+    if val then States.StuckTimeout = val else BoxStuckInput.Text = tostring(States.StuckTimeout) end
 end)
 
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
@@ -854,14 +816,19 @@ end)
 
 BtnBoost.MouseButton1Click:Connect(function() 
     States.Boost = not States.Boost 
+    BtnBoost.Text = "CPU Booster: " .. (States.Boost and "ON" or "OFF")
     ToggleVisual(BtnBoost, States.Boost) 
-    BtnBoost.Text = "Ultra Boost: " .. (States.Boost and "ON" or "OFF")
     if States.Boost then
-        PerformUltraClean() 
-        Notify("CPU Boost", "Graphics NUKED for FPS")
+        local freed = PerformUltraClean(true) -- Mode Booster: TRUE (Agresif)
+        Notify("CPU Boost", "Graphics NUKED! RAM Freed: " .. freed .. " KB")
     else
         Notify("Info", "Rejoin to restore graphics")
     end
+end)
+
+BtnClean.MouseButton1Click:Connect(function()
+    local freed = PerformUltraClean(false) -- Mode Biasa (Hanya light)
+    Notify("Clean", "RAM Freed: " .. freed .. " KB")
 end)
 
 BtnRender.MouseButton1Click:Connect(function() 
