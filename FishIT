@@ -1,13 +1,14 @@
+
 -- [1] Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Raka Ganteng",
-        Text = "Loading Sayang !",
+        Title = "Seraphin Helper",
+        Text = "Loading Cyan Theme...",
         Duration = 2,
     })
 end)
 
-task.wait(3.5)
+task.wait(2)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -18,6 +19,7 @@ local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage") 
 local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
@@ -30,18 +32,24 @@ Player.CharacterAdded:Connect(function(newChar)
     Hum = newChar:WaitForChild("Humanoid", 10)
 end)
 
--- // Konfigurasi Visual (TEMA DARK FIRE)
+-- // Konfigurasi Visual (TEMA BLACK & CYAN)
 local UI_THEME = {
     MinWidth = 280,  
-    MinHeight = 260,
-    Color = Color3.fromRGB(8, 8, 8), 
-    Transparency = 0.25, 
-    HeaderColor = Color3.fromRGB(20, 15, 15),
-    Accent = Color3.fromRGB(255, 69, 0), 
-    TabOff = Color3.fromRGB(120, 120, 120),
-    TabOn = Color3.fromRGB(255, 165, 0),
-    TextColor = Color3.fromRGB(255, 245, 230),
-    SubTextColor = Color3.fromRGB(180, 150, 140),
+    MinHeight = 300, -- Diperbesar sedikit untuk tombol Discord
+    -- Warna Dasar (Hitam Transparan)
+    Color = Color3.fromRGB(0, 0, 0), 
+    Transparency = 0.35, 
+    -- Header (Hitam Sedikit Terang)
+    HeaderColor = Color3.fromRGB(15, 15, 15),
+    -- Aksen Utama (CYAN / Neon Blue)
+    Accent = Color3.fromRGB(0, 255, 255), 
+    -- Tab Mati
+    TabOff = Color3.fromRGB(100, 100, 100),
+    -- Tab Nyala (Cyan)
+    TabOn = Color3.fromRGB(0, 255, 255),
+    -- Teks
+    TextColor = Color3.fromRGB(240, 255, 255),
+    SubTextColor = Color3.fromRGB(150, 200, 200),
     Font = Enum.Font.GothamBold,
     BtnFont = Enum.Font.GothamMedium 
 }
@@ -56,22 +64,22 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [1] MINI FLOATING HUD
+-- [1] MINI FLOATING HUD (Style Cyan)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
 FloatHUD.Size = UDim2.new(0, 140, 0, 125) 
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
-FloatHUD.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
-FloatHUD.BackgroundTransparency = 0.3
+FloatHUD.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+FloatHUD.BackgroundTransparency = 0.4
 FloatHUD.Visible = true
 FloatHUD.Active = true
 FloatHUD.Draggable = true 
 
 local HudStroke = Instance.new("UIStroke", FloatHUD)
-HudStroke.Color = UI_THEME.Accent
+HudStroke.Color = UI_THEME.Accent -- Garis Cyan
 HudStroke.Thickness = 1.5
-HudStroke.Transparency = 0.3
+HudStroke.Transparency = 0.2
 
 Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
 
@@ -94,7 +102,7 @@ TitleLabel.LayoutOrder = 1
 TitleLabel.Size = UDim2.new(1, 0, 0, 15)
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = "PANEL SERAPHIN"
-TitleLabel.TextColor3 = UI_THEME.Accent
+TitleLabel.TextColor3 = UI_THEME.Accent 
 TitleLabel.Font = Enum.Font.GothamBlack
 TitleLabel.TextSize = 14
 TitleLabel.TextStrokeTransparency = 0.8
@@ -102,7 +110,7 @@ TitleLabel.TextStrokeTransparency = 0.8
 local Div = Instance.new("Frame", FloatHUD)
 Div.LayoutOrder = 2
 Div.Size = UDim2.new(0.8, 0, 0, 1)
-Div.BackgroundColor3 = Color3.fromRGB(100, 50, 0)
+Div.BackgroundColor3 = UI_THEME.Accent
 Div.BorderSizePixel = 0
 
 local function CreateStatBlock(titleText, defaultVal, order)
@@ -153,7 +161,7 @@ Main.Draggable = false
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
 local MainStroke = Instance.new("UIStroke", Main)
-MainStroke.Color = UI_THEME.Accent
+MainStroke.Color = UI_THEME.Accent -- Border Cyan
 MainStroke.Thickness = 1.5
 MainStroke.Transparency = 0.2
 
@@ -165,7 +173,7 @@ Header.BackgroundColor3 = UI_THEME.HeaderColor
 Header.BackgroundTransparency = 0.5
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
--- [CUSTOM DRAG SCRIPT]
+-- [DRAG SCRIPT]
 local dragToggle, dragInput, dragStart, startPos
 local function updateInput(input)
     local delta = input.Position - dragStart
@@ -199,7 +207,8 @@ end)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0) 
 Title.Position = UDim2.new(0, 10, 0, 0)
-Title.Text = "SERAPHIN <font color=\"rgb(255,69,0)\">HELPER</font>" 
+-- Teks dengan warna Cyan
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>" 
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = UI_THEME.Font
@@ -257,10 +266,10 @@ TabIndicator.Position = UDim2.new(0, 0, 1, -2)
 TabIndicator.BackgroundColor3 = UI_THEME.Accent
 TabIndicator.BorderSizePixel = 0
 
--- PAGES CONTAINER
+-- PAGES CONTAINER (Disisakan ruang di bawah untuk tombol Discord)
 local PageContainer = Instance.new("Frame", Main)
 PageContainer.Name = "PageContainer"
-PageContainer.Size = UDim2.new(1, -16, 1, -65) 
+PageContainer.Size = UDim2.new(1, -16, 1, -95) -- Dikurangi tingginya untuk Footer
 PageContainer.Position = UDim2.new(0, 8, 0, 60)
 PageContainer.BackgroundTransparency = 1
 
@@ -306,7 +315,7 @@ TabMainBtn.MouseButton1Click:Connect(function() SwitchTab("Main") end)
 TabMiscBtn.MouseButton1Click:Connect(function() SwitchTab("Misc") end)
 
 -- ====================================================
--- [4] LOGIC UI & FUNCTIONS
+-- [4] LOGIC UI & HELPER FUNCTIONS
 -- ====================================================
 local IsMinimized = false
 
@@ -315,6 +324,10 @@ HideBtn.MouseButton1Click:Connect(function()
     if IsMinimized then
         PageContainer.Visible = false
         TabHolder.Visible = false
+        -- Sembunyikan Footer (Tombol Discord) juga
+        local footer = Main:FindFirstChild("FooterDiscord")
+        if footer then footer.Visible = false end
+
         Main:TweenSize(UDim2.new(0, UI_THEME.MinWidth, 0, 32), "Out", "Quad", 0.3, true) 
         HideBtn.Text = "Show" 
         HideBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -326,6 +339,8 @@ HideBtn.MouseButton1Click:Connect(function()
             if not IsMinimized then 
                 PageContainer.Visible = true 
                 TabHolder.Visible = true
+                local footer = Main:FindFirstChild("FooterDiscord")
+                if footer then footer.Visible = true end
             end 
         end)
     end
@@ -334,18 +349,18 @@ end)
 local function MakeBtn(parent, text)
     local b = Instance.new("TextButton", parent)
     b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(5, 5, 5) 
-    b.BackgroundTransparency = 0.4
-    b.TextColor3 = Color3.fromRGB(200, 200, 200)
+    b.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
+    b.BackgroundTransparency = 0.5
+    b.TextColor3 = UI_THEME.TextColor
     b.Font = UI_THEME.BtnFont 
     b.TextSize = 10 
     b.AutoButtonColor = true
     b.ClipsDescendants = true
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
     local s = Instance.new("UIStroke", b)
-    s.Color = Color3.fromRGB(60, 40, 40) 
+    s.Color = UI_THEME.Accent 
     s.Thickness = 1
-    s.Transparency = 0.5
+    s.Transparency = 0.6
     s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     return b
 end
@@ -354,14 +369,14 @@ local function ToggleVisual(btn, on)
     if on then
         btn.BackgroundColor3 = UI_THEME.Accent 
         btn.BackgroundTransparency = 0.2
-        btn.TextColor3 = Color3.fromRGB(10, 5, 5) 
+        btn.TextColor3 = Color3.fromRGB(0, 0, 0) -- Teks hitam saat aktif (biar kontras dengan cyan)
         btn.UIStroke.Transparency = 1
         btn.Font = Enum.Font.GothamBold
     else
-        btn.BackgroundColor3 = Color3.fromRGB(5, 5, 5) 
-        btn.BackgroundTransparency = 0.4
-        btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        btn.UIStroke.Transparency = 0.5
+        btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
+        btn.BackgroundTransparency = 0.5
+        btn.TextColor3 = UI_THEME.TextColor
+        btn.UIStroke.Transparency = 0.6
         btn.Font = UI_THEME.BtnFont
     end
 end
@@ -400,6 +415,7 @@ local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
 local BtnClean  = MakeBtn(PageMisc, "Auto Clean: OFF") 
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
 local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
+
 
 -- [FUNCTION] Logic Water Walk
 local function SetWoW(bool)
@@ -442,15 +458,48 @@ local function SetAutoEquip(bool)
     end
 end
 
+-- [FUNCTION] ULTRA CLEAN RAM
+local function PerformUltraClean()
+    local startMem = gcinfo() 
+    
+    -- 1. Deep Cleaning
+    for i = 1, 3 do
+        collectgarbage("collect")
+        task.wait(0.05)
+    end
+
+    -- 2. VRAM Flush
+    local L = game:GetService("Lighting")
+    L.GlobalShadows = false
+    L.FogEnd = 9e9
+    for _, v in pairs(L:GetChildren()) do
+        if v:IsA("PostEffect") or v:IsA("BlurEffect") or v:IsA("BloomEffect") or v:IsA("SunRaysEffect") then
+            v.Enabled = false
+        end
+    end
+
+    -- 3. Particle Destroyer
+    pcall(function()
+        for _, v in pairs(Workspace:GetDescendants()) do
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Explosion") then
+                v:Destroy()
+            end
+        end
+    end)
+
+    local endMem = gcinfo()
+    return math.floor(startMem - endMem)
+end
+
 -- FPS Logic
 local fpsT = 0
 RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
-    Title.Text = "SERAPHIN <font color=\"rgb(255,69,0)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
+    Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
 end)
 
--- FPS Selector Logic
+-- FPS Selector
 BtnFps.MouseButton1Click:Connect(function()
     local caps = {30, 60, 90, 144, 240, 99999}
     _G.fpsIndex = ((_G.fpsIndex or 5) % #caps) + 1
@@ -475,253 +524,13 @@ end)
 -- [5] BACKGROUND LOOPS & AUTO LOGICS
 -- ====================================================
 
--- AUTO CLEAN RAM LOOP (5 Menit)
+-- AUTO CLEAN LOOP (Ultra Mode)
 task.spawn(function()
     while true do
         task.wait(300) 
         if States.AutoClean then
             pcall(function()
-                collectgarbage("collect")
-                Notify("Auto Clean", "RAM Dibersihkan!")
+                local freed = PerformUltraClean()
+                Notify("Auto Clean", "RAM Freed: " .. freed .. " KB")
             end)
-        end
-    end
-end)
-
-BtnClean.MouseButton1Click:Connect(function()
-    States.AutoClean = not States.AutoClean
-    BtnClean.Text = "Auto Clean: " .. (States.AutoClean and "ON" or "OFF")
-    ToggleVisual(BtnClean, States.AutoClean)
-end)
-
--- >> LOGIC AUTO EVENT (Workspace.Props)
-task.spawn(function()
-    while true do
-        task.wait(1) 
-        if States.AutoEvent then
-            pcall(function()
-                local Props = workspace:FindFirstChild("Props")
-                local FoundEvent = nil
-                
-                if Props then
-                    for _, v in pairs(Props:GetChildren()) do
-                        if v:IsA("Model") or v:IsA("BasePart") then
-                            FoundEvent = v
-                            break 
-                        end
-                    end
-                end
-
-                if FoundEvent then
-                    -- >> EVENT DITEMUKAN <<
-                    if not IsInEvent then
-                        -- Simpan posisi awal HANYA jika kita belum di mode event
-                        if HRP then EventStartCFrame = HRP.CFrame end
-                        IsInEvent = true
-                        Notify("Auto Event", "Event Terdeteksi! Teleporting...")
-                    end
-
-                    local targetPos = FoundEvent:GetPivot().Position
-                    local destPos = Vector3.new(targetPos.X, 3, targetPos.Z)
-                    
-                    if HRP and (HRP.Position - destPos).Magnitude > 10 then
-                        HRP.CFrame = CFrame.new(destPos)
-                    end
-
-                    if not States.WoW then SetWoW(true) end
-
-                else
-                    -- >> EVENT SELESAI SECARA ALAMI (Barang hilang) <<
-                    if IsInEvent then
-                        IsInEvent = false
-                        Notify("Auto Event", "Event Selesai. Kembali pulang.")
-                        
-                        if EventStartCFrame and HRP then 
-                            HRP.CFrame = EventStartCFrame 
-                            EventStartCFrame = nil -- Reset posisi
-                        end
-                        
-                        -- Matikan Water Walk
-                        if States.WoW then SetWoW(false) end
-                    end
-                end
-            end)
-        else
-            -- Jika dimatikan, loop ini pasif, reset status IsInEvent di tombol
-        end
-    end
-end)
-
--- >> LOGIC AUTO EQUIP (1.5 Detik)
-task.spawn(function()
-    while true do
-        task.wait(1.5)
-        if States.AutoEquip then
-            pcall(function()
-                local char = Player.Character
-                if char then
-                    if not char:FindFirstChildWhichIsA("Tool") then
-                        local args = { [1] = 1 }
-                        local remote = game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0")
-                        if remote then
-                            remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- >> UPDATE STATS LOOP
-task.spawn(function()
-    while true do
-        task.wait(0.5)
-        if not States.Panel then continue end
-        pcall(function()
-            local ls = Player:FindFirstChild("leaderstats")
-            local caughtObj = ls and ls:FindFirstChild("Caught")
-            local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
-            local val = caughtObj and caughtObj.Value or 0
-            LblFishVal.Text = formatNum(val)
-
-            local pg = Player:FindFirstChild("PlayerGui")
-            local backpackGui = pg and pg:FindFirstChild("Backpack")
-            local bagText = "0/?"
-            if backpackGui then
-                for _, v in pairs(backpackGui:GetDescendants()) do
-                    if v:IsA("TextLabel") and string.find(v.Text, "/") then 
-                        bagText = v.Text 
-                        break 
-                    end
-                end
-            else 
-                local current = #Player.Backpack:GetChildren()
-                bagText = tostring(current)
-            end
-            LblInvVal.Text = bagText
-        end)
-    end
-end)
-
--- ====================================================
--- [6] FUNCTION BUTTONS LOGIC
--- ====================================================
-
--- Auto Equip
-BtnEquip.MouseButton1Click:Connect(function()
-    SetAutoEquip(not States.AutoEquip)
-end)
-
--- Auto Event (BARU - LOGIKA TELEPORT BALIK SAAT DIMATIKAN)
-BtnEvent.MouseButton1Click:Connect(function()
-    States.AutoEvent = not States.AutoEvent
-    BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
-    ToggleVisual(BtnEvent, States.AutoEvent)
-    
-    if not States.AutoEvent then
-        -- >> FITUR REQUEST: TELEPORT BALIK SAAT OFF <<
-        if IsInEvent and EventStartCFrame and HRP then
-            HRP.CFrame = EventStartCFrame
-            EventStartCFrame = nil -- Reset Variable
-            Notify("Info", "Kembali ke posisi awal (Manual OFF)")
-        end
-        
-        -- Reset status event & WoW
-        IsInEvent = false
-        SetWoW(false)
-        
-        -- >> FITUR REQUEST: MATIKAN AUTO EQUIP JUGA <<
-        if States.AutoEquip then
-            SetAutoEquip(false)
-            Notify("Info", "Auto Equip ikut dimatikan.")
-        end
-    end
-end)
-
--- Freeze
-BtnFreeze.MouseButton1Click:Connect(function() 
-    States.Freeze = not States.Freeze 
-    if HRP then HRP.Anchored = States.Freeze end 
-    BtnFreeze.Text = "Freeze: " .. (States.Freeze and "ON" or "OFF")
-    ToggleVisual(BtnFreeze, States.Freeze) 
-end)
-
--- Water Walk
-BtnWow.MouseButton1Click:Connect(function() 
-    SetWoW(not States.WoW)
-end)
-
--- Noclip
-BtnNoclip.MouseButton1Click:Connect(function() 
-    States.Noclip = not States.Noclip 
-    BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") 
-    ToggleVisual(BtnNoclip, States.Noclip) 
-    if States.Noclip then 
-        Connections["Noclip"] = RunService.Stepped:Connect(function() 
-            if Player.Character then 
-                for _,v in pairs(Player.Character:GetDescendants()) do 
-                    if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end 
-                end 
-            end 
-        end) 
-    else 
-        if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end 
-    end 
-end)
-
--- Boost
-BtnBoost.MouseButton1Click:Connect(function() 
-    States.Boost = not States.Boost 
-    ToggleVisual(BtnBoost, States.Boost) 
-    BtnBoost.Text = "Boost: " .. (States.Boost and "ON" or "OFF")
-    Lighting.GlobalShadows = not States.Boost 
-    if States.Boost then
-        local function CleanVisuals(folder)
-            if not folder then return end
-            for _, v in pairs(folder:GetDescendants()) do
-                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") or v:IsA("Explosion") then v.Enabled = false end
-            end
-        end
-        CleanVisuals(workspace:FindFirstChild("Islands"))
-        CleanVisuals(ReplicatedStorage:FindFirstChild("Assets"))
-    end
-end)
-
--- 3D Render
-BtnRender.MouseButton1Click:Connect(function() 
-    States.NoRender = not States.NoRender 
-    RunService:Set3dRenderingEnabled(not States.NoRender) 
-    BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
-    ToggleVisual(BtnRender, States.NoRender) 
-end)
-
--- Rejoin
-BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
-
--- Save Pos
-BtnSave.MouseButton1Click:Connect(function() 
-    if HRP then 
-        SavedCFrame = HRP.CFrame 
-        BtnSave.Text="SAVED" 
-        BtnSave.TextColor3 = Color3.fromRGB(100, 255, 100)
-        Notify("Posisi Disimpan", "Lokasi Anda saat ini telah disimpan ")
-        task.delay(1, function()
-            BtnSave.Text="Save Pos" 
-            BtnSave.TextColor3 = Color3.fromRGB(200, 200, 200)
-        end)
-    end 
-end)
-
--- Load Pos
-BtnLoad.MouseButton1Click:Connect(function() 
-    if SavedCFrame and HRP then 
-        HRP.CFrame = SavedCFrame 
-        ToggleVisual(BtnLoad,true) 
-        Notify("Posisi Dimuat", "Teleportasi ke lokasi yang disimpan")
-        wait(0.2) 
-        ToggleVisual(BtnLoad,false) 
-    else
-        Notify("Gagal", "Belum ada posisi yang disimpan ")
-    end 
-end)
+ 
