@@ -2,12 +2,12 @@
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Seraphin Helper",
-        Text = "Injecting Ultra CPU Boost...",
+        Text = "Loading Script Sayang...",
         Duration = 2,
     })
 end)
 
-task.wait(1.5)
+task.wait(3.8)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -19,6 +19,7 @@ local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage") 
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
+local NetworkClient = game:GetService("NetworkClient") -- Service Network
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
@@ -35,7 +36,7 @@ end)
 -- // Konfigurasi Visual (TEMA BLACK & CYAN - FINAL)
 local UI_THEME = {
     MinWidth = 280,  
-    MinHeight = 260, 
+    MinHeight = 285, -- Sedikit diperbesar untuk tombol baru
     Color = Color3.fromRGB(0, 0, 0), 
     Transparency = 0.35, 
     HeaderColor = Color3.fromRGB(15, 15, 15),
@@ -197,7 +198,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- TITLE
+-- TITLE (Updated for FPS + Ping)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0) 
 Title.Position = UDim2.new(0, 10, 0, 0)
@@ -205,7 +206,7 @@ Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>"
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = UI_THEME.Font
-Title.TextSize = 12
+Title.TextSize = 11
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left 
 
@@ -376,7 +377,7 @@ end
 local States = {
     Freeze=false, WoW=false, Boost=false, NoRender=false, 
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
-    AutoEvent=false 
+    AutoEvent=false, NetBoost=false 
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -393,6 +394,7 @@ local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
 local BtnBoost  = MakeBtn(PageMain, "Boost: OFF")
+local BtnNet    = MakeBtn(PageMain, "Net Boost: OFF") -- [NEW]
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Max") 
 
@@ -479,13 +481,30 @@ local function PerformUltraClean()
     return math.floor(startMem - endMem)
 end
 
--- FPS Logic
+-- ====================================================
+-- [BARU] FPS & PING MONITOR LOGIC
+-- ====================================================
 local fpsT = 0
 RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
+    
+    -- Get Network Ping
+    local ping = 0
+    pcall(function()
+        ping = math.floor(Player:GetNetworkPing() * 1000) -- sec to ms
+    end)
+
+    -- Color Logic for Ping
+    local pingColor = "rgb(0,255,100)" -- Green
+    if ping > 200 then pingColor = "rgb(255,50,50)" -- Red
+    elseif ping > 100 then pingColor = "rgb(255,200,50)" end -- Yellow
+
     if Title then
-        Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
+        Title.Text = string.format(
+            "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  |  FPS: <b>%d</b>  |  PING: <font color=\"%s\"><b>%d ms</b></font>", 
+            currentFps, pingColor, ping
+        )
     end
 end)
 
@@ -757,6 +776,43 @@ BtnBoost.MouseButton1Click:Connect(function()
     else
         game:GetService("Lighting").GlobalShadows = true
         Notify("Boost OFF", "Shadows ON. (Texture hilang permanen)")
+    end
+end)
+
+-- [BARU] NET BOOST LOGIC (NetworkClient Implementation)
+BtnNet.MouseButton1Click:Connect(function()
+    States.NetBoost = not States.NetBoost
+    BtnNet.Text = "Net Boost: " .. (States.NetBoost and "ON" or "OFF")
+    ToggleVisual(BtnNet, States.NetBoost)
+
+    if States.NetBoost then
+        Notify("Network Boost", "Optimizing Packets...")
+        
+        -- 1. Try NetworkClient (Protected)
+        task.spawn(function()
+            local success, _ = pcall(function()
+                settings().Network.IncomingReplicationLag = 0
+                game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge)
+            end)
+        end)
+
+        -- 2. Replication Optimization (Legal)
+        pcall(function()
+            for _, v in pairs(Workspace:GetDescendants()) do
+                if v:IsA("BasePart") and not v.Anchored and v ~= HRP then
+                    v.CanTouch = false
+                    v.CanQuery = false
+                end
+            end
+            if HRP then
+                Workspace.StreamingEnabled = true 
+                Player.ReplicationFocus = HRP
+            end
+        end)
+        Notify("Success", "Ping Stabilizer Active")
+    else
+        Notify("Info", "Network Boost OFF.")
+        Player.ReplicationFocus = nil
     end
 end)
 
