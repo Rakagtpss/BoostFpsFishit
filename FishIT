@@ -1,4 +1,4 @@
--- [1] Notifikasi Awal
+h- [1] Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Raka Ganteng",
@@ -389,16 +389,54 @@ end
 -- States
 local States = {
     Freeze=false, WoW=false, Boost=false, NoRender=false, 
-    Noclip=false, Panel=true, AutoEquip=false, AutoClean=false
+    Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
+    AutoEvent=false -- [NEW]
 }
 local SavedCFrame = nil 
+local EventStartCFrame = nil -- Menyimpan posisi awal sebelum event
+local IsInEvent = false -- Status sedang di event
 local Connections = {}
 local BodyV = nil
+
+-- [FUNCTION] Logic Water Walk (Dipisah agar bisa dipanggil Auto Event)
+local function SetWoW(bool)
+    States.WoW = bool
+    -- Update visual tombol jika tombol sudah dibuat
+    if typeof(BtnWow) == "Instance" then
+        BtnWow.Text = "Water Walk: " .. (States.WoW and "ON" or "OFF")
+        ToggleVisual(BtnWow, States.WoW)
+    end
+    
+    if States.WoW then 
+        -- Nyalakan WoW
+        if not BodyV then 
+            BodyV = Instance.new("BodyVelocity", HRP) 
+            BodyV.Name = "WoW_Velocity"
+        end
+        BodyV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        BodyV.Velocity = Vector3.zero 
+        
+        if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
+        
+        Connections["WoW"] = RunService.RenderStepped:Connect(function() 
+            if HRP and Hum then
+                local moveDir = Hum.MoveDirection
+                local speed = Hum.WalkSpeed
+                BodyV.Velocity = Vector3.new(moveDir.X * speed, 0, moveDir.Z * speed)
+            end 
+        end) 
+    else 
+        -- Matikan WoW
+        if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
+        if BodyV then BodyV:Destroy(); BodyV = nil end 
+    end 
+end
 
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
+local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") -- [BARU]
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
@@ -433,7 +471,6 @@ BtnFps.MouseButton1Click:Connect(function()
     
     local txt = (v > 1000) and "Max" or tostring(v)
     BtnFps.Text = "FPS: " .. txt
-    
     ToggleVisual(BtnFps, true)
     wait(0.1)
     ToggleVisual(BtnFps, false)
@@ -477,10 +514,76 @@ BtnClean.MouseButton1Click:Connect(function()
     end
 end)
 
--- >> LOGIC AUTO EQUIP (0.5 Detik)
+-- >> LOGIC AUTO EVENT (Workspace.Props)
 task.spawn(function()
     while true do
-        task.wait(0.5)
+        task.wait(1) -- Cek setiap 1 detik
+        if States.AutoEvent then
+            pcall(function()
+                local Props = workspace:FindFirstChild("Props")
+                local FoundEvent = nil
+                
+                -- Cari anak di dalam folder Props
+                if Props then
+                    for _, v in pairs(Props:GetChildren()) do
+                        if v:IsA("Model") or v:IsA("BasePart") then
+                            FoundEvent = v
+                            break 
+                        end
+                    end
+                end
+
+                if FoundEvent then
+                    -- >> EVENT DITEMUKAN <<
+                    if not IsInEvent then
+                        -- Simpan posisi awal sebelum berangkat
+                        EventStartCFrame = HRP.CFrame
+                        IsInEvent = true
+                        Notify("Auto Event", "Event Terdeteksi! Teleporting...")
+                    end
+
+                    -- Ambil posisi Event
+                    local targetPos = FoundEvent:GetPivot().Position
+                    
+                    -- Teleport ke Event (Y = 3)
+                    local destPos = Vector3.new(targetPos.X, 3, targetPos.Z)
+                    
+                    -- Cek jarak agar tidak spam teleport (jitter) jika sudah di lokasi
+                    if (HRP.Position - destPos).Magnitude > 10 then
+                        HRP.CFrame = CFrame.new(destPos)
+                    end
+
+                    -- Paksa Water Walk ON jika belum nyala
+                    if not States.WoW then
+                        SetWoW(true)
+                    end
+
+                else
+                    -- >> EVENT SELESAI / TIDAK ADA <<
+                    if IsInEvent then
+                        IsInEvent = false
+                        Notify("Auto Event", "Event Selesai. Kembali pulang.")
+                        
+                        -- Balik ke posisi awal
+                        if EventStartCFrame then
+                            HRP.CFrame = EventStartCFrame
+                        end
+                        
+                        -- Matikan Water Walk (Sesuai logic Auto Event)
+                        if States.WoW then
+                            SetWoW(false)
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- >> LOGIC AUTO EQUIP (Diubah ke 1.5 Detik)
+task.spawn(function()
+    while true do
+        task.wait(1.5) -- [UBAH WAKTU DISINI]
         if States.AutoEquip then
             pcall(function()
                 local char = Player.Character
@@ -542,6 +645,19 @@ BtnEquip.MouseButton1Click:Connect(function()
     ToggleVisual(BtnEquip, States.AutoEquip)
 end)
 
+-- Auto Event Button (BARU)
+BtnEvent.MouseButton1Click:Connect(function()
+    States.AutoEvent = not States.AutoEvent
+    BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
+    ToggleVisual(BtnEvent, States.AutoEvent)
+    
+    if not States.AutoEvent then
+        -- Jika dimatikan manual, reset status event & WoW
+        IsInEvent = false
+        SetWoW(false)
+    end
+end)
+
 -- Freeze
 BtnFreeze.MouseButton1Click:Connect(function() 
     States.Freeze = not States.Freeze 
@@ -550,29 +666,9 @@ BtnFreeze.MouseButton1Click:Connect(function()
     ToggleVisual(BtnFreeze, States.Freeze) 
 end)
 
--- Water Walk (Manual)
+-- Water Walk (Menggunakan fungsi baru SetWoW)
 BtnWow.MouseButton1Click:Connect(function() 
-    States.WoW = not States.WoW 
-    BtnWow.Text = "Water Walk: " .. (States.WoW and "ON" or "OFF")
-    ToggleVisual(BtnWow, States.WoW) 
-    
-    if States.WoW then 
-        -- Gunakan Logic BodyVelocity yang Movable (Tetap bisa jalan)
-        BodyV = Instance.new("BodyVelocity", HRP) 
-        BodyV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        BodyV.Velocity = Vector3.zero 
-        
-        Connections["WoW"] = RunService.RenderStepped:Connect(function() 
-            if HRP and Hum then
-                local moveDir = Hum.MoveDirection
-                local speed = Hum.WalkSpeed
-                BodyV.Velocity = Vector3.new(moveDir.X * speed, 0, moveDir.Z * speed)
-            end 
-        end) 
-    else 
-        if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
-        if BodyV then BodyV:Destroy() end 
-    end 
+    SetWoW(not States.WoW)
 end)
 
 -- Noclip
@@ -648,3 +744,4 @@ BtnLoad.MouseButton1Click:Connect(function()
         Notify("Gagal", "Belum ada posisi yang disimpan ")
     end 
 end)
+
