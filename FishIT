@@ -1,15 +1,8 @@
-Tentu, ini adalah update besar untuk script Anda. Saya telah merombak sistem Auto Event menjadi lebih canggih sesuai permintaan Anda.
-🆕 Fitur Baru: Event Scanner & Selector
- * Auto Scan: Tombol untuk memindai otomatis event apa saja yang sedang aktif di workspace.Props.
- * Event List: Menampilkan daftar event dalam bentuk list (1. Nama Event, 2. Nama Event, dst).
- * Targeting: Anda bisa memilih event mana yang ingin dituju secara spesifik.
- * Status Indikator: Menampilkan event apa yang sedang dipilih di menu utama.
-Silakan Copy & Replace seluruh script Anda dengan versi Final V3 ini:
 -- [1] Notifikasi Awal (Safe Load)
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Seraphin Helper",
-        Text = "Loading Event Scanner...",
+        Text = "Loading New Feature...",
         Duration = 2,
     })
 end)
