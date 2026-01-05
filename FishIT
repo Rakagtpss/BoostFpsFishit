@@ -33,7 +33,7 @@ end)
 -- // Konfigurasi Visual (TEMA DARK FIRE)
 local UI_THEME = {
     MinWidth = 280,  
-    MinHeight = 260, -- Sedikit diperbesar
+    MinHeight = 260,
     Color = Color3.fromRGB(8, 8, 8), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(20, 15, 15),
@@ -56,7 +56,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [1] MINI FLOATING HUD (Style Api)
+-- [1] MINI FLOATING HUD
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
@@ -401,7 +401,7 @@ local BtnClean  = MakeBtn(PageMisc, "Auto Clean: OFF")
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
 local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
 
--- [FUNCTION] Logic Water Walk (Dipisah agar bisa dipanggil Auto Event)
+-- [FUNCTION] Logic Water Walk
 local function SetWoW(bool)
     States.WoW = bool
     if typeof(BtnWow) == "Instance" then
@@ -515,6 +515,7 @@ task.spawn(function()
                 if FoundEvent then
                     -- >> EVENT DITEMUKAN <<
                     if not IsInEvent then
+                        -- Simpan posisi awal HANYA jika kita belum di mode event
                         if HRP then EventStartCFrame = HRP.CFrame end
                         IsInEvent = true
                         Notify("Auto Event", "Event Terdeteksi! Teleporting...")
@@ -530,12 +531,15 @@ task.spawn(function()
                     if not States.WoW then SetWoW(true) end
 
                 else
-                    -- >> EVENT SELESAI <<
+                    -- >> EVENT SELESAI SECARA ALAMI (Barang hilang) <<
                     if IsInEvent then
                         IsInEvent = false
                         Notify("Auto Event", "Event Selesai. Kembali pulang.")
                         
-                        if EventStartCFrame and HRP then HRP.CFrame = EventStartCFrame end
+                        if EventStartCFrame and HRP then 
+                            HRP.CFrame = EventStartCFrame 
+                            EventStartCFrame = nil -- Reset posisi
+                        end
                         
                         -- Matikan Water Walk
                         if States.WoW then SetWoW(false) end
@@ -543,7 +547,7 @@ task.spawn(function()
                 end
             end)
         else
-            IsInEvent = false
+            -- Jika dimatikan, loop ini pasif, reset status IsInEvent di tombol
         end
     end
 end)
@@ -609,14 +613,21 @@ BtnEquip.MouseButton1Click:Connect(function()
     SetAutoEquip(not States.AutoEquip)
 end)
 
--- Auto Event (BARU - DENGAN LOGIKA MATIKAN EQUIP)
+-- Auto Event (BARU - LOGIKA TELEPORT BALIK SAAT DIMATIKAN)
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
     ToggleVisual(BtnEvent, States.AutoEvent)
     
     if not States.AutoEvent then
-        -- Jika dimatikan manual, reset status event & WoW
+        -- >> FITUR REQUEST: TELEPORT BALIK SAAT OFF <<
+        if IsInEvent and EventStartCFrame and HRP then
+            HRP.CFrame = EventStartCFrame
+            EventStartCFrame = nil -- Reset Variable
+            Notify("Info", "Kembali ke posisi awal (Manual OFF)")
+        end
+        
+        -- Reset status event & WoW
         IsInEvent = false
         SetWoW(false)
         
