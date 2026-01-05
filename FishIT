@@ -10,7 +10,7 @@ _G.SeraphinConnections = {}
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Seraphin Helper",
-        Text = "Auto Event Mode: ON",
+        Text = "Fixing UI Layers...",
         Duration = 2,
     })
 end)
@@ -48,7 +48,7 @@ local UI_THEME = {
     Transparency = 0.35, 
     HeaderColor = Color3.fromRGB(15, 15, 15),
     Accent = Color3.fromRGB(0, 255, 255), 
-    TabOff = Color3.fromRGB(80, 80, 80),
+    TabOff = Color3.fromRGB(120, 120, 120), -- [FIX] Warna lebih terang agar terlihat
     TabOn = Color3.fromRGB(0, 255, 255),
     TextColor = Color3.fromRGB(240, 255, 255),
     SubTextColor = Color3.fromRGB(150, 200, 200),
@@ -77,6 +77,7 @@ FloatHUD.BackgroundTransparency = 0.4
 FloatHUD.Visible = true
 FloatHUD.Active = true
 FloatHUD.Draggable = true 
+FloatHUD.ZIndex = 20 -- [FIX] Layer paling atas
 
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_THEME.Accent 
@@ -98,7 +99,6 @@ Padding.PaddingBottom = UDim.new(0, 8)
 Padding.PaddingLeft = UDim.new(0, 5)
 Padding.PaddingRight = UDim.new(0, 5)
 
--- JUDUL PANEL HUD
 local TitleLabel = Instance.new("TextLabel", FloatHUD)
 TitleLabel.LayoutOrder = 1
 TitleLabel.Size = UDim2.new(1, 0, 0, 15)
@@ -108,12 +108,14 @@ TitleLabel.TextColor3 = UI_THEME.Accent
 TitleLabel.Font = Enum.Font.GothamBlack
 TitleLabel.TextSize = 14
 TitleLabel.TextStrokeTransparency = 0.8
+TitleLabel.ZIndex = 21
 
 local Div = Instance.new("Frame", FloatHUD)
 Div.LayoutOrder = 2
 Div.Size = UDim2.new(0.8, 0, 0, 1)
 Div.BackgroundColor3 = UI_THEME.Accent
 Div.BorderSizePixel = 0
+Div.ZIndex = 21
 
 local function CreateStatBlock(titleText, defaultVal, order)
     local Block = Instance.new("Frame", FloatHUD)
@@ -121,6 +123,7 @@ local function CreateStatBlock(titleText, defaultVal, order)
     Block.LayoutOrder = order
     Block.Size = UDim2.new(1, 0, 0, 35) 
     Block.BackgroundTransparency = 1
+    Block.ZIndex = 21
     
     local LblTitle = Instance.new("TextLabel", Block)
     LblTitle.Name = "Title"
@@ -131,6 +134,7 @@ local function CreateStatBlock(titleText, defaultVal, order)
     LblTitle.TextColor3 = UI_THEME.SubTextColor
     LblTitle.Font = Enum.Font.GothamBold
     LblTitle.TextSize = 9
+    LblTitle.ZIndex = 21
     
     local LblValue = Instance.new("TextLabel", Block)
     LblValue.Name = "Value"
@@ -141,6 +145,7 @@ local function CreateStatBlock(titleText, defaultVal, order)
     LblValue.TextColor3 = UI_THEME.TextColor
     LblValue.Font = Enum.Font.GothamBold
     LblValue.TextSize = 16 
+    LblValue.ZIndex = 21
     return LblValue 
 end
 
@@ -159,6 +164,7 @@ Main.BackgroundTransparency = UI_THEME.Transparency
 Main.Active = true
 Main.ClipsDescendants = true 
 Main.Draggable = false 
+Main.ZIndex = 1
 
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
@@ -173,6 +179,7 @@ Header.Name = "Header"
 Header.Size = UDim2.new(1, 0, 0, 32) 
 Header.BackgroundColor3 = UI_THEME.HeaderColor
 Header.BackgroundTransparency = 0.5
+Header.ZIndex = 5 -- [FIX] Header di atas content
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
 -- [DRAG SCRIPT]
@@ -216,6 +223,7 @@ Title.Font = UI_THEME.Font
 Title.TextSize = 12
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left 
+Title.ZIndex = 6
 
 -- HIDE BUTTON
 local HideBtn = Instance.new("TextButton", Header)
@@ -228,22 +236,24 @@ HideBtn.TextColor3 = UI_THEME.Accent
 HideBtn.Font = Enum.Font.GothamBold
 HideBtn.TextSize = 10
 HideBtn.AutoButtonColor = true
+HideBtn.ZIndex = 6
 Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
 local HideStroke = Instance.new("UIStroke", HideBtn)
 HideStroke.Color = UI_THEME.Accent
 HideStroke.Transparency = 0.6
 
 -- ====================================================
--- [3] SIDEBAR TAB SYSTEM
+-- [3] SIDEBAR TAB SYSTEM (FIXED Z-INDEX)
 -- ====================================================
-local TabWidth = 80 -- Lebar Sidebar
+local TabWidth = 85 -- Lebar Sidebar Sedikit Ditambah
 
 local TabHolder = Instance.new("Frame", Main)
 TabHolder.Name = "TabHolder"
 TabHolder.Size = UDim2.new(0, TabWidth, 1, -32) -- Full height minus header
 TabHolder.Position = UDim2.new(0, 0, 0, 32)
-TabHolder.BackgroundTransparency = 0.5
-TabHolder.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+TabHolder.BackgroundTransparency = 0.6 -- Sedikit terlihat
+TabHolder.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Warna pembeda
+TabHolder.ZIndex = 10 -- [FIX] ZIndex Tinggi agar tidak tertutup
 
 -- Garis Pemisah Sidebar
 local TabLine = Instance.new("Frame", TabHolder)
@@ -252,6 +262,7 @@ TabLine.Position = UDim2.new(1, -1, 0, 0)
 TabLine.BackgroundColor3 = UI_THEME.Accent
 TabLine.BackgroundTransparency = 0.7
 TabLine.BorderSizePixel = 0
+TabLine.ZIndex = 11
 
 -- Layout Sidebar (List Menurun)
 local TabListLayout = Instance.new("UIListLayout", TabHolder)
@@ -275,6 +286,7 @@ local function CreateTabBtn(text, order)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 11
     btn.TextColor3 = UI_THEME.TabOff
+    btn.ZIndex = 11 -- [FIX] Di atas TabHolder
     
     -- Indikator (Garis Kiri)
     local ind = Instance.new("Frame", btn)
@@ -284,10 +296,12 @@ local function CreateTabBtn(text, order)
     ind.BackgroundColor3 = UI_THEME.Accent
     ind.BackgroundTransparency = 1 -- Hidden by default
     ind.BorderSizePixel = 0
+    ind.ZIndex = 12
     
     return btn, ind
 end
 
+-- [FIX] Buat Tab Sekarang dan Paksa Update
 local TabMainBtn, IndMain = CreateTabBtn("MAIN", 1)
 local TabMiscBtn, IndMisc = CreateTabBtn("MISC", 2)
 
@@ -301,12 +315,14 @@ PageContainer.Name = "PageContainer"
 PageContainer.Size = UDim2.new(1, -TabWidth - 10, 1, -45) 
 PageContainer.Position = UDim2.new(0, TabWidth + 5, 0, 40) -- Kanan Sidebar
 PageContainer.BackgroundTransparency = 1
+PageContainer.ZIndex = 2 -- Di bawah Sidebar
 
 local PageMain = Instance.new("Frame", PageContainer)
 PageMain.Name = "PageMain"
 PageMain.Size = UDim2.new(1, 0, 1, 0)
 PageMain.BackgroundTransparency = 1
 PageMain.Visible = true
+PageMain.ZIndex = 2
 
 local GridMain = Instance.new("UIGridLayout", PageMain)
 GridMain.CellSize = UDim2.new(0, 100, 0, 28) 
@@ -318,6 +334,7 @@ PageMisc.Name = "PageMisc"
 PageMisc.Size = UDim2.new(1, 0, 1, 0)
 PageMisc.BackgroundTransparency = 1
 PageMisc.Visible = false
+PageMisc.ZIndex = 2
 
 local GridMisc = Instance.new("UIGridLayout", PageMisc)
 GridMisc.CellSize = UDim2.new(0, 100, 0, 28) 
@@ -385,6 +402,7 @@ local function MakeBtn(parent, text)
     b.TextSize = 9
     b.AutoButtonColor = true
     b.ClipsDescendants = true
+    b.ZIndex = 3 -- [FIX] Button Content ZIndex
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
     local s = Instance.new("UIStroke", b)
     s.Color = UI_THEME.Accent 
@@ -427,7 +445,7 @@ local BodyV = nil
 
 -- >> TOMBOL UI <<
 
--- TAB MAIN (Tanpa tombol list)
+-- TAB MAIN
 local BtnEvent    = MakeBtn(PageMain, "Auto Event: OFF")
 local BtnEquip    = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnWow      = MakeBtn(PageMain, "Water Walk: OFF")
@@ -587,8 +605,6 @@ task.spawn(function()
                 if not HRP or not HRP.Parent then return end
 
                 local Target = nil
-                
-                -- Cari event apapun di Props
                 local Props = Workspace:FindFirstChild("Props")
                 if Props then
                     for _, v in pairs(Props:GetChildren()) do
