@@ -1,15 +1,23 @@
--- [1] Notifikasi Awal (Safe Load)
+-- [1] GLOBAL CLEANUP
+if _G.SeraphinConnections then
+    for _, conn in pairs(_G.SeraphinConnections) do
+        if conn then conn:Disconnect() end
+    end
+end
+_G.SeraphinConnections = {} 
+
+-- [2] Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Seraphin Helper",
-        Text = "Loading New Feature...",
+        Text = "Loading Sidebar UI...",
         Duration = 2,
     })
 end)
 
-task.wait(1.5)
+task.wait(1)
 
--- [2] Variable & Services
+-- [3] Variable & Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -25,22 +33,22 @@ local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 10)
 local Hum = Char:WaitForChild("Humanoid", 10)
 
--- Auto Update Character saat Respawn
-Player.CharacterAdded:Connect(function(newChar)
+local CharConn = Player.CharacterAdded:Connect(function(newChar)
     Char = newChar
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
     Hum = newChar:WaitForChild("Humanoid", 10)
 end)
+table.insert(_G.SeraphinConnections, CharConn)
 
 -- // Konfigurasi Visual (TEMA BLACK & CYAN)
 local UI_THEME = {
-    MinWidth = 280,  
-    MinHeight = 280, 
+    MinWidth = 310,  -- Diperlebar sedikit untuk Sidebar
+    MinHeight = 260, 
     Color = Color3.fromRGB(0, 0, 0), 
     Transparency = 0.35, 
     HeaderColor = Color3.fromRGB(15, 15, 15),
     Accent = Color3.fromRGB(0, 255, 255), 
-    TabOff = Color3.fromRGB(100, 100, 100),
+    TabOff = Color3.fromRGB(80, 80, 80),
     TabOn = Color3.fromRGB(0, 255, 255),
     TextColor = Color3.fromRGB(240, 255, 255),
     SubTextColor = Color3.fromRGB(150, 200, 200),
@@ -140,7 +148,7 @@ local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...", 3)
 local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)     
 
 -- ====================================================
--- [2] MAIN MENU UI
+-- [2] MAIN MENU UI (SIDEBAR STYLE)
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
@@ -155,7 +163,7 @@ Main.Draggable = false
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
 local MainStroke = Instance.new("UIStroke", Main)
-MainStroke.Color = UI_THEME.Accent -- Border Cyan
+MainStroke.Color = UI_THEME.Accent
 MainStroke.Thickness = 1.5
 MainStroke.Transparency = 0.2
 
@@ -226,44 +234,72 @@ HideStroke.Color = UI_THEME.Accent
 HideStroke.Transparency = 0.6
 
 -- ====================================================
--- [3] TAB SYSTEM
+-- [3] SIDEBAR TAB SYSTEM (NEW)
 -- ====================================================
+local TabWidth = 80 -- Lebar Sidebar
+
 local TabHolder = Instance.new("Frame", Main)
 TabHolder.Name = "TabHolder"
-TabHolder.Size = UDim2.new(1, 0, 0, 25)
+TabHolder.Size = UDim2.new(0, TabWidth, 1, -32) -- Full height minus header
 TabHolder.Position = UDim2.new(0, 0, 0, 32)
-TabHolder.BackgroundTransparency = 1
+TabHolder.BackgroundTransparency = 0.5
+TabHolder.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
 
-local TabMainBtn = Instance.new("TextButton", TabHolder)
-TabMainBtn.Name = "MainTab"
-TabMainBtn.Size = UDim2.new(0.5, 0, 1, 0)
-TabMainBtn.BackgroundTransparency = 1
-TabMainBtn.Text = "MAIN"
-TabMainBtn.Font = Enum.Font.GothamBold
-TabMainBtn.TextSize = 11
+-- Garis Pemisah Sidebar
+local TabLine = Instance.new("Frame", TabHolder)
+TabLine.Size = UDim2.new(0, 1, 1, 0)
+TabLine.Position = UDim2.new(1, -1, 0, 0)
+TabLine.BackgroundColor3 = UI_THEME.Accent
+TabLine.BackgroundTransparency = 0.7
+TabLine.BorderSizePixel = 0
+
+-- Layout Sidebar (List Menurun)
+local TabListLayout = Instance.new("UIListLayout", TabHolder)
+TabListLayout.FillDirection = Enum.FillDirection.Vertical
+TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabListLayout.Padding = UDim.new(0, 5)
+TabListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- Padding atas Sidebar
+local TabPad = Instance.new("UIPadding", TabHolder)
+TabPad.PaddingTop = UDim.new(0, 10)
+
+-- Fungsi Membuat Tab Button Vertical
+local function CreateTabBtn(text, order)
+    local btn = Instance.new("TextButton", TabHolder)
+    btn.Name = text .. "Tab"
+    btn.LayoutOrder = order
+    btn.Size = UDim2.new(1, -10, 0, 30)
+    btn.BackgroundTransparency = 1
+    btn.Text = text
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 11
+    btn.TextColor3 = UI_THEME.TabOff
+    
+    -- Indikator (Garis Kiri)
+    local ind = Instance.new("Frame", btn)
+    ind.Name = "Indicator"
+    ind.Size = UDim2.new(0, 2, 1, 0)
+    ind.Position = UDim2.new(0, 0, 0, 0)
+    ind.BackgroundColor3 = UI_THEME.Accent
+    ind.BackgroundTransparency = 1 -- Hidden by default
+    ind.BorderSizePixel = 0
+    
+    return btn, ind
+end
+
+local TabMainBtn, IndMain = CreateTabBtn("MAIN", 1)
+local TabMiscBtn, IndMisc = CreateTabBtn("MISC", 2)
+
+-- Set Default Active (Main)
 TabMainBtn.TextColor3 = UI_THEME.TabOn
+IndMain.BackgroundTransparency = 0
 
-local TabMiscBtn = Instance.new("TextButton", TabHolder)
-TabMiscBtn.Name = "MiscTab"
-TabMiscBtn.Size = UDim2.new(0.5, 0, 1, 0)
-TabMiscBtn.Position = UDim2.new(0.5, 0, 0, 0)
-TabMiscBtn.BackgroundTransparency = 1
-TabMiscBtn.Text = "MISC"
-TabMiscBtn.Font = Enum.Font.GothamBold
-TabMiscBtn.TextSize = 11
-TabMiscBtn.TextColor3 = UI_THEME.TabOff
-
-local TabIndicator = Instance.new("Frame", TabHolder)
-TabIndicator.Size = UDim2.new(0.5, 0, 0, 2)
-TabIndicator.Position = UDim2.new(0, 0, 1, -2)
-TabIndicator.BackgroundColor3 = UI_THEME.Accent
-TabIndicator.BorderSizePixel = 0
-
--- PAGES CONTAINER
+-- PAGES CONTAINER (Digeser ke Kanan)
 local PageContainer = Instance.new("Frame", Main)
 PageContainer.Name = "PageContainer"
-PageContainer.Size = UDim2.new(1, -16, 1, -65) 
-PageContainer.Position = UDim2.new(0, 8, 0, 60)
+PageContainer.Size = UDim2.new(1, -TabWidth - 10, 1, -45) 
+PageContainer.Position = UDim2.new(0, TabWidth + 5, 0, 40) -- Kanan Sidebar
 PageContainer.BackgroundTransparency = 1
 
 local PageMain = Instance.new("Frame", PageContainer)
@@ -273,9 +309,9 @@ PageMain.BackgroundTransparency = 1
 PageMain.Visible = true
 
 local GridMain = Instance.new("UIGridLayout", PageMain)
-GridMain.CellSize = UDim2.new(0, 128, 0, 28) 
-GridMain.CellPadding = UDim2.new(0, 8, 0, 6) 
-GridMain.HorizontalAlignment = Enum.HorizontalAlignment.Center
+GridMain.CellSize = UDim2.new(0, 100, 0, 28) -- Sedikit dikecilkan agar muat
+GridMain.CellPadding = UDim2.new(0, 6, 0, 6) 
+GridMain.HorizontalAlignment = Enum.HorizontalAlignment.Left
 
 local PageMisc = Instance.new("Frame", PageContainer)
 PageMisc.Name = "PageMisc"
@@ -284,23 +320,29 @@ PageMisc.BackgroundTransparency = 1
 PageMisc.Visible = false
 
 local GridMisc = Instance.new("UIGridLayout", PageMisc)
-GridMisc.CellSize = UDim2.new(0, 128, 0, 28) 
-GridMisc.CellPadding = UDim2.new(0, 8, 0, 6) 
-GridMisc.HorizontalAlignment = Enum.HorizontalAlignment.Center
+GridMisc.CellSize = UDim2.new(0, 100, 0, 28) 
+GridMisc.CellPadding = UDim2.new(0, 6, 0, 6) 
+GridMisc.HorizontalAlignment = Enum.HorizontalAlignment.Left
 
 local function SwitchTab(tabName)
     if tabName == "Main" then
         PageMain.Visible = true
         PageMisc.Visible = false
+        
         TabMainBtn.TextColor3 = UI_THEME.TabOn
+        IndMain.BackgroundTransparency = 0
+        
         TabMiscBtn.TextColor3 = UI_THEME.TabOff
-        TabIndicator:TweenPosition(UDim2.new(0, 0, 1, -2), "Out", "Quad", 0.2)
+        IndMisc.BackgroundTransparency = 1
     elseif tabName == "Misc" then
         PageMain.Visible = false
         PageMisc.Visible = true
+        
         TabMainBtn.TextColor3 = UI_THEME.TabOff
+        IndMain.BackgroundTransparency = 1
+        
         TabMiscBtn.TextColor3 = UI_THEME.TabOn
-        TabIndicator:TweenPosition(UDim2.new(0.5, 0, 1, -2), "Out", "Quad", 0.2)
+        IndMisc.BackgroundTransparency = 0
     end
 end
 
@@ -340,7 +382,7 @@ local function MakeBtn(parent, text)
     b.BackgroundTransparency = 0.5
     b.TextColor3 = UI_THEME.TextColor
     b.Font = UI_THEME.BtnFont 
-    b.TextSize = 10 
+    b.TextSize = 9 -- Font diperkecil agar muat di grid baru
     b.AutoButtonColor = true
     b.ClipsDescendants = true
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
@@ -381,15 +423,15 @@ local States = {
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
 local IsInEvent = false 
-local Connections = {}
 local BodyV = nil
-local TargetedEvent = nil -- [NEW] Target Event
+local TargetedEvent = nil 
 
 -- [NEW] EVENT LIST UI
 local EventFrame = Instance.new("Frame", Main)
 EventFrame.Name = "EventListFrame"
-EventFrame.Size = UDim2.new(1, -16, 1, -40)
-EventFrame.Position = UDim2.new(0, 8, 0, 35)
+-- Posisi Event List menyesuaikan layout baru
+EventFrame.Size = UDim2.new(1, -TabWidth - 20, 1, -50)
+EventFrame.Position = UDim2.new(0, TabWidth + 10, 0, 40)
 EventFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
 EventFrame.BackgroundTransparency = 0.1
 EventFrame.Visible = false
@@ -402,7 +444,7 @@ EFStroke.Thickness = 1
 local EventTitle = Instance.new("TextLabel", EventFrame)
 EventTitle.Size = UDim2.new(1, 0, 0, 25)
 EventTitle.BackgroundTransparency = 1
-EventTitle.Text = "ACTIVE EVENT LIST"
+EventTitle.Text = "EVENT LIST"
 EventTitle.TextColor3 = UI_THEME.Accent
 EventTitle.Font = Enum.Font.GothamBlack
 EventTitle.TextSize = 12
@@ -434,7 +476,7 @@ BtnScan.Size = UDim2.new(1, -10, 0, 20)
 BtnScan.Position = UDim2.new(0, 5, 1, -25)
 BtnScan.BackgroundColor3 = UI_THEME.Accent
 BtnScan.BackgroundTransparency = 0.2
-BtnScan.Text = "RE-SCAN EVENTS"
+BtnScan.Text = "RE-SCAN"
 BtnScan.TextColor3 = Color3.fromRGB(0, 0, 0)
 BtnScan.Font = Enum.Font.GothamBold
 BtnScan.TextSize = 10
@@ -444,8 +486,8 @@ Instance.new("UICorner", BtnScan).CornerRadius = UDim.new(0, 4)
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
-local BtnOpenList = MakeBtn(PageMain, "Select Event >") -- [NEW] Tombol Buka List
-local BtnEvent    = MakeBtn(PageMain, "Auto Event: OFF") -- Tombol Toggle
+local BtnOpenList = MakeBtn(PageMain, "Select Event >")
+local BtnEvent    = MakeBtn(PageMain, "Auto Event: OFF")
 local BtnEquip    = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnWow      = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnFreeze   = MakeBtn(PageMain, "Freeze: OFF")
@@ -463,7 +505,6 @@ local BtnPanel    = MakeBtn(PageMisc, "Panel Info: ON")
 
 -- [FUNCTION] Event Scanner Logic
 local function ScanAndPopulate()
-    -- Clear List Lama
     for _, v in pairs(EventScroll:GetChildren()) do
         if v:IsA("TextButton") then v:Destroy() end
     end
@@ -497,7 +538,7 @@ local function ScanAndPopulate()
                         if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(20, 20, 20) end
                     end
                     btn.BackgroundColor3 = UI_THEME.Accent
-                    EventFrame.Visible = false -- Tutup setelah pilih
+                    EventFrame.Visible = false
                 end)
             end
         end
@@ -515,7 +556,6 @@ end)
 
 BtnScan.MouseButton1Click:Connect(ScanAndPopulate)
 BtnCloseEvent.MouseButton1Click:Connect(function() EventFrame.Visible = false end)
-
 
 -- [FUNCTION] Logic Water Walk
 local function SetWoW(bool)
@@ -536,17 +576,23 @@ local function SetWoW(bool)
         end
         BodyV.Parent = HRP
         
-        if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
+        if _G.SeraphinConnections and _G.SeraphinConnections["WoW"] then
+            _G.SeraphinConnections["WoW"]:Disconnect()
+        end
         
-        Connections["WoW"] = RunService.RenderStepped:Connect(function() 
+        local wowLoop = RunService.RenderStepped:Connect(function() 
             if HRP and Hum and BodyV and BodyV.Parent then
                 local moveDir = Hum.MoveDirection
                 local speed = Hum.WalkSpeed
                 BodyV.Velocity = Vector3.new(moveDir.X * speed, 0, moveDir.Z * speed)
             end 
-        end) 
+        end)
+        _G.SeraphinConnections["WoW"] = wowLoop
     else 
-        if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
+        if _G.SeraphinConnections and _G.SeraphinConnections["WoW"] then 
+            _G.SeraphinConnections["WoW"]:Disconnect()
+            _G.SeraphinConnections["WoW"] = nil
+        end 
         if BodyV then BodyV:Destroy(); BodyV = nil end 
     end 
 end
@@ -588,13 +634,14 @@ end
 
 -- FPS Logic
 local fpsT = 0
-RunService.RenderStepped:Connect(function(dt)
+local fpsLoop = RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
     if Title then
         Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
     end
 end)
+table.insert(_G.SeraphinConnections, fpsLoop)
 
 -- FPS Selector
 BtnFps.MouseButton1Click:Connect(function()
@@ -618,7 +665,7 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [5] BACKGROUND LOOPS & AUTO LOGICS
+-- [5] BACKGROUND LOOPS
 -- ====================================================
 
 -- AUTO CLEAN LOOP
@@ -644,7 +691,7 @@ BtnClean.MouseButton1Click:Connect(function()
     end
 end)
 
--- >> LOGIC AUTO EVENT (SMART SELECTOR)
+-- >> LOGIC AUTO EVENT
 task.spawn(function()
     while true do
         task.wait(1) 
@@ -654,7 +701,6 @@ task.spawn(function()
 
                 local Target = TargetedEvent
                 
-                -- Jika tidak ada target spesifik, cari sembarang
                 if not Target or not Target.Parent then
                      local Props = Workspace:FindFirstChild("Props")
                      if Props then
@@ -668,7 +714,6 @@ task.spawn(function()
                 end
 
                 if Target and Target.Parent then
-                    -- >> EVENT START
                     if not IsInEvent then
                         EventStartCFrame = HRP.CFrame 
                         IsInEvent = true
@@ -683,9 +728,7 @@ task.spawn(function()
                     end
 
                     if not States.WoW then SetWoW(true) end
-
                 else
-                    -- >> EVENT END / LOST
                     if IsInEvent then
                         IsInEvent = false
                         Notify("Auto Event", "Target Lost. Returning...")
@@ -810,16 +853,20 @@ BtnNoclip.MouseButton1Click:Connect(function()
     States.Noclip = not States.Noclip 
     BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") 
     ToggleVisual(BtnNoclip, States.Noclip) 
+    
+    if _G.SeraphinConnections and _G.SeraphinConnections["Noclip"] then
+        _G.SeraphinConnections["Noclip"]:Disconnect()
+    end
+    
     if States.Noclip then 
-        Connections["Noclip"] = RunService.Stepped:Connect(function() 
+        local ncLoop = RunService.Stepped:Connect(function() 
             if Player.Character then 
                 for _,v in pairs(Player.Character:GetDescendants()) do 
                     if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end 
                 end 
             end 
-        end) 
-    else 
-        if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end 
+        end)
+        _G.SeraphinConnections["Noclip"] = ncLoop
     end 
 end)
 
@@ -902,4 +949,3 @@ BtnLoad.MouseButton1Click:Connect(function()
         Notify("Gagal", "Belum ada posisi yang disimpan ")
     end 
 end)
-
