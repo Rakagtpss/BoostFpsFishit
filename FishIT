@@ -1,13 +1,13 @@
--- [1] Notifikasi Awal
+-- [1] Notifikasi Awal (Safe Load)
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Seraphin Helper",
-        Text = "Loading Cyan Theme...",
+        Text = "System Scanned & Loaded...",
         Duration = 2,
     })
 end)
 
-task.wait(2)
+task.wait(1.5)
 
 -- [2] Variable & Services
 local Players = game:GetService("Players")
@@ -22,19 +22,20 @@ local Workspace = game:GetService("Workspace")
 
 local Player = Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
-local HRP = Char:WaitForChild("HumanoidRootPart", 5)
-local Hum = Char:WaitForChild("Humanoid", 5)
+local HRP = Char:WaitForChild("HumanoidRootPart", 10)
+local Hum = Char:WaitForChild("Humanoid", 10)
 
+-- Auto Update Character saat Respawn
 Player.CharacterAdded:Connect(function(newChar)
     Char = newChar
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
     Hum = newChar:WaitForChild("Humanoid", 10)
 end)
 
--- // Konfigurasi Visual (TEMA BLACK & CYAN)
+-- // Konfigurasi Visual (TEMA BLACK & CYAN - FINAL)
 local UI_THEME = {
     MinWidth = 280,  
-    MinHeight = 260, -- Ukuran dikembalikan normal
+    MinHeight = 260, 
     -- Warna Dasar (Hitam Transparan)
     Color = Color3.fromRGB(0, 0, 0), 
     Transparency = 0.35, 
@@ -53,7 +54,7 @@ local UI_THEME = {
     BtnFont = Enum.Font.GothamMedium 
 }
 
--- Bersihkan UI Lama
+-- Bersihkan UI Lama (Anti Duplicate)
 if CoreGui:FindFirstChild("SeraphinHelper") then CoreGui.SeraphinHelper:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -172,7 +173,7 @@ Header.BackgroundColor3 = UI_THEME.HeaderColor
 Header.BackgroundTransparency = 0.5
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
--- [DRAG SCRIPT]
+-- [DRAG SCRIPT - FIXED]
 local dragToggle, dragInput, dragStart, startPos
 local function updateInput(input)
     local delta = input.Position - dragStart
@@ -264,10 +265,10 @@ TabIndicator.Position = UDim2.new(0, 0, 1, -2)
 TabIndicator.BackgroundColor3 = UI_THEME.Accent
 TabIndicator.BorderSizePixel = 0
 
--- PAGES CONTAINER (Ukuran dikembalikan normal)
+-- PAGES CONTAINER
 local PageContainer = Instance.new("Frame", Main)
 PageContainer.Name = "PageContainer"
-PageContainer.Size = UDim2.new(1, -16, 1, -65) -- Kembali ke -65
+PageContainer.Size = UDim2.new(1, -16, 1, -65) 
 PageContainer.Position = UDim2.new(0, 8, 0, 60)
 PageContainer.BackgroundTransparency = 1
 
@@ -361,7 +362,7 @@ local function ToggleVisual(btn, on)
     if on then
         btn.BackgroundColor3 = UI_THEME.Accent 
         btn.BackgroundTransparency = 0.2
-        btn.TextColor3 = Color3.fromRGB(0, 0, 0) -- Teks hitam saat aktif (biar kontras dengan cyan)
+        btn.TextColor3 = Color3.fromRGB(0, 0, 0) -- Text Hitam (Kontras)
         btn.UIStroke.Transparency = 1
         btn.Font = Enum.Font.GothamBold
     else
@@ -408,7 +409,7 @@ local BtnClean  = MakeBtn(PageMisc, "Auto Clean: OFF")
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
 local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
 
--- [FUNCTION] Logic Water Walk
+-- [FUNCTION] Logic Water Walk (FIXED DEEP SCAN)
 local function SetWoW(bool)
     States.WoW = bool
     if typeof(BtnWow) == "Instance" then
@@ -417,13 +418,15 @@ local function SetWoW(bool)
     end
     
     if States.WoW then 
+        if not HRP or not HRP.Parent then return end -- Check Exist
+        
         if not BodyV then 
             BodyV = Instance.new("BodyVelocity")
             BodyV.Name = "WoW_Velocity"
             BodyV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
             BodyV.Velocity = Vector3.zero
         end
-        if HRP then BodyV.Parent = HRP end
+        BodyV.Parent = HRP
         
         if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
         
@@ -482,12 +485,14 @@ local function PerformUltraClean()
     return math.floor(startMem - endMem)
 end
 
--- FPS Logic
+-- FPS Logic (FIXED RICH TEXT BUG)
 local fpsT = 0
 RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
-    Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
+    if Title then
+        Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  |  FPS: <b>" .. currentFps .. "</b>"
+    end
 end)
 
 -- FPS Selector
@@ -538,12 +543,15 @@ BtnClean.MouseButton1Click:Connect(function()
     end
 end)
 
--- >> LOGIC AUTO EVENT
+-- >> LOGIC AUTO EVENT (Optimized)
 task.spawn(function()
     while true do
         task.wait(1) 
         if States.AutoEvent then
             pcall(function()
+                -- Check Character integrity first
+                if not HRP or not HRP.Parent then return end
+
                 local Props = Workspace:FindFirstChild("Props")
                 local FoundEvent = nil
                 
@@ -559,7 +567,7 @@ task.spawn(function()
                 if FoundEvent then
                     -- >> EVENT START
                     if not IsInEvent then
-                        if HRP then EventStartCFrame = HRP.CFrame end
+                        EventStartCFrame = HRP.CFrame 
                         IsInEvent = true
                         Notify("Auto Event", "Event Found! Teleporting...")
                     end
@@ -567,7 +575,7 @@ task.spawn(function()
                     local targetPos = FoundEvent:GetPivot().Position
                     local destPos = Vector3.new(targetPos.X, 3, targetPos.Z)
                     
-                    if HRP and (HRP.Position - destPos).Magnitude > 10 then
+                    if (HRP.Position - destPos).Magnitude > 10 then
                         HRP.CFrame = CFrame.new(destPos)
                     end
 
@@ -588,12 +596,12 @@ task.spawn(function()
                 end
             end)
         else
-            -- Pasif saat mati
+            -- Passive
         end
     end
 end)
 
--- >> LOGIC AUTO EQUIP
+-- >> LOGIC AUTO EQUIP (Safe)
 task.spawn(function()
     while true do
         task.wait(1.5)
@@ -603,9 +611,15 @@ task.spawn(function()
                 if char then
                     if not char:FindFirstChildWhichIsA("Tool") then
                         local args = { [1] = 1 }
-                        local remote = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0")
-                        if remote then
-                            remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
+                        -- Safe Path Check
+                        if ReplicatedStorage:FindFirstChild("Packages") then
+                             local idx = ReplicatedStorage.Packages:FindFirstChild("_Index")
+                             if idx then
+                                 local remote = idx:FindFirstChild("sleitnick_net@0.2.0")
+                                 if remote then
+                                     remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
+                                 end
+                             end
                         end
                     end
                 end
