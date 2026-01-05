@@ -1,4 +1,3 @@
-
 -- [1] Notifikasi Awal
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
@@ -35,7 +34,7 @@ end)
 -- // Konfigurasi Visual (TEMA BLACK & CYAN)
 local UI_THEME = {
     MinWidth = 280,  
-    MinHeight = 300, -- Diperbesar sedikit untuk tombol Discord
+    MinHeight = 260, -- Ukuran dikembalikan normal
     -- Warna Dasar (Hitam Transparan)
     Color = Color3.fromRGB(0, 0, 0), 
     Transparency = 0.35, 
@@ -207,7 +206,6 @@ end)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0) 
 Title.Position = UDim2.new(0, 10, 0, 0)
--- Teks dengan warna Cyan
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>" 
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
@@ -266,10 +264,10 @@ TabIndicator.Position = UDim2.new(0, 0, 1, -2)
 TabIndicator.BackgroundColor3 = UI_THEME.Accent
 TabIndicator.BorderSizePixel = 0
 
--- PAGES CONTAINER (Disisakan ruang di bawah untuk tombol Discord)
+-- PAGES CONTAINER (Ukuran dikembalikan normal)
 local PageContainer = Instance.new("Frame", Main)
 PageContainer.Name = "PageContainer"
-PageContainer.Size = UDim2.new(1, -16, 1, -95) -- Dikurangi tingginya untuk Footer
+PageContainer.Size = UDim2.new(1, -16, 1, -65) -- Kembali ke -65
 PageContainer.Position = UDim2.new(0, 8, 0, 60)
 PageContainer.BackgroundTransparency = 1
 
@@ -324,10 +322,6 @@ HideBtn.MouseButton1Click:Connect(function()
     if IsMinimized then
         PageContainer.Visible = false
         TabHolder.Visible = false
-        -- Sembunyikan Footer (Tombol Discord) juga
-        local footer = Main:FindFirstChild("FooterDiscord")
-        if footer then footer.Visible = false end
-
         Main:TweenSize(UDim2.new(0, UI_THEME.MinWidth, 0, 32), "Out", "Quad", 0.3, true) 
         HideBtn.Text = "Show" 
         HideBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -339,8 +333,6 @@ HideBtn.MouseButton1Click:Connect(function()
             if not IsMinimized then 
                 PageContainer.Visible = true 
                 TabHolder.Visible = true
-                local footer = Main:FindFirstChild("FooterDiscord")
-                if footer then footer.Visible = true end
             end 
         end)
     end
@@ -415,7 +407,6 @@ local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
 local BtnClean  = MakeBtn(PageMisc, "Auto Clean: OFF") 
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
 local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
-
 
 -- [FUNCTION] Logic Water Walk
 local function SetWoW(bool)
@@ -533,4 +524,271 @@ task.spawn(function()
                 local freed = PerformUltraClean()
                 Notify("Auto Clean", "RAM Freed: " .. freed .. " KB")
             end)
- 
+        end
+    end
+end)
+
+BtnClean.MouseButton1Click:Connect(function()
+    States.AutoClean = not States.AutoClean
+    BtnClean.Text = "Auto Clean: " .. (States.AutoClean and "ON" or "OFF")
+    ToggleVisual(BtnClean, States.AutoClean)
+    if States.AutoClean then
+        local freed = PerformUltraClean() -- Instant Boost
+        Notify("Ultra Clean", "Boosted: -" .. freed .. " KB (Auto 5m)")
+    end
+end)
+
+-- >> LOGIC AUTO EVENT
+task.spawn(function()
+    while true do
+        task.wait(1) 
+        if States.AutoEvent then
+            pcall(function()
+                local Props = Workspace:FindFirstChild("Props")
+                local FoundEvent = nil
+                
+                if Props then
+                    for _, v in pairs(Props:GetChildren()) do
+                        if v:IsA("Model") or v:IsA("BasePart") then
+                            FoundEvent = v
+                            break 
+                        end
+                    end
+                end
+
+                if FoundEvent then
+                    -- >> EVENT START
+                    if not IsInEvent then
+                        if HRP then EventStartCFrame = HRP.CFrame end
+                        IsInEvent = true
+                        Notify("Auto Event", "Event Found! Teleporting...")
+                    end
+
+                    local targetPos = FoundEvent:GetPivot().Position
+                    local destPos = Vector3.new(targetPos.X, 3, targetPos.Z)
+                    
+                    if HRP and (HRP.Position - destPos).Magnitude > 10 then
+                        HRP.CFrame = CFrame.new(destPos)
+                    end
+
+                    if not States.WoW then SetWoW(true) end
+
+                else
+                    -- >> EVENT END (Natural)
+                    if IsInEvent then
+                        IsInEvent = false
+                        Notify("Auto Event", "Event Selesai. Returning...")
+                        
+                        if EventStartCFrame and HRP then 
+                            HRP.CFrame = EventStartCFrame 
+                            EventStartCFrame = nil 
+                        end
+                        if States.WoW then SetWoW(false) end
+                    end
+                end
+            end)
+        else
+            -- Pasif saat mati
+        end
+    end
+end)
+
+-- >> LOGIC AUTO EQUIP
+task.spawn(function()
+    while true do
+        task.wait(1.5)
+        if States.AutoEquip then
+            pcall(function()
+                local char = Player.Character
+                if char then
+                    if not char:FindFirstChildWhichIsA("Tool") then
+                        local args = { [1] = 1 }
+                        local remote = ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0")
+                        if remote then
+                            remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- >> UPDATE STATS LOOP
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if not States.Panel then continue end
+        pcall(function()
+            local ls = Player:FindFirstChild("leaderstats")
+            local caughtObj = ls and ls:FindFirstChild("Caught")
+            local function formatNum(n) return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "") end
+            local val = caughtObj and caughtObj.Value or 0
+            LblFishVal.Text = formatNum(val)
+
+            local pg = Player:FindFirstChild("PlayerGui")
+            local backpackGui = pg and pg:FindFirstChild("Backpack")
+            local bagText = "0/?"
+            if backpackGui then
+                for _, v in pairs(backpackGui:GetDescendants()) do
+                    if v:IsA("TextLabel") and string.find(v.Text, "/") then 
+                        bagText = v.Text 
+                        break 
+                    end
+                end
+            else 
+                local current = #Player.Backpack:GetChildren()
+                bagText = tostring(current)
+            end
+            LblInvVal.Text = bagText
+        end)
+    end
+end)
+
+-- ====================================================
+-- [6] FUNCTION BUTTONS LOGIC
+-- ====================================================
+
+-- Auto Equip
+BtnEquip.MouseButton1Click:Connect(function()
+    SetAutoEquip(not States.AutoEquip)
+end)
+
+-- Auto Event (Return Logic + Link Equip)
+BtnEvent.MouseButton1Click:Connect(function()
+    States.AutoEvent = not States.AutoEvent
+    BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
+    ToggleVisual(BtnEvent, States.AutoEvent)
+    
+    if not States.AutoEvent then
+        -- Teleport Balik jika dimatikan paksa
+        if IsInEvent and EventStartCFrame and HRP then
+            HRP.CFrame = EventStartCFrame
+            EventStartCFrame = nil 
+            Notify("Info", "Kembali ke posisi awal.")
+        end
+        IsInEvent = false
+        SetWoW(false)
+        
+        -- Matikan Equip juga
+        if States.AutoEquip then
+            SetAutoEquip(false)
+            Notify("Info", "Auto Equip ikut dimatikan.")
+        end
+    end
+end)
+
+-- Freeze
+BtnFreeze.MouseButton1Click:Connect(function() 
+    States.Freeze = not States.Freeze 
+    if HRP then HRP.Anchored = States.Freeze end 
+    BtnFreeze.Text = "Freeze: " .. (States.Freeze and "ON" or "OFF")
+    ToggleVisual(BtnFreeze, States.Freeze) 
+end)
+
+-- Water Walk
+BtnWow.MouseButton1Click:Connect(function() 
+    SetWoW(not States.WoW)
+end)
+
+-- Noclip
+BtnNoclip.MouseButton1Click:Connect(function() 
+    States.Noclip = not States.Noclip 
+    BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") 
+    ToggleVisual(BtnNoclip, States.Noclip) 
+    if States.Noclip then 
+        Connections["Noclip"] = RunService.Stepped:Connect(function() 
+            if Player.Character then 
+                for _,v in pairs(Player.Character:GetDescendants()) do 
+                    if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end 
+                end 
+            end 
+        end) 
+    else 
+        if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end 
+    end 
+end)
+
+-- ULTRA FPS BOOST (Potato Mode)
+BtnBoost.MouseButton1Click:Connect(function() 
+    States.Boost = not States.Boost 
+    ToggleVisual(BtnBoost, States.Boost) 
+    BtnBoost.Text = "Boost: " .. (States.Boost and "ON" or "OFF")
+    
+    if States.Boost then
+        local L = game:GetService("Lighting")
+        L.GlobalShadows = false
+        L.FogEnd = 9e9
+        L.Brightness = 2 
+        
+        for _, v in pairs(L:GetChildren()) do
+            if v:IsA("PostEffect") or v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
+                v.Enabled = false
+            end
+        end
+
+        if Workspace:FindFirstChild("Terrain") then
+            Workspace.Terrain.WaterWaveSize = 0.1 
+            Workspace.Terrain.WaterReflectance = 0 
+            Workspace.Terrain.WaterTransparency = 0 
+        end
+
+        Notify("Ultra Boost", "Potato Mode: Activating...")
+        task.spawn(function()
+            pcall(function()
+                for _, v in pairs(Workspace:GetDescendants()) do
+                    if v:IsA("BasePart") and not v.Parent:IsA("Tool") then 
+                        v.Material = Enum.Material.SmoothPlastic
+                        v.Reflectance = 0
+                        v.CastShadow = false
+                    elseif v:IsA("Decal") or v:IsA("Texture") then
+                        v.Transparency = 1 
+                    elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") then
+                        v.Enabled = false
+                    end
+                end
+            end)
+        end)
+    else
+        game:GetService("Lighting").GlobalShadows = true
+        Notify("Boost OFF", "Lighting Reset. (Rejoin untuk Texture)")
+    end
+end)
+
+-- 3D Render
+BtnRender.MouseButton1Click:Connect(function() 
+    States.NoRender = not States.NoRender 
+    RunService:Set3dRenderingEnabled(not States.NoRender) 
+    BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
+    ToggleVisual(BtnRender, States.NoRender) 
+end)
+
+-- Rejoin
+BtnRejoin.MouseButton1Click:Connect(function() TeleportService:Teleport(game.PlaceId, Player) end)
+
+-- Save Pos
+BtnSave.MouseButton1Click:Connect(function() 
+    if HRP then 
+        SavedCFrame = HRP.CFrame 
+        BtnSave.Text="SAVED" 
+        BtnSave.TextColor3 = Color3.fromRGB(0, 255, 0)
+        Notify("Posisi Disimpan", "Lokasi Anda saat ini telah disimpan ")
+        task.delay(1, function()
+            BtnSave.Text="Save Pos" 
+            BtnSave.TextColor3 = UI_THEME.TextColor
+        end)
+    end 
+end)
+
+-- Load Pos
+BtnLoad.MouseButton1Click:Connect(function() 
+    if SavedCFrame and HRP then 
+        HRP.CFrame = SavedCFrame 
+        ToggleVisual(BtnLoad,true) 
+        Notify("Posisi Dimuat", "Teleportasi ke lokasi yang disimpan")
+        wait(0.2) 
+        ToggleVisual(BtnLoad,false) 
+    else
+        Notify("Gagal", "Belum ada posisi yang disimpan ")
+    end 
+end)
