@@ -1,22 +1,43 @@
 --[[ 
-    SERAPHIN HELPER - REDESIGNED MODERN
-    Updated by: Gemini AI
-    Original Author: @828_Raka
+    SERAPHIN HELPER - FIXED VERSION (Safe Mode)
+    Updated by: r
+    Fixes: UI Not Showing (Parenting Issue), Game Loading Check
 ]]
 
--- [1] Services
+-- [1] Safe Loading (Tunggu Game Sampai Benar-benar Load)
+if not game:IsLoaded() then 
+    game.Loaded:Wait() 
+end
+
+-- [2] Universal Parent Logic (Otomatis cari tempat agar UI Muncul)
+local function GetSafeParent()
+    -- Coba gunakan gethui() (Standar executor modern/mobile)
+    if gethui then return gethui() end
+    
+    -- Coba CoreGui (Executor PC lama)
+    local Success, Core = pcall(function() return game:GetService("CoreGui") end)
+    if Success and Core then return Core end
+    
+    -- Opsi Terakhir: PlayerGui (Paling aman, pasti muncul)
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+    return LocalPlayer:WaitForChild("PlayerGui")
+end
+
+local TargetParent = GetSafeParent()
+print("UI Parenting to: " .. tostring(TargetParent)) -- Cek Console (F9) jika masih gagal
+
+-- [3] Services & Variables
 local Services = {
     Players = game:GetService("Players"),
     RunService = game:GetService("RunService"),
-    CoreGui = game:GetService("CoreGui"),
-    Lighting = game:GetService("Lighting"),
-    TeleportService = game:GetService("TeleportService"),
-    UserInputService = game:GetService("UserInputService"),
-    ReplicatedStorage = game:GetService("ReplicatedStorage"),
     TweenService = game:GetService("TweenService"),
     Workspace = game:GetService("Workspace"),
     GuiService = game:GetService("GuiService"),
-    HttpService = game:GetService("HttpService")
+    HttpService = game:GetService("HttpService"),
+    UserInputService = game:GetService("UserInputService"),
+    ReplicatedStorage = game:GetService("ReplicatedStorage"),
+    Lighting = game:GetService("Lighting")
 }
 
 local Player = Services.Players.LocalPlayer
@@ -24,7 +45,6 @@ local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 10)
 local Hum = Char:WaitForChild("Humanoid", 10)
 
--- Auto Update Character
 Player.CharacterAdded:Connect(function(newChar)
     Char = newChar
     HRP = newChar:WaitForChild("HumanoidRootPart", 10)
@@ -33,28 +53,31 @@ end)
 
 -- // KONFIGURASI TEMA MODERN //
 local UI_THEME = {
-    MainColor = Color3.fromRGB(25, 25, 30),      -- Background Utama Gelap
-    SidebarColor = Color3.fromRGB(35, 35, 40),   -- Sidebar sedikit lebih terang
-    Accent = Color3.fromRGB(0, 200, 255),        -- Biru Neon Modern
+    MainColor = Color3.fromRGB(25, 25, 30),
+    SidebarColor = Color3.fromRGB(35, 35, 40),
+    Accent = Color3.fromRGB(0, 200, 255),
     TextWhite = Color3.fromRGB(240, 240, 240),
     TextGray = Color3.fromRGB(150, 150, 150),
-    Red = Color3.fromRGB(255, 60, 60),
-    Green = Color3.fromRGB(60, 255, 100),
     FontBold = Enum.Font.GothamBlack,
     FontReg = Enum.Font.GothamMedium,
     Corner = 6
 }
 
--- Bersihkan UI Lama
-if Services.CoreGui:FindFirstChild("SeraphinHelper") then Services.CoreGui.SeraphinHelper:Destroy() end
+-- Bersihkan UI Lama (Cek di semua kemungkinan parent)
+pcall(function()
+    if TargetParent:FindFirstChild("SeraphinHelper") then TargetParent.SeraphinHelper:Destroy() end
+    if game:GetService("CoreGui"):FindFirstChild("SeraphinHelper") then game:GetService("CoreGui").SeraphinHelper:Destroy() end
+    if Player.PlayerGui:FindFirstChild("SeraphinHelper") then Player.PlayerGui.SeraphinHelper:Destroy() end
+end)
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SeraphinHelper"
-ScreenGui.Parent = Services.CoreGui
+ScreenGui.Parent = TargetParent
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.IgnoreGuiInset = true -- Agar tidak terpotong header Roblox
 
--- [2] CUSTOM NOTIFICATION SYSTEM
+-- [4] CUSTOM NOTIFICATION SYSTEM
 local NotifContainer = Instance.new("Frame", ScreenGui)
 NotifContainer.Name = "Notifications"
 NotifContainer.Size = UDim2.new(0, 300, 1, 0)
@@ -73,14 +96,13 @@ local function Notify(title, text, duration)
     Frame.BorderSizePixel = 0
     Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 4)
     
-    -- Color Bar di Samping
     local Bar = Instance.new("Frame", Frame)
     Bar.Size = UDim2.new(0, 6, 1, 0)
     Bar.BackgroundColor3 = UI_THEME.Accent
     Instance.new("UICorner", Bar).CornerRadius = UDim.new(0, 4)
     
     local TitleLbl = Instance.new("TextLabel", Frame)
-    TitleLbl.Positiion = UDim2.new(0, 15, 0, 5)
+    TitleLbl.Position = UDim2.new(0, 15, 0, 5)
     TitleLbl.Size = UDim2.new(1, -20, 0, 25)
     TitleLbl.BackgroundTransparency = 1
     TitleLbl.Text = title
@@ -100,7 +122,6 @@ local function Notify(title, text, duration)
     DescLbl.TextXAlignment = Enum.TextXAlignment.Left
     DescLbl.TextWrapped = true
 
-    -- Animation
     Frame.BackgroundTransparency = 1
     TitleLbl.TextTransparency = 1
     DescLbl.TextTransparency = 1
@@ -112,25 +133,28 @@ local function Notify(title, text, duration)
     Services.TweenService:Create(DescLbl, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
     
     task.delay(duration or 3, function()
-        Services.TweenService:Create(Frame, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
-        Services.TweenService:Create(Bar, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
-        Services.TweenService:Create(TitleLbl, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
-        Services.TweenService:Create(DescLbl, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
-        task.wait(0.5)
-        Frame:Destroy()
+        pcall(function()
+            Services.TweenService:Create(Frame, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+            Services.TweenService:Create(Bar, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+            Services.TweenService:Create(TitleLbl, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+            Services.TweenService:Create(DescLbl, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+            task.wait(0.5)
+            Frame:Destroy()
+        end)
     end)
 end
 
-Notify("Welcome", "Seraphin Helper V2 Loaded", 4)
+Notify("Welcome", "Seraphin Helper V2 (Fixed)", 4)
 
--- [3] MAIN UI STRUCTURE
+-- [5] MAIN UI STRUCTURE
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "MainFrame"
-Main.Size = UDim2.new(0, 550, 0, 320) -- Lebar disesuaikan untuk Sidebar
+Main.Size = UDim2.new(0, 550, 0, 320)
 Main.Position = UDim2.new(0.5, -275, 0.5, -160)
 Main.BackgroundColor3 = UI_THEME.MainColor
 Main.BorderSizePixel = 0
 Main.ClipsDescendants = true
+Main.Visible = true -- Pastikan Visible
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, UI_THEME.Corner)
 
 local Shadow = Instance.new("UIStroke", Main)
@@ -185,11 +209,10 @@ PageContainer.Size = UDim2.new(1, -140, 1, -10)
 PageContainer.Position = UDim2.new(0, 135, 0, 5)
 PageContainer.BackgroundTransparency = 1
 
-local Pages = {} -- Table to store page frames
+local Pages = {} 
 
 -- [FUNCTION] Create Tab Button
-local currentTab = nil
-local function CreateTab(name, icon, pageFrame)
+local function CreateTab(name, pageFrame)
     local Btn = Instance.new("TextButton", Sidebar)
     Btn.Name = name.."Btn"
     Btn.Size = UDim2.new(0.9, 0, 0, 35)
@@ -230,6 +253,7 @@ local function MakePage(name)
     Scroll.BackgroundTransparency = 1
     Scroll.ScrollBarThickness = 2
     Scroll.ScrollBarImageColor3 = UI_THEME.Accent
+    Scroll.BorderSizePixel = 0
     
     local Layout = Instance.new("UIGridLayout", Scroll)
     Layout.CellSize = UDim2.new(0, 125, 0, 40)
@@ -243,23 +267,21 @@ local function MakePage(name)
     return P, Scroll, Layout
 end
 
--- Create Pages
 local PageMain, ScrollMain = MakePage("Main")
 local PageMisc, ScrollMisc, LayoutMisc = MakePage("Misc")
-local PageHook, ScrollHook, LayoutHook = MakePage("Webhook") -- New Page
-LayoutHook.CellSize = UDim2.new(0.95, 0, 0, 40) -- List Style for Webhook
-LayoutMisc.CellSize = UDim2.new(0.95, 0, 0, 40) -- List Style for Misc (Sliders)
+local PageHook, ScrollHook, LayoutHook = MakePage("Webhook")
 
--- Create Tabs
-local Tab1 = CreateTab("MAIN", "", PageMain)
-local Tab2 = CreateTab("MISC", "", PageMisc)
-local Tab3 = CreateTab("WEBHOOK", "", PageHook)
+LayoutHook.CellSize = UDim2.new(0.95, 0, 0, 40) 
+LayoutMisc.CellSize = UDim2.new(0.95, 0, 0, 40)
 
--- Set Default
+local Tab1 = CreateTab("MAIN", PageMain)
+local Tab2 = CreateTab("MISC", PageMisc)
+local Tab3 = CreateTab("WEBHOOK", PageHook)
+
 PageMain.Visible = true
 Services.TweenService:Create(Tab1, TweenInfo.new(0.2), {BackgroundTransparency = 0, TextColor3 = UI_THEME.Accent}):Play()
 
--- [FUNCTION] Create Toggle Button
+-- [FUNCTION] Create Buttons & Sliders
 local function CreateButton(parent, text, callback)
     local Btn = Instance.new("TextButton", parent)
     Btn.Text = ""
@@ -299,7 +321,6 @@ local function CreateButton(parent, text, callback)
     return Btn
 end
 
--- [FUNCTION] Create Slider (Anti-Stuck)
 local function CreateSlider(parent, text, min, max, default, callback)
     local Frame = Instance.new("Frame", parent)
     Frame.BackgroundColor3 = UI_THEME.SidebarColor
@@ -325,7 +346,7 @@ local function CreateSlider(parent, text, min, max, default, callback)
     ValLbl.TextSize = 11
     ValLbl.TextXAlignment = Enum.TextXAlignment.Right
     
-    local SlideBg = Instance.new("TextButton", Frame) -- Button for input
+    local SlideBg = Instance.new("TextButton", Frame)
     SlideBg.Position = UDim2.new(0, 10, 0, 25)
     SlideBg.Size = UDim2.new(1, -20, 0, 6)
     SlideBg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -348,47 +369,35 @@ local function CreateSlider(parent, text, min, max, default, callback)
     end
     
     SlideBg.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            update(input)
-        end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true; update(input) end
     end)
     
     Services.UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            update(input)
-        end
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then update(input) end
     end)
     
     Services.UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
     end)
-    
     return Frame
 end
 
 -- ====================================================
--- [LOGIC] VARIABLES & FUNCTIONS
+-- [STATES & LOGIC]
 -- ====================================================
-
 local States = {
     Freeze=false, WoW=false, Boost=false, NoRender=false, 
-    Noclip=false, Panel=true, AutoEquip=false,
-    AutoEvent=false, AntiStuck=false, StuckTimeout=60, -- Default safe
-    WebhookEnabled = false, WebhookUrl = ""
+    Noclip=false, AutoEquip=false, AutoEvent=false, 
+    AntiStuck=false, StuckTimeout=60, WebhookEnabled=false, WebhookUrl=""
 }
-
-local SavedCFrame = nil 
-local EventStartCFrame = nil 
-local IsInEvent = false 
 local Connections = {}
 local BodyV = nil
+local IsInEvent = false
+local EventStartCFrame = nil
 local LastFishCaughtTime = tick()
 local LastFishCount = 0
 
--- Function: Drag GUI
+-- Drag Function
 local function EnableDrag(frame)
     local dragToggle, dragStart, startPos
     local function updateInput(input)
@@ -409,41 +418,32 @@ local function EnableDrag(frame)
 end
 EnableDrag(Main)
 
--- Function: Optimize
-local function CleanVisuals(parent)
-    for _, v in pairs(parent:GetDescendants()) do
-        if v:IsA("Texture") or v:IsA("Decal") or v:IsA("ParticleEmitter") then v:Destroy() end
-    end
-end
-
--- Function: Water Walk
+-- Logic Functions
 local function SetWoW(bool)
     States.WoW = bool
-    if States.WoW then 
-        if not HRP or not HRP.Parent then return end 
+    if bool then
+        if not HRP then return end
         if not BodyV then 
             BodyV = Instance.new("BodyVelocity")
-            BodyV.Name = "WoW_Velocity"
             BodyV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
             BodyV.Velocity = Vector3.zero
+            BodyV.Parent = HRP
         end
-        BodyV.Parent = HRP
-        if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
-        Connections["WoW"] = Services.RunService.RenderStepped:Connect(function() 
+        Connections["WoW"] = Services.RunService.RenderStepped:Connect(function()
             if HRP and Hum and BodyV and BodyV.Parent then
                 local moveDir = Hum.MoveDirection
+                local speed = Hum.WalkSpeed
                 if moveDir.Magnitude > 0 then
-                    local speed = Hum.WalkSpeed
                     BodyV.Velocity = Vector3.new(moveDir.X * speed, 0, moveDir.Z * speed)
                 else
                     BodyV.Velocity = Vector3.zero
                 end
-            end 
-        end) 
-    else 
-        if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
-        if BodyV then BodyV:Destroy(); BodyV = nil end 
-    end 
+            end
+        end)
+    else
+        if Connections["WoW"] then Connections["WoW"]:Disconnect() end
+        if BodyV then BodyV:Destroy(); BodyV = nil end
+    end
 end
 
 local function ForceEquipRod()
@@ -451,175 +451,54 @@ local function ForceEquipRod()
         local pkgs = Services.ReplicatedStorage:FindFirstChild("Packages")
         if pkgs then
             local idx = pkgs:FindFirstChild("_Index")
-            if idx then
-                local remote = idx:FindFirstChild("sleitnick_net@0.2.0")
-                if remote then remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(1) end
+            if idx and idx:FindFirstChild("sleitnick_net@0.2.0") then
+                idx["sleitnick_net@0.2.0"].net["RE/EquipToolFromHotbar"]:FireServer(1)
             end
         end
     end)
 end
 
 -- ====================================================
--- [UI COMPONENTS & BUTTONS]
+-- [BUTTON MAPPING]
 -- ====================================================
 
--- >> PAGE MAIN BUTTONS <<
-CreateButton(ScrollMain, "Auto Event", function(state, btn, lbl) 
-    States.AutoEvent = state
-    lbl.Text = "Auto Event: "..(state and "ON" or "OFF")
-    if not state then
-        if IsInEvent and EventStartCFrame and HRP then HRP.CFrame = EventStartCFrame end
-        IsInEvent = false; SetWoW(false)
-    end
-end)
+-- Page Main
+CreateButton(ScrollMain, "Auto Event", function(state, btn, lbl) States.AutoEvent = state; lbl.Text="Auto Event: "..(state and "ON" or "OFF"); if not state then IsInEvent=false; SetWoW(false); if EventStartCFrame and HRP then HRP.CFrame=EventStartCFrame end end end)
+CreateButton(ScrollMain, "Auto Equip", function(state, btn, lbl) States.AutoEquip = state; lbl.Text="Auto Equip: "..(state and "ON" or "OFF") end)
+CreateButton(ScrollMain, "Water Walk", function(state, btn, lbl) SetWoW(state); lbl.Text="Water Walk: "..(state and "ON" or "OFF") end)
+CreateButton(ScrollMain, "Freeze Pos", function(state, btn, lbl) States.Freeze = state; if HRP then HRP.Anchored = state end; lbl.Text="Freeze: "..(state and "ON" or "OFF") end)
+CreateButton(ScrollMain, "No Clip", function(state, btn, lbl) States.Noclip = state; lbl.Text="No Clip: "..(state and "ON" or "OFF"); if state then Connections["Noclip"] = Services.RunService.Stepped:Connect(function() if Player.Character then for _,v in pairs(Player.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide=false end end end end) else if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end end end)
+CreateButton(ScrollMain, "FPS Cap", function(state, btn, lbl) if setfpscap then setfpscap(state and 9999 or 60) end; lbl.Text="FPS Unlock: "..(state and "MAX" or "60") end)
 
-CreateButton(ScrollMain, "Auto Equip", function(state, btn, lbl)
-    States.AutoEquip = state
-    lbl.Text = "Auto Equip: "..(state and "ON" or "OFF")
-end)
+-- Page Misc
+CreateButton(ScrollMisc, "Toggle Anti-Stuck", function(state, btn, lbl) States.AntiStuck = state; lbl.Text="Anti-Stuck: "..(state and "ON" or "OFF"); LastFishCaughtTime = tick() end)
+CreateSlider(ScrollMisc, "Stuck Timeout", 1, 120, 60, function(val) States.StuckTimeout = val end)
+CreateButton(ScrollMisc, "Save Pos", function(state, btn, lbl) if HRP then EventStartCFrame = HRP.CFrame; Notify("Info","Position Saved",2) end end)
+CreateButton(ScrollMisc, "Load Pos", function(state, btn, lbl) if EventStartCFrame and HRP then HRP.CFrame = EventStartCFrame; Notify("Info","Position Loaded",2) end end)
+CreateButton(ScrollMisc, "Rejoin", function() Services.TeleportService:Teleport(game.PlaceId, Player) end)
 
-CreateButton(ScrollMain, "Water Walk", function(state, btn, lbl)
-    SetWoW(state)
-    lbl.Text = "Water Walk: "..(state and "ON" or "OFF")
-end)
-
-CreateButton(ScrollMain, "Freeze Pos", function(state, btn, lbl)
-    States.Freeze = state
-    if HRP then HRP.Anchored = state end
-    lbl.Text = "Freeze: "..(state and "ON" or "OFF")
-end)
-
-CreateButton(ScrollMain, "No Clip", function(state, btn, lbl)
-    States.Noclip = state
-    lbl.Text = "No Clip: "..(state and "ON" or "OFF")
-    if state then
-        Connections["Noclip"] = Services.RunService.Stepped:Connect(function()
-            if Player.Character then
-                for _,v in pairs(Player.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end
-            end
-        end)
-    else
-        if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end
-    end
-end)
-
-CreateButton(ScrollMain, "CPU Booster", function(state, btn, lbl)
-    States.Boost = state
-    lbl.Text = "Booster: "..(state and "ON" or "OFF")
-    if state then
-        Services.Lighting.GlobalShadows = false
-        Notify("Booster", "Graphics lowered for FPS", 2)
-    end
-end)
-
-CreateButton(ScrollMain, "3D Render", function(state, btn, lbl)
-    States.NoRender = not state -- If button ON, Render OFF (logic inverted in UI usually, lets simplify)
-    -- Actually let's make Button ON = Render ON (Standard)
-    -- Original script: Button ON = NoRender ON. I will fix this logic for better UX.
-    -- If button is pressed (ON), we disable rendering? Let's stick to label.
-    if state then 
-        Services.RunService:Set3dRenderingEnabled(false)
-        lbl.Text = "3D Render: OFF"
-    else
-        Services.RunService:Set3dRenderingEnabled(true)
-        lbl.Text = "3D Render: ON"
-    end
-end)
-
-CreateButton(ScrollMain, "FPS Cap", function(state, btn, lbl)
-    -- Simple toggle for max fps
-    if setfpscap then setfpscap(state and 9999 or 60) end
-    lbl.Text = "FPS Unlock: "..(state and "MAX" or "60")
-end)
-
--- >> PAGE MISC COMPONENTS <<
-
--- Anti Stuck Slider
-CreateButton(ScrollMisc, "Toggle Anti-Stuck", function(state, btn, lbl)
-    States.AntiStuck = state
-    lbl.Text = "Anti-Stuck: "..(state and "ACTIVE" or "OFF")
-    LastFishCaughtTime = tick() -- Reset timer
-end)
-
--- Slider Range: 1s to 120s (User asked 0.1-0.6s but that breaks functionality, assuming scaling or typo. 
--- Providing 1-120s covers all practical needs).
-CreateSlider(ScrollMisc, "Stuck Timeout (Sec)", 1, 120, 60, function(val)
-    States.StuckTimeout = val
-end)
-
-CreateButton(ScrollMisc, "Save Position", function(state, btn, lbl)
-    if HRP then SavedCFrame = HRP.CFrame; Notify("Position", "Location Saved!", 2) end
-    task.wait(0.5)
-    -- Auto turn off button visual for "Trigger" type buttons
-    btn.BackgroundColor3 = UI_THEME.SidebarColor
-    lbl.TextColor3 = UI_THEME.TextWhite
-    lbl.Font = UI_THEME.FontReg
-    btn.UIStroke.Transparency = 0.7
-end)
-
-CreateButton(ScrollMisc, "Load Position", function(state, btn, lbl)
-    if SavedCFrame and HRP then HRP.CFrame = SavedCFrame; Notify("Position", "Location Loaded!", 2) end
-    task.wait(0.5)
-    btn.BackgroundColor3 = UI_THEME.SidebarColor
-    lbl.TextColor3 = UI_THEME.TextWhite
-    lbl.Font = UI_THEME.FontReg
-    btn.UIStroke.Transparency = 0.7
-end)
-
-CreateButton(ScrollMisc, "Rejoin Server", function(state, btn, lbl)
-    Services.TeleportService:Teleport(game.PlaceId, Player)
-end)
-
--- >> PAGE WEBHOOK COMPONENTS <<
-
+-- Page Webhook
 local WhInput = Instance.new("TextBox", ScrollHook)
 WhInput.Size = UDim2.new(0.95, 0, 0, 35)
 WhInput.BackgroundColor3 = UI_THEME.SidebarColor
 WhInput.TextColor3 = UI_THEME.Accent
-WhInput.PlaceholderText = "Paste Discord Webhook URL Here..."
-WhInput.PlaceholderColor3 = UI_THEME.TextGray
-WhInput.Font = Enum.Font.Code
+WhInput.PlaceholderText = "Paste Webhook URL..."
 WhInput.TextSize = 10
-WhInput.TextWrapped = true
 Instance.new("UICorner", WhInput).CornerRadius = UDim.new(0, 4)
+WhInput.FocusLost:Connect(function() States.WebhookUrl = WhInput.Text end)
 
-WhInput.FocusLost:Connect(function()
-    States.WebhookUrl = WhInput.Text
+CreateButton(ScrollHook, "Test Webhook", function() 
+    if States.WebhookUrl == "" then Notify("Error","Empty URL",2) return end
+    local req = http_request or request or HttpPost or syn.request
+    if req then req({Url=States.WebhookUrl, Body=Services.HttpService:JSONEncode({content="Test Webhook Success!"}), Method="POST", Headers={["Content-Type"]="application/json"}}) end
 end)
-
-CreateButton(ScrollHook, "Test Webhook", function(state, btn, lbl)
-    if States.WebhookUrl == "" then Notify("Error", "Input URL first!", 2) return end
-    
-    local data = {
-        ["content"] = "",
-        ["embeds"] = {{
-            ["title"] = "Seraphin Helper Test",
-            ["description"] = "Webhook is working correctly!",
-            ["color"] = 65535
-        }}
-    }
-    
-    local headers = {["Content-Type"] = "application/json"}
-    local request = http_request or request or HttpPost or syn.request
-    if request then
-        request({Url = States.WebhookUrl, Body = Services.HttpService:JSONEncode(data), Method = "POST", Headers = headers})
-        Notify("Webhook", "Test sent!", 2)
-    else
-        Notify("Error", "Executor not supported", 2)
-    end
-    
-    task.wait(0.5)
-    btn.BackgroundColor3 = UI_THEME.SidebarColor
-end)
-
-CreateButton(ScrollHook, "Auto Disconnect Notif", function(state, btn, lbl)
-    States.WebhookEnabled = state
-    lbl.Text = "Dc Notify: "..(state and "ON" or "OFF")
-end)
+CreateButton(ScrollHook, "DC Notify", function(state, btn, lbl) States.WebhookEnabled = state; lbl.Text="DC Notify: "..(state and "ON" or "OFF") end)
 
 -- ====================================================
--- [FLOATING HUD]
+-- [LOOPS]
 -- ====================================================
+
+-- Float HUD
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Size = UDim2.new(0, 150, 0, 60)
 FloatHUD.Position = UDim2.new(0.02, 0, 0.4, 0)
@@ -635,7 +514,7 @@ LblFPS.BackgroundTransparency = 1
 LblFPS.Text = "FPS: 60"
 LblFPS.TextColor3 = UI_THEME.Accent
 LblFPS.Font = UI_THEME.FontBold
-LblFPS.TextSize = 18 -- Lebih Besar
+LblFPS.TextSize = 18
 
 local LblFish = Instance.new("TextLabel", FloatHUD)
 LblFish.Position = UDim2.new(0, 0, 0.5, 0)
@@ -646,128 +525,85 @@ LblFish.TextColor3 = UI_THEME.TextWhite
 LblFish.Font = UI_THEME.FontReg
 LblFish.TextSize = 14
 
--- ====================================================
--- [LOOPS & LOGIC]
--- ====================================================
-
--- FPS Monitor
+-- FPS Loop
 local fpsT = 0
 Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1
     LblFPS.Text = "FPS: " .. math.floor(fpsT)
 end)
 
--- Fish Counter Loop
+-- Fish Loop
 task.spawn(function()
     while true do
         task.wait(1)
         pcall(function()
             local ls = Player:FindFirstChild("leaderstats")
-            if ls and ls:FindFirstChild("Caught") then
-                LblFish.Text = "Fish: " .. ls.Caught.Value
-            end
+            if ls and ls:FindFirstChild("Caught") then LblFish.Text = "Fish: " .. ls.Caught.Value end
         end)
     end
 end)
 
--- Anti Stuck Logic
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if States.AntiStuck then
-            pcall(function()
-                local ls = Player:FindFirstChild("leaderstats")
-                local currentFish = (ls and ls:FindFirstChild("Caught")) and ls.Caught.Value or 0
-
-                if currentFish > LastFishCount then
-                    LastFishCount = currentFish
-                    LastFishCaughtTime = tick()
-                else
-                    if (tick() - LastFishCaughtTime) > States.StuckTimeout then
-                        Notify("Anti-Stuck", "Stuck detected! Resetting...", 3)
-                        local stuckPos = HRP.CFrame 
-                        if Hum then Hum.Health = 0 end
-                        Player.CharacterAdded:Wait()
-                        local newChar = Player.Character or Player.CharacterAdded:Wait()
-                        local newHRP = newChar:WaitForChild("HumanoidRootPart", 10)
-                        task.wait(1) 
-                        if newHRP then newHRP.CFrame = stuckPos end
-                        task.wait(0.5)
-                        ForceEquipRod()
-                        LastFishCaughtTime = tick()
-                        LastFishCount = currentFish 
-                    end
-                end
-            end)
-        else
-            LastFishCaughtTime = tick()
-        end
-    end
-end)
-
--- Auto Event Logic
+-- Auto Event
 task.spawn(function()
     while true do
         task.wait(1.5)
         if States.AutoEvent then
             pcall(function()
-                if not HRP then return end
                 local Props = Services.Workspace:FindFirstChild("Props")
                 local FoundEvent = nil
+                if Props then for _, v in pairs(Props:GetChildren()) do if v:IsA("Model") or v:IsA("BasePart") then FoundEvent = v; break end end end
                 
-                if Props then
-                    for _, v in pairs(Props:GetChildren()) do
-                        if v:IsA("Model") or v:IsA("BasePart") then FoundEvent = v; break end
-                    end
-                end
-
                 if FoundEvent then
-                    if not IsInEvent then
-                        EventStartCFrame = HRP.CFrame; IsInEvent = true; Notify("Event", "Event Found!", 2)
-                    end
-                    local targetPos = FoundEvent:GetPivot().Position
-                    if (HRP.Position - targetPos).Magnitude > 15 then
-                        HRP.CFrame = CFrame.new(targetPos.X, targetPos.Y + 3, targetPos.Z)
-                    end
+                    if not IsInEvent then EventStartCFrame = HRP.CFrame; IsInEvent = true; Notify("Event","Started!",2) end
+                    local t = FoundEvent:GetPivot().Position
+                    if (HRP.Position - t).Magnitude > 15 then HRP.CFrame = CFrame.new(t.X, t.Y+3, t.Z) end
                     if not States.WoW then SetWoW(true) end
                 else
-                    if IsInEvent then
-                        IsInEvent = false; Notify("Event", "Event Finished", 2)
-                        if EventStartCFrame then HRP.CFrame = EventStartCFrame end
-                        if States.WoW then SetWoW(false) end
-                    end
+                    if IsInEvent then IsInEvent=false; Notify("Event","Ended",2); if EventStartCFrame then HRP.CFrame=EventStartCFrame end; SetWoW(false) end
                 end
             end)
         end
     end
 end)
 
--- Auto Equip Loop
+-- Anti Stuck & Auto Equip
 task.spawn(function()
     while true do
-        task.wait(2)
+        task.wait(1)
         if States.AutoEquip then ForceEquipRod() end
+        if States.AntiStuck then
+            pcall(function()
+                local ls = Player:FindFirstChild("leaderstats")
+                local cur = (ls and ls:FindFirstChild("Caught")) and ls.Caught.Value or 0
+                if cur > LastFishCount then LastFishCount=cur; LastFishCaughtTime=tick()
+                else
+                    if (tick()-LastFishCaughtTime) > States.StuckTimeout then
+                        Notify("Stuck","Respawning...",3)
+                        local oldPos = HRP.CFrame
+                        if Hum then Hum.Health=0 end
+                        Player.CharacterAdded:Wait()
+                        Char = Player.Character or Player.CharacterAdded:Wait()
+                        HRP = Char:WaitForChild("HumanoidRootPart")
+                        Hum = Char:WaitForChild("Humanoid")
+                        task.wait(1)
+                        HRP.CFrame = oldPos
+                        LastFishCaughtTime=tick()
+                    end
+                end
+            end)
+        else
+            LastFishCaughtTime=tick()
+        end
     end
 end)
 
--- Detect Disconnect (Webhook)
+-- Webhook Disconnect
 Services.GuiService.ErrorMessageChanged:Connect(function()
     if States.WebhookEnabled and States.WebhookUrl ~= "" then
         local err = Services.GuiService:GetErrorMessage()
         if err and err ~= "" then
-            local request = http_request or request or HttpPost or syn.request
-            if request then
-                local data = {
-                    ["content"] = "@everyone Account Disconnected!",
-                    ["embeds"] = {{
-                        ["title"] = "Seraphin Helper Alert",
-                        ["description"] = "Reason: " .. tostring(err),
-                        ["color"] = 16711680,
-                        ["footer"] = { ["text"] = os.date("%X") }
-                    }}
-                }
-                request({Url = States.WebhookUrl, Body = Services.HttpService:JSONEncode(data), Method = "POST", Headers = {["Content-Type"] = "application/json"}})
-            end
+            local req = http_request or request or HttpPost or syn.request
+            if req then req({Url=States.WebhookUrl, Body=Services.HttpService:JSONEncode({content="@everyone DC!", embeds={{title="Disconnect", description=err, color=16711680}}}), Method="POST", Headers={["Content-Type"]="application/json"}}) end
         end
     end
 end)
