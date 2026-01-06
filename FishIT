@@ -1,3 +1,14 @@
+Tentu, ini adalah FULL SCRIPT UI FINAL yang sudah digabungkan dengan semua fitur yang Anda minta:
+ * Side UI Layout (Sidebar Kiri + Konten Kanan).
+ * Ultimate CPU Booster (Pembersih level ekstrem).
+ * Event-Based Logic (0% CPU Usage saat diam).
+ * Custom Notification (Garis Cyan + Teks Bold di pojok kanan bawah).
+ * Anti-Stuck Slider (0.1s - 60s).
+ * Footer Credit (@828_raka).
+Silakan salin dan jalankan:
+-- [[ SERAPHIN HELPER - ULTIMATE SIDE UI ]] --
+-- [[ Optimized by Gemini & @828_raka ]] --
+
 -- [1] Services & Variables
 local Services = {
     Players = game:GetService("Players"),
@@ -22,11 +33,11 @@ Player.CharacterAdded:Connect(function(newChar)
     Hum = newChar:WaitForChild("Humanoid", 10)
 end)
 
--- // UI CONFIGURATION
+-- // UI CONFIGURATION (Dark Theme + Cyan Accent)
 local UI_THEME = {
-    MainColor = Color3.fromRGB(18, 18, 18),
-    SideColor = Color3.fromRGB(12, 12, 12),
-    Accent = Color3.fromRGB(0, 255, 255), -- Cyan
+    MainColor = Color3.fromRGB(18, 18, 18),      -- Hitam Pekat Elegan
+    SideColor = Color3.fromRGB(12, 12, 12),      -- Sidebar Lebih Gelap
+    Accent = Color3.fromRGB(0, 255, 255),        -- Cyan Neon
     TextWhite = Color3.fromRGB(240, 240, 240),
     TextGray = Color3.fromRGB(150, 150, 150),
     Font = Enum.Font.GothamBold,
@@ -64,20 +75,20 @@ local function Notify(title, msg)
     NFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     NFrame.BackgroundTransparency = 0.1
     NFrame.BorderSizePixel = 0
-    NFrame.Position = UDim2.new(1, 260, 0, 0) -- Mulai dari luar layar
+    NFrame.Position = UDim2.new(1, 260, 0, 0) -- Mulai dari luar layar (untuk animasi)
     
-    -- Garis Cyan di Pinggir (Accent)
+    -- Garis Cyan di Pinggir (Accent Bar)
     local AccentBar = Instance.new("Frame", NFrame)
     AccentBar.Size = UDim2.new(0, 3, 1, 0)
     AccentBar.Position = UDim2.new(0, 0, 0, 0)
     AccentBar.BackgroundColor3 = UI_THEME.Accent
     AccentBar.BorderSizePixel = 0
     
-    -- Rounded Corner (Hanya kanan)
+    -- Rounded Corner (Kanan saja)
     local UIC = Instance.new("UICorner", NFrame)
     UIC.CornerRadius = UDim.new(0, 4)
 
-    -- Title (BOLD)
+    -- Title (BOLD CYAN)
     local LblTitle = Instance.new("TextLabel", NFrame)
     LblTitle.Size = UDim2.new(1, -15, 0, 20)
     LblTitle.Position = UDim2.new(0, 10, 0, 5)
@@ -88,7 +99,7 @@ local function Notify(title, msg)
     LblTitle.TextSize = 12
     LblTitle.TextXAlignment = Enum.TextXAlignment.Left
 
-    -- Message (Semi Bold)
+    -- Message (SEMI BOLD WHITE)
     local LblMsg = Instance.new("TextLabel", NFrame)
     LblMsg.Size = UDim2.new(1, -15, 0, 20)
     LblMsg.Position = UDim2.new(0, 10, 0, 22)
@@ -105,7 +116,7 @@ local function Notify(title, msg)
     
     -- Auto Destroy
     task.spawn(function()
-        task.wait(3) -- Durasi tampil
+        task.wait(3.5) -- Durasi tampil
         Services.TweenService:Create(NFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart), {BackgroundTransparency = 1}):Play()
         Services.TweenService:Create(LblTitle, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
         Services.TweenService:Create(LblMsg, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
@@ -119,10 +130,10 @@ end
 Notify("SYSTEM", "Seraphin Ultimate Loaded!")
 
 -- ====================================================
--- [UI CONSTRUCTION]
+-- [UI CONSTRUCTION - MAIN FRAME]
 -- ====================================================
 
--- Main Frame
+-- Main Frame (Wadah Utama)
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 420, 0, 270)
@@ -137,7 +148,7 @@ MainStroke.Color = UI_THEME.Accent
 MainStroke.Thickness = 1.2
 MainStroke.Transparency = 0.3
 
--- Sidebar
+-- Sidebar (Kiri)
 local Sidebar = Instance.new("Frame", MainFrame)
 Sidebar.Name = "Sidebar"
 Sidebar.Size = UDim2.new(0, 100, 1, 0)
@@ -151,14 +162,14 @@ Line.BackgroundColor3 = UI_THEME.Accent
 Line.BackgroundTransparency = 0.8
 Line.BorderSizePixel = 0
 
--- Content Area
+-- Content Area (Kanan)
 local Content = Instance.new("Frame", MainFrame)
 Content.Name = "Content"
 Content.Size = UDim2.new(1, -110, 1, -25)
 Content.Position = UDim2.new(0, 110, 0, 10)
 Content.BackgroundTransparency = 1
 
--- Footer Text
+-- Footer Text (@828_raka)
 local Footer = Instance.new("TextLabel", MainFrame)
 Footer.Text = "@828_raka"
 Footer.Size = UDim2.new(0, 100, 0, 20)
@@ -179,7 +190,7 @@ SideTitle.TextColor3 = UI_THEME.Accent
 SideTitle.Font = Enum.Font.GothamBlack
 SideTitle.TextSize = 14
 
--- Drag Logic
+-- Drag Logic (Agar UI bisa digeser)
 local function EnableDrag(frame)
     local dragToggle, dragStart, startPos, dragInput
     frame.InputBegan:Connect(function(input)
@@ -235,6 +246,7 @@ local BtnHide    = CreateTabBtn("HIDE UI", 4)
 BtnHide.BackgroundColor3 = Color3.fromRGB(40, 10, 10)
 BtnHide.TextColor3 = Color3.fromRGB(255, 100, 100)
 
+-- Page Main
 local PageMain = Instance.new("ScrollingFrame", Content)
 PageMain.Size = UDim2.new(1, 0, 1, 0)
 PageMain.BackgroundTransparency = 1
@@ -245,6 +257,7 @@ local GridMain = Instance.new("UIGridLayout", PageMain)
 GridMain.CellSize = UDim2.new(0, 135, 0, 32)
 GridMain.CellPadding = UDim2.new(0, 8, 0, 8)
 
+-- Page Misc
 local PageMisc = Instance.new("ScrollingFrame", Content)
 PageMisc.Size = UDim2.new(1, 0, 1, 0)
 PageMisc.BackgroundTransparency = 1
@@ -256,6 +269,7 @@ local ListMisc = Instance.new("UIListLayout", PageMisc)
 ListMisc.Padding = UDim.new(0, 8)
 ListMisc.SortOrder = Enum.SortOrder.LayoutOrder
 
+-- Switch Logic
 local function SwitchTab(name, activeBtn)
     for _, p in pairs(Pages) do p.Visible = false end
     Pages[name].Visible = true
@@ -271,6 +285,7 @@ BtnTabMain.MouseButton1Click:Connect(function() SwitchTab("Main", BtnTabMain) en
 BtnTabMisc.MouseButton1Click:Connect(function() SwitchTab("Misc", BtnTabMisc) end)
 SwitchTab("Main", BtnTabMain)
 
+-- Hide UI Logic
 local isHidden = false
 BtnHide.MouseButton1Click:Connect(function()
     isHidden = not isHidden
@@ -289,7 +304,7 @@ BtnHide.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [CORE LOGIC & BOOSTER]
+-- [CORE BUTTON MAKER & VISUALS]
 -- ====================================================
 
 local function MakeBtn(parent, text)
@@ -316,7 +331,7 @@ local function ToggleVisual(btn, on)
     end
 end
 
--- Variables
+-- Variables Global
 local States = {
     AutoEvent = false, AutoEquip = false, WoW = false,
     Freeze = false, Noclip = false, Boost = false,
@@ -327,17 +342,17 @@ local BodyV = nil
 local LastFishTime = tick()
 local LastFishCount = 0
 
--- UI Elements
+-- UI Elements Declaration
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF")
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnNoclip = MakeBtn(PageMain, "Noclip: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON")
-local BtnBoost  = MakeBtn(PageMain, "🔥 ULTIMATE BOOST") -- Updated Name
+local BtnBoost  = MakeBtn(PageMain, "🔥 ULTIMATE BOOST")
 local BtnFps    = MakeBtn(PageMain, "Unlock FPS")
 
--- SLIDER COMPONENT
+-- SLIDER COMPONENT (Untuk Anti Stuck)
 local function CreateSlider(parent, title, min, max, default, callback)
     local Container = Instance.new("Frame", parent)
     Container.Size = UDim2.new(0.95, 0, 0, 50)
@@ -396,7 +411,7 @@ local function CreateSlider(parent, title, min, max, default, callback)
     Fill.Size = UDim2.new(startPercent, 0, 1, 0)
 end
 
--- MISC PAGE SETUP
+-- MISC PAGE SETUP (Stuck & Save)
 local StuckFrame = Instance.new("Frame", PageMisc)
 StuckFrame.Size = UDim2.new(0.95, 0, 0, 85)
 StuckFrame.BackgroundColor3 = Color3.fromRGB(0,0,0) 
@@ -416,7 +431,7 @@ end)
 
 StuckFrame.DescendantsAdded:Connect(function(desc)
     if desc:IsA("Frame") and desc.Size.Y.Offset == 50 then
-        desc.Position = UDim2.new(0, 5, 0, 35)
+        desc.Position = UDim2.new(0, 5, 0, 35) -- Reposition Slider
     end
 end)
 
@@ -664,3 +679,4 @@ task.spawn(function()
         end
     end
 end)
+
