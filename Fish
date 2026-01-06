@@ -420,7 +420,7 @@ Instance.new("UICorner", BtnStuckToggle).CornerRadius = UDim.new(0, 4)
 local s1 = Instance.new("UIStroke", BtnStuckToggle)
 s1.Color = UI_THEME.Accent
 s1.Thickness = 1
-s1.Transparency = 0.4
+s1.Transparency = 0.6
 
 local BoxStuckInput = Instance.new("TextBox", StuckContainer)
 BoxStuckInput.Name = "Input"
