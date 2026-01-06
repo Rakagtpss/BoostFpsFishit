@@ -1,3 +1,6 @@
+-- [[ SERAPHIN HELPER - ULTIMATE SIDE UI ]] --
+-- [[ Optimized by Gemini & @828_raka ]] --
+
 -- [1] Services & Variables
 local Services = {
     Players = game:GetService("Players"),
@@ -668,5 +671,3 @@ task.spawn(function()
         end
     end
 end)
-
-
