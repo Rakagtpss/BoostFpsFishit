@@ -1,14 +1,3 @@
-Tentu, ini adalah FULL SCRIPT UI FINAL yang sudah digabungkan dengan semua fitur yang Anda minta:
- * Side UI Layout (Sidebar Kiri + Konten Kanan).
- * Ultimate CPU Booster (Pembersih level ekstrem).
- * Event-Based Logic (0% CPU Usage saat diam).
- * Custom Notification (Garis Cyan + Teks Bold di pojok kanan bawah).
- * Anti-Stuck Slider (0.1s - 60s).
- * Footer Credit (@828_raka).
-Silakan salin dan jalankan:
--- [[ SERAPHIN HELPER - ULTIMATE SIDE UI ]] --
--- [[ Optimized by Gemini & @828_raka ]] --
-
 -- [1] Services & Variables
 local Services = {
     Players = game:GetService("Players"),
@@ -679,4 +668,5 @@ task.spawn(function()
         end
     end
 end)
+
 
