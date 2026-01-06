@@ -36,8 +36,8 @@ end)
 
 -- // Konfigurasi Visual (TEMA CYAN & LIGHTWEIGHT)
 local UI_THEME = {
-    MinWidth = 260,  
-    MinHeight = 240,
+    MinWidth = 280,  
+    MinHeight = 250,
     Color = Color3.fromRGB(10, 10, 10), 
     Transparency = 0.25, 
     HeaderColor = Color3.fromRGB(5, 5, 5),
@@ -420,7 +420,7 @@ Instance.new("UICorner", BtnStuckToggle).CornerRadius = UDim.new(0, 4)
 local s1 = Instance.new("UIStroke", BtnStuckToggle)
 s1.Color = UI_THEME.Accent
 s1.Thickness = 1
-s1.Transparency = 0.6
+s1.Transparency = 0.4
 
 local BoxStuckInput = Instance.new("TextBox", StuckContainer)
 BoxStuckInput.Name = "Input"
