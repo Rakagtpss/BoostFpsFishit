@@ -470,104 +470,49 @@ local function ForceEquipRod()
     end)
 end
 
--- ====================================================
--- [UPDATED] HOLY TRIDENT FULL (ANIMATION + GRIP)
--- ====================================================
-
--- State Khusus Animasi & Skin
-local AnimState = {
-    Enabled = false,
-    Index = 1
-}
-
--- Asset ID List (Official Holy Trident Set)
-local HOLY_TRIDENT_ANIMS = {
-    "rbxassetid://114917462794864",  -- RodThrow
-    "rbxassetid://83219020397849",   -- StartRodCharge / EquipIdle
-    "rbxassetid://12683185389724",   -- ReelStart / ReelIdle / Intermission
-    "rbxassetid://1128167068291703", -- FishCaught
-}
-
--- [DATA] Holy Trident Skin Offset
-local HOLY_SKIN_DATA = {
-    OverrideC0 = Vector3.new(0.60000, 0, -1.5),
-    OverrideROT = CFrame.fromOrientation(0, (-math.pi/2), 0.7853981633974483)
-}
-
--- Fungsi Override Grip/Posisi
-local function ApplyHolyGrip(char)
-    if not AnimState.Enabled then return end
-    
-    local Tool = char:FindFirstChildOfClass("Tool")
-    if Tool then
-        -- Cari Motor6D di Tangan Kanan
-        local RightGrip = nil
-        local RightHand = char:FindFirstChild("RightHand") -- R15
-        local RightArm = char:FindFirstChild("Right Arm")  -- R6
-        
-        if RightHand then RightGrip = RightHand:FindFirstChild("RightGrip") end
-        if RightArm and not RightGrip then RightGrip = RightArm:FindFirstChild("RightGrip") end
-        
-        if RightGrip then
-            -- TERAPKAN OFFSET DARI DATA USER
-            RightGrip.C0 = CFrame.new(HOLY_SKIN_DATA.OverrideC0) * HOLY_SKIN_DATA.OverrideROT
-        end
-    end
-end
-
--- Core Hook Function (Animation)
-local function HookAnimator(char)
-    local hum = char:WaitForChild("Humanoid", 10)
-    if not hum then return end
-    local animator = hum:WaitForChild("Animator", 10)
-    if not animator then return end
-
-    animator.AnimationPlayed:Connect(function(track)
-        if not AnimState.Enabled then return end
-        
-        -- Apply Grip saat animasi main (untuk memastikan grip tetap terkunci)
-        ApplyHolyGrip(char)
-
-        -- Anti-Crash Loop
-        local currentID = track.Animation.AnimationId
-        local isHoly = false
-        for _, id in pairs(HOLY_TRIDENT_ANIMS) do
-            if currentID == id then isHoly = true; break end
-        end
-        if isHoly then return end
-
-        track:Stop()
-
-        AnimState.Index = AnimState.Index + 1
-        if AnimState.Index > #HOLY_TRIDENT_ANIMS then AnimState.Index = 1 end
-
-        local anim = track.Animation
-        anim.AnimationId = HOLY_TRIDENT_ANIMS[AnimState.Index]
-
-        local newTrack = animator:LoadAnimation(anim)
-        newTrack.Priority = track.Priority
-        newTrack:Play()
-    end)
-    
-    -- Juga apply grip saat tool di-equip
-    char.ChildAdded:Connect(function(child)
-        if child:IsA("Tool") and AnimState.Enabled then
-            task.wait(0.1) -- Tunggu Motor6D dibuat game
-            ApplyHolyGrip(char)
-        end
-    end)
-end
-
--- Auto Hook pada Spawn
-Player.CharacterAdded:Connect(HookAnimator)
-if Player.Character then HookAnimator(Player.Character) end
-
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
-local BtnAnim   = MakeBtn(PageMain, "Holy Anim: OFF") 
+
+-- [REPLACED] Holy Anim -> Sell Enchant Section
+local SellContainer = Instance.new("Frame", PageMain)
+SellContainer.Name = "SellContainer"
+SellContainer.BackgroundTransparency = 1
+
+local BtnSellStones = Instance.new("TextButton", SellContainer)
+BtnSellStones.Name = "BtnSell"
+BtnSellStones.Size = UDim2.new(0.65, -4, 1, 0)
+BtnSellStones.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+BtnSellStones.BackgroundTransparency = 0.5
+BtnSellStones.Text = "Sell Enchants"
+BtnSellStones.TextColor3 = UI_THEME.TextColor
+BtnSellStones.Font = UI_THEME.BtnFont
+BtnSellStones.TextSize = 10
+Instance.new("UICorner", BtnSellStones).CornerRadius = UDim.new(0, 4)
+local sSell = Instance.new("UIStroke", BtnSellStones)
+sSell.Color = Color3.fromRGB(255, 100, 100) -- Red Accent for Sell
+sSell.Thickness = 1
+sSell.Transparency = 0.6
+
+local BoxSellCount = Instance.new("TextBox", SellContainer)
+BoxSellCount.Name = "Input"
+BoxSellCount.Size = UDim2.new(0.35, 0, 1, 0)
+BoxSellCount.Position = UDim2.new(0.65, 0, 0, 0)
+BoxSellCount.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+BoxSellCount.BackgroundTransparency = 0.5
+BoxSellCount.Text = "1" -- Default
+BoxSellCount.PlaceholderText = "Amt"
+BoxSellCount.TextColor3 = UI_THEME.Accent
+BoxSellCount.Font = Enum.Font.GothamBold
+BoxSellCount.TextSize = 10
+Instance.new("UICorner", BoxSellCount).CornerRadius = UDim.new(0, 4)
+local sBox = Instance.new("UIStroke", BoxSellCount)
+sBox.Color = UI_THEME.Accent
+sBox.Thickness = 1
+sBox.Transparency = 0.6
+
 local BtnUltra  = MakeBtn(PageMain, "Ultra HD: OFF") 
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
@@ -1005,19 +950,91 @@ end)
 
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
-BtnAnim.MouseButton1Click:Connect(function() 
-    AnimState.Enabled = not AnimState.Enabled
-    BtnAnim.Text = "Holy Anim: " .. (AnimState.Enabled and "ON" or "OFF")
-    ToggleVisual(BtnAnim, AnimState.Enabled)
-    
-    if AnimState.Enabled then
-        Notify("ANIMATION", "Holy Override ENABLED", Color3.fromRGB(0, 255, 100))
-        -- Paksa Terapkan Grip (Offset) saat diaktifkan
-        local Char = Player.Character
-        if Char then ApplyHolyGrip(Char) end
-    else
-        Notify("ANIMATION", "Holy Override DISABLED", Color3.fromRGB(255, 100, 100))
+-- ====================================================
+-- [NEW LOGIC] SELL ENCHANT CUSTOM AMOUNT (GUID FIX)
+-- ====================================================
+BtnSellStones.MouseButton1Click:Connect(function()
+    local amountToSell = tonumber(BoxSellCount.Text)
+    if not amountToSell or amountToSell <= 0 then 
+        Notify("ERROR", "Invalid Amount!", Color3.fromRGB(255, 50, 50))
+        return 
     end
+
+    Notify("SYSTEM", "Scanning for Enchant Stones...", UI_THEME.Accent)
+    
+    task.spawn(function()
+        local Net = Services.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+        local EquipRemote = Net:FindFirstChild("RE/EquipItem")
+        local SellRemote = Net:FindFirstChild("RF/SellItem")
+        
+        -- Coba cari Remote GetInventory (Knit/Sleitnick standard)
+        local GetInvRemote = Net:FindFirstChild("RF/GetInventory") or Net:FindFirstChild("RF/GetPlayerData")
+        
+        if not EquipRemote or not SellRemote then
+            Notify("ERROR", "Remotes not found! Game Updated?", Color3.fromRGB(255, 0, 0))
+            return
+        end
+
+        local foundGUIDs = {}
+        
+        -- METHOD 1: Fetch via Remote (Best)
+        if GetInvRemote then
+            local success, data = pcall(function() return GetInvRemote:InvokeServer() end)
+            if success and type(data) == "table" then
+                -- Sesuaikan path inventory jika ada nested table (misal data.Inventory)
+                local inventory = data.Inventory or data 
+                for _, item in pairs(inventory) do
+                    -- Check nama item (sesuaikan jika nama di game berbeda, misal "Enchant Relic")
+                    if item.Name == "Enchant Stones" or item.Name == "Enchant Stone" then
+                        table.insert(foundGUIDs, item.Id or item.UUID or item.Guid)
+                    end
+                end
+            end
+        end
+
+        -- METHOD 2: Fallback (Scan PlayerGui jika Remote gagal/kosong)
+        if #foundGUIDs == 0 then
+            local PlayerGui = Player:FindFirstChild("PlayerGui")
+            -- Scanning kasar UI Inventory (Backup Logic)
+            for _, v in pairs(PlayerGui:GetDescendants()) do
+                if v:IsA("TextLabel") and (v.Text == "Enchant Stones" or v.Text == "Enchant Stone") then
+                    local frame = v.Parent
+                    -- Biasanya GUID ada di atribut atau nama frame
+                    local potentialGUID = frame:GetAttribute("ItemId") or frame.Name
+                    if potentialGUID and #potentialGUID > 10 then -- GUID biasanya panjang
+                        table.insert(foundGUIDs, potentialGUID)
+                    end
+                end
+            end
+        end
+        
+        -- Check Results
+        if #foundGUIDs == 0 then
+            Notify("SYSTEM", "No Enchant Stones Found!", Color3.fromRGB(255, 100, 100))
+            return
+        end
+
+        local sellCount = math.min(amountToSell, #foundGUIDs)
+        Notify("SELLING", "Selling " .. sellCount .. " stones...", Color3.fromRGB(0, 255, 0))
+        
+        for i = 1, sellCount do
+            local guid = foundGUIDs[i]
+            
+            -- 1. Equip (Server args: {GUID, Name})
+            EquipRemote:FireServer(unpack({guid, "Enchant Stones"}))
+            task.wait(0.1)
+            
+            -- 2. Sell (Server args: {GUID})
+            SellRemote:InvokeServer(unpack({guid}))
+            
+            -- Visual Update di tombol
+            BtnSellStones.Text = "Selling: " .. i .. "/" .. sellCount
+            task.wait(0.35) -- Delay aman agar tidak kena rate limit
+        end
+        
+        BtnSellStones.Text = "Sell Enchants"
+        Notify("SUCCESS", "Sold " .. sellCount .. " Enchant Stones!", UI_THEME.Accent)
+    end)
 end)
 
 BtnEvent.MouseButton1Click:Connect(function()
