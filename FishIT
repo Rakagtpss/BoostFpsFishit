@@ -274,7 +274,8 @@ EnableDrag(FloatHUD, FloatHUD)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0) 
 Title.Position = UDim2.new(0, 10, 0, 0) 
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  <font size=\"10\" color=\"rgb(180,180,180)\">@828_raka</font>" 
+-- [UPDATED HEADER] Custom Name Request
+Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  <font size=\"12\" color=\"rgb(200,200,200)\">by @828_raka</font>" 
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = UI_THEME.Font
@@ -758,8 +759,9 @@ Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
     if Title and currentFps then
+        -- [UPDATED] Keep the footer consistent
         Title.Text = string.format(
-            "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  <font size=\"10\" color=\"rgb(180,180,180)\">@828_raka</font> | FPS: <b>%d</b>", 
+            "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  <font size=\"12\" color=\"rgb(200,200,200)\">by @828_raka</font> | FPS: <b>%d</b>", 
             currentFps
         )
     end
@@ -951,7 +953,7 @@ end)
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
 -- ====================================================
--- [NEW LOGIC] SELL ENCHANT CUSTOM AMOUNT (GUID FIX)
+-- [UPDATED] SELL ENCHANT CUSTOM AMOUNT (InventoryController Scan)
 -- ====================================================
 BtnSellStones.MouseButton1Click:Connect(function()
     local amountToSell = tonumber(BoxSellCount.Text)
@@ -960,80 +962,73 @@ BtnSellStones.MouseButton1Click:Connect(function()
         return 
     end
 
-    Notify("SYSTEM", "Scanning for Enchant Stones...", UI_THEME.Accent)
+    Notify("SYSTEM", "Scanning Inventory...", UI_THEME.Accent)
     
     task.spawn(function()
         local Net = Services.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
-        local EquipRemote = Net:FindFirstChild("RE/EquipItem")
-        local SellRemote = Net:FindFirstChild("RF/SellItem")
+        local EquipRemote = Net:WaitForChild("RE/EquipItem")
+        local SellRemote = Net:WaitForChild("RF/SellItem")
+
+        -- 1. Scan Inventory via Controller (Preferred Method)
+        local inventoryData = {}
+        local success, result = pcall(function()
+            -- Access InventoryController directly as requested
+            local InvController = require(Services.ReplicatedStorage.Controllers.InventoryController)
+            return InvController.Inventory -- Biasanya ada di table Inventory
+        end)
         
-        -- Coba cari Remote GetInventory (Knit/Sleitnick standard)
-        local GetInvRemote = Net:FindFirstChild("RF/GetInventory") or Net:FindFirstChild("RF/GetPlayerData")
-        
-        if not EquipRemote or not SellRemote then
-            Notify("ERROR", "Remotes not found! Game Updated?", Color3.fromRGB(255, 0, 0))
-            return
+        -- Fallback jika Controller tidak bisa di-require (Executor limitation)
+        if not success or not result then
+             local GetInv = Net:FindFirstChild("RF/GetInventory")
+             if GetInv then
+                 result = GetInv:InvokeServer()
+             end
         end
 
-        local foundGUIDs = {}
+        if not result then
+            Notify("ERROR", "Failed to get Inventory Data!", Color3.fromRGB(255, 0, 0))
+            return
+        end
         
-        -- METHOD 1: Fetch via Remote (Best)
-        if GetInvRemote then
-            local success, data = pcall(function() return GetInvRemote:InvokeServer() end)
-            if success and type(data) == "table" then
-                -- Sesuaikan path inventory jika ada nested table (misal data.Inventory)
-                local inventory = data.Inventory or data 
-                for _, item in pairs(inventory) do
-                    -- Check nama item (sesuaikan jika nama di game berbeda, misal "Enchant Relic")
-                    if item.Name == "Enchant Stones" or item.Name == "Enchant Stone" then
-                        table.insert(foundGUIDs, item.Id or item.UUID or item.Guid)
-                    end
-                end
+        inventoryData = result
+
+        -- 2. Filter Stones & Collect GUIDs
+        local stones = {}
+        for _, item in pairs(inventoryData) do
+            -- Cek nama item (Pastikan sesuai nama in-game)
+            if item.Name == "Enchant Stones" or item.Name == "Enchant Stone" then
+                -- Ambil GUID (biasanya di field 'Id', 'UUID', atau 'Guid')
+                table.insert(stones, item.Id or item.UUID or item.Guid)
             end
         end
 
-        -- METHOD 2: Fallback (Scan PlayerGui jika Remote gagal/kosong)
-        if #foundGUIDs == 0 then
-            local PlayerGui = Player:FindFirstChild("PlayerGui")
-            -- Scanning kasar UI Inventory (Backup Logic)
-            for _, v in pairs(PlayerGui:GetDescendants()) do
-                if v:IsA("TextLabel") and (v.Text == "Enchant Stones" or v.Text == "Enchant Stone") then
-                    local frame = v.Parent
-                    -- Biasanya GUID ada di atribut atau nama frame
-                    local potentialGUID = frame:GetAttribute("ItemId") or frame.Name
-                    if potentialGUID and #potentialGUID > 10 then -- GUID biasanya panjang
-                        table.insert(foundGUIDs, potentialGUID)
-                    end
-                end
-            end
-        end
-        
-        -- Check Results
-        if #foundGUIDs == 0 then
-            Notify("SYSTEM", "No Enchant Stones Found!", Color3.fromRGB(255, 100, 100))
-            return
+        if #stones == 0 then
+             Notify("SYSTEM", "No Enchant Stones Found!", Color3.fromRGB(255, 100, 100))
+             return
         end
 
-        local sellCount = math.min(amountToSell, #foundGUIDs)
+        local sellCount = math.min(amountToSell, #stones)
         Notify("SELLING", "Selling " .. sellCount .. " stones...", Color3.fromRGB(0, 255, 0))
         
+        -- 3. Execute Sell Loop
         for i = 1, sellCount do
-            local guid = foundGUIDs[i]
+            local guid = stones[i]
             
-            -- 1. Equip (Server args: {GUID, Name})
-            EquipRemote:FireServer(unpack({guid, "Enchant Stones"}))
-            task.wait(0.1)
+            -- Equip Args: {GUID, Name}
+            local argsEquip = { guid, "Enchant Stones" }
+            EquipRemote:FireServer(unpack(argsEquip))
             
-            -- 2. Sell (Server args: {GUID})
-            SellRemote:InvokeServer(unpack({guid}))
+            -- Sell Args: {GUID}
+            local argsSell = { guid }
+            SellRemote:InvokeServer(unpack(argsSell))
             
-            -- Visual Update di tombol
+            -- Update UI
             BtnSellStones.Text = "Selling: " .. i .. "/" .. sellCount
-            task.wait(0.35) -- Delay aman agar tidak kena rate limit
+            task.wait(0.25) -- Delay agar aman dari rate limit
         end
         
         BtnSellStones.Text = "Sell Enchants"
-        Notify("SUCCESS", "Sold " .. sellCount .. " Enchant Stones!", UI_THEME.Accent)
+        Notify("SUCCESS", "Sold " .. sellCount .. " Stones!", UI_THEME.Accent)
     end)
 end)
 
