@@ -442,7 +442,7 @@ end
 -- States
 local States = {
     Freeze=false, WoW=false, Boost=false, Ultra=false, NoRender=false, 
-    Noclip=false, Panel=true, AutoEquip=false, Anim=false,
+    Noclip=false, Panel=true, AutoEquip=false, 
     AutoEvent=false, AntiStuck=false, StuckTimeout=60 
 }
 local SavedCFrame = nil 
@@ -471,58 +471,74 @@ local function ForceEquipRod()
 end
 
 -- ====================================================
--- [FUNCTION] ANIMATION REPLACER (HOLY TRIDENT)
+-- [UPDATED] HOLY TRIDENT FULL ANIMATION OVERRIDE
 -- ====================================================
-local function OverwriteAnimationIDs()
-    local success, err = pcall(function()
-        local RS = game:GetService("ReplicatedStorage")
-        local Modules = RS:WaitForChild("Modules", 5)
-        if not Modules then return end
-        local Anims = Modules:WaitForChild("Animations", 5)
-        if not Anims then return end
 
-        local Replacements = {
-            ["Holy Trident - FishCaught"]     = "rbxassetid://128167068291703",
-            ["Holy Trident - EquipIdle"]      = "rbxassetid://83219020397849",
-            ["Holy Trident - ReelStart"]      = "rbxassetid://126831815839724",
-            ["Holy Trident - ReelingIdle"]    = "rbxassetid://126831815839724",
-            ["Holy Trident - RodThrow"]       = "rbxassetid://114917462794864",
-            ["Holy Trident - StartRodCharge"] = "rbxassetid://83219020397849"
-        }
+-- State Khusus Animasi
+local AnimState = {
+    Enabled = false,
+    Index = 1
+}
 
-        -- Ganti Animasi Utama
-        for name, id in pairs(Replacements) do
-            local obj = Anims:FindFirstChild(name)
-            if obj then
-                if obj:IsA("StringValue") then obj.Value = id
-                elseif obj:IsA("Animation") then obj.AnimationId = id end
+-- Asset ID List (Official Holy Trident Set)
+local HOLY_TRIDENT_ANIMS = {
+    "rbxassetid://114917462794864",  -- RodThrow
+    "rbxassetid://83219020397849",   -- StartRodCharge / EquipIdle
+    "rbxassetid://12683185389724",   -- ReelStart / ReelIdle / Intermission
+    "rbxassetid://1128167068291703", -- FishCaught
+}
+
+-- Core Hook Function
+local function HookAnimator(char)
+    local hum = char:WaitForChild("Humanoid", 10)
+    if not hum then return end
+    local animator = hum:WaitForChild("Animator", 10)
+    if not animator then return end
+
+    animator.AnimationPlayed:Connect(function(track)
+        if not AnimState.Enabled then return end
+        
+        -- Anti-Crash Loop: Jangan proses jika animasi sudah ID Holy Trident
+        local currentID = track.Animation.AnimationId
+        local isHoly = false
+        for _, id in pairs(HOLY_TRIDENT_ANIMS) do
+            if currentID == id then 
+                isHoly = true
+                break 
             end
         end
+        if isHoly then return end
 
-        -- Ganti Sub-Animasi (ReelIntermission ada di dalam ReelStart)
-        local ReelStart = Anims:FindFirstChild("Holy Trident - ReelStart")
-        if ReelStart then
-            local Intermission = ReelStart:FindFirstChild("Holy Trident - ReelIntermission")
-            if Intermission then
-                 if Intermission:IsA("StringValue") then Intermission.Value = "rbxassetid://126831815839724"
-                 elseif Intermission:IsA("Animation") then Intermission.AnimationId = "rbxassetid://126831815839724" end
-            end
+        -- Hentikan animasi asli
+        track:Stop()
+
+        -- Rotate index animasi (Cycle 1-4)
+        AnimState.Index = AnimState.Index + 1
+        if AnimState.Index > #HOLY_TRIDENT_ANIMS then
+            AnimState.Index = 1
         end
+
+        -- Terapkan Override
+        local anim = track.Animation
+        anim.AnimationId = HOLY_TRIDENT_ANIMS[AnimState.Index]
+
+        -- Mainkan ulang dengan ID baru
+        local newTrack = animator:LoadAnimation(anim)
+        newTrack.Priority = track.Priority
+        newTrack:Play()
     end)
-    
-    if success then
-        Notify("ANIMATION", "Holy Animations Applied!", UI_THEME.Accent)
-    else
-        warn("Anim Error:", err)
-    end
 end
+
+-- Auto Hook pada Spawn
+Player.CharacterAdded:Connect(HookAnimator)
+if Player.Character then HookAnimator(Player.Character) end
 
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
-local BtnAnim   = MakeBtn(PageMain, "Holy Anim: OFF") -- [ADDED BACK]
+local BtnAnim   = MakeBtn(PageMain, "Holy Anim: OFF") 
 local BtnUltra  = MakeBtn(PageMain, "Ultra HD: OFF") 
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
@@ -961,22 +977,14 @@ end)
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
 BtnAnim.MouseButton1Click:Connect(function() 
-    States.Anim = not States.Anim
-    BtnAnim.Text = "Holy Anim: " .. (States.Anim and "ON" or "OFF")
-    ToggleVisual(BtnAnim, States.Anim)
+    AnimState.Enabled = not AnimState.Enabled
+    BtnAnim.Text = "Holy Anim: " .. (AnimState.Enabled and "ON" or "OFF")
+    ToggleVisual(BtnAnim, AnimState.Enabled)
     
-    if States.Anim then
-        OverwriteAnimationIDs()
-        -- Auto Re-equip agar animasi langsung berubah
-        local Char = Player.Character
-        if Char then
-            local Tool = Char:FindFirstChildOfClass("Tool")
-            if Tool then Tool.Parent = Player.Backpack end
-            task.wait(0.2)
-            ForceEquipRod()
-        end
+    if AnimState.Enabled then
+        Notify("ANIMATION", "Holy Override ENABLED", Color3.fromRGB(0, 255, 100))
     else
-        Notify("ANIMATION", "Disabled (Rejoin to Reset)", Color3.fromRGB(200, 200, 200), 4)
+        Notify("ANIMATION", "Holy Override DISABLED", Color3.fromRGB(255, 100, 100))
     end
 end)
 
