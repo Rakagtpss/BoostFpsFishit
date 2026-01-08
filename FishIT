@@ -346,7 +346,7 @@ PageMain.BorderSizePixel = 0
 PageMain.ScrollBarThickness = 4
 PageMain.ScrollBarImageColor3 = UI_THEME.Accent
 PageMain.Visible = true
-PageMain.AutomaticCanvasSize = Enum.AutomaticSize.Y -- Auto panjang ke bawah
+PageMain.AutomaticCanvasSize = Enum.AutomaticSize.Y 
 PageMain.CanvasSize = UDim2.new(0, 0, 0, 0) 
 
 local MainLayout = Instance.new("UIListLayout", PageMain)
@@ -371,7 +371,7 @@ local SellWidget = Instance.new("Frame", PageMain)
 SellWidget.Name = "SellWidget"
 SellWidget.LayoutOrder = 2
 SellWidget.Size = UDim2.new(0.95, 0, 0, 95) -- Ukuran Widget
-SellWidget.BackgroundColor3 = Color3.fromRGB(20, 20, 20) -- Sedikit lebih gelap agar kontras
+SellWidget.BackgroundColor3 = Color3.fromRGB(20, 20, 20) 
 SellWidget.BackgroundTransparency = 0.3
 Instance.new("UICorner", SellWidget).CornerRadius = UDim.new(0, 6)
 local WidgetStroke = Instance.new("UIStroke", SellWidget)
@@ -397,7 +397,7 @@ SellControls.BackgroundTransparency = 1
 
 local BoxSellCount = Instance.new("TextBox", SellControls)
 BoxSellCount.Name = "Input"
-BoxSellCount.Size = UDim2.new(0.25, 0, 1, 0) -- Lebar input box
+BoxSellCount.Size = UDim2.new(0.25, 0, 1, 0) 
 BoxSellCount.Position = UDim2.new(0, 0, 0, 0)
 BoxSellCount.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 BoxSellCount.BackgroundTransparency = 0.4
@@ -414,9 +414,9 @@ sBox.Transparency = 0.6
 
 local BtnSellStones = Instance.new("TextButton", SellControls)
 BtnSellStones.Name = "BtnSell"
-BtnSellStones.Size = UDim2.new(0.72, 0, 1, 0) -- Lebar tombol sisa
+BtnSellStones.Size = UDim2.new(0.72, 0, 1, 0) 
 BtnSellStones.Position = UDim2.new(0.28, 0, 0, 0)
-BtnSellStones.BackgroundColor3 = Color3.fromRGB(80, 20, 20) -- Merah Gelap Elegan
+BtnSellStones.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
 BtnSellStones.BackgroundTransparency = 0.2
 BtnSellStones.Text = "SELL SELECTED"
 BtnSellStones.TextColor3 = Color3.new(1,1,1)
@@ -428,7 +428,7 @@ sSell.Color = Color3.fromRGB(255, 80, 80)
 sSell.Thickness = 1
 sSell.Transparency = 0.4
 
--- Status Label (Counter)
+-- Status Label
 local LblOwnedInfo = Instance.new("TextLabel", SellWidget)
 LblOwnedInfo.Name = "LblOwned"
 LblOwnedInfo.Size = UDim2.new(1, 0, 0, 20)
@@ -986,11 +986,13 @@ end)
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
 -- ====================================================
--- [UPDATED] SELL ENCHANT LOGIC (DEEP SCAN)
+-- [UPDATED] SELL ENCHANT LOGIC (DEEP SCAN & FIXED PATH)
 -- ====================================================
 
 local function GetEnchantData()
     local stones = {}
+    
+    -- [1] Scan Standard Controller
     pcall(function()
         local inventoryData = nil
         local success, res = pcall(function()
@@ -998,6 +1000,7 @@ local function GetEnchantData()
         end)
         if success then inventoryData = res end
 
+        -- [2] Scan Fallback CorePackages
         if not inventoryData then
             pcall(function()
                 local mod = require(game:GetService("CorePackages").Workspace.Packages._Workspace.ProfilePlatform.ProfilePlatform.Components.Inventory)
@@ -1005,6 +1008,21 @@ local function GetEnchantData()
             end)
         end
         
+        -- [3] Scan NEW: ReplicatedStorage Direct (User Request)
+        if not inventoryData then
+             pcall(function()
+                 -- Cari Module bernama Inventory atau Data di ReplicatedStorage Root
+                 local DirectInv = Services.ReplicatedStorage:FindFirstChild("Inventory") or Services.ReplicatedStorage:FindFirstChild("Data")
+                 if DirectInv and DirectInv:IsA("ModuleScript") then
+                     local success, data = pcall(require, DirectInv)
+                     if success and (data.Inventory or type(data) == "table") then
+                         inventoryData = data.Inventory or data
+                     end
+                 end
+             end)
+        end
+
+        -- Parse Data
         if inventoryData then
             for _, item in pairs(inventoryData) do
                 if item.Name == "Enchant Stones" or item.Name == "Enchant Stone" then
@@ -1014,6 +1032,7 @@ local function GetEnchantData()
         end
     end)
     
+    -- [4] Scan UI (Last Resort)
     if #stones == 0 then
         local PG = Player:FindFirstChild("PlayerGui")
         if PG then
