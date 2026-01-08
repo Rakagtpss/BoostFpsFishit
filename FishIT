@@ -476,34 +476,38 @@ end
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 
--- [REPLACED] Holy Anim -> Sell Enchant Section
+-- ====================================================
+-- [REPLACED] SELL ENCHANT UI (FIXED)
+-- ====================================================
 local SellContainer = Instance.new("Frame", PageMain)
 SellContainer.Name = "SellContainer"
 SellContainer.BackgroundTransparency = 1
 
+-- [1] Tombol Sell
 local BtnSellStones = Instance.new("TextButton", SellContainer)
 BtnSellStones.Name = "BtnSell"
-BtnSellStones.Size = UDim2.new(0.65, -4, 1, 0)
+BtnSellStones.Size = UDim2.new(0.45, -4, 1, 0)
 BtnSellStones.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 BtnSellStones.BackgroundTransparency = 0.5
-BtnSellStones.Text = "Sell Enchants"
+BtnSellStones.Text = "SELL"
 BtnSellStones.TextColor3 = UI_THEME.TextColor
 BtnSellStones.Font = UI_THEME.BtnFont
 BtnSellStones.TextSize = 10
 Instance.new("UICorner", BtnSellStones).CornerRadius = UDim.new(0, 4)
 local sSell = Instance.new("UIStroke", BtnSellStones)
-sSell.Color = Color3.fromRGB(255, 100, 100) -- Red Accent for Sell
+sSell.Color = Color3.fromRGB(255, 80, 80) -- Merah
 sSell.Thickness = 1
 sSell.Transparency = 0.6
 
+-- [2] Input Jumlah
 local BoxSellCount = Instance.new("TextBox", SellContainer)
 BoxSellCount.Name = "Input"
-BoxSellCount.Size = UDim2.new(0.35, 0, 1, 0)
-BoxSellCount.Position = UDim2.new(0.65, 0, 0, 0)
+BoxSellCount.Size = UDim2.new(0.25, 0, 1, 0)
+BoxSellCount.Position = UDim2.new(0.45, 0, 0, 0)
 BoxSellCount.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 BoxSellCount.BackgroundTransparency = 0.5
-BoxSellCount.Text = "1" -- Default
-BoxSellCount.PlaceholderText = "Amt"
+BoxSellCount.Text = "1"
+BoxSellCount.PlaceholderText = "#"
 BoxSellCount.TextColor3 = UI_THEME.Accent
 BoxSellCount.Font = Enum.Font.GothamBold
 BoxSellCount.TextSize = 10
@@ -512,6 +516,23 @@ local sBox = Instance.new("UIStroke", BoxSellCount)
 sBox.Color = UI_THEME.Accent
 sBox.Thickness = 1
 sBox.Transparency = 0.6
+
+-- [3] Label Info Jumlah (Owned)
+local LblOwnedInfo = Instance.new("TextLabel", SellContainer)
+LblOwnedInfo.Name = "LblOwned"
+LblOwnedInfo.Size = UDim2.new(0.30, -4, 1, 0)
+LblOwnedInfo.Position = UDim2.new(0.70, 4, 0, 0)
+LblOwnedInfo.BackgroundColor3 = Color3.fromRGB(0,0,0)
+LblOwnedInfo.BackgroundTransparency = 0.6
+LblOwnedInfo.Text = "Owned: ..."
+LblOwnedInfo.TextColor3 = Color3.fromRGB(200, 200, 200)
+LblOwnedInfo.Font = Enum.Font.GothamBold
+LblOwnedInfo.TextSize = 9
+Instance.new("UICorner", LblOwnedInfo).CornerRadius = UDim.new(0, 4)
+Instance.new("UIStroke", LblOwnedInfo).Color = UI_THEME.SubTextColor
+Instance.new("UIStroke", LblOwnedInfo).Transparency = 0.8
+
+-- --------------------------------------------------------------------------------
 
 local BtnUltra  = MakeBtn(PageMain, "Ultra HD: OFF") 
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
@@ -952,76 +973,31 @@ end)
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
 -- ====================================================
--- [UPDATED] SELL ENCHANT (Fixed: Sell 1 per loop)
+-- [UPDATED] SELL ENCHANT LOGIC (DEEP SCAN & FIXED LIMIT)
 -- ====================================================
-BtnSellStones.MouseButton1Click:Connect(function()
-    local amountToSell = tonumber(BoxSellCount.Text)
-    if not amountToSell or amountToSell <= 0 then 
-        Notify("ERROR", "Invalid Amount!", Color3.fromRGB(255, 50, 50))
-        return 
-    end
 
-    Notify("SYSTEM", "Scanning Inventory...", UI_THEME.Accent)
+local function GetEnchantData()
+    local stones = {}
     
-    task.spawn(function()
-        local Net = Services.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
-        local EquipRemote = Net:WaitForChild("RE/EquipItem")
-        local SellRemote = Net:WaitForChild("RF/SellItem")
-
+    -- Coba Scan Inventory via Remote / Module
+    pcall(function()
         local inventoryData = nil
-
-        -- [METHOD 1] ReplicatedStorage Controller
+        
+        -- Cara 1: Controller
         local success, res = pcall(function()
-            local InvController = require(Services.ReplicatedStorage.Controllers.InventoryController)
-            return InvController.Inventory 
+            return require(Services.ReplicatedStorage.Controllers.InventoryController).Inventory 
         end)
-        if success and res then inventoryData = res end
+        if success then inventoryData = res end
 
-        -- [METHOD 2] CorePackages Path
+        -- Cara 2: CorePackages (Fallback)
         if not inventoryData then
             pcall(function()
-                local path = game:GetService("CorePackages").Workspace.Packages._Workspace.ProfilePlatform.ProfilePlatform.Components.Inventory
-                local mod = require(path)
+                local mod = require(game:GetService("CorePackages").Workspace.Packages._Workspace.ProfilePlatform.ProfilePlatform.Components.Inventory)
                 inventoryData = mod.Inventory or mod
             end)
         end
-
-        -- [METHOD 3] ReplicatedStorage Direct
-        if not inventoryData then
-            pcall(function()
-                local path = game:GetService("ReplicatedStorage")
-                if path:FindFirstChild("Inventory") then
-                     local mod = require(path.Inventory)
-                     inventoryData = mod.Inventory or mod
-                end
-            end)
-        end
-
-        -- [METHOD 4] UI Scan
-        local uiStones = {}
-        if not inventoryData then
-            local PG = Player:FindFirstChild("PlayerGui")
-            if PG then
-                for _, desc in pairs(PG:GetDescendants()) do
-                    if desc:IsA("TextLabel") and (desc.Text == "Enchant Stones" or desc.Text == "Enchant Stone") then
-                        local parent = desc.Parent
-                        local foundID = parent:GetAttribute("ItemId") or parent:GetAttribute("Guid") or parent:GetAttribute("UUID")
-                        if foundID then table.insert(uiStones, foundID) end
-                    end
-                end
-            end
-        end
-
-        -- [METHOD 5] Fallback Remote
-        if not inventoryData and #uiStones == 0 then
-             local GetInv = Net:FindFirstChild("RF/GetInventory")
-             if GetInv then
-                 inventoryData = GetInv:InvokeServer()
-             end
-        end
-
-        -- Collect GUIDs
-        local stones = {}
+        
+        -- Filter Item "Enchant Stones"
         if inventoryData then
             for _, item in pairs(inventoryData) do
                 if item.Name == "Enchant Stones" or item.Name == "Enchant Stone" then
@@ -1029,33 +1005,88 @@ BtnSellStones.MouseButton1Click:Connect(function()
                 end
             end
         end
-        for _, id in pairs(uiStones) do table.insert(stones, id) end
-
-        if #stones == 0 then
-             Notify("SYSTEM", "No Enchant Stones Found!", Color3.fromRGB(255, 100, 100))
-             return
+    end)
+    
+    -- Cara 3: UI Scan (Jika data internal gagal)
+    if #stones == 0 then
+        local PG = Player:FindFirstChild("PlayerGui")
+        if PG then
+            for _, desc in pairs(PG:GetDescendants()) do
+                if desc:IsA("TextLabel") and (string.find(desc.Text, "Enchant Stone")) then
+                    local parent = desc.Parent
+                    local foundID = parent:GetAttribute("ItemId") or parent:GetAttribute("Guid") or parent:GetAttribute("UUID")
+                    if foundID and not table.find(stones, foundID) then 
+                        table.insert(stones, foundID) 
+                    end
+                end
+            end
         end
+    end
 
-        local sellCount = math.min(amountToSell, #stones)
-        Notify("SELLING", "Selling " .. sellCount .. " stones...", Color3.fromRGB(0, 255, 0))
-        
-        -- EXECUTE SELL LOOP (FIXED: Added Quantity '1')
-        for i = 1, sellCount do
-            local guid = stones[i]
+    return stones
+end
+
+-- [LOOP] Auto Scan Jumlah Item (Setiap 1 Detik)
+task.spawn(function()
+    while true do
+        if Main.Visible then -- Hemat resource, scan cuma kalau UI buka
+            local myStones = GetEnchantData()
+            LblOwnedInfo.Text = "Owned: " .. #myStones
+        end
+        task.wait(1)
+    end
+end)
+
+-- [ACTION] Sell Logic
+BtnSellStones.MouseButton1Click:Connect(function()
+    local amountToSell = tonumber(BoxSellCount.Text)
+    if not amountToSell or amountToSell <= 0 then 
+        Notify("ERROR", "Masukkan jumlah valid!", Color3.fromRGB(255, 50, 50))
+        return 
+    end
+
+    local myStones = GetEnchantData()
+    local totalOwned = #myStones
+
+    if totalOwned == 0 then
+        Notify("SYSTEM", "Kamu tidak punya Enchant Stones!", Color3.fromRGB(255, 100, 100))
+        return
+    end
+
+    -- Pastikan tidak menjual lebih dari yang dimiliki
+    local actualSellCount = math.min(amountToSell, totalOwned)
+    
+    Notify("SELLING", "Menjual " .. actualSellCount .. " stones...", Color3.fromRGB(255, 255, 0))
+
+    -- Remote setup
+    local Net = Services.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+    local EquipRemote = Net:WaitForChild("RE/EquipItem")
+    local SellRemote = Net:WaitForChild("RF/SellItem")
+
+    task.spawn(function()
+        for i = 1, actualSellCount do
+            -- Ambil ID berdasarkan index
+            local guid = myStones[i]
             
-            -- Equip
-            EquipRemote:FireServer(guid, "Enchant Stones")
-            
-            -- Sell (Sending '1' to prevent full stack sell)
-            SellRemote:InvokeServer(guid, 1)
-            
-            -- Update UI
-            BtnSellStones.Text = "Selling: " .. i .. "/" .. sellCount
-            task.wait(0.25) 
+            if guid then
+                -- 1. Equip Item (Penting agar server mendeteksi item aktif)
+                EquipRemote:FireServer(guid, "Enchant Stones")
+                
+                -- 2. Sell Item (Jumlah fix 1 per loop agar aman)
+                SellRemote:InvokeServer(guid, 1)
+                
+                -- Update Text Tombol
+                BtnSellStones.Text = i .. "/" .. actualSellCount
+            end
+            task.wait(0.1) -- Delay kecil untuk mencegah lag/spam error
         end
         
-        BtnSellStones.Text = "Sell Enchants"
-        Notify("SUCCESS", "Sold " .. sellCount .. " Stones!", UI_THEME.Accent)
+        BtnSellStones.Text = "SELL"
+        Notify("SUCCESS", "Berhasil menjual " .. actualSellCount .. " item!", UI_THEME.Accent)
+        
+        -- Update Label langsung setelah selesai
+        local sisa = GetEnchantData()
+        LblOwnedInfo.Text = "Owned: " .. #sisa
     end)
 end)
 
