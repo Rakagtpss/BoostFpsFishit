@@ -952,7 +952,7 @@ end)
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
 -- ====================================================
--- [UPDATED] SELL ENCHANT CUSTOM AMOUNT
+-- [UPDATED] SELL ENCHANT CUSTOM AMOUNT (Multi-Path)
 -- ====================================================
 BtnSellStones.MouseButton1Click:Connect(function()
     local amountToSell = tonumber(BoxSellCount.Text)
@@ -970,25 +970,36 @@ BtnSellStones.MouseButton1Click:Connect(function()
 
         local inventoryData = nil
 
-        -- [METHOD 1] ReplicatedStorage Controller
+        -- [METHOD 1] ReplicatedStorage Controller (Standard)
         local success, res = pcall(function()
-            -- Access InventoryController directly
             local InvController = require(Services.ReplicatedStorage.Controllers.InventoryController)
             return InvController.Inventory 
         end)
         if success and res then inventoryData = res end
 
-        -- [METHOD 2] CorePackages Path (Added as Requested)
+        -- [METHOD 2] CorePackages Path (Added Previously)
         if not inventoryData then
             pcall(function()
-                -- Fixed 'ame' to 'game'
                 local path = game:GetService("CorePackages").Workspace.Packages._Workspace.ProfilePlatform.ProfilePlatform.Components.Inventory
                 local mod = require(path)
                 inventoryData = mod.Inventory or mod
             end)
         end
 
-        -- [METHOD 3] Fallback Remote
+        -- [METHOD 3] ReplicatedStorage Direct (Added Request)
+        if not inventoryData then
+            pcall(function()
+                -- Checks game:GetService("ReplicatedStorage") for Inventory module
+                local path = game:GetService("ReplicatedStorage")
+                -- Try finding Inventory module directly
+                if path:FindFirstChild("Inventory") then
+                     local mod = require(path.Inventory)
+                     inventoryData = mod.Inventory or mod
+                end
+            end)
+        end
+
+        -- [METHOD 4] Fallback Remote
         if not inventoryData then
              local GetInv = Net:FindFirstChild("RF/GetInventory")
              if GetInv then
