@@ -952,7 +952,7 @@ end)
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
 -- ====================================================
--- [UPDATED] SELL ENCHANT CUSTOM AMOUNT (Multi-Path)
+-- [UPDATED] SELL ENCHANT (ULTIMATE SCAN: GUI & MODULES)
 -- ====================================================
 BtnSellStones.MouseButton1Click:Connect(function()
     local amountToSell = tonumber(BoxSellCount.Text)
@@ -961,7 +961,7 @@ BtnSellStones.MouseButton1Click:Connect(function()
         return 
     end
 
-    Notify("SYSTEM", "Scanning Inventory...", UI_THEME.Accent)
+    Notify("SYSTEM", "Scanning Inventory (Deep Scan)...", UI_THEME.Accent)
     
     task.spawn(function()
         local Net = Services.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
@@ -970,14 +970,14 @@ BtnSellStones.MouseButton1Click:Connect(function()
 
         local inventoryData = nil
 
-        -- [METHOD 1] ReplicatedStorage Controller (Standard)
+        -- [METHOD 1] ReplicatedStorage Controller (Standard Knit)
         local success, res = pcall(function()
             local InvController = require(Services.ReplicatedStorage.Controllers.InventoryController)
             return InvController.Inventory 
         end)
         if success and res then inventoryData = res end
 
-        -- [METHOD 2] CorePackages Path (Added Previously)
+        -- [METHOD 2] CorePackages Path
         if not inventoryData then
             pcall(function()
                 local path = game:GetService("CorePackages").Workspace.Packages._Workspace.ProfilePlatform.ProfilePlatform.Components.Inventory
@@ -986,12 +986,10 @@ BtnSellStones.MouseButton1Click:Connect(function()
             end)
         end
 
-        -- [METHOD 3] ReplicatedStorage Direct (Added Request)
+        -- [METHOD 3] ReplicatedStorage Direct
         if not inventoryData then
             pcall(function()
-                -- Checks game:GetService("ReplicatedStorage") for Inventory module
                 local path = game:GetService("ReplicatedStorage")
-                -- Try finding Inventory module directly
                 if path:FindFirstChild("Inventory") then
                      local mod = require(path.Inventory)
                      inventoryData = mod.Inventory or mod
@@ -999,36 +997,73 @@ BtnSellStones.MouseButton1Click:Connect(function()
             end)
         end
 
-        -- [METHOD 4] Fallback Remote
+        -- [METHOD 4] UI ATTRIBUTE SCAN (BRUTE FORCE)
+        -- Ini akan membaca PlayerGui jika require gagal
+        local uiStones = {}
         if not inventoryData then
+            Notify("SYSTEM", "Modules Protected. Scanning GUI...", Color3.fromRGB(255, 200, 50))
+            local PG = Player:FindFirstChild("PlayerGui")
+            if PG then
+                for _, desc in pairs(PG:GetDescendants()) do
+                    -- Cari teks "Enchant Stone"
+                    if desc:IsA("TextLabel") and (desc.Text == "Enchant Stones" or desc.Text == "Enchant Stone") then
+                        -- Cek parent frame untuk atribut ID
+                        local parent = desc.Parent
+                        local foundID = nil
+                        
+                        -- Cek atribut umum
+                        if parent:GetAttribute("ItemId") then foundID = parent:GetAttribute("ItemId") end
+                        if parent:GetAttribute("Guid") then foundID = parent:GetAttribute("Guid") end
+                        if parent:GetAttribute("UUID") then foundID = parent:GetAttribute("UUID") end
+                        
+                        -- Cek parent dari parent (kadang label dibungkus)
+                        if not foundID and parent.Parent then
+                            if parent.Parent:GetAttribute("ItemId") then foundID = parent.Parent:GetAttribute("ItemId") end
+                             if parent.Parent:GetAttribute("Guid") then foundID = parent.Parent:GetAttribute("Guid") end
+                        end
+                        
+                        if foundID then
+                            table.insert(uiStones, foundID)
+                        end
+                    end
+                end
+            end
+        end
+
+        -- [METHOD 5] Fallback Remote
+        if not inventoryData and #uiStones == 0 then
              local GetInv = Net:FindFirstChild("RF/GetInventory")
              if GetInv then
                  inventoryData = GetInv:InvokeServer()
              end
         end
 
-        if not inventoryData then
-            Notify("ERROR", "Failed to get Inventory Data!", Color3.fromRGB(255, 0, 0))
-            return
+        -- GABUNGKAN DATA (Modules + UI Scan)
+        local stones = {}
+        
+        -- Proses data dari Module/Remote
+        if inventoryData then
+            for _, item in pairs(inventoryData) do
+                if item.Name == "Enchant Stones" or item.Name == "Enchant Stone" then
+                    table.insert(stones, item.Id or item.UUID or item.Guid)
+                end
+            end
         end
         
-        -- 2. Filter Stones & Collect GUIDs
-        local stones = {}
-        for _, item in pairs(inventoryData) do
-            if item.Name == "Enchant Stones" or item.Name == "Enchant Stone" then
-                table.insert(stones, item.Id or item.UUID or item.Guid)
-            end
+        -- Proses data dari UI Scan
+        for _, id in pairs(uiStones) do
+            table.insert(stones, id)
         end
 
         if #stones == 0 then
-             Notify("SYSTEM", "No Enchant Stones Found!", Color3.fromRGB(255, 100, 100))
+             Notify("SYSTEM", "No Enchant Stones Found! (Open Inventory)", Color3.fromRGB(255, 100, 100))
              return
         end
 
         local sellCount = math.min(amountToSell, #stones)
         Notify("SELLING", "Selling " .. sellCount .. " stones...", Color3.fromRGB(0, 255, 0))
         
-        -- 3. Execute Sell Loop
+        -- EXECUTE SELL LOOP
         for i = 1, sellCount do
             local guid = stones[i]
             
