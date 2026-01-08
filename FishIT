@@ -442,7 +442,7 @@ end
 -- States
 local States = {
     Freeze=false, WoW=false, Boost=false, Ultra=false, NoRender=false, 
-    Noclip=false, Panel=true, AutoEquip=false,
+    Noclip=false, Panel=true, AutoEquip=false, Anim=false,
     AutoEvent=false, AntiStuck=false, StuckTimeout=60 
 }
 local SavedCFrame = nil 
@@ -470,18 +470,66 @@ local function ForceEquipRod()
     end)
 end
 
+-- ====================================================
+-- [FUNCTION] ANIMATION REPLACER (HOLY TRIDENT)
+-- ====================================================
+local function OverwriteAnimationIDs()
+    local success, err = pcall(function()
+        local RS = game:GetService("ReplicatedStorage")
+        local Modules = RS:WaitForChild("Modules", 5)
+        if not Modules then return end
+        local Anims = Modules:WaitForChild("Animations", 5)
+        if not Anims then return end
+
+        local Replacements = {
+            ["Holy Trident - FishCaught"]     = "rbxassetid://128167068291703",
+            ["Holy Trident - EquipIdle"]      = "rbxassetid://83219020397849",
+            ["Holy Trident - ReelStart"]      = "rbxassetid://126831815839724",
+            ["Holy Trident - ReelingIdle"]    = "rbxassetid://126831815839724",
+            ["Holy Trident - RodThrow"]       = "rbxassetid://114917462794864",
+            ["Holy Trident - StartRodCharge"] = "rbxassetid://83219020397849"
+        }
+
+        -- Ganti Animasi Utama
+        for name, id in pairs(Replacements) do
+            local obj = Anims:FindFirstChild(name)
+            if obj then
+                if obj:IsA("StringValue") then obj.Value = id
+                elseif obj:IsA("Animation") then obj.AnimationId = id end
+            end
+        end
+
+        -- Ganti Sub-Animasi (ReelIntermission ada di dalam ReelStart)
+        local ReelStart = Anims:FindFirstChild("Holy Trident - ReelStart")
+        if ReelStart then
+            local Intermission = ReelStart:FindFirstChild("Holy Trident - ReelIntermission")
+            if Intermission then
+                 if Intermission:IsA("StringValue") then Intermission.Value = "rbxassetid://126831815839724"
+                 elseif Intermission:IsA("Animation") then Intermission.AnimationId = "rbxassetid://126831815839724" end
+            end
+        end
+    end)
+    
+    if success then
+        Notify("ANIMATION", "Holy Animations Applied!", UI_THEME.Accent)
+    else
+        warn("Anim Error:", err)
+    end
+end
+
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
-local BtnUltra  = MakeBtn(PageMain, "Ultra HD: OFF") -- BUTTON BARU
+local BtnAnim   = MakeBtn(PageMain, "Holy Anim: OFF") -- [ADDED BACK]
+local BtnUltra  = MakeBtn(PageMain, "Ultra HD: OFF") 
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
 local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF") 
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
-local BtnFps    = MakeBtn(PageMain, "FPS: Max") 
+local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 
 -- TAB MISC
 local StuckContainer = Instance.new("Frame", PageMisc)
@@ -727,13 +775,17 @@ Services.RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
+-- [UPDATED] FPS BUTTON LOGIC (60/90/144/240/Unli)
 BtnFps.MouseButton1Click:Connect(function()
-    local caps = {30, 60, 90, 144, 240, 99999}
-    _G.fpsIndex = ((_G.fpsIndex or 5) % #caps) + 1
+    local caps = {60, 90, 144, 240, 99999}
+    _G.fpsIndex = (_G.fpsIndex or 0) % #caps + 1 -- Cycle 1-5
     local v = caps[_G.fpsIndex]
+    
     if setfpscap then setfpscap(v) end
-    local txt = (v > 1000) and "Max" or tostring(v)
+    
+    local txt = (v >= 9999) and "Unli" or tostring(v)
     BtnFps.Text = "FPS: " .. txt
+    
     ToggleVisual(BtnFps, true)
     task.wait(0.1)
     ToggleVisual(BtnFps, false)
@@ -907,6 +959,26 @@ BoxStuckInput.FocusLost:Connect(function()
 end)
 
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
+
+BtnAnim.MouseButton1Click:Connect(function() 
+    States.Anim = not States.Anim
+    BtnAnim.Text = "Holy Anim: " .. (States.Anim and "ON" or "OFF")
+    ToggleVisual(BtnAnim, States.Anim)
+    
+    if States.Anim then
+        OverwriteAnimationIDs()
+        -- Auto Re-equip agar animasi langsung berubah
+        local Char = Player.Character
+        if Char then
+            local Tool = Char:FindFirstChildOfClass("Tool")
+            if Tool then Tool.Parent = Player.Backpack end
+            task.wait(0.2)
+            ForceEquipRod()
+        end
+    else
+        Notify("ANIMATION", "Disabled (Rejoin to Reset)", Color3.fromRGB(200, 200, 200), 4)
+    end
+end)
 
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
