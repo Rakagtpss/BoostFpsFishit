@@ -16,19 +16,19 @@ local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 10)
 local Hum = Char:WaitForChild("Humanoid", 10)
 
--- // Konfigurasi Visual (UPDATED: BRIGHT WHITE THEME)
+-- // Konfigurasi Visual (Theme: Dark Grey & White Text)
 local UI_THEME = {
     MinWidth = 280,  
-    MinHeight = 320, -- Sedikit dipertinggi agar muat layout baru
-    Color = Color3.fromRGB(25, 25, 25),       -- Background Lebih Gelap (Kontras)
+    MinHeight = 320, 
+    Color = Color3.fromRGB(25, 25, 25),       
     Transparency = 0.1, 
     HeaderColor = Color3.fromRGB(40, 40, 40), 
     Accent = Color3.fromRGB(120, 120, 120),   
     TabOff = Color3.fromRGB(150, 150, 150),
     TabOn = Color3.fromRGB(255, 255, 255),
-    TextColor = Color3.fromRGB(255, 255, 255), -- PURE WHITE (JELAS)
-    SubTextColor = Color3.fromRGB(220, 220, 220), -- BRIGHT GREY
-    Font = Enum.Font.GothamBlack, -- Font Lebih Tebal
+    TextColor = Color3.fromRGB(255, 255, 255), 
+    SubTextColor = Color3.fromRGB(220, 220, 220), 
+    Font = Enum.Font.GothamBlack, 
     BtnFont = Enum.Font.GothamBold 
 }
 
@@ -334,19 +334,31 @@ PageContainer.Position = UDim2.new(0, 8, 0, 60)
 PageContainer.BackgroundTransparency = 1
 
 -- ====================================================
--- [UPDATED LAYOUT] PAGE MAIN
+-- [UPDATED LAYOUT WITH SCROLLING]
 -- ====================================================
-local PageMain = Instance.new("Frame", PageContainer)
+
+-- 1. SCROLLING FRAME (Agar bisa gulir ke bawah)
+local PageMain = Instance.new("ScrollingFrame", PageContainer)
 PageMain.Name = "PageMain"
 PageMain.Size = UDim2.new(1, 0, 1, 0)
 PageMain.BackgroundTransparency = 1
+PageMain.BorderSizePixel = 0
+PageMain.ScrollBarThickness = 4
+PageMain.ScrollBarImageColor3 = UI_THEME.Accent
 PageMain.Visible = true
+PageMain.AutomaticCanvasSize = Enum.AutomaticSize.Y -- Auto panjang ke bawah
+PageMain.CanvasSize = UDim2.new(0, 0, 0, 0) 
 
--- 1. BUTTON GRID CONTAINER (TOP SECTION)
+local MainLayout = Instance.new("UIListLayout", PageMain)
+MainLayout.SortOrder = Enum.SortOrder.LayoutOrder
+MainLayout.Padding = UDim.new(0, 15) -- Jarak antara Grid dan Sell Area
+MainLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- 2. BUTTON GRID CONTAINER (Top)
 local BtnContainer = Instance.new("Frame", PageMain)
 BtnContainer.Name = "ButtonArea"
-BtnContainer.Size = UDim2.new(1, 0, 0, 160) -- Tinggi fix untuk tombol biasa
-BtnContainer.Position = UDim2.new(0, 0, 0, 0)
+BtnContainer.LayoutOrder = 1
+BtnContainer.Size = UDim2.new(1, 0, 0, 160) 
 BtnContainer.BackgroundTransparency = 1
 
 local GridMain = Instance.new("UIGridLayout", BtnContainer)
@@ -354,46 +366,44 @@ GridMain.CellSize = UDim2.new(0, 128, 0, 28)
 GridMain.CellPadding = UDim2.new(0, 8, 0, 8) 
 GridMain.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- 2. SEPARATOR
-local Sep = Instance.new("Frame", PageMain)
-Sep.Position = UDim2.new(0, 10, 0, 165)
-Sep.Size = UDim2.new(1, -20, 0, 1)
-Sep.BackgroundColor3 = UI_THEME.Accent
-Sep.BackgroundTransparency = 0.7
-Sep.BorderSizePixel = 0
+-- 3. SELL ENCHANT SECTION (NEW WIDGET STYLE)
+local SellWidget = Instance.new("Frame", PageMain)
+SellWidget.Name = "SellWidget"
+SellWidget.LayoutOrder = 2
+SellWidget.Size = UDim2.new(0.95, 0, 0, 95) -- Ukuran Widget
+SellWidget.BackgroundColor3 = Color3.fromRGB(20, 20, 20) -- Sedikit lebih gelap agar kontras
+SellWidget.BackgroundTransparency = 0.3
+Instance.new("UICorner", SellWidget).CornerRadius = UDim.new(0, 6)
+local WidgetStroke = Instance.new("UIStroke", SellWidget)
+WidgetStroke.Color = UI_THEME.Accent
+WidgetStroke.Transparency = 0.7
+WidgetStroke.Thickness = 1
 
--- 3. SELL ENCHANT SECTION (BOTTOM SECTION)
-local SellArea = Instance.new("Frame", PageMain)
-SellArea.Name = "SellArea"
-SellArea.Size = UDim2.new(1, 0, 0, 80) -- Area luas di bawah
-SellArea.Position = UDim2.new(0, 0, 1, -85) -- Tempel di bawah
-SellArea.BackgroundTransparency = 1
-
--- Judul Section Sell
-local SellTitle = Instance.new("TextLabel", SellArea)
+-- Judul Widget
+local SellTitle = Instance.new("TextLabel", SellWidget)
 SellTitle.Text = "AUTO SELL ENCHANT"
-SellTitle.Size = UDim2.new(1, 0, 0, 15)
-SellTitle.Position = UDim2.new(0, 0, 0, 0)
+SellTitle.Size = UDim2.new(1, 0, 0, 20)
+SellTitle.Position = UDim2.new(0, 0, 0, 2)
 SellTitle.BackgroundTransparency = 1
 SellTitle.TextColor3 = UI_THEME.SubTextColor
 SellTitle.Font = Enum.Font.GothamBlack
 SellTitle.TextSize = 10
 
--- Container Controls
-local SellControls = Instance.new("Frame", SellArea)
-SellControls.Size = UDim2.new(1, 0, 0, 30)
-SellControls.Position = UDim2.new(0, 0, 0, 18)
+-- Input & Button Holder
+local SellControls = Instance.new("Frame", SellWidget)
+SellControls.Size = UDim2.new(1, -16, 0, 30)
+SellControls.Position = UDim2.new(0, 8, 0, 26)
 SellControls.BackgroundTransparency = 1
 
 local BoxSellCount = Instance.new("TextBox", SellControls)
 BoxSellCount.Name = "Input"
-BoxSellCount.Size = UDim2.new(0.25, 0, 1, 0)
+BoxSellCount.Size = UDim2.new(0.25, 0, 1, 0) -- Lebar input box
 BoxSellCount.Position = UDim2.new(0, 0, 0, 0)
 BoxSellCount.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-BoxSellCount.BackgroundTransparency = 0.5
+BoxSellCount.BackgroundTransparency = 0.4
 BoxSellCount.Text = "1"
 BoxSellCount.PlaceholderText = "#"
-BoxSellCount.TextColor3 = Color3.new(1,1,1) -- Bright White
+BoxSellCount.TextColor3 = Color3.new(1,1,1)
 BoxSellCount.Font = Enum.Font.GothamBold
 BoxSellCount.TextSize = 12
 Instance.new("UICorner", BoxSellCount).CornerRadius = UDim.new(0, 4)
@@ -404,29 +414,30 @@ sBox.Transparency = 0.6
 
 local BtnSellStones = Instance.new("TextButton", SellControls)
 BtnSellStones.Name = "BtnSell"
-BtnSellStones.Size = UDim2.new(0.70, 0, 1, 0)
-BtnSellStones.Position = UDim2.new(0.30, 0, 0, 0)
-BtnSellStones.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
-BtnSellStones.BackgroundTransparency = 0.3
-BtnSellStones.Text = "SELL SELECTED AMOUNT"
-BtnSellStones.TextColor3 = Color3.new(1,1,1) -- Bright White
+BtnSellStones.Size = UDim2.new(0.72, 0, 1, 0) -- Lebar tombol sisa
+BtnSellStones.Position = UDim2.new(0.28, 0, 0, 0)
+BtnSellStones.BackgroundColor3 = Color3.fromRGB(80, 20, 20) -- Merah Gelap Elegan
+BtnSellStones.BackgroundTransparency = 0.2
+BtnSellStones.Text = "SELL SELECTED"
+BtnSellStones.TextColor3 = Color3.new(1,1,1)
 BtnSellStones.Font = Enum.Font.GothamBlack
 BtnSellStones.TextSize = 11
 Instance.new("UICorner", BtnSellStones).CornerRadius = UDim.new(0, 4)
 local sSell = Instance.new("UIStroke", BtnSellStones)
 sSell.Color = Color3.fromRGB(255, 80, 80)
 sSell.Thickness = 1
-sSell.Transparency = 0.3
+sSell.Transparency = 0.4
 
-local LblOwnedInfo = Instance.new("TextLabel", SellArea)
+-- Status Label (Counter)
+local LblOwnedInfo = Instance.new("TextLabel", SellWidget)
 LblOwnedInfo.Name = "LblOwned"
 LblOwnedInfo.Size = UDim2.new(1, 0, 0, 20)
-LblOwnedInfo.Position = UDim2.new(0, 0, 0, 52) -- Di bawah tombol
+LblOwnedInfo.Position = UDim2.new(0, 0, 0, 65) 
 LblOwnedInfo.BackgroundTransparency = 1
-LblOwnedInfo.Text = "Enchant Stone: Loading..." -- UPDATED LABEL
-LblOwnedInfo.TextColor3 = Color3.new(1,1,1) -- Bright White
+LblOwnedInfo.Text = "Enchant Stone: Loading..." 
+LblOwnedInfo.TextColor3 = Color3.new(0.8, 0.8, 0.8) 
 LblOwnedInfo.Font = Enum.Font.GothamBold
-LblOwnedInfo.TextSize = 11
+LblOwnedInfo.TextSize = 10
 LblOwnedInfo.TextXAlignment = Enum.TextXAlignment.Center
 
 -- ====================================================
@@ -517,7 +528,7 @@ local function ToggleVisual(btn, on)
         btn.BackgroundTransparency = 0.2
         btn.TextColor3 = Color3.fromRGB(0, 0, 0) 
         btn.UIStroke.Transparency = 1
-        btn.Font = Enum.Font.GothamBlack -- Bold saat aktif
+        btn.Font = Enum.Font.GothamBlack 
     else
         btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
         btn.BackgroundTransparency = 0.5
@@ -655,7 +666,7 @@ local function SetAutoEquip(bool)
 end
 
 -- ====================================================
--- [FUNCTION] ULTRA HD GRAPHICS (4K)
+-- [FUNCTION] ULTRA HD GRAPHICS
 -- ====================================================
 local function SetUltraGraphics(enabled)
     States.Ultra = enabled
@@ -1024,7 +1035,6 @@ task.spawn(function()
     while true do
         if Main.Visible then 
             local myStones = GetEnchantData()
-            -- UPDATED LABEL TEXT
             LblOwnedInfo.Text = "Enchant Stone: " .. #myStones
         end
         task.wait(1)
@@ -1063,7 +1073,7 @@ BtnSellStones.MouseButton1Click:Connect(function()
             end
             task.wait(0.1) 
         end
-        BtnSellStones.Text = "SELL SELECTED AMOUNT"
+        BtnSellStones.Text = "SELL SELECTED"
         Notify("SUCCESS", "Berhasil menjual " .. actualSellCount .. " item!", UI_THEME.Accent)
         
         local sisa = GetEnchantData()
