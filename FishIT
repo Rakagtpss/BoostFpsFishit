@@ -16,17 +16,17 @@ local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 10)
 local Hum = Char:WaitForChild("Humanoid", 10)
 
--- // Konfigurasi Visual (DARK GREY SIDE UI THEME)
+-- // Konfigurasi Visual (DARK GREY & BRIGHT WHITE TEXT)
 local UI_THEME = {
-    MainWidth = 420,  -- Lebih lebar untuk Side UI
+    MainWidth = 420,  
     MainHeight = 260, 
     BgColor = Color3.fromRGB(35, 35, 35),       
-    SidebarColor = Color3.fromRGB(25, 25, 25), -- Lebih gelap untuk sidebar
-    Accent = Color3.fromRGB(100, 100, 100),   
-    TextColor = Color3.fromRGB(255, 255, 255),
-    SubTextColor = Color3.fromRGB(180, 180, 180),
-    Font = Enum.Font.GothamBold,
-    BtnFont = Enum.Font.GothamMedium 
+    SidebarColor = Color3.fromRGB(25, 25, 25), 
+    Accent = Color3.fromRGB(120, 120, 120),   -- Aksen Grey Silver
+    TextColor = Color3.fromRGB(255, 255, 255), -- [UBAH] Putih Terang Mutlak
+    SubTextColor = Color3.fromRGB(220, 220, 220), -- [UBAH] Putih sedikit soft
+    Font = Enum.Font.GothamBold, -- Font Tebal agar Jelas
+    BtnFont = Enum.Font.GothamBold -- Tombol juga pakai Bold agar jelas walau kecil
 }
 
 -- Bersihkan UI Lama
@@ -114,7 +114,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Side UI Loaded - @828_Raka", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "Script Updated - @828_Raka", UI_THEME.Accent, 2.5)
 
 -- ====================================================
 -- [UI CONSTRUCTION] SIDE UI LAYOUT
@@ -159,7 +159,7 @@ Header.BackgroundTransparency = 1
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -10, 1, 0)
 Title.Position = UDim2.new(0, 5, 0, 0)
-Title.Text = "SERAPHIN\n<font size='10' color='rgb(150,150,150)'>HELPER</font>"
+Title.Text = "SERAPHIN\n<font size='10' color='rgb(200,200,200)'>HELPER</font>"
 Title.RichText = true
 Title.TextColor3 = UI_THEME.TextColor
 Title.Font = Enum.Font.GothamBlack
@@ -223,12 +223,12 @@ PageMisc.Visible = false
 
 -- Grids
 local GridMain = Instance.new("UIGridLayout", PageMain)
-GridMain.CellSize = UDim2.new(0, 140, 0, 28)
+GridMain.CellSize = UDim2.new(0, 140, 0, 24) -- [UBAH] Tinggi tombol diperkecil (24)
 GridMain.CellPadding = UDim2.new(0, 8, 0, 8)
 GridMain.HorizontalAlignment = Enum.HorizontalAlignment.Left
 
 local GridMisc = Instance.new("UIGridLayout", PageMisc)
-GridMisc.CellSize = UDim2.new(0, 140, 0, 28)
+GridMisc.CellSize = UDim2.new(0, 140, 0, 24) -- [UBAH] Tinggi tombol diperkecil (24)
 GridMisc.CellPadding = UDim2.new(0, 8, 0, 8)
 GridMisc.HorizontalAlignment = Enum.HorizontalAlignment.Left
 
@@ -362,7 +362,7 @@ local function ToggleVisual(btn, on)
     if on then
         btn.BackgroundColor3 = UI_THEME.Accent 
         btn.BackgroundTransparency = 0.2
-        btn.TextColor3 = Color3.fromRGB(0, 0, 0) 
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255) 
         btn.UIStroke.Transparency = 1
         btn.Font = Enum.Font.GothamBold
     else
@@ -394,29 +394,31 @@ local EnchTitle = Instance.new("TextLabel", PageEnchant)
 EnchTitle.Size = UDim2.new(1, 0, 0, 20)
 EnchTitle.BackgroundTransparency = 1
 EnchTitle.Text = "AUTO SELL ENCHANT"
-EnchTitle.TextColor3 = UI_THEME.Accent
+EnchTitle.TextColor3 = UI_THEME.TextColor -- Bright White
 EnchTitle.Font = Enum.Font.GothamBlack
 EnchTitle.TextSize = 14
 
-local EnchDesc = Instance.new("TextLabel", PageEnchant)
-EnchDesc.Size = UDim2.new(1, 0, 0, 30)
-EnchDesc.Position = UDim2.new(0, 0, 0, 20)
-EnchDesc.BackgroundTransparency = 1
-EnchDesc.Text = "Automatically select and sell enchant stones.\nSafety: Only sells the amount you input."
-EnchDesc.TextColor3 = UI_THEME.SubTextColor
-EnchDesc.Font = Enum.Font.GothamMedium
-EnchDesc.TextSize = 10
-EnchDesc.TextWrapped = true
+-- Info/Count Label (Dipindah ke tengah atas)
+local LblOwnedInfo = Instance.new("TextLabel", PageEnchant)
+LblOwnedInfo.Name = "LblOwned"
+LblOwnedInfo.Size = UDim2.new(1, 0, 0, 25)
+LblOwnedInfo.Position = UDim2.new(0, 0, 0.25, 0)
+LblOwnedInfo.BackgroundTransparency = 1
+LblOwnedInfo.Text = "Enchant Stone: ..." -- [UBAH] Nama Label
+LblOwnedInfo.TextColor3 = UI_THEME.TextColor -- Bright White
+LblOwnedInfo.Font = Enum.Font.GothamBold
+LblOwnedInfo.TextSize = 14
 
+-- Input Box (Tengah)
 local BoxSellCount = Instance.new("TextBox", PageEnchant)
 BoxSellCount.Name = "Input"
 BoxSellCount.Size = UDim2.new(0.6, 0, 0, 30)
-BoxSellCount.Position = UDim2.new(0.2, 0, 0.4, 0)
+BoxSellCount.Position = UDim2.new(0.2, 0, 0.45, 0)
 BoxSellCount.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 BoxSellCount.BackgroundTransparency = 0.5
 BoxSellCount.Text = "1"
 BoxSellCount.PlaceholderText = "Amount"
-BoxSellCount.TextColor3 = UI_THEME.Accent
+BoxSellCount.TextColor3 = UI_THEME.TextColor -- Bright White
 BoxSellCount.Font = Enum.Font.GothamBold
 BoxSellCount.TextSize = 14
 Instance.new("UICorner", BoxSellCount).CornerRadius = UDim.new(0, 4)
@@ -425,33 +427,25 @@ sBox.Color = UI_THEME.Accent
 sBox.Thickness = 1
 sBox.Transparency = 0.6
 
+-- Sell Button (PALING BAWAH)
 local BtnSellStones = Instance.new("TextButton", PageEnchant)
-BtnSellStones.Size = UDim2.new(0.6, 0, 0, 35)
-BtnSellStones.Position = UDim2.new(0.2, 0, 0.6, 0)
+BtnSellStones.Size = UDim2.new(0.8, 0, 0, 30) -- Lebar tapi tidak terlalu tinggi
+BtnSellStones.Position = UDim2.new(0.1, 0, 0.85, 0) -- [UBAH] Posisi Bawah Sekali
 BtnSellStones.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 BtnSellStones.BackgroundTransparency = 0.5
-BtnSellStones.Text = "SELL NOW"
+BtnSellStones.Text = "SELL SELECTED AMOUNT"
 BtnSellStones.TextColor3 = Color3.fromRGB(255, 80, 80) -- Merah Warning
 BtnSellStones.Font = Enum.Font.GothamBlack
-BtnSellStones.TextSize = 12
+BtnSellStones.TextSize = 11 -- [UBAH] Kecil tapi Jelas
 Instance.new("UICorner", BtnSellStones).CornerRadius = UDim.new(0, 4)
 local sSell = Instance.new("UIStroke", BtnSellStones)
 sSell.Color = Color3.fromRGB(255, 80, 80)
 sSell.Thickness = 1
 sSell.Transparency = 0.6
 
-local LblOwnedInfo = Instance.new("TextLabel", PageEnchant)
-LblOwnedInfo.Size = UDim2.new(1, 0, 0, 20)
-LblOwnedInfo.Position = UDim2.new(0, 0, 0.85, 0)
-LblOwnedInfo.BackgroundTransparency = 1
-LblOwnedInfo.Text = "Owned: ..."
-LblOwnedInfo.TextColor3 = UI_THEME.SubTextColor
-LblOwnedInfo.Font = Enum.Font.GothamBold
-LblOwnedInfo.TextSize = 11
-
 -- >> TAB: MISC <<
 local StuckContainer = Instance.new("Frame", PageMisc)
-StuckContainer.Size = UDim2.new(0, 288, 0, 28) -- Span 2 columns approx
+StuckContainer.Size = UDim2.new(0, 288, 0, 24) -- [UBAH] Tinggi 24
 StuckContainer.BackgroundTransparency = 1
 
 local BtnStuckToggle = Instance.new("TextButton", StuckContainer)
@@ -475,7 +469,7 @@ BoxStuckInput.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 BoxStuckInput.BackgroundTransparency = 0.5
 BoxStuckInput.Text = "60" 
 BoxStuckInput.PlaceholderText = "Sec"
-BoxStuckInput.TextColor3 = UI_THEME.Accent
+BoxStuckInput.TextColor3 = UI_THEME.TextColor
 BoxStuckInput.Font = Enum.Font.GothamBold
 BoxStuckInput.TextSize = 10
 Instance.new("UICorner", BoxStuckInput).CornerRadius = UDim.new(0, 4)
@@ -526,7 +520,7 @@ local LblFishVal = Instance.new("TextLabel", FloatHUD)
 LblFishVal.Size = UDim2.new(1,0,0,20)
 LblFishVal.BackgroundTransparency = 1
 LblFishVal.Text = "FISH: ..."
-LblFishVal.TextColor3 = UI_THEME.Accent
+LblFishVal.TextColor3 = UI_THEME.TextColor -- Bright White
 LblFishVal.Font = Enum.Font.GothamBold
 LblFishVal.TextSize = 12
 
@@ -534,7 +528,7 @@ local LblInvVal = Instance.new("TextLabel", FloatHUD)
 LblInvVal.Size = UDim2.new(1,0,0,20)
 LblInvVal.BackgroundTransparency = 1
 LblInvVal.Text = "BAG: ..."
-LblInvVal.TextColor3 = UI_THEME.TextColor
+LblInvVal.TextColor3 = UI_THEME.SubTextColor
 LblInvVal.Font = Enum.Font.GothamBold
 LblInvVal.TextSize = 12
 
@@ -646,7 +640,7 @@ end
 local function ToggleBoost(enable)
     States.Boost = enable
     BtnBoost.Text = "CPU Booster: " .. (States.Boost and "ON" or "OFF")
-    ToggleVisual(BtnBoost, States.Boost)
+    ToggleBoost(BtnBoost, States.Boost)
 
     if enable then
         if States.Ultra then SetUltraGraphics(false) end
@@ -760,7 +754,8 @@ task.spawn(function()
     while true do
         if Main.Visible and PageEnchant.Visible then
             local myStones = GetEnchantData()
-            LblOwnedInfo.Text = "Owned: " .. #myStones
+            -- [UBAH] Label sesuai request
+            LblOwnedInfo.Text = "Enchant Stone: " .. #myStones
         end
         task.wait(1)
     end
@@ -792,10 +787,10 @@ BtnSellStones.MouseButton1Click:Connect(function()
             end
             task.wait(0.1)
         end
-        BtnSellStones.Text = "SELL NOW"
+        BtnSellStones.Text = "SELL SELECTED AMOUNT"
         Notify("SUCCESS", "Sold " .. actualSellCount .. " Stones!", UI_THEME.Accent)
         local sisa = GetEnchantData()
-        LblOwnedInfo.Text = "Owned: " .. #sisa
+        LblOwnedInfo.Text = "Enchant Stone: " .. #sisa
     end)
 end)
 
