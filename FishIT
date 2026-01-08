@@ -16,14 +16,14 @@ local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 10)
 local Hum = Char:WaitForChild("Humanoid", 10)
 
--- // Konfigurasi Visual (CYAN & BOLD THEME)
+-- // Konfigurasi Visual (DARK GREY THEME)
 local UI_THEME = {
     MinWidth = 280,  
     MinHeight = 280, 
-    Color = Color3.fromRGB(10, 10, 10), 
+    Color = Color3.fromRGB(35, 35, 35),       -- [UBAH] Background Dark Grey
     Transparency = 0.1, 
-    HeaderColor = Color3.fromRGB(20, 20, 20),
-    Accent = Color3.fromRGB(0, 255, 255), -- CYAN NEON
+    HeaderColor = Color3.fromRGB(45, 45, 45), -- [UBAH] Header Dark Grey (Sedikit Terang)
+    Accent = Color3.fromRGB(100, 100, 100),   -- [UBAH] List/Garis jadi Grey (Pengganti Cyan)
     TabOff = Color3.fromRGB(120, 120, 120),
     TabOn = Color3.fromRGB(255, 255, 255),
     TextColor = Color3.fromRGB(255, 255, 255),
@@ -65,7 +65,7 @@ local function Notify(title, text, colorOverride, duration)
     local Frame = Instance.new("Frame")
     Frame.Name = "NotifyItem"
     Frame.Size = UDim2.new(1, 0, 0, 0)
-    Frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+    Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- Darker Grey for Notif
     Frame.BackgroundTransparency = 0.15
     Frame.BorderSizePixel = 0
     Frame.Parent = NotifyContainer
@@ -127,7 +127,7 @@ local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
 FloatHUD.Size = UDim2.new(0, 140, 0, 125) 
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
-FloatHUD.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+FloatHUD.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- Dark Grey
 FloatHUD.BackgroundTransparency = 0.3
 FloatHUD.Visible = false 
 FloatHUD.Active = true 
@@ -274,7 +274,8 @@ EnableDrag(FloatHUD, FloatHUD)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0) 
 Title.Position = UDim2.new(0, 10, 0, 0) 
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  <font size=\"12\" color=\"rgb(200,200,200)\">by @828_raka</font>" 
+-- Note: RichText font color adjusted to Grey/White theme
+Title.Text = "SERAPHIN <font color=\"rgb(150,150,150)\">HELPER</font>  <font size=\"12\" color=\"rgb(200,200,200)\">by @828_raka</font>" 
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = UI_THEME.Font
@@ -495,7 +496,7 @@ BtnSellStones.Font = UI_THEME.BtnFont
 BtnSellStones.TextSize = 10
 Instance.new("UICorner", BtnSellStones).CornerRadius = UDim.new(0, 4)
 local sSell = Instance.new("UIStroke", BtnSellStones)
-sSell.Color = Color3.fromRGB(255, 80, 80) -- Merah
+sSell.Color = Color3.fromRGB(255, 80, 80) -- Merah (Tetap merah sebagai danger action)
 sSell.Thickness = 1
 sSell.Transparency = 0.6
 
@@ -779,9 +780,9 @@ Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
     if Title and currentFps then
-        -- [UPDATED] Keep the footer consistent
+        -- [UPDATED] Keep the footer consistent with Dark Theme
         Title.Text = string.format(
-            "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  <font size=\"12\" color=\"rgb(200,200,200)\">by @828_raka</font> | FPS: <b>%d</b>", 
+            "SERAPHIN <font color=\"rgb(150,150,150)\">HELPER</font>  <font size=\"12\" color=\"rgb(200,200,200)\">by @828_raka</font> | FPS: <b>%d</b>", 
             currentFps
         )
     end
