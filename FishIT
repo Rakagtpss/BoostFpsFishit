@@ -42,7 +42,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [SYSTEM] CUSTOM NOTIFICATION (UPDATED DURATION)
+-- [SYSTEM] CUSTOM NOTIFICATION
 -- ====================================================
 local NotifyContainer = Instance.new("Frame", ScreenGui)
 NotifyContainer.Name = "NotificationContainer"
@@ -58,10 +58,9 @@ NotifyLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
 NotifyLayout.SortOrder = Enum.SortOrder.LayoutOrder
 NotifyLayout.Padding = UDim.new(0, 6)
 
--- Function Updated: Added 'duration' parameter
 local function Notify(title, text, colorOverride, duration)
     local color = colorOverride or UI_THEME.Accent
-    local timeTime = duration or 4 -- Default 4 detik jika tidak diisi
+    local timeTime = duration or 4 
     
     local Frame = Instance.new("Frame")
     Frame.Name = "NotifyItem"
@@ -101,7 +100,6 @@ local function Notify(title, text, colorOverride, duration)
     local TweenIn = Services.TweenService:Create(Frame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, 50)})
     TweenIn:Play()
     
-    -- Auto Hapus Sesuai Durasi
     task.delay(timeTime, function()
         if Frame then
             local TweenOut = Services.TweenService:Create(Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
@@ -119,11 +117,11 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
--- [UPDATE] Notif Masuk Script: 2.5 Detik
+-- Notif Masuk Script: 2.5 Detik
 Notify("SERAPHIN", "Script Loaded - @828_Raka", UI_THEME.Accent, 2.5)
 
 -- ====================================================
--- [1] MINI FLOATING HUD
+-- [1] MINI FLOATING HUD (Optimized)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
@@ -131,7 +129,7 @@ FloatHUD.Size = UDim2.new(0, 140, 0, 125)
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
 FloatHUD.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
 FloatHUD.BackgroundTransparency = 0.3
-FloatHUD.Visible = false -- [UPDATE] Hidden by default (muncul di 3.8s)
+FloatHUD.Visible = false 
 FloatHUD.Active = true 
 
 local HudStroke = Instance.new("UIStroke", FloatHUD)
@@ -209,17 +207,17 @@ Main.Name = "Main"
 Main.Size = UDim2.new(0, UI_THEME.MinWidth, 0, UI_THEME.MinHeight)
 Main.Position = UDim2.new(0.5, -UI_THEME.MinWidth/2, 0.4, 0)
 Main.BackgroundColor3 = UI_THEME.Color
-Main.BackgroundTransparency = 1 -- [UPDATE] Invisible Start
-Main.Visible = false -- [UPDATE] Invisible Start
+Main.BackgroundTransparency = UI_THEME.Transparency
 Main.Active = true
 Main.ClipsDescendants = true 
+Main.Visible = false -- Sembunyikan Panel di awal (Muncul 3.8s)
 
 local MainCorner = Instance.new("UICorner", Main)
 MainCorner.CornerRadius = UDim.new(0, 8)
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Color = UI_THEME.Accent
 MainStroke.Thickness = 1.5
-MainStroke.Transparency = 1 -- [UPDATE] Invisible Start
+MainStroke.Transparency = 0
 
 local LogoR = Instance.new("TextButton", Main)
 LogoR.Name = "LogoR"
@@ -443,7 +441,7 @@ end
 
 -- States
 local States = {
-    Freeze=false, WoW=false, Boost=false, NoRender=false, 
+    Freeze=false, WoW=false, Boost=false, Ultra=false, NoRender=false, 
     Noclip=false, Panel=true, AutoEquip=false,
     AutoEvent=false, AntiStuck=false, StuckTimeout=60 
 }
@@ -454,63 +452,6 @@ local Connections = {}
 local BodyV = nil
 local LastFishCaughtTime = tick()
 local LastFishCount = 0
-
--- ====================================================
--- [UPDATE] SMART ANIMATION LOOP (ANTI-RESET)
--- ====================================================
-local AnimState = { Enabled = false }
-local AnimationIDs = {
-    -- ID Baru dari Request
-    ["Holy Trident - FishCaught"]       = "rbxassetid://128167068291703",
-    ["Holy Trident - EquipIdle"]        = "rbxassetid://83219020397849",
-    ["Holy Trident - ReelStart"]        = "rbxassetid://126831815839724",
-    ["Holy Trident - ReelingIdle"]      = "rbxassetid://126831815839724",
-    ["Holy Trident - RodThrow"]         = "rbxassetid://114917462794864",
-    ["Holy Trident - StartRodCharge"]   = "rbxassetid://83219020397849",
-    -- Sub Children
-    ["Holy Trident - ReelIntermission"] = "rbxassetid://126831815839724"
-}
-
--- FUNGSI INTI: Memaksa ID Animasi secara terus menerus
-local function EnforceAnimations()
-    local RepAnim = Services.ReplicatedStorage:FindFirstChild("Modules") and Services.ReplicatedStorage.Modules:FindFirstChild("Animations")
-    if not RepAnim then return end
-    
-    -- Main Loop penggantian ID
-    for name, id in pairs(AnimationIDs) do
-        -- Cek folder utama
-        local target = RepAnim:FindFirstChild(name)
-        if target then
-            if target:IsA("StringValue") and target.Value ~= id then
-                target.Value = id -- Paksa ganti jika berubah
-            elseif target:IsA("Animation") and target.AnimationId ~= id then
-                target.AnimationId = id -- Paksa ganti jika berubah
-            end
-        else
-            -- Cek folder ReelStart untuk sub-child
-            if name == "Holy Trident - ReelIntermission" then
-                local reelParent = RepAnim:FindFirstChild("Holy Trident - ReelStart")
-                if reelParent then
-                    local subTarget = reelParent:FindFirstChild(name)
-                    if subTarget then
-                        if subTarget:IsA("StringValue") and subTarget.Value ~= id then subTarget.Value = id end
-                        if subTarget:IsA("Animation") and subTarget.AnimationId ~= id then subTarget.AnimationId = id end
-                    end
-                end
-            end
-        end
-    end
-end
-
--- Loop Pintar: Berjalan di background untuk menjaga animasi
-task.spawn(function()
-    while true do
-        task.wait(0.5) -- Cek setiap 0.5 detik
-        if AnimState.Enabled then
-            pcall(EnforceAnimations)
-        end
-    end
-end)
 
 -- Force Re-Equip untuk refresh animasi
 local function ForceEquipRod()
@@ -534,7 +475,7 @@ end
 -- TAB MAIN
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
-local BtnAnim   = MakeBtn(PageMain, "Holy Anim: OFF") 
+local BtnUltra  = MakeBtn(PageMain, "Ultra HD: OFF") -- BUTTON BARU
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
@@ -628,55 +569,147 @@ local function SetAutoEquip(bool)
 end
 
 -- ====================================================
--- [FUNCTION] MAX LEVEL OPTIMIZATION BOOSTER
+-- [FUNCTION] ULTRA HD GRAPHICS (4K)
 -- ====================================================
-local function OptimizePerformance()
-    local startMem = gcinfo()
+local function SetUltraGraphics(enabled)
+    States.Ultra = enabled
+    BtnUltra.Text = "Ultra HD: " .. (States.Ultra and "ON" or "OFF")
+    ToggleVisual(BtnUltra, States.Ultra)
+
+    if enabled then
+        -- Max Settings
+        pcall(function() settings().Rendering.QualityLevel = "Level21" end)
+        Services.Lighting.GlobalShadows = true
+        Services.Lighting.Technology = Enum.Technology.Future -- Teknologi Cahaya Masa Depan
+        Services.Lighting.EnvironmentDiffuseScale = 1
+        Services.Lighting.EnvironmentSpecularScale = 1
+
+        -- Add Post Processing
+        local Effects = {
+            ["Seraphin_Bloom"] = Instance.new("BloomEffect"),
+            ["Seraphin_Color"] = Instance.new("ColorCorrectionEffect"),
+            ["Seraphin_Sun"] = Instance.new("SunRaysEffect"),
+            ["Seraphin_DOF"] = Instance.new("DepthOfFieldEffect"),
+        }
+
+        Effects["Seraphin_Bloom"].Intensity = 0.8
+        Effects["Seraphin_Bloom"].Size = 24
+        Effects["Seraphin_Bloom"].Threshold = 0.8
+
+        Effects["Seraphin_Color"].Brightness = 0.05
+        Effects["Seraphin_Color"].Contrast = 0.2
+        Effects["Seraphin_Color"].Saturation = 0.25 -- Lebih tajam/vibrant
+
+        Effects["Seraphin_Sun"].Intensity = 0.25
+        Effects["Seraphin_Sun"].Spread = 0.6
+
+        Effects["Seraphin_DOF"].FocusDistance = 50
+        Effects["Seraphin_DOF"].InFocusRadius = 20
+        Effects["Seraphin_DOF"].NearIntensity = 0.2
+
+        for name, fx in pairs(Effects) do
+            fx.Name = name
+            fx.Parent = Services.Lighting
+        end
+
+        Notify("GRAPHICS", "ULTRA HD (4K) ACTIVE", Color3.fromRGB(0, 255, 255))
+    else
+        -- Cleanup
+        for _, v in pairs(Services.Lighting:GetChildren()) do
+            if v.Name:find("Seraphin_") then v:Destroy() end
+        end
+        Services.Lighting.Technology = Enum.Technology.ShadowMap 
+        Services.Lighting.EnvironmentDiffuseScale = 0
+        Services.Lighting.EnvironmentSpecularScale = 0
+        Notify("GRAPHICS", "Returned to Normal", UI_THEME.Accent)
+    end
+end
+
+-- ====================================================
+-- [FUNCTION] SMART BOOSTER (Restorable & Looping)
+-- ====================================================
+local RestoreData = {}
+
+local function SmartBoostTick()
+    -- Hanya proses jika Boost aktif
+    if not States.Boost then return end
     
+    -- Global Optimization
     Services.Lighting.GlobalShadows = false
-    Services.Lighting.FogEnd = 9e9
-    Services.Lighting.Brightness = 1
-    Services.Lighting.Technology = Enum.Technology.Compatibility
-    if Services.Lighting:FindFirstChild("Sky") then Services.Lighting.Sky:Destroy() end
-    if Services.Lighting:FindFirstChild("Atmosphere") then Services.Lighting.Atmosphere:Destroy() end
-    if Services.Lighting:FindFirstChild("Bloom") then Services.Lighting.Bloom:Destroy() end
-    if Services.Lighting:FindFirstChild("DepthOfField") then Services.Lighting.DepthOfField:Destroy() end
-
-    pcall(function()
-        settings().Rendering.QualityLevel = "Level01"
-        settings().Rendering.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Level01
-    end)
-
+    Services.Lighting.Brightness = 0
+    pcall(function() settings().Rendering.QualityLevel = "Level01" end)
+    
+    -- Cleanup Workspace (Non-Destructive)
     for _, v in pairs(Services.Workspace:GetDescendants()) do
-        if v:IsA("BasePart") then
+        if v:IsA("BasePart") and v.Material ~= Enum.Material.SmoothPlastic then
             v.Material = Enum.Material.SmoothPlastic
             v.Reflectance = 0
             v.CastShadow = false
-            if v.Transparency > 0.5 then v.Transparency = 1 else v.Transparency = 0 end
-            
-        elseif v:IsA("Decal") or v:IsA("Texture") or v:IsA("Beam") or v:IsA("Trail") or v:IsA("ParticleEmitter") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Explosion") or v:IsA("Sparkles") then
-            v:Destroy()
-            
-        elseif v:IsA("MeshPart") then
-            v.RenderFidelity = Enum.RenderFidelity.Performance
-            v.Material = Enum.Material.SmoothPlastic
-            v.Reflectance = 0
-            v.CastShadow = false
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            if v.Transparency < 1 then v.Transparency = 1 end
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            if v.Enabled then v.Enabled = false end
         end
     end
-
+    
     local Terrain = Services.Workspace:FindFirstChildOfClass("Terrain")
     if Terrain then
         Terrain.WaterWaveSize = 0
         Terrain.WaterReflectance = 0
         Terrain.WaterTransparency = 0 
-        Terrain.Decoration = false
     end
-    
-    for i = 1, 5 do collectgarbage("collect") end
-    
-    local endMem = gcinfo()
-    return math.floor(startMem - endMem)
+end
+
+local function ToggleBoost(enable)
+    States.Boost = enable
+    BtnBoost.Text = "CPU Booster: " .. (States.Boost and "ON" or "OFF")
+    ToggleVisual(BtnBoost, States.Boost)
+
+    if enable then
+        -- Matikan Ultra jika aktif (agar tidak bentrok)
+        if States.Ultra then SetUltraGraphics(false) end
+
+        -- [SAVE STATE] Simpan data sebelum boost (Hanya Global)
+        if not RestoreData.Lighting then
+            RestoreData.Lighting = {
+                GlobalShadows = Services.Lighting.GlobalShadows,
+                Brightness = Services.Lighting.Brightness
+            }
+        end
+        
+        Notify("BOOSTER", "Smart Boost Active (Hiding Textures...)", Color3.fromRGB(0, 255, 100))
+        SmartBoostTick() -- Apply immediately
+        
+        -- Smart Loop (Jalan setiap 3 detik untuk handle part baru)
+        if Connections["BoostLoop"] then Connections["BoostLoop"]:Disconnect() end
+        Connections["BoostLoop"] = task.spawn(function()
+            while States.Boost do
+                task.wait(3)
+                SmartBoostTick()
+            end
+        end)
+        
+    else
+        -- [RESTORE STATE]
+        if Connections["BoostLoop"] then cancel(Connections["BoostLoop"]) end
+        
+        Notify("BOOSTER", "Restoring Graphics...", UI_THEME.Accent)
+        
+        -- Restore Global Settings
+        if RestoreData.Lighting then
+            Services.Lighting.GlobalShadows = RestoreData.Lighting.GlobalShadows
+            Services.Lighting.Brightness = RestoreData.Lighting.Brightness
+        end
+        
+        -- Restore Workspace (Rough Estimate)
+        for _, v in pairs(Services.Workspace:GetDescendants()) do
+            if v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 0
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Enabled = true
+            end
+        end
+    end
 end
 
 -- ====================================================
@@ -715,7 +748,7 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [5] BACKGROUND LOOPS
+-- [5] BACKGROUND LOOPS (Optimized)
 -- ====================================================
 
 -- ANTI STUCK LOOP
@@ -875,28 +908,6 @@ end)
 
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
--- [UPDATE] BUTTON ANIMATION (SMART LOOP)
-BtnAnim.MouseButton1Click:Connect(function()
-    AnimState.Enabled = not AnimState.Enabled
-    BtnAnim.Text = "Holy Anim: " .. (AnimState.Enabled and "ON" or "OFF")
-    ToggleVisual(BtnAnim, AnimState.Enabled)
-    
-    if AnimState.Enabled then
-        EnforceAnimations()
-        Notify("ANIMATION", "Holy Loop Active! (Won't reset on catch)", UI_THEME.Accent, 4)
-        -- Auto Re-equip untuk menerapkan animasi baru
-        local Char = Player.Character
-        if Char then
-            local Tool = Char:FindFirstChildOfClass("Tool")
-            if Tool then Tool.Parent = Player.Backpack end
-            task.wait(0.2)
-            ForceEquipRod()
-        end
-    else
-        Notify("ANIMATION", "Disabled (Rejoin to Reset)", Color3.fromRGB(200, 200, 200), 4)
-    end
-end)
-
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
@@ -935,15 +946,13 @@ BtnNoclip.MouseButton1Click:Connect(function()
 end)
 
 BtnBoost.MouseButton1Click:Connect(function() 
-    States.Boost = not States.Boost 
-    BtnBoost.Text = "CPU Booster: " .. (States.Boost and "ON" or "OFF")
-    ToggleVisual(BtnBoost, States.Boost) 
-    if States.Boost then
-        local freed = OptimizePerformance()
-        Notify("EXTREME BOOST", "Graphics Killed! (Extreme Mode)", Color3.fromRGB(255, 0, 0))
-    else
-        Notify("INFO", "Graphics saved (Rejoin to reset)", Color3.fromRGB(200, 200, 200))
-    end
+    ToggleBoost(not States.Boost)
+end)
+
+BtnUltra.MouseButton1Click:Connect(function()
+    -- Matikan Boost jika aktif
+    if States.Boost then ToggleBoost(false) end
+    SetUltraGraphics(not States.Ultra)
 end)
 
 BtnRender.MouseButton1Click:Connect(function() 
@@ -971,16 +980,8 @@ BtnLoad.MouseButton1Click:Connect(function()
     end 
 end)
 
--- ====================================================
--- [UPDATE] DELAYED UI REVEAL (3.8 DETIK)
--- ====================================================
+-- [Logic Panel Delay]
 task.delay(3.8, function()
     Main.Visible = true
-    if States.Panel then FloatHUD.Visible = true end
-    
-    -- Efek Fade In
-    Services.TweenService:Create(Main, TweenInfo.new(0.5), {BackgroundTransparency = UI_THEME.Transparency}):Play()
-    Services.TweenService:Create(MainStroke, TweenInfo.new(0.5), {Transparency = 0}):Play()
-    
-    Notify("SYSTEM", "Panel Ready!", Color3.fromRGB(0, 255, 100), 2)
+    FloatHUD.Visible = States.Panel 
 end)
