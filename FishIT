@@ -119,11 +119,11 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
--- Notif Masuk Script: 2.5 Detik
+-- [UPDATE] Notif Masuk Script: 2.5 Detik
 Notify("SERAPHIN", "Script Loaded - @828_Raka", UI_THEME.Accent, 2.5)
 
 -- ====================================================
--- [1] MINI FLOATING HUD (Optimized)
+-- [1] MINI FLOATING HUD
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
@@ -131,7 +131,7 @@ FloatHUD.Size = UDim2.new(0, 140, 0, 125)
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
 FloatHUD.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
 FloatHUD.BackgroundTransparency = 0.3
-FloatHUD.Visible = true
+FloatHUD.Visible = false -- [UPDATE] Hidden by default (muncul di 3.8s)
 FloatHUD.Active = true 
 
 local HudStroke = Instance.new("UIStroke", FloatHUD)
@@ -209,7 +209,8 @@ Main.Name = "Main"
 Main.Size = UDim2.new(0, UI_THEME.MinWidth, 0, UI_THEME.MinHeight)
 Main.Position = UDim2.new(0.5, -UI_THEME.MinWidth/2, 0.4, 0)
 Main.BackgroundColor3 = UI_THEME.Color
-Main.BackgroundTransparency = UI_THEME.Transparency
+Main.BackgroundTransparency = 1 -- [UPDATE] Invisible Start
+Main.Visible = false -- [UPDATE] Invisible Start
 Main.Active = true
 Main.ClipsDescendants = true 
 
@@ -218,7 +219,7 @@ MainCorner.CornerRadius = UDim.new(0, 8)
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Color = UI_THEME.Accent
 MainStroke.Thickness = 1.5
-MainStroke.Transparency = 0
+MainStroke.Transparency = 1 -- [UPDATE] Invisible Start
 
 local LogoR = Instance.new("TextButton", Main)
 LogoR.Name = "LogoR"
@@ -454,60 +455,62 @@ local BodyV = nil
 local LastFishCaughtTime = tick()
 local LastFishCount = 0
 
--- [UPDATED] HOLY TRIDENT ANIMATION REPLACER
+-- ====================================================
+-- [UPDATE] SMART ANIMATION LOOP (ANTI-RESET)
+-- ====================================================
 local AnimState = { Enabled = false }
+local AnimationIDs = {
+    -- ID Baru dari Request
+    ["Holy Trident - FishCaught"]       = "rbxassetid://128167068291703",
+    ["Holy Trident - EquipIdle"]        = "rbxassetid://83219020397849",
+    ["Holy Trident - ReelStart"]        = "rbxassetid://126831815839724",
+    ["Holy Trident - ReelingIdle"]      = "rbxassetid://126831815839724",
+    ["Holy Trident - RodThrow"]         = "rbxassetid://114917462794864",
+    ["Holy Trident - StartRodCharge"]   = "rbxassetid://83219020397849",
+    -- Sub Children
+    ["Holy Trident - ReelIntermission"] = "rbxassetid://126831815839724"
+}
 
-local function OverwriteAnimationIDs()
-    local RepAnim = Services.ReplicatedStorage:WaitForChild("Modules", 5) and Services.ReplicatedStorage.Modules:WaitForChild("Animations", 5)
+-- FUNGSI INTI: Memaksa ID Animasi secara terus menerus
+local function EnforceAnimations()
+    local RepAnim = Services.ReplicatedStorage:FindFirstChild("Modules") and Services.ReplicatedStorage.Modules:FindFirstChild("Animations")
+    if not RepAnim then return end
     
-    if not RepAnim then
-        Notify("ANIM ERROR", "Module Animations not found!", Color3.fromRGB(255, 50, 50), 4)
-        return
-    end
-
-    -- Mapping sesuai request user
-    local targetAnims = {
-        ["Holy Trident - FishCaught"]       = "rbxassetid://128167068291703",
-        ["Holy Trident - EquipIdle"]        = "rbxassetid://83219020397849",
-        ["Holy Trident - ReelStart"]        = "rbxassetid://126831815839724",
-        ["Holy Trident - ReelingIdle"]      = "rbxassetid://126831815839724",
-        ["Holy Trident - RodThrow"]         = "rbxassetid://114917462794864",
-        ["Holy Trident - StartRodCharge"]   = "rbxassetid://83219020397849"
-    }
-    
-    -- Sub-child mapping (ReelIntermission ada di dalam ReelStart)
-    local subAnims = {
-        ["Holy Trident - ReelIntermission"] = "rbxassetid://126831815839724"
-    }
-
-    local successCount = 0
-    
-    -- Replace Utama
-    for name, id in pairs(targetAnims) do
-        local animObj = RepAnim:FindFirstChild(name)
-        if animObj and animObj:IsA("StringValue") then
-            animObj.Value = id
-            successCount = successCount + 1
-        elseif animObj and animObj:IsA("Animation") then
-            animObj.AnimationId = id
-            successCount = successCount + 1
-        end
-    end
-
-    -- Replace Sub-child
-    local reelStart = RepAnim:FindFirstChild("Holy Trident - ReelStart")
-    if reelStart then
-        for name, id in pairs(subAnims) do
-            local subObj = reelStart:FindFirstChild(name)
-            if subObj then
-                if subObj:IsA("StringValue") then subObj.Value = id end
-                if subObj:IsA("Animation") then subObj.AnimationId = id end
+    -- Main Loop penggantian ID
+    for name, id in pairs(AnimationIDs) do
+        -- Cek folder utama
+        local target = RepAnim:FindFirstChild(name)
+        if target then
+            if target:IsA("StringValue") and target.Value ~= id then
+                target.Value = id -- Paksa ganti jika berubah
+            elseif target:IsA("Animation") and target.AnimationId ~= id then
+                target.AnimationId = id -- Paksa ganti jika berubah
+            end
+        else
+            -- Cek folder ReelStart untuk sub-child
+            if name == "Holy Trident - ReelIntermission" then
+                local reelParent = RepAnim:FindFirstChild("Holy Trident - ReelStart")
+                if reelParent then
+                    local subTarget = reelParent:FindFirstChild(name)
+                    if subTarget then
+                        if subTarget:IsA("StringValue") and subTarget.Value ~= id then subTarget.Value = id end
+                        if subTarget:IsA("Animation") and subTarget.AnimationId ~= id then subTarget.AnimationId = id end
+                    end
+                end
             end
         end
     end
-    
-    Notify("ANIMATION", "Applied " .. successCount .. " Holy Animations!", UI_THEME.Accent, 4)
 end
+
+-- Loop Pintar: Berjalan di background untuk menjaga animasi
+task.spawn(function()
+    while true do
+        task.wait(0.5) -- Cek setiap 0.5 detik
+        if AnimState.Enabled then
+            pcall(EnforceAnimations)
+        end
+    end
+end)
 
 -- Force Re-Equip untuk refresh animasi
 local function ForceEquipRod()
@@ -712,7 +715,7 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [5] BACKGROUND LOOPS (Optimized)
+-- [5] BACKGROUND LOOPS
 -- ====================================================
 
 -- ANTI STUCK LOOP
@@ -872,13 +875,15 @@ end)
 
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
+-- [UPDATE] BUTTON ANIMATION (SMART LOOP)
 BtnAnim.MouseButton1Click:Connect(function()
     AnimState.Enabled = not AnimState.Enabled
     BtnAnim.Text = "Holy Anim: " .. (AnimState.Enabled and "ON" or "OFF")
     ToggleVisual(BtnAnim, AnimState.Enabled)
     
     if AnimState.Enabled then
-        OverwriteAnimationIDs()
+        EnforceAnimations()
+        Notify("ANIMATION", "Holy Loop Active! (Won't reset on catch)", UI_THEME.Accent, 4)
         -- Auto Re-equip untuk menerapkan animasi baru
         local Char = Player.Character
         if Char then
@@ -964,4 +969,18 @@ BtnLoad.MouseButton1Click:Connect(function()
         HRP.CFrame = SavedCFrame 
         Notify("POSITION", "Location Loaded!", UI_THEME.Accent)
     end 
+end)
+
+-- ====================================================
+-- [UPDATE] DELAYED UI REVEAL (3.8 DETIK)
+-- ====================================================
+task.delay(3.8, function()
+    Main.Visible = true
+    if States.Panel then FloatHUD.Visible = true end
+    
+    -- Efek Fade In
+    Services.TweenService:Create(Main, TweenInfo.new(0.5), {BackgroundTransparency = UI_THEME.Transparency}):Play()
+    Services.TweenService:Create(MainStroke, TweenInfo.new(0.5), {Transparency = 0}):Play()
+    
+    Notify("SYSTEM", "Panel Ready!", Color3.fromRGB(0, 255, 100), 2)
 end)
