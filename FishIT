@@ -471,10 +471,10 @@ local function ForceEquipRod()
 end
 
 -- ====================================================
--- [UPDATED] HOLY TRIDENT FULL ANIMATION OVERRIDE
+-- [UPDATED] HOLY TRIDENT FULL (ANIMATION + GRIP)
 -- ====================================================
 
--- State Khusus Animasi
+-- State Khusus Animasi & Skin
 local AnimState = {
     Enabled = false,
     Index = 1
@@ -488,7 +488,34 @@ local HOLY_TRIDENT_ANIMS = {
     "rbxassetid://1128167068291703", -- FishCaught
 }
 
--- Core Hook Function
+-- [DATA] Holy Trident Skin Offset
+local HOLY_SKIN_DATA = {
+    OverrideC0 = Vector3.new(0.60000, 0, -1.5),
+    OverrideROT = CFrame.fromOrientation(0, (-math.pi/2), 0.7853981633974483)
+}
+
+-- Fungsi Override Grip/Posisi
+local function ApplyHolyGrip(char)
+    if not AnimState.Enabled then return end
+    
+    local Tool = char:FindFirstChildOfClass("Tool")
+    if Tool then
+        -- Cari Motor6D di Tangan Kanan
+        local RightGrip = nil
+        local RightHand = char:FindFirstChild("RightHand") -- R15
+        local RightArm = char:FindFirstChild("Right Arm")  -- R6
+        
+        if RightHand then RightGrip = RightHand:FindFirstChild("RightGrip") end
+        if RightArm and not RightGrip then RightGrip = RightArm:FindFirstChild("RightGrip") end
+        
+        if RightGrip then
+            -- TERAPKAN OFFSET DARI DATA USER
+            RightGrip.C0 = CFrame.new(HOLY_SKIN_DATA.OverrideC0) * HOLY_SKIN_DATA.OverrideROT
+        end
+    end
+end
+
+-- Core Hook Function (Animation)
 local function HookAnimator(char)
     local hum = char:WaitForChild("Humanoid", 10)
     if not hum then return end
@@ -498,34 +525,36 @@ local function HookAnimator(char)
     animator.AnimationPlayed:Connect(function(track)
         if not AnimState.Enabled then return end
         
-        -- Anti-Crash Loop: Jangan proses jika animasi sudah ID Holy Trident
+        -- Apply Grip saat animasi main (untuk memastikan grip tetap terkunci)
+        ApplyHolyGrip(char)
+
+        -- Anti-Crash Loop
         local currentID = track.Animation.AnimationId
         local isHoly = false
         for _, id in pairs(HOLY_TRIDENT_ANIMS) do
-            if currentID == id then 
-                isHoly = true
-                break 
-            end
+            if currentID == id then isHoly = true; break end
         end
         if isHoly then return end
 
-        -- Hentikan animasi asli
         track:Stop()
 
-        -- Rotate index animasi (Cycle 1-4)
         AnimState.Index = AnimState.Index + 1
-        if AnimState.Index > #HOLY_TRIDENT_ANIMS then
-            AnimState.Index = 1
-        end
+        if AnimState.Index > #HOLY_TRIDENT_ANIMS then AnimState.Index = 1 end
 
-        -- Terapkan Override
         local anim = track.Animation
         anim.AnimationId = HOLY_TRIDENT_ANIMS[AnimState.Index]
 
-        -- Mainkan ulang dengan ID baru
         local newTrack = animator:LoadAnimation(anim)
         newTrack.Priority = track.Priority
         newTrack:Play()
+    end)
+    
+    -- Juga apply grip saat tool di-equip
+    char.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") and AnimState.Enabled then
+            task.wait(0.1) -- Tunggu Motor6D dibuat game
+            ApplyHolyGrip(char)
+        end
     end)
 end
 
@@ -983,6 +1012,9 @@ BtnAnim.MouseButton1Click:Connect(function()
     
     if AnimState.Enabled then
         Notify("ANIMATION", "Holy Override ENABLED", Color3.fromRGB(0, 255, 100))
+        -- Paksa Terapkan Grip (Offset) saat diaktifkan
+        local Char = Player.Character
+        if Char then ApplyHolyGrip(Char) end
     else
         Notify("ANIMATION", "Holy Override DISABLED", Color3.fromRGB(255, 100, 100))
     end
