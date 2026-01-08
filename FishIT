@@ -274,7 +274,6 @@ EnableDrag(FloatHUD, FloatHUD)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0) 
 Title.Position = UDim2.new(0, 10, 0, 0) 
--- [UPDATED HEADER] Custom Name Request
 Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  <font size=\"12\" color=\"rgb(200,200,200)\">by @828_raka</font>" 
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
@@ -953,7 +952,7 @@ end)
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
 -- ====================================================
--- [UPDATED] SELL ENCHANT CUSTOM AMOUNT (InventoryController Scan)
+-- [UPDATED] SELL ENCHANT CUSTOM AMOUNT
 -- ====================================================
 BtnSellStones.MouseButton1Click:Connect(function()
     local amountToSell = tonumber(BoxSellCount.Text)
@@ -969,35 +968,43 @@ BtnSellStones.MouseButton1Click:Connect(function()
         local EquipRemote = Net:WaitForChild("RE/EquipItem")
         local SellRemote = Net:WaitForChild("RF/SellItem")
 
-        -- 1. Scan Inventory via Controller (Preferred Method)
-        local inventoryData = {}
-        local success, result = pcall(function()
-            -- Access InventoryController directly as requested
+        local inventoryData = nil
+
+        -- [METHOD 1] ReplicatedStorage Controller
+        local success, res = pcall(function()
+            -- Access InventoryController directly
             local InvController = require(Services.ReplicatedStorage.Controllers.InventoryController)
-            return InvController.Inventory -- Biasanya ada di table Inventory
+            return InvController.Inventory 
         end)
-        
-        -- Fallback jika Controller tidak bisa di-require (Executor limitation)
-        if not success or not result then
+        if success and res then inventoryData = res end
+
+        -- [METHOD 2] CorePackages Path (Added as Requested)
+        if not inventoryData then
+            pcall(function()
+                -- Fixed 'ame' to 'game'
+                local path = game:GetService("CorePackages").Workspace.Packages._Workspace.ProfilePlatform.ProfilePlatform.Components.Inventory
+                local mod = require(path)
+                inventoryData = mod.Inventory or mod
+            end)
+        end
+
+        -- [METHOD 3] Fallback Remote
+        if not inventoryData then
              local GetInv = Net:FindFirstChild("RF/GetInventory")
              if GetInv then
-                 result = GetInv:InvokeServer()
+                 inventoryData = GetInv:InvokeServer()
              end
         end
 
-        if not result then
+        if not inventoryData then
             Notify("ERROR", "Failed to get Inventory Data!", Color3.fromRGB(255, 0, 0))
             return
         end
         
-        inventoryData = result
-
         -- 2. Filter Stones & Collect GUIDs
         local stones = {}
         for _, item in pairs(inventoryData) do
-            -- Cek nama item (Pastikan sesuai nama in-game)
             if item.Name == "Enchant Stones" or item.Name == "Enchant Stone" then
-                -- Ambil GUID (biasanya di field 'Id', 'UUID', atau 'Guid')
                 table.insert(stones, item.Id or item.UUID or item.Guid)
             end
         end
@@ -1024,7 +1031,7 @@ BtnSellStones.MouseButton1Click:Connect(function()
             
             -- Update UI
             BtnSellStones.Text = "Selling: " .. i .. "/" .. sellCount
-            task.wait(0.25) -- Delay agar aman dari rate limit
+            task.wait(0.25) 
         end
         
         BtnSellStones.Text = "Sell Enchants"
