@@ -952,7 +952,7 @@ end)
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
 -- ====================================================
--- [UPDATED] SELL ENCHANT (ULTIMATE SCAN: GUI & MODULES)
+-- [UPDATED] SELL ENCHANT (Fixed: Sell 1 per loop)
 -- ====================================================
 BtnSellStones.MouseButton1Click:Connect(function()
     local amountToSell = tonumber(BoxSellCount.Text)
@@ -961,7 +961,7 @@ BtnSellStones.MouseButton1Click:Connect(function()
         return 
     end
 
-    Notify("SYSTEM", "Scanning Inventory (Deep Scan)...", UI_THEME.Accent)
+    Notify("SYSTEM", "Scanning Inventory...", UI_THEME.Accent)
     
     task.spawn(function()
         local Net = Services.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
@@ -970,7 +970,7 @@ BtnSellStones.MouseButton1Click:Connect(function()
 
         local inventoryData = nil
 
-        -- [METHOD 1] ReplicatedStorage Controller (Standard Knit)
+        -- [METHOD 1] ReplicatedStorage Controller
         local success, res = pcall(function()
             local InvController = require(Services.ReplicatedStorage.Controllers.InventoryController)
             return InvController.Inventory 
@@ -997,34 +997,16 @@ BtnSellStones.MouseButton1Click:Connect(function()
             end)
         end
 
-        -- [METHOD 4] UI ATTRIBUTE SCAN (BRUTE FORCE)
-        -- Ini akan membaca PlayerGui jika require gagal
+        -- [METHOD 4] UI Scan
         local uiStones = {}
         if not inventoryData then
-            Notify("SYSTEM", "Modules Protected. Scanning GUI...", Color3.fromRGB(255, 200, 50))
             local PG = Player:FindFirstChild("PlayerGui")
             if PG then
                 for _, desc in pairs(PG:GetDescendants()) do
-                    -- Cari teks "Enchant Stone"
                     if desc:IsA("TextLabel") and (desc.Text == "Enchant Stones" or desc.Text == "Enchant Stone") then
-                        -- Cek parent frame untuk atribut ID
                         local parent = desc.Parent
-                        local foundID = nil
-                        
-                        -- Cek atribut umum
-                        if parent:GetAttribute("ItemId") then foundID = parent:GetAttribute("ItemId") end
-                        if parent:GetAttribute("Guid") then foundID = parent:GetAttribute("Guid") end
-                        if parent:GetAttribute("UUID") then foundID = parent:GetAttribute("UUID") end
-                        
-                        -- Cek parent dari parent (kadang label dibungkus)
-                        if not foundID and parent.Parent then
-                            if parent.Parent:GetAttribute("ItemId") then foundID = parent.Parent:GetAttribute("ItemId") end
-                             if parent.Parent:GetAttribute("Guid") then foundID = parent.Parent:GetAttribute("Guid") end
-                        end
-                        
-                        if foundID then
-                            table.insert(uiStones, foundID)
-                        end
+                        local foundID = parent:GetAttribute("ItemId") or parent:GetAttribute("Guid") or parent:GetAttribute("UUID")
+                        if foundID then table.insert(uiStones, foundID) end
                     end
                 end
             end
@@ -1038,10 +1020,8 @@ BtnSellStones.MouseButton1Click:Connect(function()
              end
         end
 
-        -- GABUNGKAN DATA (Modules + UI Scan)
+        -- Collect GUIDs
         local stones = {}
-        
-        -- Proses data dari Module/Remote
         if inventoryData then
             for _, item in pairs(inventoryData) do
                 if item.Name == "Enchant Stones" or item.Name == "Enchant Stone" then
@@ -1049,31 +1029,25 @@ BtnSellStones.MouseButton1Click:Connect(function()
                 end
             end
         end
-        
-        -- Proses data dari UI Scan
-        for _, id in pairs(uiStones) do
-            table.insert(stones, id)
-        end
+        for _, id in pairs(uiStones) do table.insert(stones, id) end
 
         if #stones == 0 then
-             Notify("SYSTEM", "No Enchant Stones Found! (Open Inventory)", Color3.fromRGB(255, 100, 100))
+             Notify("SYSTEM", "No Enchant Stones Found!", Color3.fromRGB(255, 100, 100))
              return
         end
 
         local sellCount = math.min(amountToSell, #stones)
         Notify("SELLING", "Selling " .. sellCount .. " stones...", Color3.fromRGB(0, 255, 0))
         
-        -- EXECUTE SELL LOOP
+        -- EXECUTE SELL LOOP (FIXED: Added Quantity '1')
         for i = 1, sellCount do
             local guid = stones[i]
             
-            -- Equip Args: {GUID, Name}
-            local argsEquip = { guid, "Enchant Stones" }
-            EquipRemote:FireServer(unpack(argsEquip))
+            -- Equip
+            EquipRemote:FireServer(guid, "Enchant Stones")
             
-            -- Sell Args: {GUID}
-            local argsSell = { guid }
-            SellRemote:InvokeServer(unpack(argsSell))
+            -- Sell (Sending '1' to prevent full stack sell)
+            SellRemote:InvokeServer(guid, 1)
             
             -- Update UI
             BtnSellStones.Text = "Selling: " .. i .. "/" .. sellCount
@@ -1162,3 +1136,4 @@ task.delay(3.8, function()
     Main.Visible = true
     FloatHUD.Visible = States.Panel 
 end)
+jl
