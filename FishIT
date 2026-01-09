@@ -8,7 +8,8 @@ local Services = {
     UserInputService = game:GetService("UserInputService"),
     ReplicatedStorage = game:GetService("ReplicatedStorage"),
     TweenService = game:GetService("TweenService"),
-    Workspace = game:GetService("Workspace")
+    Workspace = game:GetService("Workspace"),
+    StarterGui = game:GetService("StarterGui")
 }
 
 local Player = Services.Players.LocalPlayer
@@ -16,20 +17,20 @@ local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 10)
 local Hum = Char:WaitForChild("Humanoid", 10)
 
--- // Konfigurasi Visual (CYAN & BOLD THEME)
+-- // Konfigurasi Visual
 local UI_THEME = {
     MinWidth = 280,  
-    MinHeight = 280, 
-    Color = Color3.fromRGB(10, 10, 10), 
+    MinHeight = 320, 
+    Color = Color3.fromRGB(25, 25, 25),       
     Transparency = 0.1, 
-    HeaderColor = Color3.fromRGB(20, 20, 20),
-    Accent = Color3.fromRGB(0, 255, 255), -- CYAN NEON
-    TabOff = Color3.fromRGB(120, 120, 120),
+    HeaderColor = Color3.fromRGB(40, 40, 40), 
+    Accent = Color3.fromRGB(120, 120, 120),   
+    TabOff = Color3.fromRGB(150, 150, 150),
     TabOn = Color3.fromRGB(255, 255, 255),
-    TextColor = Color3.fromRGB(255, 255, 255),
-    SubTextColor = Color3.fromRGB(180, 180, 180),
-    Font = Enum.Font.GothamBold,
-    BtnFont = Enum.Font.GothamMedium 
+    TextColor = Color3.fromRGB(255, 255, 255), 
+    SubTextColor = Color3.fromRGB(220, 220, 220), 
+    Font = Enum.Font.GothamBlack, 
+    BtnFont = Enum.Font.GothamBold 
 }
 
 -- Bersihkan UI Lama
@@ -65,8 +66,8 @@ local function Notify(title, text, colorOverride, duration)
     local Frame = Instance.new("Frame")
     Frame.Name = "NotifyItem"
     Frame.Size = UDim2.new(1, 0, 0, 0)
-    Frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-    Frame.BackgroundTransparency = 0.15
+    Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    Frame.BackgroundTransparency = 0.1
     Frame.BorderSizePixel = 0
     Frame.Parent = NotifyContainer
     
@@ -84,7 +85,7 @@ local function Notify(title, text, colorOverride, duration)
     LblTitle.Text = string.upper(title)
     LblTitle.TextColor3 = color
     LblTitle.Font = Enum.Font.GothamBlack
-    LblTitle.TextSize = 15
+    LblTitle.TextSize = 14
     LblTitle.TextXAlignment = Enum.TextXAlignment.Left
     
     local LblMsg = Instance.new("TextLabel", Frame)
@@ -117,17 +118,16 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
--- Notif Masuk Script: 2.5 Detik
-Notify("SERAPHIN", "Script Loaded - @828_Raka", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "Force Bypass Mode Ready", UI_THEME.Accent, 2.5)
 
 -- ====================================================
--- [1] MINI FLOATING HUD (Optimized)
+-- [1] MINI FLOATING HUD
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
 FloatHUD.Size = UDim2.new(0, 140, 0, 125) 
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
-FloatHUD.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+FloatHUD.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 FloatHUD.BackgroundTransparency = 0.3
 FloatHUD.Visible = false 
 FloatHUD.Active = true 
@@ -210,7 +210,7 @@ Main.BackgroundColor3 = UI_THEME.Color
 Main.BackgroundTransparency = UI_THEME.Transparency
 Main.Active = true
 Main.ClipsDescendants = true 
-Main.Visible = false -- Sembunyikan Panel di awal (Muncul 3.8s)
+Main.Visible = false
 
 local MainCorner = Instance.new("UICorner", Main)
 MainCorner.CornerRadius = UDim.new(0, 8)
@@ -274,7 +274,7 @@ EnableDrag(FloatHUD, FloatHUD)
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -60, 1, 0) 
 Title.Position = UDim2.new(0, 10, 0, 0) 
-Title.Text = "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  <font size=\"12\" color=\"rgb(200,200,200)\">by @828_raka</font>" 
+Title.Text = "SERAPHIN <font color=\"rgb(180,180,180)\">HELPER</font>  <font size=\"12\" color=\"rgb(220,220,220)\">by @828_raka</font>" 
 Title.RichText = true
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = UI_THEME.Font
@@ -308,8 +308,8 @@ TabMainBtn.Name = "MainTab"
 TabMainBtn.Size = UDim2.new(0.5, 0, 1, 0)
 TabMainBtn.BackgroundTransparency = 1
 TabMainBtn.Text = "MAIN"
-TabMainBtn.Font = Enum.Font.GothamBold
-TabMainBtn.TextSize = 11
+TabMainBtn.Font = Enum.Font.GothamBlack
+TabMainBtn.TextSize = 12
 TabMainBtn.TextColor3 = UI_THEME.TabOn
 
 local TabMiscBtn = Instance.new("TextButton", TabHolder)
@@ -318,8 +318,8 @@ TabMiscBtn.Size = UDim2.new(0.5, 0, 1, 0)
 TabMiscBtn.Position = UDim2.new(0.5, 0, 0, 0)
 TabMiscBtn.BackgroundTransparency = 1
 TabMiscBtn.Text = "MISC"
-TabMiscBtn.Font = Enum.Font.GothamBold
-TabMiscBtn.TextSize = 11
+TabMiscBtn.Font = Enum.Font.GothamBlack
+TabMiscBtn.TextSize = 12
 TabMiscBtn.TextColor3 = UI_THEME.TabOff
 
 local TabIndicator = Instance.new("Frame", TabHolder)
@@ -334,16 +334,110 @@ PageContainer.Size = UDim2.new(1, -16, 1, -65)
 PageContainer.Position = UDim2.new(0, 8, 0, 60)
 PageContainer.BackgroundTransparency = 1
 
-local PageMain = Instance.new("Frame", PageContainer)
+-- ====================================================
+-- [UPDATED LAYOUT WITH SCROLLING]
+-- ====================================================
+
+local PageMain = Instance.new("ScrollingFrame", PageContainer)
 PageMain.Name = "PageMain"
 PageMain.Size = UDim2.new(1, 0, 1, 0)
 PageMain.BackgroundTransparency = 1
+PageMain.BorderSizePixel = 0
+PageMain.ScrollBarThickness = 4
+PageMain.ScrollBarImageColor3 = UI_THEME.Accent
 PageMain.Visible = true
+PageMain.AutomaticCanvasSize = Enum.AutomaticSize.Y 
+PageMain.CanvasSize = UDim2.new(0, 0, 0, 0) 
 
-local GridMain = Instance.new("UIGridLayout", PageMain)
+local MainLayout = Instance.new("UIListLayout", PageMain)
+MainLayout.SortOrder = Enum.SortOrder.LayoutOrder
+MainLayout.Padding = UDim.new(0, 15)
+MainLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local BtnContainer = Instance.new("Frame", PageMain)
+BtnContainer.Name = "ButtonArea"
+BtnContainer.LayoutOrder = 1
+BtnContainer.Size = UDim2.new(1, 0, 0, 160) 
+BtnContainer.BackgroundTransparency = 1
+
+local GridMain = Instance.new("UIGridLayout", BtnContainer)
 GridMain.CellSize = UDim2.new(0, 128, 0, 28) 
-GridMain.CellPadding = UDim2.new(0, 8, 0, 12) 
+GridMain.CellPadding = UDim2.new(0, 8, 0, 8) 
 GridMain.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local SellWidget = Instance.new("Frame", PageMain)
+SellWidget.Name = "SellWidget"
+SellWidget.LayoutOrder = 2
+SellWidget.Size = UDim2.new(0.95, 0, 0, 95) 
+SellWidget.BackgroundColor3 = Color3.fromRGB(20, 20, 20) 
+SellWidget.BackgroundTransparency = 0.3
+Instance.new("UICorner", SellWidget).CornerRadius = UDim.new(0, 6)
+local WidgetStroke = Instance.new("UIStroke", SellWidget)
+WidgetStroke.Color = UI_THEME.Accent
+WidgetStroke.Transparency = 0.7
+WidgetStroke.Thickness = 1
+
+local SellTitle = Instance.new("TextLabel", SellWidget)
+SellTitle.Text = "AUTO SELL ENCHANT (Force Mode)"
+SellTitle.Size = UDim2.new(1, 0, 0, 20)
+SellTitle.Position = UDim2.new(0, 0, 0, 2)
+SellTitle.BackgroundTransparency = 1
+SellTitle.TextColor3 = UI_THEME.SubTextColor
+SellTitle.Font = Enum.Font.GothamBlack
+SellTitle.TextSize = 10
+
+local SellControls = Instance.new("Frame", SellWidget)
+SellControls.Size = UDim2.new(1, -16, 0, 30)
+SellControls.Position = UDim2.new(0, 8, 0, 26)
+SellControls.BackgroundTransparency = 1
+
+local BoxSellCount = Instance.new("TextBox", SellControls)
+BoxSellCount.Name = "Input"
+BoxSellCount.Size = UDim2.new(0.25, 0, 1, 0) 
+BoxSellCount.Position = UDim2.new(0, 0, 0, 0)
+BoxSellCount.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+BoxSellCount.BackgroundTransparency = 0.4
+BoxSellCount.Text = "1"
+BoxSellCount.PlaceholderText = "#"
+BoxSellCount.TextColor3 = Color3.new(1,1,1)
+BoxSellCount.Font = Enum.Font.GothamBold
+BoxSellCount.TextSize = 12
+Instance.new("UICorner", BoxSellCount).CornerRadius = UDim.new(0, 4)
+local sBox = Instance.new("UIStroke", BoxSellCount)
+sBox.Color = UI_THEME.Accent
+sBox.Thickness = 1
+sBox.Transparency = 0.6
+
+local BtnSellStones = Instance.new("TextButton", SellControls)
+BtnSellStones.Name = "BtnSell"
+BtnSellStones.Size = UDim2.new(0.72, 0, 1, 0) 
+BtnSellStones.Position = UDim2.new(0.28, 0, 0, 0)
+BtnSellStones.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+BtnSellStones.BackgroundTransparency = 0.2
+BtnSellStones.Text = "FORCE SELL"
+BtnSellStones.TextColor3 = Color3.new(1,1,1)
+BtnSellStones.Font = Enum.Font.GothamBlack
+BtnSellStones.TextSize = 11
+Instance.new("UICorner", BtnSellStones).CornerRadius = UDim.new(0, 4)
+local sSell = Instance.new("UIStroke", BtnSellStones)
+sSell.Color = Color3.fromRGB(255, 80, 80)
+sSell.Thickness = 1
+sSell.Transparency = 0.4
+
+local LblOwnedInfo = Instance.new("TextLabel", SellWidget)
+LblOwnedInfo.Name = "LblOwned"
+LblOwnedInfo.Size = UDim2.new(1, 0, 0, 20)
+LblOwnedInfo.Position = UDim2.new(0, 0, 0, 65) 
+LblOwnedInfo.BackgroundTransparency = 1
+LblOwnedInfo.Text = "Enchant Stone: 0" 
+LblOwnedInfo.TextColor3 = Color3.new(0.8, 0.8, 0.8) 
+LblOwnedInfo.Font = Enum.Font.GothamBold
+LblOwnedInfo.TextSize = 10
+LblOwnedInfo.TextXAlignment = Enum.TextXAlignment.Center
+
+-- ====================================================
+-- MISC PAGE
+-- ====================================================
 
 local PageMisc = Instance.new("Frame", PageContainer)
 PageMisc.Name = "PageMisc"
@@ -429,7 +523,7 @@ local function ToggleVisual(btn, on)
         btn.BackgroundTransparency = 0.2
         btn.TextColor3 = Color3.fromRGB(0, 0, 0) 
         btn.UIStroke.Transparency = 1
-        btn.Font = Enum.Font.GothamBold
+        btn.Font = Enum.Font.GothamBlack 
     else
         btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
         btn.BackgroundTransparency = 0.5
@@ -470,56 +564,16 @@ local function ForceEquipRod()
     end)
 end
 
--- >> TOMBOL UI <<
-
--- TAB MAIN
-local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
-local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
-
--- [REPLACED] Holy Anim -> Sell Enchant Section
-local SellContainer = Instance.new("Frame", PageMain)
-SellContainer.Name = "SellContainer"
-SellContainer.BackgroundTransparency = 1
-
-local BtnSellStones = Instance.new("TextButton", SellContainer)
-BtnSellStones.Name = "BtnSell"
-BtnSellStones.Size = UDim2.new(0.65, -4, 1, 0)
-BtnSellStones.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-BtnSellStones.BackgroundTransparency = 0.5
-BtnSellStones.Text = "Sell Enchants"
-BtnSellStones.TextColor3 = UI_THEME.TextColor
-BtnSellStones.Font = UI_THEME.BtnFont
-BtnSellStones.TextSize = 10
-Instance.new("UICorner", BtnSellStones).CornerRadius = UDim.new(0, 4)
-local sSell = Instance.new("UIStroke", BtnSellStones)
-sSell.Color = Color3.fromRGB(255, 100, 100) -- Red Accent for Sell
-sSell.Thickness = 1
-sSell.Transparency = 0.6
-
-local BoxSellCount = Instance.new("TextBox", SellContainer)
-BoxSellCount.Name = "Input"
-BoxSellCount.Size = UDim2.new(0.35, 0, 1, 0)
-BoxSellCount.Position = UDim2.new(0.65, 0, 0, 0)
-BoxSellCount.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-BoxSellCount.BackgroundTransparency = 0.5
-BoxSellCount.Text = "1" -- Default
-BoxSellCount.PlaceholderText = "Amt"
-BoxSellCount.TextColor3 = UI_THEME.Accent
-BoxSellCount.Font = Enum.Font.GothamBold
-BoxSellCount.TextSize = 10
-Instance.new("UICorner", BoxSellCount).CornerRadius = UDim.new(0, 4)
-local sBox = Instance.new("UIStroke", BoxSellCount)
-sBox.Color = UI_THEME.Accent
-sBox.Thickness = 1
-sBox.Transparency = 0.6
-
-local BtnUltra  = MakeBtn(PageMain, "Ultra HD: OFF") 
-local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
-local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
-local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
-local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF") 
-local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
-local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
+-- >> TOMBOL UI (Ditempatkan di BtnContainer agar rapi di grid atas) <<
+local BtnEvent  = MakeBtn(BtnContainer, "Auto Event: OFF") 
+local BtnEquip  = MakeBtn(BtnContainer, "Auto Equip: OFF")
+local BtnUltra  = MakeBtn(BtnContainer, "Ultra HD: OFF") 
+local BtnWow    = MakeBtn(BtnContainer, "Water Walk: OFF")
+local BtnFreeze = MakeBtn(BtnContainer, "Freeze: OFF")
+local BtnNoclip = MakeBtn(BtnContainer, "No Clip: OFF")
+local BtnBoost  = MakeBtn(BtnContainer, "CPU Booster: OFF") 
+local BtnRender = MakeBtn(BtnContainer, "3D Render: ON") 
+local BtnFps    = MakeBtn(BtnContainer, "FPS: Unli")
 
 -- TAB MISC
 local StuckContainer = Instance.new("Frame", PageMisc)
@@ -607,7 +661,7 @@ local function SetAutoEquip(bool)
 end
 
 -- ====================================================
--- [FUNCTION] ULTRA HD GRAPHICS (4K)
+-- [FUNCTION] ULTRA HD GRAPHICS
 -- ====================================================
 local function SetUltraGraphics(enabled)
     States.Ultra = enabled
@@ -615,14 +669,12 @@ local function SetUltraGraphics(enabled)
     ToggleVisual(BtnUltra, States.Ultra)
 
     if enabled then
-        -- Max Settings
         pcall(function() settings().Rendering.QualityLevel = "Level21" end)
         Services.Lighting.GlobalShadows = true
-        Services.Lighting.Technology = Enum.Technology.Future -- Teknologi Cahaya Masa Depan
+        Services.Lighting.Technology = Enum.Technology.Future
         Services.Lighting.EnvironmentDiffuseScale = 1
         Services.Lighting.EnvironmentSpecularScale = 1
 
-        -- Add Post Processing
         local Effects = {
             ["Seraphin_Bloom"] = Instance.new("BloomEffect"),
             ["Seraphin_Color"] = Instance.new("ColorCorrectionEffect"),
@@ -636,7 +688,7 @@ local function SetUltraGraphics(enabled)
 
         Effects["Seraphin_Color"].Brightness = 0.05
         Effects["Seraphin_Color"].Contrast = 0.2
-        Effects["Seraphin_Color"].Saturation = 0.25 -- Lebih tajam/vibrant
+        Effects["Seraphin_Color"].Saturation = 0.25 
 
         Effects["Seraphin_Sun"].Intensity = 0.25
         Effects["Seraphin_Sun"].Spread = 0.6
@@ -652,7 +704,6 @@ local function SetUltraGraphics(enabled)
 
         Notify("GRAPHICS", "ULTRA HD (4K) ACTIVE", Color3.fromRGB(0, 255, 255))
     else
-        -- Cleanup
         for _, v in pairs(Services.Lighting:GetChildren()) do
             if v.Name:find("Seraphin_") then v:Destroy() end
         end
@@ -664,20 +715,16 @@ local function SetUltraGraphics(enabled)
 end
 
 -- ====================================================
--- [FUNCTION] SMART BOOSTER (Restorable & Looping)
+-- [FUNCTION] SMART BOOSTER
 -- ====================================================
 local RestoreData = {}
 
 local function SmartBoostTick()
-    -- Hanya proses jika Boost aktif
     if not States.Boost then return end
-    
-    -- Global Optimization
     Services.Lighting.GlobalShadows = false
     Services.Lighting.Brightness = 0
     pcall(function() settings().Rendering.QualityLevel = "Level01" end)
     
-    -- Cleanup Workspace (Non-Destructive)
     for _, v in pairs(Services.Workspace:GetDescendants()) do
         if v:IsA("BasePart") and v.Material ~= Enum.Material.SmoothPlastic then
             v.Material = Enum.Material.SmoothPlastic
@@ -704,21 +751,15 @@ local function ToggleBoost(enable)
     ToggleVisual(BtnBoost, States.Boost)
 
     if enable then
-        -- Matikan Ultra jika aktif (agar tidak bentrok)
         if States.Ultra then SetUltraGraphics(false) end
-
-        -- [SAVE STATE] Simpan data sebelum boost (Hanya Global)
         if not RestoreData.Lighting then
             RestoreData.Lighting = {
                 GlobalShadows = Services.Lighting.GlobalShadows,
                 Brightness = Services.Lighting.Brightness
             }
         end
-        
-        Notify("BOOSTER", "Smart Boost Active (Hiding Textures...)", Color3.fromRGB(0, 255, 100))
-        SmartBoostTick() -- Apply immediately
-        
-        -- Smart Loop (Jalan setiap 3 detik untuk handle part baru)
+        Notify("BOOSTER", "Smart Boost Active", Color3.fromRGB(0, 255, 100))
+        SmartBoostTick() 
         if Connections["BoostLoop"] then Connections["BoostLoop"]:Disconnect() end
         Connections["BoostLoop"] = task.spawn(function()
             while States.Boost do
@@ -726,20 +767,13 @@ local function ToggleBoost(enable)
                 SmartBoostTick()
             end
         end)
-        
     else
-        -- [RESTORE STATE]
         if Connections["BoostLoop"] then cancel(Connections["BoostLoop"]) end
-        
         Notify("BOOSTER", "Restoring Graphics...", UI_THEME.Accent)
-        
-        -- Restore Global Settings
         if RestoreData.Lighting then
             Services.Lighting.GlobalShadows = RestoreData.Lighting.GlobalShadows
             Services.Lighting.Brightness = RestoreData.Lighting.Brightness
         end
-        
-        -- Restore Workspace (Rough Estimate)
         for _, v in pairs(Services.Workspace:GetDescendants()) do
             if v:IsA("Decal") or v:IsA("Texture") then
                 v.Transparency = 0
@@ -758,25 +792,20 @@ Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
     if Title and currentFps then
-        -- [UPDATED] Keep the footer consistent
         Title.Text = string.format(
-            "SERAPHIN <font color=\"rgb(0,255,255)\">HELPER</font>  <font size=\"12\" color=\"rgb(200,200,200)\">by @828_raka</font> | FPS: <b>%d</b>", 
+            "SERAPHIN <font color=\"rgb(180,180,180)\">HELPER</font>  <font size=\"12\" color=\"rgb(220,220,220)\">by @828_raka</font> | FPS: <b>%d</b>", 
             currentFps
         )
     end
 end)
 
--- [UPDATED] FPS BUTTON LOGIC (60/90/144/240/Unli)
 BtnFps.MouseButton1Click:Connect(function()
     local caps = {60, 90, 144, 240, 99999}
-    _G.fpsIndex = (_G.fpsIndex or 0) % #caps + 1 -- Cycle 1-5
+    _G.fpsIndex = (_G.fpsIndex or 0) % #caps + 1 
     local v = caps[_G.fpsIndex]
-    
     if setfpscap then setfpscap(v) end
-    
     local txt = (v >= 9999) and "Unli" or tostring(v)
     BtnFps.Text = "FPS: " .. txt
-    
     ToggleVisual(BtnFps, true)
     task.wait(0.1)
     ToggleVisual(BtnFps, false)
@@ -791,7 +820,7 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [5] BACKGROUND LOOPS (Optimized)
+-- [5] BACKGROUND LOOPS
 -- ====================================================
 
 -- ANTI STUCK LOOP
@@ -833,10 +862,10 @@ task.spawn(function()
     end
 end)
 
--- AUTO EVENT LOOP (Optimized)
+-- AUTO EVENT LOOP
 task.spawn(function()
     while true do
-        task.wait(3) -- Diperlambat agar tidak lag
+        task.wait(3) 
         if States.AutoEvent then
             pcall(function()
                 if not HRP or not HRP.Parent then return end
@@ -952,8 +981,119 @@ end)
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
 -- ====================================================
--- [UPDATED] SELL ENCHANT (ULTIMATE SCAN: GUI & MODULES)
+-- [UPDATED] SELL ENCHANT (ULTIMATE SCAN + FORCE BYPASS)
 -- ====================================================
+
+local function GetEnchantGUIDs()
+    local stones = {}
+    local inventoryData = nil
+
+    -- [METODE 1] InventoryController (Original)
+    pcall(function()
+        local Controller = require(Services.ReplicatedStorage.Controllers.InventoryController)
+        inventoryData = Controller.Inventory
+    end)
+    
+    -- [METODE 2] BackpackController (NEW REQUEST)
+    if not inventoryData then
+        pcall(function()
+             local BPController = require(Services.ReplicatedStorage.Controllers.BackpackController)
+             inventoryData = BPController.Inventory or BPController.Backpack or BPController.Items
+        end)
+    end
+
+    -- [METODE 3] CorePackages Fallback
+    if not inventoryData then
+        pcall(function()
+            local Path = game:GetService("CorePackages").Workspace.Packages._Workspace.ProfilePlatform.ProfilePlatform.Components.Inventory
+            local Mod = require(Path)
+            inventoryData = Mod.Inventory or Mod
+        end)
+    end
+
+    -- [PROCESS DATA from MODULES]
+    if inventoryData then
+        for _, item in pairs(inventoryData) do
+            -- Case-insensitive match ("enchant" & "stone")
+            if item.Name and string.find(string.lower(item.Name), "enchant") and string.find(string.lower(item.Name), "stone") then
+                local id = item.Id or item.UUID or item.Guid
+                if id then table.insert(stones, id) end
+            end
+        end
+    end
+
+    -- [METODE 4] RECURSIVE UI SCAN (PLAYER GUI)
+    if #stones == 0 then
+        local PG = Player:FindFirstChild("PlayerGui")
+        -- Prioritize "Backpack" gui but scan everything
+        if PG then
+            local targets = {PG:FindFirstChild("Backpack"), PG} -- Prioritas Backpack dulu, lalu seluruh PG
+            for _, root in ipairs(targets) do
+                if root then
+                    for _, v in pairs(root:GetDescendants()) do
+                         if v:IsA("TextLabel") and v.Visible and v.Text ~= "" then
+                            local txt = string.lower(v.Text)
+                            if string.find(txt, "enchant") and string.find(txt, "stone") then
+                                local parent = v.Parent
+                                local id = parent:GetAttribute("Guid") or parent:GetAttribute("ItemId") or parent:GetAttribute("UUID")
+                                if not id and parent.Parent then
+                                     id = parent.Parent:GetAttribute("Guid") or parent.Parent:GetAttribute("ItemId") or parent.Parent:GetAttribute("UUID")
+                                end
+                                if id and not table.find(stones, id) then 
+                                    table.insert(stones, id) 
+                                end
+                            end
+                         end
+                    end
+                end
+                if #stones > 0 then break end -- Stop scanning if found
+            end
+        end
+    end
+    
+    -- [METODE 5] PHYSICAL BACKPACK (LocalPlayer)
+    if #stones == 0 then
+        local Backpack = Player:FindFirstChild("Backpack")
+        if Backpack then
+            for _, tool in pairs(Backpack:GetChildren()) do
+                if string.find(string.lower(tool.Name), "enchant") then
+                     local id = tool:GetAttribute("Guid") or tool:GetAttribute("UUID")
+                     if id then table.insert(stones, id) end
+                end
+            end
+        end
+    end
+
+    -- [METODE 6] STARTER GUI (Template Fallback)
+    if #stones == 0 then
+        pcall(function()
+             local SGBackpack = Services.StarterGui:FindFirstChild("Backpack")
+             if SGBackpack then
+                 -- Logic same as above if needed
+             end
+        end)
+    end
+    
+    -- [DEBUG PRINTER]
+    if #stones > 0 then
+        -- print("[Seraphin] Found " .. #stones .. " items via scan.")
+    end
+
+    return stones
+end
+
+-- Update Label
+task.spawn(function()
+    while true do
+        if Main.Visible then 
+            local myStones = GetEnchantGUIDs()
+            LblOwnedInfo.Text = "Enchant Stone: " .. #myStones
+        end
+        task.wait(1)
+    end
+end)
+
+-- LOGIKA TOMBOL SELL (FORCE BYPASS MODE)
 BtnSellStones.MouseButton1Click:Connect(function()
     local amountToSell = tonumber(BoxSellCount.Text)
     if not amountToSell or amountToSell <= 0 then 
@@ -961,127 +1101,60 @@ BtnSellStones.MouseButton1Click:Connect(function()
         return 
     end
 
-    Notify("SYSTEM", "Scanning Inventory (Deep Scan)...", UI_THEME.Accent)
+    Notify("SYSTEM", "Deep Scanning...", UI_THEME.Accent)
     
     task.spawn(function()
+        local stones = GetEnchantGUIDs()
+        local isBypass = false
+        
+        -- [LOGIKA BYPASS NAMA]
+        -- Jika tidak ada GUID yang ditemukan, kita buat LIST PALSU berisi string nama
+        if #stones == 0 then
+             Notify("SYSTEM", "0 GUIDs Found. ACTIVATING BYPASS...", Color3.fromRGB(255, 165, 0))
+             isBypass = true
+             -- Isi array dengan nama item agar loop tetap jalan
+             for k=1, amountToSell do
+                 table.insert(stones, "Enchant Stones") -- Coba bentuk Plural
+                 table.insert(stones, "Enchant Stone")  -- Coba bentuk Singular (Double shot)
+             end
+        end
+
+        local totalOps = #stones
+        local limit = isBypass and (amountToSell * 2) or math.min(amountToSell, totalOps)
+        
         local Net = Services.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
         local EquipRemote = Net:WaitForChild("RE/EquipItem")
         local SellRemote = Net:WaitForChild("RF/SellItem")
 
-        local inventoryData = nil
+        for i = 1, limit do
+            if not Main.Visible then break end 
 
-        -- [METHOD 1] ReplicatedStorage Controller (Standard Knit)
-        local success, res = pcall(function()
-            local InvController = require(Services.ReplicatedStorage.Controllers.InventoryController)
-            return InvController.Inventory 
-        end)
-        if success and res then inventoryData = res end
+            local identifier = stones[i] 
+            
+            if identifier then
+                -- [DEBUG]
+                print("[Seraphin Sell] ID/Name: ", identifier)
 
-        -- [METHOD 2] CorePackages Path
-        if not inventoryData then
-            pcall(function()
-                local path = game:GetService("CorePackages").Workspace.Packages._Workspace.ProfilePlatform.ProfilePlatform.Components.Inventory
-                local mod = require(path)
-                inventoryData = mod.Inventory or mod
-            end)
-        end
-
-        -- [METHOD 3] ReplicatedStorage Direct
-        if not inventoryData then
-            pcall(function()
-                local path = game:GetService("ReplicatedStorage")
-                if path:FindFirstChild("Inventory") then
-                     local mod = require(path.Inventory)
-                     inventoryData = mod.Inventory or mod
-                end
-            end)
-        end
-
-        -- [METHOD 4] UI ATTRIBUTE SCAN (BRUTE FORCE)
-        -- Ini akan membaca PlayerGui jika require gagal
-        local uiStones = {}
-        if not inventoryData then
-            Notify("SYSTEM", "Modules Protected. Scanning GUI...", Color3.fromRGB(255, 200, 50))
-            local PG = Player:FindFirstChild("PlayerGui")
-            if PG then
-                for _, desc in pairs(PG:GetDescendants()) do
-                    -- Cari teks "Enchant Stone"
-                    if desc:IsA("TextLabel") and (desc.Text == "Enchant Stones" or desc.Text == "Enchant Stone") then
-                        -- Cek parent frame untuk atribut ID
-                        local parent = desc.Parent
-                        local foundID = nil
-                        
-                        -- Cek atribut umum
-                        if parent:GetAttribute("ItemId") then foundID = parent:GetAttribute("ItemId") end
-                        if parent:GetAttribute("Guid") then foundID = parent:GetAttribute("Guid") end
-                        if parent:GetAttribute("UUID") then foundID = parent:GetAttribute("UUID") end
-                        
-                        -- Cek parent dari parent (kadang label dibungkus)
-                        if not foundID and parent.Parent then
-                            if parent.Parent:GetAttribute("ItemId") then foundID = parent.Parent:GetAttribute("ItemId") end
-                             if parent.Parent:GetAttribute("Guid") then foundID = parent.Parent:GetAttribute("Guid") end
-                        end
-                        
-                        if foundID then
-                            table.insert(uiStones, foundID)
-                        end
-                    end
+                -- Fire Remote
+                -- Arg 1: Identifier (GUID atau Nama String)
+                -- Arg 2: Item Category/Name (Biasanya "Enchant Stones")
+                EquipRemote:FireServer(identifier, "Enchant Stones")
+                SellRemote:InvokeServer(identifier, 1) 
+                
+                if isBypass then
+                     BtnSellStones.Text = "BYPASS: " .. math.ceil(i/2) .. "/" .. amountToSell
+                else
+                     BtnSellStones.Text = i .. "/" .. limit
                 end
             end
-        end
-
-        -- [METHOD 5] Fallback Remote
-        if not inventoryData and #uiStones == 0 then
-             local GetInv = Net:FindFirstChild("RF/GetInventory")
-             if GetInv then
-                 inventoryData = GetInv:InvokeServer()
-             end
-        end
-
-        -- GABUNGKAN DATA (Modules + UI Scan)
-        local stones = {}
-        
-        -- Proses data dari Module/Remote
-        if inventoryData then
-            for _, item in pairs(inventoryData) do
-                if item.Name == "Enchant Stones" or item.Name == "Enchant Stone" then
-                    table.insert(stones, item.Id or item.UUID or item.Guid)
-                end
-            end
+            task.wait(0.2) -- Delay sedikit dipercepat untuk bypass
         end
         
-        -- Proses data dari UI Scan
-        for _, id in pairs(uiStones) do
-            table.insert(stones, id)
-        end
-
-        if #stones == 0 then
-             Notify("SYSTEM", "No Enchant Stones Found! (Open Inventory)", Color3.fromRGB(255, 100, 100))
-             return
-        end
-
-        local sellCount = math.min(amountToSell, #stones)
-        Notify("SELLING", "Selling " .. sellCount .. " stones...", Color3.fromRGB(0, 255, 0))
+        BtnSellStones.Text = "FORCE SELL"
+        Notify("SUCCESS", "Process Completed!", UI_THEME.Accent)
         
-        -- EXECUTE SELL LOOP
-        for i = 1, sellCount do
-            local guid = stones[i]
-            
-            -- Equip Args: {GUID, Name}
-            local argsEquip = { guid, "Enchant Stones" }
-            EquipRemote:FireServer(unpack(argsEquip))
-            
-            -- Sell Args: {GUID}
-            local argsSell = { guid }
-            SellRemote:InvokeServer(unpack(argsSell))
-            
-            -- Update UI
-            BtnSellStones.Text = "Selling: " .. i .. "/" .. sellCount
-            task.wait(0.25) 
-        end
-        
-        BtnSellStones.Text = "Sell Enchants"
-        Notify("SUCCESS", "Sold " .. sellCount .. " Stones!", UI_THEME.Accent)
+        local sisa = GetEnchantGUIDs()
+        LblOwnedInfo.Text = "Enchant Stone: " .. #sisa
     end)
 end)
 
@@ -1127,7 +1200,6 @@ BtnBoost.MouseButton1Click:Connect(function()
 end)
 
 BtnUltra.MouseButton1Click:Connect(function()
-    -- Matikan Boost jika aktif
     if States.Boost then ToggleBoost(false) end
     SetUltraGraphics(not States.Ultra)
 end)
@@ -1157,7 +1229,6 @@ BtnLoad.MouseButton1Click:Connect(function()
     end 
 end)
 
--- [Logic Panel Delay]
 task.delay(3.8, function()
     Main.Visible = true
     FloatHUD.Visible = States.Panel 
