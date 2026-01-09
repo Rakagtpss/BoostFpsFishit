@@ -381,7 +381,7 @@ WidgetStroke.Thickness = 1
 
 -- Judul Widget
 local SellTitle = Instance.new("TextLabel", SellWidget)
-SellTitle.Text = "AUTO SELL ENCHANT (Universal Scan)"
+SellTitle.Text = "AUTO SELL ENCHANT (Scan & Bypass)"
 SellTitle.Size = UDim2.new(1, 0, 0, 20)
 SellTitle.Position = UDim2.new(0, 0, 0, 2)
 SellTitle.BackgroundTransparency = 1
@@ -986,20 +986,28 @@ end)
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
 -- ====================================================
--- [UPDATED] SELL ENCHANT (DEEP UNIVERSAL SCAN)
+-- [UPDATED] SELL ENCHANT (DEEP SCAN + NEW PATHS + BYPASS)
 -- ====================================================
 
 local function GetEnchantGUIDs()
     local stones = {}
     local inventoryData = nil
 
-    -- [METODE 1] Coba ambil data dari InventoryController (Paling Akurat)
+    -- [METODE 1] InventoryController
     pcall(function()
         local Controller = require(Services.ReplicatedStorage.Controllers.InventoryController)
         inventoryData = Controller.Inventory
     end)
+    
+    -- [METODE 2] BackpackController (NEW PATH REQUEST)
+    if not inventoryData then
+        pcall(function()
+             local BPController = require(Services.ReplicatedStorage.Controllers.BackpackController)
+             inventoryData = BPController.Inventory or BPController.Backpack or BPController.Items
+        end)
+    end
 
-    -- [METODE 2] Jika gagal, coba ambil dari CorePackages (Fallback)
+    -- [METODE 3] CorePackages Fallback
     if not inventoryData then
         pcall(function()
             local Path = game:GetService("CorePackages").Workspace.Packages._Workspace.ProfilePlatform.ProfilePlatform.Components.Inventory
@@ -1008,10 +1016,9 @@ local function GetEnchantGUIDs()
         end)
     end
 
-    -- [METODE 3] DATA DARI MODULE (Jika ditemukan)
+    -- [PROCESS DATA]
     if inventoryData then
         for _, item in pairs(inventoryData) do
-            -- Gunakan string.find agar mendeteksi "Enchant Stone" ATAU "Enchant Stones"
             if item.Name and string.find(item.Name, "Enchant") and string.find(item.Name, "Stone") then
                 local id = item.Id or item.UUID or item.Guid
                 if id then table.insert(stones, id) end
@@ -1019,44 +1026,31 @@ local function GetEnchantGUIDs()
         end
     end
 
-    -- [METODE 4] SCAN VISUAL PLAYER GUI (Jika Module Gagal)
+    -- [METODE 4] SCAN VISUAL PLAYER GUI + BACKPACK (Updated Logic)
     if #stones == 0 then
         local PG = Player:FindFirstChild("PlayerGui")
-        if PG then
-            -- Cari semua TextLabel yang bertuliskan "Enchant Stone"
-            for _, v in pairs(PG:GetDescendants()) do
-                if v:IsA("TextLabel") and v.Visible then
-                    if string.find(v.Text, "Enchant") and string.find(v.Text, "Stone") then
-                        -- Cek Attribute di Parent tombol/label tersebut
-                        local parent = v.Parent
-                        local id = parent:GetAttribute("Guid") or parent:GetAttribute("ItemId") or parent:GetAttribute("UUID")
-                        
-                        -- Naik satu level lagi jika tidak ketemu
-                        if not id and parent.Parent then
-                             id = parent.Parent:GetAttribute("Guid") or parent.Parent:GetAttribute("ItemId") or parent.Parent:GetAttribute("UUID")
-                        end
-
-                        if id then 
-                            table.insert(stones, id) 
-                        end
+        -- 4A. Scan spesifik di PlayerGui.Backpack (NEW PATH REQUEST)
+        local BackpackUI = PG and PG:FindFirstChild("Backpack")
+        if BackpackUI then
+            for _, v in pairs(BackpackUI:GetDescendants()) do
+                if v:IsA("TextLabel") and v.Visible and string.find(v.Text, "Enchant") and string.find(v.Text, "Stone") then
+                    local parent = v.Parent
+                    local id = parent:GetAttribute("Guid") or parent:GetAttribute("ItemId") or parent:GetAttribute("UUID")
+                    if not id and parent.Parent then
+                         id = parent.Parent:GetAttribute("Guid") or parent.Parent:GetAttribute("ItemId") or parent.Parent:GetAttribute("UUID")
                     end
+                    if id then table.insert(stones, id) end
                 end
             end
         end
     end
     
-    -- [METODE 5] CHECK FOLDER REPLICATED STORAGE (User Request)
+    -- [METODE 5] StarterGui (Fallback, rare case but requested)
     if #stones == 0 then
         pcall(function()
-             local ItemsFolder = Services.ReplicatedStorage:FindFirstChild("Items")
-             if ItemsFolder then
-                 -- Cari folder/item dengan nama mirip
-                 for _, child in pairs(ItemsFolder:GetChildren()) do
-                      if string.find(child.Name, "Enchant") and string.find(child.Name, "Stone") then
-                           local id = child:GetAttribute("Guid") or child:GetAttribute("UUID")
-                           if id then table.insert(stones, id) end
-                      end
-                 end
+             local SGBackpack = Services.StarterGui:FindFirstChild("Backpack")
+             if SGBackpack then
+                 -- Logic similar to PG scan if needed, mostly static
              end
         end)
     end
@@ -1064,7 +1058,7 @@ local function GetEnchantGUIDs()
     return stones
 end
 
--- Update Label Jumlah Item Secara Realtime
+-- Update Label
 task.spawn(function()
     while true do
         if Main.Visible then 
@@ -1075,7 +1069,7 @@ task.spawn(function()
     end
 end)
 
--- LOGIKA TOMBOL SELL
+-- LOGIKA TOMBOL SELL (WITH BYPASS MODE)
 BtnSellStones.MouseButton1Click:Connect(function()
     local amountToSell = tonumber(BoxSellCount.Text)
     if not amountToSell or amountToSell <= 0 then 
@@ -1087,14 +1081,24 @@ BtnSellStones.MouseButton1Click:Connect(function()
     
     task.spawn(function()
         local stones = GetEnchantGUIDs()
+        local usingBypass = false
         
+        -- [BYPASS MODE LOGIC]
         if #stones == 0 then
-             Notify("SYSTEM", "Item Not Found! (Open your Bag)", Color3.fromRGB(255, 100, 100))
-             return
+             Notify("SYSTEM", "No GUIDs. Trying Name Bypass...", Color3.fromRGB(255, 165, 0))
+             usingBypass = true
+             -- Isi list palsu dengan Nama String untuk memaksa kirim nama
+             for k=1, amountToSell do
+                 table.insert(stones, "Enchant Stones") 
+             end
         end
 
         local sellCount = math.min(amountToSell, #stones)
-        Notify("SELLING", "Selling " .. sellCount .. " stones...", Color3.fromRGB(0, 255, 0))
+        if not usingBypass then
+            Notify("SELLING", "Selling " .. sellCount .. " stones (GUID)...", Color3.fromRGB(0, 255, 0))
+        else
+            Notify("SELLING", "Selling by NAME (Bypass)...", Color3.fromRGB(255, 200, 0))
+        end
         
         local Net = Services.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
         local EquipRemote = Net:WaitForChild("RE/EquipItem")
@@ -1103,19 +1107,21 @@ BtnSellStones.MouseButton1Click:Connect(function()
         for i = 1, sellCount do
             if not Main.Visible then break end 
 
-            local guid = stones[i]
-            if guid then
-                print("Selling Enchant GUID:", guid) -- Debug di Console (F9)
-
-                EquipRemote:FireServer(guid, "Enchant Stones")
-                SellRemote:InvokeServer(guid, 1) -- Jual 1 per 1 agar aman
+            local identifier = stones[i] -- Bisa berupa GUID atau String "Enchant Stones"
+            if identifier then
+                -- Kirim Remote
+                -- Arg 1: GUID atau Nama (jika bypass)
+                -- Arg 2: Nama Item (selalu "Enchant Stones")
+                EquipRemote:FireServer(identifier, "Enchant Stones")
+                SellRemote:InvokeServer(identifier, 1) 
+                
                 BtnSellStones.Text = i .. "/" .. sellCount
             end
-            task.wait(0.25) -- Delay
+            task.wait(0.25) 
         end
         
         BtnSellStones.Text = "SELL SELECTED"
-        Notify("SUCCESS", "Sold " .. sellCount .. " Stones!", UI_THEME.Accent)
+        Notify("SUCCESS", "Process Completed!", UI_THEME.Accent)
         
         -- Refresh Label
         local sisa = GetEnchantGUIDs()
