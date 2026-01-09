@@ -118,7 +118,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Force Bypass Mode Ready", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "Script Loaded - @828_Raka", UI_THEME.Accent, 2.5)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -378,7 +378,7 @@ WidgetStroke.Transparency = 0.7
 WidgetStroke.Thickness = 1
 
 local SellTitle = Instance.new("TextLabel", SellWidget)
-SellTitle.Text = "AUTO SELL ENCHANT (Force Mode)"
+SellTitle.Text = "AUTO SELL ENCHANT (Brute Force Mode)"
 SellTitle.Size = UDim2.new(1, 0, 0, 20)
 SellTitle.Position = UDim2.new(0, 0, 0, 2)
 SellTitle.BackgroundTransparency = 1
@@ -414,7 +414,7 @@ BtnSellStones.Size = UDim2.new(0.72, 0, 1, 0)
 BtnSellStones.Position = UDim2.new(0.28, 0, 0, 0)
 BtnSellStones.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
 BtnSellStones.BackgroundTransparency = 0.2
-BtnSellStones.Text = "FORCE SELL"
+BtnSellStones.Text = "SELL SELECTED"
 BtnSellStones.TextColor3 = Color3.new(1,1,1)
 BtnSellStones.Font = Enum.Font.GothamBlack
 BtnSellStones.TextSize = 11
@@ -1115,12 +1115,11 @@ BtnSellStones.MouseButton1Click:Connect(function()
              -- Isi array dengan nama item agar loop tetap jalan
              for k=1, amountToSell do
                  table.insert(stones, "Enchant Stones") -- Coba bentuk Plural
-                 table.insert(stones, "Enchant Stone")  -- Coba bentuk Singular (Double shot)
              end
         end
 
-        local totalOps = #stones
-        local limit = isBypass and (amountToSell * 2) or math.min(amountToSell, totalOps)
+        -- Limitasi jumlah loop agar tidak over
+        local limit = isBypass and amountToSell or math.min(amountToSell, #stones)
         
         local Net = Services.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
         local EquipRemote = Net:WaitForChild("RE/EquipItem")
@@ -1135,22 +1134,32 @@ BtnSellStones.MouseButton1Click:Connect(function()
                 -- [DEBUG]
                 print("[Seraphin Sell] ID/Name: ", identifier)
 
-                -- Fire Remote
-                -- Arg 1: Identifier (GUID atau Nama String)
-                -- Arg 2: Item Category/Name (Biasanya "Enchant Stones")
+                -- BRUTE FORCE SEQUENCE
+                -- 1. Standard Method
                 EquipRemote:FireServer(identifier, "Enchant Stones")
-                SellRemote:InvokeServer(identifier, 1) 
+                SellRemote:InvokeServer(identifier, 1)
+
+                -- 2. Singular Fallback
+                EquipRemote:FireServer(identifier, "Enchant Stone")
+                SellRemote:InvokeServer(identifier, 1)
+
+                -- 3. Name Bypass (Jika identifier adalah GUID, coba kirim string juga)
+                EquipRemote:FireServer("Enchant Stones", "Enchant Stones")
+                SellRemote:InvokeServer("Enchant Stones", 1)
+
+                -- 4. No Quantity Arg
+                SellRemote:InvokeServer(identifier)
                 
                 if isBypass then
-                     BtnSellStones.Text = "BYPASS: " .. math.ceil(i/2) .. "/" .. amountToSell
+                     BtnSellStones.Text = "BYPASS: " .. i .. "/" .. amountToSell
                 else
                      BtnSellStones.Text = i .. "/" .. limit
                 end
             end
-            task.wait(0.2) -- Delay sedikit dipercepat untuk bypass
+            task.wait(0.25) -- Delay
         end
         
-        BtnSellStones.Text = "FORCE SELL"
+        BtnSellStones.Text = "SELL SELECTED"
         Notify("SUCCESS", "Process Completed!", UI_THEME.Accent)
         
         local sisa = GetEnchantGUIDs()
