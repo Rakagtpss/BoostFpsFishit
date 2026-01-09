@@ -42,7 +42,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [SYSTEM] CUSTOM NOTIFICATION (CENTERED & COMPACT)
+-- [SYSTEM] CUSTOM NOTIFICATION
 -- ====================================================
 local NotifyContainer = Instance.new("Frame", ScreenGui)
 NotifyContainer.Name = "NotificationContainer"
@@ -77,7 +77,6 @@ local function Notify(title, text, colorOverride, duration)
     
     Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
     
-    -- Judul (Centered)
     local LblTitle = Instance.new("TextLabel", Frame)
     LblTitle.Size = UDim2.new(1, -12, 0, 20)
     LblTitle.Position = UDim2.new(0, 6, 0, 4)
@@ -88,7 +87,6 @@ local function Notify(title, text, colorOverride, duration)
     LblTitle.TextSize = 14
     LblTitle.TextXAlignment = Enum.TextXAlignment.Center 
     
-    -- Pesan (Centered)
     local LblMsg = Instance.new("TextLabel", Frame)
     LblMsg.Size = UDim2.new(1, -12, 0, 20)
     LblMsg.Position = UDim2.new(0, 6, 0, 22)
@@ -471,12 +469,12 @@ local function ForceEquipRod()
     end)
 end
 
--- >> TOMBOL UI (LAYOUT RAPI) <<
+-- >> TOMBOL UI (LAYOUT RAPI - CLEANED) <<
 
 -- TAB MAIN
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
-local BtnClean  = MakeBtn(PageMain, "Auto Clean: OFF") -- [NEW] Auto Clean
+local BtnClean  = MakeBtn(PageMain, "Auto Clean: OFF")
 local BtnUltra  = MakeBtn(PageMain, "Ultra HD: OFF") 
 local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
 local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
@@ -733,26 +731,24 @@ end)
 -- [5] BACKGROUND LOOPS
 -- ====================================================
 
--- AUTO CLEANER (RAM/CPU/GPU/FPS)
+-- AUTO CLEANER (SAFE MODE)
 task.spawn(function()
     while true do
-        task.wait(5) -- Cek setiap 5 detik
+        task.wait(5)
         if States.AutoClean then
             pcall(function()
-                -- 1. RAM: Collect Garbage
                 collectgarbage("collect")
-                
-                -- 2. FPS: Force Unlock
                 if setfpscap then setfpscap(999) end
                 
-                -- 3. GPU: Destroy Heavy Visuals in Workspace
+                -- Hapus Efek Berat (Safe Check)
                 for _, v in pairs(Services.Workspace:GetDescendants()) do
-                    if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Explosion") then
-                        v:Destroy()
+                    if v and v.Parent then -- Cek apakah part masih ada
+                        if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Explosion") then
+                            pcall(function() v:Destroy() end)
+                        end
                     end
                 end
                 
-                -- 4. Clean Lighting
                 local L = Services.Lighting
                 if L:FindFirstChild("Bloom") then L.Bloom:Destroy() end
                 if L:FindFirstChild("Blur") then L.Blur:Destroy() end
