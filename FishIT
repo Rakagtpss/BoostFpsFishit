@@ -381,7 +381,7 @@ WidgetStroke.Thickness = 1
 
 -- Judul Widget
 local SellTitle = Instance.new("TextLabel", SellWidget)
-SellTitle.Text = "AUTO SELL ENCHANT"
+SellTitle.Text = "AUTO SELL ENCHANT (Universal Scan)"
 SellTitle.Size = UDim2.new(1, 0, 0, 20)
 SellTitle.Position = UDim2.new(0, 0, 0, 2)
 SellTitle.BackgroundTransparency = 1
@@ -986,46 +986,96 @@ end)
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
 -- ====================================================
--- [UPDATED] SELL ENCHANT (SAFE MODE + MULTI SCAN)
+-- [UPDATED] SELL ENCHANT (DEEP UNIVERSAL SCAN)
 -- ====================================================
 
-local function GetEnchantDataGlobal()
+local function GetEnchantGUIDs()
     local stones = {}
-    -- Helper luar, tapi logic inti ada di tombol
-    -- Agar counter label tetap jalan
+    local inventoryData = nil
+
+    -- [METODE 1] Coba ambil data dari InventoryController (Paling Akurat)
     pcall(function()
-        local inventoryData = nil
+        local Controller = require(Services.ReplicatedStorage.Controllers.InventoryController)
+        inventoryData = Controller.Inventory
+    end)
+
+    -- [METODE 2] Jika gagal, coba ambil dari CorePackages (Fallback)
+    if not inventoryData then
         pcall(function()
-             inventoryData = require(Services.ReplicatedStorage.Controllers.InventoryController).Inventory 
+            local Path = game:GetService("CorePackages").Workspace.Packages._Workspace.ProfilePlatform.ProfilePlatform.Components.Inventory
+            local Mod = require(Path)
+            inventoryData = Mod.Inventory or Mod
         end)
-        if not inventoryData then
-            pcall(function()
-                local mod = require(game:GetService("CorePackages").Workspace.Packages._Workspace.ProfilePlatform.ProfilePlatform.Components.Inventory)
-                inventoryData = mod.Inventory or mod
-            end)
+    end
+
+    -- [METODE 3] DATA DARI MODULE (Jika ditemukan)
+    if inventoryData then
+        for _, item in pairs(inventoryData) do
+            -- Gunakan string.find agar mendeteksi "Enchant Stone" ATAU "Enchant Stones"
+            if item.Name and string.find(item.Name, "Enchant") and string.find(item.Name, "Stone") then
+                local id = item.Id or item.UUID or item.Guid
+                if id then table.insert(stones, id) end
+            end
         end
-        if inventoryData then
-            for _, item in pairs(inventoryData) do
-                if item.Name == "Enchant Stones" or item.Name == "Enchant Stone" then
-                    table.insert(stones, item.Id or item.UUID or item.Guid)
+    end
+
+    -- [METODE 4] SCAN VISUAL PLAYER GUI (Jika Module Gagal)
+    if #stones == 0 then
+        local PG = Player:FindFirstChild("PlayerGui")
+        if PG then
+            -- Cari semua TextLabel yang bertuliskan "Enchant Stone"
+            for _, v in pairs(PG:GetDescendants()) do
+                if v:IsA("TextLabel") and v.Visible then
+                    if string.find(v.Text, "Enchant") and string.find(v.Text, "Stone") then
+                        -- Cek Attribute di Parent tombol/label tersebut
+                        local parent = v.Parent
+                        local id = parent:GetAttribute("Guid") or parent:GetAttribute("ItemId") or parent:GetAttribute("UUID")
+                        
+                        -- Naik satu level lagi jika tidak ketemu
+                        if not id and parent.Parent then
+                             id = parent.Parent:GetAttribute("Guid") or parent.Parent:GetAttribute("ItemId") or parent.Parent:GetAttribute("UUID")
+                        end
+
+                        if id then 
+                            table.insert(stones, id) 
+                        end
+                    end
                 end
             end
         end
-    end)
+    end
+    
+    -- [METODE 5] CHECK FOLDER REPLICATED STORAGE (User Request)
+    if #stones == 0 then
+        pcall(function()
+             local ItemsFolder = Services.ReplicatedStorage:FindFirstChild("Items")
+             if ItemsFolder then
+                 -- Cari folder/item dengan nama mirip
+                 for _, child in pairs(ItemsFolder:GetChildren()) do
+                      if string.find(child.Name, "Enchant") and string.find(child.Name, "Stone") then
+                           local id = child:GetAttribute("Guid") or child:GetAttribute("UUID")
+                           if id then table.insert(stones, id) end
+                      end
+                 end
+             end
+        end)
+    end
+
     return stones
 end
 
--- Update Label Counter
+-- Update Label Jumlah Item Secara Realtime
 task.spawn(function()
     while true do
         if Main.Visible then 
-            local myStones = GetEnchantDataGlobal()
+            local myStones = GetEnchantGUIDs()
             LblOwnedInfo.Text = "Enchant Stone: " .. #myStones
         end
         task.wait(1)
     end
 end)
 
+-- LOGIKA TOMBOL SELL
 BtnSellStones.MouseButton1Click:Connect(function()
     local amountToSell = tonumber(BoxSellCount.Text)
     if not amountToSell or amountToSell <= 0 then 
@@ -1033,78 +1083,43 @@ BtnSellStones.MouseButton1Click:Connect(function()
         return 
     end
 
-    Notify("SYSTEM", "Scanning Inventory...", UI_THEME.Accent)
+    Notify("SYSTEM", "Deep Scanning...", UI_THEME.Accent)
     
     task.spawn(function()
-        local Net = Services.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
-        local EquipRemote = Net:WaitForChild("RE/EquipItem")
-        local SellRemote = Net:WaitForChild("RF/SellItem")
-        local GetInvRemote = Net:FindFirstChild("RF/GetInventory")
-
-        local inventoryData = nil
-
-        -- [SCAN METHOD 1] Controller
-        pcall(function()
-            local InvController = require(Services.ReplicatedStorage.Controllers.InventoryController)
-            inventoryData = InvController.Inventory 
-        end)
-
-        -- [SCAN METHOD 2] CorePackages
-        if not inventoryData then
-            pcall(function()
-                local path = game:GetService("CorePackages").Workspace.Packages._Workspace.ProfilePlatform.ProfilePlatform.Components.Inventory
-                local mod = require(path)
-                inventoryData = mod.Inventory or mod
-            end)
-        end
-
-        -- [SCAN METHOD 3] Remote
-        if not inventoryData and GetInvRemote then
-             inventoryData = GetInvRemote:InvokeServer()
-        end
-
-        -- [SCAN METHOD 4] Fallback Direct
-        if not inventoryData then
-             pcall(function()
-                 local DirectInv = Services.ReplicatedStorage:FindFirstChild("Inventory") or Services.ReplicatedStorage:FindFirstChild("Data")
-                 if DirectInv and DirectInv:IsA("ModuleScript") then
-                     local s, d = pcall(require, DirectInv)
-                     if s then inventoryData = d.Inventory or d end
-                 end
-             end)
-        end
-
-        local stones = {}
-        if inventoryData then
-            for _, item in pairs(inventoryData) do
-                if item.Name == "Enchant Stones" or item.Name == "Enchant Stone" then
-                    table.insert(stones, item.Id or item.UUID or item.Guid)
-                end
-            end
-        end
-
+        local stones = GetEnchantGUIDs()
+        
         if #stones == 0 then
-             Notify("SYSTEM", "No Enchant Stones Found!", Color3.fromRGB(255, 100, 100))
+             Notify("SYSTEM", "Item Not Found! (Open your Bag)", Color3.fromRGB(255, 100, 100))
              return
         end
 
         local sellCount = math.min(amountToSell, #stones)
         Notify("SELLING", "Selling " .. sellCount .. " stones...", Color3.fromRGB(0, 255, 0))
         
+        local Net = Services.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+        local EquipRemote = Net:WaitForChild("RE/EquipItem")
+        local SellRemote = Net:WaitForChild("RF/SellItem")
+
         for i = 1, sellCount do
-            if not Main.Visible then break end -- Safety stop
+            if not Main.Visible then break end 
 
             local guid = stones[i]
             if guid then
+                print("Selling Enchant GUID:", guid) -- Debug di Console (F9)
+
                 EquipRemote:FireServer(guid, "Enchant Stones")
-                SellRemote:InvokeServer(guid, 1) -- FORCE QUANTITY 1
+                SellRemote:InvokeServer(guid, 1) -- Jual 1 per 1 agar aman
                 BtnSellStones.Text = i .. "/" .. sellCount
             end
-            task.wait(0.25) -- Safe Delay
+            task.wait(0.25) -- Delay
         end
         
         BtnSellStones.Text = "SELL SELECTED"
         Notify("SUCCESS", "Sold " .. sellCount .. " Stones!", UI_THEME.Accent)
+        
+        -- Refresh Label
+        local sisa = GetEnchantGUIDs()
+        LblOwnedInfo.Text = "Enchant Stone: " .. #sisa
     end)
 end)
 
