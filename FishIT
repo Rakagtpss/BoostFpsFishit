@@ -118,7 +118,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Script Loaded - @828_Raka", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "DEEP SCANNER ACTIVATED", UI_THEME.Accent, 2.5)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -378,7 +378,7 @@ WidgetStroke.Transparency = 0.7
 WidgetStroke.Thickness = 1
 
 local SellTitle = Instance.new("TextLabel", SellWidget)
-SellTitle.Text = "AUTO SELL ENCHANT (Brute Force Mode)"
+SellTitle.Text = "AUTO SELL ENCHANT (Final Fix)"
 SellTitle.Size = UDim2.new(1, 0, 0, 20)
 SellTitle.Position = UDim2.new(0, 0, 0, 2)
 SellTitle.BackgroundTransparency = 1
@@ -981,40 +981,54 @@ end)
 BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
 
 -- ====================================================
--- [UPDATED] SELL ENCHANT (ULTIMATE SCAN + FORCE BYPASS)
+-- [UPDATED] SELL ENCHANT (ULTIMATE SCANNER V3)
 -- ====================================================
 
 local function GetEnchantGUIDs()
     local stones = {}
     local inventoryData = nil
 
-    -- [METODE 1] InventoryController (Original)
-    pcall(function()
-        local Controller = require(Services.ReplicatedStorage.Controllers.InventoryController)
-        inventoryData = Controller.Inventory
-    end)
-    
-    -- [METODE 2] BackpackController (NEW REQUEST)
-    if not inventoryData then
+    -- [1] REMOTE FUNCTION (Paling kuat jika Module diproteksi)
+    -- Kita cari RemoteFunction yang mungkin mengembalikan data inventory
+    local Net = Services.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+    local GetInv = Net:FindFirstChild("RF/GetInventory") or Net:FindFirstChild("RF/GetPlayerData")
+    if GetInv then
         pcall(function()
-             local BPController = require(Services.ReplicatedStorage.Controllers.BackpackController)
-             inventoryData = BPController.Inventory or BPController.Backpack or BPController.Items
+            local res = GetInv:InvokeServer()
+            -- Cek struktur data (kadang dibungkus dalam .Inventory)
+            if res then
+                if res.Inventory then 
+                    inventoryData = res.Inventory 
+                elseif res.Backpack then
+                    inventoryData = res.Backpack
+                elseif res.Items then
+                    inventoryData = res.Items
+                else
+                    inventoryData = res -- Data mentah
+                end
+            end
         end)
     end
 
-    -- [METODE 3] CorePackages Fallback
+    -- [2] MODULE: INVENTORY CONTROLLER
     if not inventoryData then
         pcall(function()
-            local Path = game:GetService("CorePackages").Workspace.Packages._Workspace.ProfilePlatform.ProfilePlatform.Components.Inventory
-            local Mod = require(Path)
-            inventoryData = Mod.Inventory or Mod
+            inventoryData = require(Services.ReplicatedStorage.Controllers.InventoryController).Inventory
         end)
     end
 
-    -- [PROCESS DATA from MODULES]
+    -- [3] MODULE: BACKPACK CONTROLLER
+    if not inventoryData then
+        pcall(function()
+             local BP = require(Services.ReplicatedStorage.Controllers.BackpackController)
+             inventoryData = BP.Inventory or BP.Backpack or BP.Items
+        end)
+    end
+
+    -- [PARSE DATA DARI REMOTE/MODULE]
     if inventoryData then
         for _, item in pairs(inventoryData) do
-            -- Case-insensitive match ("enchant" & "stone")
+            -- Cek nama (Case Insensitive)
             if item.Name and string.find(string.lower(item.Name), "enchant") and string.find(string.lower(item.Name), "stone") then
                 local id = item.Id or item.UUID or item.Guid
                 if id then table.insert(stones, id) end
@@ -1022,61 +1036,46 @@ local function GetEnchantGUIDs()
         end
     end
 
-    -- [METODE 4] RECURSIVE UI SCAN (PLAYER GUI)
-    if #stones == 0 then
-        local PG = Player:FindFirstChild("PlayerGui")
-        -- Prioritize "Backpack" gui but scan everything
-        if PG then
-            local targets = {PG:FindFirstChild("Backpack"), PG} -- Prioritas Backpack dulu, lalu seluruh PG
-            for _, root in ipairs(targets) do
-                if root then
-                    for _, v in pairs(root:GetDescendants()) do
-                         if v:IsA("TextLabel") and v.Visible and v.Text ~= "" then
-                            local txt = string.lower(v.Text)
-                            if string.find(txt, "enchant") and string.find(txt, "stone") then
-                                local parent = v.Parent
-                                local id = parent:GetAttribute("Guid") or parent:GetAttribute("ItemId") or parent:GetAttribute("UUID")
-                                if not id and parent.Parent then
-                                     id = parent.Parent:GetAttribute("Guid") or parent.Parent:GetAttribute("ItemId") or parent.Parent:GetAttribute("UUID")
-                                end
-                                if id and not table.find(stones, id) then 
-                                    table.insert(stones, id) 
-                                end
-                            end
-                         end
-                    end
-                end
-                if #stones > 0 then break end -- Stop scanning if found
-            end
-        end
-    end
-    
-    -- [METODE 5] PHYSICAL BACKPACK (LocalPlayer)
-    if #stones == 0 then
-        local Backpack = Player:FindFirstChild("Backpack")
-        if Backpack then
-            for _, tool in pairs(Backpack:GetChildren()) do
-                if string.find(string.lower(tool.Name), "enchant") then
-                     local id = tool:GetAttribute("Guid") or tool:GetAttribute("UUID")
-                     if id then table.insert(stones, id) end
-                end
-            end
-        end
-    end
-
-    -- [METODE 6] STARTER GUI (Template Fallback)
+    -- [4] FOLDER SCAN (ReplicatedStorage.Items) - Request User Sebelumnya
     if #stones == 0 then
         pcall(function()
-             local SGBackpack = Services.StarterGui:FindFirstChild("Backpack")
-             if SGBackpack then
-                 -- Logic same as above if needed
+             local Items = Services.ReplicatedStorage:FindFirstChild("Items")
+             if Items then
+                 -- Cek anak-anak folder Items
+                 for _, v in pairs(Items:GetChildren()) do
+                     if string.find(string.lower(v.Name), "enchant") and string.find(string.lower(v.Name), "stone") then
+                         -- Coba ambil ID dari Attribute atau Value
+                         local id = v:GetAttribute("Guid") or v:GetAttribute("UUID") or v:GetAttribute("ItemId")
+                         if id then table.insert(stones, id) end
+                     end
+                 end
              end
         end)
     end
-    
-    -- [DEBUG PRINTER]
-    if #stones > 0 then
-        -- print("[Seraphin] Found " .. #stones .. " items via scan.")
+
+    -- [5] UI SCAN (Visual Deep Scan)
+    if #stones == 0 then
+        local PG = Player:FindFirstChild("PlayerGui")
+        if PG then
+            for _, v in pairs(PG:GetDescendants()) do
+                -- Cari TextLabel yang terlihat
+                if v:IsA("TextLabel") and v.Visible then
+                    local txt = string.lower(v.Text)
+                    if string.find(txt, "enchant") and string.find(txt, "stone") then
+                        -- Cek Attribute di Parent/Grandparent
+                        local p = v.Parent
+                        local id = p:GetAttribute("Guid") or p:GetAttribute("ItemId") or p:GetAttribute("UUID")
+                        if not id and p.Parent then 
+                            id = p.Parent:GetAttribute("Guid") or p.Parent:GetAttribute("ItemId") or p.Parent:GetAttribute("UUID") 
+                        end
+                        
+                        if id and not table.find(stones, id) then 
+                            table.insert(stones, id) 
+                        end
+                    end
+                end
+            end
+        end
     end
 
     return stones
@@ -1093,7 +1092,7 @@ task.spawn(function()
     end
 end)
 
--- LOGIKA TOMBOL SELL (FORCE BYPASS MODE)
+-- LOGIKA TOMBOL SELL (NO BYPASS - MUST FIND GUID)
 BtnSellStones.MouseButton1Click:Connect(function()
     local amountToSell = tonumber(BoxSellCount.Text)
     if not amountToSell or amountToSell <= 0 then 
@@ -1101,26 +1100,20 @@ BtnSellStones.MouseButton1Click:Connect(function()
         return 
     end
 
-    Notify("SYSTEM", "Deep Scanning...", UI_THEME.Accent)
+    Notify("SYSTEM", "Scanning for GUID...", UI_THEME.Accent)
     
     task.spawn(function()
         local stones = GetEnchantGUIDs()
-        local isBypass = false
         
-        -- [LOGIKA BYPASS NAMA]
-        -- Jika tidak ada GUID yang ditemukan, kita buat LIST PALSU berisi string nama
+        -- JIKA TIDAK KETEMU GUID, JANGAN DIPAKSA KIRIM NAMA (Server Reject)
         if #stones == 0 then
-             Notify("SYSTEM", "0 GUIDs Found. ACTIVATING BYPASS...", Color3.fromRGB(255, 165, 0))
-             isBypass = true
-             -- Isi array dengan nama item agar loop tetap jalan
-             for k=1, amountToSell do
-                 table.insert(stones, "Enchant Stones") -- Coba bentuk Plural
-             end
+             print("[SERAPHIN ERROR] Cannot find GUID for Enchant Stones!")
+             print("Tried: Remote, Modules, Folder, UI. All failed.")
+             Notify("FAILED", "Could not find Item ID (GUID).", Color3.fromRGB(255, 50, 50))
+             return
         end
 
-        -- Limitasi jumlah loop agar tidak over
-        local limit = isBypass and amountToSell or math.min(amountToSell, #stones)
-        
+        local limit = math.min(amountToSell, #stones)
         local Net = Services.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
         local EquipRemote = Net:WaitForChild("RE/EquipItem")
         local SellRemote = Net:WaitForChild("RF/SellItem")
@@ -1131,32 +1124,15 @@ BtnSellStones.MouseButton1Click:Connect(function()
             local identifier = stones[i] 
             
             if identifier then
-                -- [DEBUG]
-                print("[Seraphin Sell] ID/Name: ", identifier)
+                -- [DEBUG SUCCESS]
+                print("[Seraphin Sell] Found Valid GUID: ", identifier)
 
-                -- BRUTE FORCE SEQUENCE
-                -- 1. Standard Method
                 EquipRemote:FireServer(identifier, "Enchant Stones")
                 SellRemote:InvokeServer(identifier, 1)
 
-                -- 2. Singular Fallback
-                EquipRemote:FireServer(identifier, "Enchant Stone")
-                SellRemote:InvokeServer(identifier, 1)
-
-                -- 3. Name Bypass (Jika identifier adalah GUID, coba kirim string juga)
-                EquipRemote:FireServer("Enchant Stones", "Enchant Stones")
-                SellRemote:InvokeServer("Enchant Stones", 1)
-
-                -- 4. No Quantity Arg
-                SellRemote:InvokeServer(identifier)
-                
-                if isBypass then
-                     BtnSellStones.Text = "BYPASS: " .. i .. "/" .. amountToSell
-                else
-                     BtnSellStones.Text = i .. "/" .. limit
-                end
+                BtnSellStones.Text = i .. "/" .. limit
             end
-            task.wait(0.25) -- Delay
+            task.wait(0.25)
         end
         
         BtnSellStones.Text = "SELL SELECTED"
