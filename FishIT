@@ -124,7 +124,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Loaded: Deep Scan Active - @8raka_", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "Loaded - @8raka_", UI_THEME.Accent, 2.5)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -778,54 +778,39 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [DEEP SCAN SMART BACKPACK]
-local CachedBackpackLabel = nil
-
-local function GetBackpackDeep()
-    -- 1. Use Cached Label if valid (Fastest)
-    if CachedBackpackLabel and CachedBackpackLabel.Parent and CachedBackpackLabel.Visible then
-        return CachedBackpackLabel.Text
-    end
-
-    -- 2. Deep Scan for label with "/" (e.g., "10/500")
-    local pGui = Player:FindFirstChild("PlayerGui")
-    if pGui then
-        for _, v in pairs(pGui:GetDescendants()) do
-            if v:IsA("TextLabel") and v.Visible then
-                -- Check for standard weight format "Number / Number"
-                if v.Text:find("/") and v.Text:match("%d") then
-                    -- Filter out dates or irrelevant text
-                     if v.Text:len() < 20 and v.Text:match("%d+/%d+") then
-                        CachedBackpackLabel = v -- Cache it!
-                        return v.Text
-                     end
-                end
-            end
-        end
-    end
-
-    -- 3. Fallback (Manual Count)
-    local count = 0
-    if Player:FindFirstChild("Backpack") then count = count + #Player.Backpack:GetChildren() end
-    if Player.Character then
-        for _, v in pairs(Player.Character:GetChildren()) do
-            if v:IsA("Tool") then count = count + 1 end
-        end
-    end
-    return tostring(count)
-end
-
 task.spawn(function() 
     while true do 
-        task.wait(1) -- Update every 1s
+        task.wait(1) 
         if States.Panel then 
             pcall(function() 
                 local ls = Player:FindFirstChild("leaderstats")
                 local c = ls and ls:FindFirstChild("Caught") and ls.Caught.Value or 0
                 LblFishVal.Text = tostring(c):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
                 
-                -- Call Deep Scan
-                LblInvVal.Text = GetBackpackDeep()
+                -- [REQUESTED REVERT: ORIGINAL LOGIC]
+                local bagText = "0/?"
+                local backpackGui = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("Backpack")
+
+                if backpackGui then
+                    local foundLabel = false
+                    for _, v in pairs(backpackGui:GetDescendants()) do
+                        -- Mencari label yang berisi format "/"
+                        if v:IsA("TextLabel") and string.find(v.Text, "/") then 
+                            bagText = v.Text 
+                            foundLabel = true
+                            break 
+                        end
+                    end
+                    if not foundLabel and Player:FindFirstChild("Backpack") then
+                        bagText = tostring(#Player.Backpack:GetChildren())
+                    end
+                else 
+                    -- Fallback to count children (prevent crash)
+                    if Player:FindFirstChild("Backpack") then
+                         bagText = tostring(#Player.Backpack:GetChildren())
+                    end
+                end
+                LblInvVal.Text = bagText
             end) 
         end 
     end 
