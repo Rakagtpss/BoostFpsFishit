@@ -124,7 +124,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Deep Scan Event Ready - @8raka_", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "Event Logic Fixed (Props) - @8raka_", UI_THEME.Accent, 2.5)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -261,11 +261,11 @@ Header.BackgroundColor3 = UI_THEME.SidebarColor
 Header.BackgroundTransparency = 0.5
 Header.BorderSizePixel = 0
 
--- Header Title (Updated Layout: Title + Name + FPS in one line)
+-- Header Title
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -40, 1, 0) 
 Title.Position = UDim2.new(0, 14, 0, 0) 
-Title.Text = "Loading..." -- Will be updated by FPS Loop
+Title.Text = "Loading..." 
 Title.RichText = true
 Title.TextColor3 = UI_THEME.TextMain
 Title.Font = UI_THEME.FontHeader
@@ -540,7 +540,7 @@ local function ForceEquipRod()
     end)
 end
 
--- >> TOMBOL UI (LAYOUT RAPI) <<
+-- >> TOMBOL UI <<
 
 -- TAB MAIN BUTTONS
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
@@ -672,7 +672,7 @@ local function ToggleBoost(enable)
     else Notify("BOOSTER", "Boost Disabled", UI_THEME.Accent) end
 end
 
--- FPS Updater & Header Updater (Format: Title + Name + FPS)
+-- FPS Updater
 local fpsT = 0
 Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
@@ -726,12 +726,25 @@ BtnClean.MouseButton1Click:Connect(function()
     BtnClean.Text = "Auto Clean: " .. (States.AutoClean and "ON" or "OFF")
     ToggleVisual(BtnClean, States.AutoClean)
 end)
+
+-- [EVENT BUTTON UPDATED LOGIC]
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
     ToggleVisual(BtnEvent, States.AutoEvent)
-    if not States.AutoEvent then IsInEvent = false; SetWoW(false) end
+    
+    if not States.AutoEvent then 
+        -- Jika dimatikan manual, TELEPORT BALIK
+        if IsInEvent and EventStartCFrame and HRP then 
+            HRP.CFrame = EventStartCFrame 
+            EventStartCFrame = nil
+            Notify("AUTO EVENT", "Manual Off: Returning...", UI_THEME.Accent)
+        end
+        IsInEvent = false
+        SetWoW(false) -- Matikan WoW
+    end
 end)
+
 BtnFreeze.MouseButton1Click:Connect(function() 
     States.Freeze = not States.Freeze 
     if HRP then HRP.Anchored = States.Freeze end 
@@ -778,35 +791,20 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP - DEEP SCANNER]
-local function ScanForEvent()
-    -- 1. Folder Scan (Path Optimization)
-    local folders = {
-        Services.Workspace:FindFirstChild("ActiveEvents"),
-        Services.Workspace:FindFirstChild("Events"),
-        Services.Workspace:FindFirstChild("World"),
-        Services.Workspace:FindFirstChild("Props")
-    }
-    
-    for _, folder in pairs(folders) do
-        if folder then
-            for _, v in pairs(folder:GetChildren()) do
-                -- Cek Prompt (Interaksi)
-                if v:IsA("Model") and v:FindFirstChildWhichIsA("ProximityPrompt", true) then
-                    return v
-                end
-                -- Cek Keyword Nama
+-- [AUTO EVENT LOOP - PROPS ONLY & AUTO RETURN]
+local function ScanForEventProps()
+    -- Hanya Check Workspace.Props sesuai request
+    local props = Services.Workspace:FindFirstChild("Props")
+    if props then
+        for _, v in pairs(props:GetChildren()) do
+            -- Filter agar tidak teleport ke dekorasi biasa
+            -- Cari Model/Part yang punya ProximityPrompt ATAU nama mengandung "Event/Crate"
+            if v:IsA("Model") or v:IsA("BasePart") then
+                if v:FindFirstChildWhichIsA("ProximityPrompt", true) then return v end
                 if v.Name:lower():find("event") or v.Name:lower():find("crate") or v.Name:lower():find("supply") then
                     return v
                 end
             end
-        end
-    end
-    
-    -- 2. Deep Workspace Scan (Jika tidak ada di folder)
-    for _, v in pairs(Services.Workspace:GetChildren()) do
-        if v:IsA("Model") and (v.Name:lower():find("event") or v.Name:lower():find("boss")) then
-            return v
         end
     end
     return nil
@@ -814,38 +812,40 @@ end
 
 task.spawn(function()
     while true do
-        task.wait(3) 
+        task.wait(2) -- Scan setiap 2 detik
         if States.AutoEvent then
             pcall(function()
                 if not HRP or not HRP.Parent then return end
                 
-                -- Gunakan Fungsi Deep Scan
-                local FoundEvent = ScanForEvent()
+                local FoundEvent = ScanForEventProps()
 
                 if FoundEvent then
+                    -- EVENT KETEMU
                     if not IsInEvent then
-                        EventStartCFrame = HRP.CFrame 
+                        EventStartCFrame = HRP.CFrame -- Simpan Posisi Awal
                         IsInEvent = true
-                        Notify("AUTO EVENT", "Event Found! Teleporting...", Color3.fromRGB(255, 255, 0))
+                        Notify("AUTO EVENT", "Event in Props! Teleporting...", Color3.fromRGB(255, 255, 0))
+                        SetWoW(true) -- Auto Walk On Water ON
                     end
                     
-                    -- Safe Teleport Logic
+                    -- Teleport ke Event
                     local targetPos = FoundEvent:GetPivot().Position
-                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 5, targetPos.Z) -- +5 Y Biar gak nyangkut
-                    
+                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 4, targetPos.Z) 
                     if (HRP.Position - destPos).Magnitude > 15 then
                         HRP.CFrame = CFrame.new(destPos)
                     end
-                    if not States.WoW then SetWoW(true) end
                 else
+                    -- EVENT HILANG (SELESAI)
                     if IsInEvent then
                         IsInEvent = false
-                        Notify("AUTO EVENT", "Event Finished.", Color3.fromRGB(0, 255, 100))
+                        Notify("AUTO EVENT", "Event Finished. Returning...", Color3.fromRGB(0, 255, 100))
+                        
+                        -- Teleport Balik ke Posisi Awal
                         if EventStartCFrame and HRP then 
                             HRP.CFrame = EventStartCFrame 
                             EventStartCFrame = nil 
                         end
-                        if States.WoW then SetWoW(false) end
+                        SetWoW(false) -- Matikan WoW
                     end
                 end
             end)
@@ -863,14 +863,12 @@ task.spawn(function()
                 local c = ls and ls:FindFirstChild("Caught") and ls.Caught.Value or 0
                 LblFishVal.Text = tostring(c):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
                 
-                -- Restore Code Baris 568 - 584
                 local bagText = "0/?"
                 local backpackGui = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("Backpack")
 
                 if backpackGui then
                     local foundLabel = false
                     for _, v in pairs(backpackGui:GetDescendants()) do
-                        -- Mencari label yang berisi format "/"
                         if v:IsA("TextLabel") and string.find(v.Text, "/") then 
                             bagText = v.Text 
                             foundLabel = true
@@ -881,7 +879,9 @@ task.spawn(function()
                         bagText = tostring(#Player.Backpack:GetChildren())
                     end
                 else 
-                    bagText = tostring(#Player:WaitForChild("Backpack"):GetChildren())
+                    if Player:FindFirstChild("Backpack") then
+                         bagText = tostring(#Player.Backpack:GetChildren())
+                    end
                 end
                 LblInvVal.Text = bagText
             end) 
