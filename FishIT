@@ -43,15 +43,6 @@ ScreenGui.Parent = Services.CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- [NEW] BLACK SCREEN OVERLAY (FOR NO RENDER)
-local BlackScreen = Instance.new("Frame", ScreenGui)
-BlackScreen.Name = "BlackOverlay"
-BlackScreen.Size = UDim2.new(1, 0, 1, 0)
-BlackScreen.BackgroundColor3 = Color3.new(0, 0, 0)
-BlackScreen.BorderSizePixel = 0
-BlackScreen.Visible = false
-BlackScreen.ZIndex = 0 -- Di belakang UI utama
-
 -- ====================================================
 -- [SYSTEM] CUSTOM NOTIFICATION
 -- ====================================================
@@ -62,7 +53,6 @@ NotifyContainer.AnchorPoint = Vector2.new(1, 1)
 NotifyContainer.Position = UDim2.new(1, -20, 1, -20)
 NotifyContainer.BackgroundTransparency = 1
 NotifyContainer.ClipsDescendants = false
-NotifyContainer.ZIndex = 100 -- Paling depan
 
 local NotifyLayout = Instance.new("UIListLayout", NotifyContainer)
 NotifyLayout.FillDirection = Enum.FillDirection.Vertical
@@ -139,7 +129,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Update: Low Height & Black Render - @8raka_", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "New UI + More Feature - @8raka_", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -152,7 +142,6 @@ FloatHUD.BackgroundColor3 = UI_THEME.Color
 FloatHUD.BackgroundTransparency = UI_THEME.Transparency
 FloatHUD.Visible = false 
 FloatHUD.Active = true 
-FloatHUD.ZIndex = 50 
 
 local GradHud = Instance.new("UIGradient", FloatHUD)
 GradHud.Color = ColorSequence.new{
@@ -241,7 +230,6 @@ Main.BackgroundTransparency = UI_THEME.Transparency
 Main.Active = true
 Main.ClipsDescendants = true 
 Main.Visible = false 
-Main.ZIndex = 50 -- Pastikan di atas Black Screen
 
 local MainGrad = Instance.new("UIGradient", Main)
 MainGrad.Color = ColorSequence.new{
@@ -542,7 +530,7 @@ local States = {
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
     AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
     Speed=false, SpeedVal=50, Fly=false, FlySpeed=50, NoDmg=false,
-    AutoFollow=false, FollowTarget=nil
+    AutoFollow=false, FollowTarget=nil, PriorityEvent="Ghost Shark Hunt"
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -553,6 +541,16 @@ local Connections = {}
 local BodyV = nil
 local LastFishCaughtTime = tick()
 local LastFishCount = 0
+
+-- Priority List
+local EventList = {"Ghost Shark Hunt", "Worm Hunt", "Treasure Hunt", "Shark Hunt", "Megalodon Hunt"}
+local EventListIndex = 1
+
+-- Restore Data for Booster
+local OriginalSettings = {
+    Lighting = {},
+    Terrain = {}
+}
 
 -- Force Re-Equip
 local function ForceEquipRod()
@@ -575,6 +573,7 @@ end
 
 -- TAB MAIN
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
+local BtnPrior  = MakeBtn(PageMain, "Prioritas: Ghost Shark")
 local BtnChest  = MakeBtn(PageMain, "Auto Chest: OFF") 
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnClean  = MakeBtn(PageMain, "Auto Clean: OFF")
@@ -818,13 +817,58 @@ local function SetUltraGraphics(enabled)
     end
 end
 
--- Smart Booster
+-- Smart Booster (Upgraded & Restorable)
 local function ToggleBoost(enable)
     States.Boost = enable
     BtnBoost.Text = "CPU Booster: " .. (States.Boost and "ON" or "OFF")
     ToggleVisual(BtnBoost, States.Boost)
-    if enable then Notify("BOOSTER", "Boost Active", Color3.fromRGB(0, 255, 100))
-    else Notify("BOOSTER", "Boost Disabled", UI_THEME.Accent) end
+    
+    if enable then
+        Notify("BOOSTER", "Maximizing FPS...", Color3.fromRGB(0, 255, 100))
+        
+        -- Save Settings
+        OriginalSettings.Lighting.GlobalShadows = Services.Lighting.GlobalShadows
+        OriginalSettings.Lighting.Technology = Services.Lighting.Technology
+        OriginalSettings.Lighting.EnvironmentDiffuseScale = Services.Lighting.EnvironmentDiffuseScale
+        OriginalSettings.Lighting.EnvironmentSpecularScale = Services.Lighting.EnvironmentSpecularScale
+        
+        -- Apply Boost (Lighting)
+        Services.Lighting.GlobalShadows = false
+        Services.Lighting.Technology = Enum.Technology.Voxel
+        Services.Lighting.EnvironmentDiffuseScale = 0
+        Services.Lighting.EnvironmentSpecularScale = 0
+        
+        -- Clear Terrain Water
+        if Services.Workspace.Terrain then
+            Services.Workspace.Terrain.WaterReflectance = 0
+            Services.Workspace.Terrain.WaterTransparency = 0
+            Services.Workspace.Terrain.WaterWaveSize = 0
+            Services.Workspace.Terrain.WaterWaveSpeed = 0
+        end
+        
+        -- Aggressive Part Cleanup
+        for _, v in pairs(Services.Workspace:GetDescendants()) do
+            if v:IsA("BasePart") and not v:IsA("Terrain") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.Reflectance = 0
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 1
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Enabled = false
+            end
+        end
+    else
+        Notify("BOOSTER", "Restoring Visuals...", UI_THEME.Accent)
+        
+        -- Restore Lighting
+        Services.Lighting.GlobalShadows = OriginalSettings.Lighting.GlobalShadows
+        Services.Lighting.Technology = OriginalSettings.Lighting.Technology
+        Services.Lighting.EnvironmentDiffuseScale = OriginalSettings.Lighting.EnvironmentDiffuseScale
+        Services.Lighting.EnvironmentSpecularScale = OriginalSettings.Lighting.EnvironmentSpecularScale
+        
+        -- Note: We don't restore every single part material because it causes massive lag/crash.
+        -- Restoring lighting is usually enough to make the game look normal again.
+    end
 end
 
 -- FPS Updater
@@ -834,7 +878,7 @@ Services.RunService.RenderStepped:Connect(function(dt)
     local currentFps = math.floor(fpsT)
     if Title and currentFps then
         Title.Text = string.format(
-            "SERA <font color=\"rgb(64,162,227)\">HELPER</font> <font size=\"10\" color=\"rgb(230,230,230)\">@8raka_</font> | FPS: <b>%d</b>", 
+            "SERA <font color=\"rgb(64,162,227)\">HELPER</font> <font size=\"10\" color=\"rgb(255,255,255)\">@8raka_</font> | FPS: <b>%d</b>", 
             currentFps
         )
     end
@@ -1103,7 +1147,16 @@ BtnClean.MouseButton1Click:Connect(function()
     ToggleVisual(BtnClean, States.AutoClean)
 end)
 
--- [EVENT BUTTON - REVERTED TO OLD METHOD (PROPS) + 1.2 Y]
+-- [EVENT BUTTON - PRIORITY SYSTEM]
+BtnPrior.MouseButton1Click:Connect(function()
+    EventListIndex = EventListIndex + 1
+    if EventListIndex > #EventList then EventListIndex = 1 end
+    States.PriorityEvent = EventList[EventListIndex]
+    BtnPrior.Text = "Prioritas: " .. States.PriorityEvent
+    Services.TweenService:Create(BtnPrior, TweenInfo.new(0.2), {BackgroundColor3=UI_THEME.Accent}):Play()
+    task.delay(0.2, function() ToggleVisual(BtnPrior, false) end)
+end)
+
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
@@ -1139,16 +1192,9 @@ end)
 
 BtnRender.MouseButton1Click:Connect(function()
     States.NoRender = not States.NoRender
+    Services.RunService:Set3dRenderingEnabled(not States.NoRender) 
     BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON")
     ToggleVisual(BtnRender, States.NoRender)
-    
-    if States.NoRender then
-        BlackScreen.Visible = true
-        Services.RunService:Set3dRenderingEnabled(false)
-    else
-        Services.RunService:Set3dRenderingEnabled(true)
-        BlackScreen.Visible = false
-    end
 end)
 
 BtnFreeze.MouseButton1Click:Connect(function() 
@@ -1195,17 +1241,34 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP - OLD METHOD PROPS SCAN + 1.2 Y]
-local function ScanForEvent()
-    local props = Services.Workspace:FindFirstChild("Props")
-    if props then
-        for _, v in pairs(props:GetChildren()) do
-            if v:IsA("Model") or v:IsA("BasePart") then
-                -- Method: Cari ProximityPrompt ATAU Nama Khas Event
-                if v:FindFirstChildWhichIsA("ProximityPrompt", true) then return v end
-                local name = v.Name:lower()
-                if name:find("event") or name:find("crate") or name:find("supply") then return v end
+-- [AUTO EVENT LOOP - PRIORITY & SECONDARY]
+local function FindInFolders(targetName)
+    local folders = {Services.Workspace:FindFirstChild("ActiveEvents"), Services.Workspace:FindFirstChild("Props")}
+    for _, folder in pairs(folders) do
+        if folder then
+            for _, v in pairs(folder:GetChildren()) do
+                if v:IsA("Model") or v:IsA("BasePart") then
+                    if v.Name == targetName or v.Name:find(targetName) then
+                        return v
+                    end
+                end
             end
+        end
+    end
+    return nil
+end
+
+local function ScanEvent()
+    -- 1. Scan Priority
+    local pName = States.PriorityEvent
+    local target = FindInFolders(pName)
+    if target then return target, true end 
+
+    -- 2. Scan Others (Secondary)
+    for _, name in pairs(EventList) do
+        if name ~= pName then
+            local t = FindInFolders(name)
+            if t then return t, false end
         end
     end
     return nil
@@ -1219,18 +1282,19 @@ task.spawn(function()
                 local hrp = GetRoot()
                 if not hrp then return end
                 
-                local FoundEvent = ScanForEvent()
+                local FoundEvent, IsPriority = ScanEvent()
 
                 if FoundEvent then
                     if not IsInEvent then
                         EventStartCFrame = hrp.CFrame 
                         IsInEvent = true
-                        Notify("AUTO EVENT", "Event Found! Teleporting...", Color3.fromRGB(255, 255, 0))
+                        local msg = IsPriority and "Priority Event Found!" or "Secondary Event Found"
+                        Notify("AUTO EVENT", msg, IsPriority and Color3.fromRGB(0, 255, 255) or Color3.fromRGB(255, 200, 0))
                         SetWoW(true)
                     end
                     local targetPos = FoundEvent:GetPivot().Position
-                    -- HEIGHT: +1.2 Studs (Near Water Surface)
-                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 1.2, targetPos.Z) 
+                    -- Height +3 Studs
+                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 3, targetPos.Z) 
                     if (hrp.Position - destPos).Magnitude > 15 then
                         hrp.CFrame = CFrame.new(destPos)
                     end
