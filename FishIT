@@ -139,7 +139,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Auto Claim Added - @8raka_", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "Reverted: Old Event Method (Props) - @8raka_", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -487,6 +487,7 @@ LogoR.MouseButton1Click:Connect(function()
     end
 end)
 
+-- [UPDATED BUTTON MAKER WITH TEXT STROKE]
 local function MakeBtn(parent, text)
     local b = Instance.new("TextButton", parent)
     b.Text = text
@@ -498,7 +499,7 @@ local function MakeBtn(parent, text)
     b.AutoButtonColor = true
     b.ClipsDescendants = true
     
-    -- Black Outline for Clarity
+    -- Black Outline
     b.TextStrokeColor3 = Color3.new(0,0,0)
     b.TextStrokeTransparency = 0.3
     
@@ -537,17 +538,15 @@ end
 local States = {
     Freeze=false, WoW=false, Boost=false, Ultra=false, NoRender=false, 
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
-    AutoEvent=false, AutoChest=false, AutoClaim=false, AntiStuck=false, StuckTimeout=60,
+    AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
     Speed=false, SpeedVal=50, Fly=false, FlySpeed=50, NoDmg=false,
     AutoFollow=false, FollowTarget=nil
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
-local ChestReturnCFrame = nil
-local ClaimReturnCFrame = nil 
+local ChestReturnCFrame = nil 
 local IsInEvent = false 
-local IsLootingChests = false
-local IsClaiming = false
+local IsLootingChests = false 
 local Connections = {}
 local BodyV = nil
 local LastFishCaughtTime = tick()
@@ -575,7 +574,6 @@ end
 -- TAB MAIN
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
 local BtnChest  = MakeBtn(PageMain, "Auto Chest: OFF") 
-local BtnClaim  = MakeBtn(PageMain, "Auto Claim: OFF") -- [NEW AUTO CLAIM]
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnClean  = MakeBtn(PageMain, "Auto Clean: OFF")
 local BtnUltra  = MakeBtn(PageMain, "Ultra HD: OFF") 
@@ -834,7 +832,7 @@ Services.RunService.RenderStepped:Connect(function(dt)
     local currentFps = math.floor(fpsT)
     if Title and currentFps then
         Title.Text = string.format(
-            "SERA <font color=\"rgb(64,162,227)\">HELPER</font> <font size=\"10\" color=\"rgb(255,255,255)\">@8raka_</font> | FPS: <b>%d</b>", 
+            "SERA <font color=\"rgb(64,162,227)\">HELPER</font> <font size=\"10\" color=\"rgb(230,230,230)\">@8raka_</font> | FPS: <b>%d</b>", 
             currentFps
         )
     end
@@ -1031,7 +1029,6 @@ task.spawn(function()
                 local tHRP = tChar and tChar:FindFirstChild("HumanoidRootPart")
                 local myHRP = GetRoot()
                 if tHRP and myHRP then
-                    -- Jarak 0 (Menempel Pas)
                     myHRP.CFrame = tHRP.CFrame
                 end
             end)
@@ -1104,7 +1101,7 @@ BtnClean.MouseButton1Click:Connect(function()
     ToggleVisual(BtnClean, States.AutoClean)
 end)
 
--- [EVENT BUTTON - FIXED]
+-- [EVENT BUTTON - REVERTED TO OLD METHOD PROPS SCAN]
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
@@ -1134,24 +1131,6 @@ BtnChest.MouseButton1Click:Connect(function()
             Notify("CHEST", "Manual Stop: Returning", UI_THEME.Accent)
         end
         IsLootingChests = false
-        SetWoW(false)
-    end
-end)
-
--- [AUTO CLAIM BUTTON]
-BtnClaim.MouseButton1Click:Connect(function()
-    States.AutoClaim = not States.AutoClaim
-    BtnClaim.Text = "Auto Claim: " .. (States.AutoClaim and "ON" or "OFF")
-    ToggleVisual(BtnClaim, States.AutoClaim)
-    
-    if not States.AutoClaim then
-        -- Manual Stop Logic for Claim
-        local hrp = GetRoot()
-        if IsClaiming and ClaimReturnCFrame and hrp then
-            hrp.CFrame = ClaimReturnCFrame
-            Notify("CLAIM", "Manual Stop: Returning...", UI_THEME.Accent)
-        end
-        IsClaiming = false
         SetWoW(false)
     end
 end)
@@ -1206,25 +1185,17 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP - REVERTED TO STABLE + 3 STUD]
+-- [AUTO EVENT LOOP - OLD METHOD (SCAN PROPS FOR NAME/PROMPT)]
 local function ScanForEvent()
-    -- Scan Props (Prioritas Utama)
     local props = Services.Workspace:FindFirstChild("Props")
     if props then
         for _, v in pairs(props:GetChildren()) do
-            -- Filter Stabil: Cari yg punya Prompt ATAU Nama Event
             if v:IsA("Model") or v:IsA("BasePart") then
+                -- Method: Cari ProximityPrompt ATAU Nama Khas Event
                 if v:FindFirstChildWhichIsA("ProximityPrompt", true) then return v end
                 local name = v.Name:lower()
                 if name:find("event") or name:find("crate") or name:find("supply") then return v end
             end
-        end
-    end
-    -- Scan ActiveEvents (Backup)
-    local active = Services.Workspace:FindFirstChild("ActiveEvents")
-    if active then
-        for _, v in pairs(active:GetChildren()) do
-            if v:IsA("Model") or v:IsA("BasePart") then return v end
         end
     end
     return nil
@@ -1248,7 +1219,7 @@ task.spawn(function()
                         SetWoW(true)
                     end
                     local targetPos = FoundEvent:GetPivot().Position
-                    -- FIXED: Ketinggian +3 Stud (Pas di atas air)
+                    -- HEIGHT: +3 Studs (Above Water)
                     local destPos = Vector3.new(targetPos.X, targetPos.Y + 3, targetPos.Z) 
                     if (hrp.Position - destPos).Magnitude > 15 then
                         hrp.CFrame = CFrame.new(destPos)
@@ -1309,53 +1280,6 @@ task.spawn(function()
             end)
         else
             if IsLootingChests then IsLootingChests = false end
-        end
-    end
-end)
-
--- [AUTO CLAIM LOOP]
-task.spawn(function()
-    local TargetItems = {"TNT", "StevesBoatKey", "DeadManCompass", "Mushroom", "Coin"}
-    while true do
-        task.wait(2)
-        if States.AutoClaim then
-            pcall(function()
-                local folder = Services.Workspace:FindFirstChild("!!! SEARCH ITEM SPAWNS")
-                if folder then
-                    for _, v in pairs(folder:GetChildren()) do
-                        if table.find(TargetItems, v.Name) and v:FindFirstChildWhichIsA("ProximityPrompt", true) then
-                            local hrp = GetRoot()
-                            
-                            -- 1. Setup Return Pos
-                            if not IsClaiming and hrp then
-                                ClaimReturnCFrame = hrp.CFrame
-                                IsClaiming = true
-                                Notify("CLAIM", "Found " .. v.Name .. "!", Color3.fromRGB(0, 255, 255))
-                                SetWoW(true)
-                            end
-
-                            -- 2. Teleport & Claim
-                            if hrp then
-                                hrp.CFrame = v:GetPivot() + Vector3.new(0, 3, 0)
-                                task.wait(0.2)
-                                local prompt = v:FindFirstChildWhichIsA("ProximityPrompt", true)
-                                if prompt then fireproximityprompt(prompt) end
-                            end
-                            task.wait(0.5) -- Delay antar item
-                        end
-                    end
-                end
-            end)
-        else
-            if IsClaiming then
-                IsClaiming = false
-                local hrp = GetRoot()
-                if ClaimReturnCFrame and hrp then
-                    hrp.CFrame = ClaimReturnCFrame
-                    Notify("CLAIM", "Finished/Stopped. Returning...", Color3.fromRGB(0, 255, 100))
-                end
-                SetWoW(false)
-            end
         end
     end
 end)
