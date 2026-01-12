@@ -20,7 +20,7 @@ local Cam = Services.Workspace.CurrentCamera
 -- // Konfigurasi Visual (MODERN SIDE UI THEME - RAKA)
 local UI_THEME = {
     Width = 440,   
-    Height = 340,  -- Diperbesar untuk fitur Follow
+    Height = 360,  -- Diperbesar untuk tombol Hide Rod
     Color = Color3.fromRGB(18, 18, 22),       
     SidebarColor = Color3.fromRGB(25, 25, 30),
     Transparency = 0.1, 
@@ -125,7 +125,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Auto Follow Added - @8raka_", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "Fly Fixed, Hide Rod Added - @8raka_", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -520,7 +520,7 @@ local States = {
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
     AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
     Speed=false, SpeedVal=50, Fly=false, FlySpeed=50, NoDmg=false,
-    AutoFollow=false, FollowTarget=nil
+    AutoFollow=false, FollowTarget=nil, HideRod=false
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -675,6 +675,7 @@ sFolIn.Thickness = 1
 sFolIn.Transparency = 0.5
 
 local BtnNoDmg = MakeBtn(PagePlayer, "No Damage: OFF")
+local BtnHideRod = MakeBtn(PagePlayer, "Hide Rod: OFF") -- [NEW HIDE ROD]
 
 -- TAB MISC
 local StuckContainer = Instance.new("Frame", PageMisc)
@@ -827,7 +828,7 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [BUTTON LOGIC - PLAYER TAB (FIXED FLY & FOLLOW)]
+-- [BUTTON LOGIC - PLAYER TAB (FIXED)]
 -- ====================================================
 
 -- 1. SPEED BUTTON
@@ -852,11 +853,14 @@ BoxSpeedInput.FocusLost:Connect(function()
     if val then States.SpeedVal = val else BoxSpeedInput.Text = tostring(States.SpeedVal) end
 end)
 
--- 2. FLY BUTTON (FIXED: Uses BodyVelocity for smooth movement)
+-- 2. FLY BUTTON (FIXED STUCK ISSUE)
 local FlyBV, FlyBG
 local function ToggleFly(state)
     if state then
         if not HRP then return end
+        
+        -- Matikan Fisika Humanoid biar gak stuck
+        if Hum then Hum.PlatformStand = true end
         
         FlyBG = Instance.new("BodyGyro")
         FlyBG.Parent = HRP
@@ -894,6 +898,9 @@ local function ToggleFly(state)
         if Connections["Fly"] then Connections["Fly"]:Disconnect() end
         if FlyBV then FlyBV:Destroy() end
         if FlyBG then FlyBG:Destroy() end
+        
+        -- Restore Physics
+        if Hum then Hum.PlatformStand = false end
         if Char then
             for _,v in pairs(Char:GetDescendants()) do
                 if v:IsA("BasePart") then v.CanCollide = true end
@@ -923,7 +930,7 @@ BoxFlyInput.FocusLost:Connect(function()
     if val then States.FlySpeed = val else BoxFlyInput.Text = "50" end
 end)
 
--- 3. FOLLOW PLAYER BUTTON (NEW)
+-- 3. FOLLOW PLAYER BUTTON (FIXED DISTANCE)
 local function FindPlayer(namePart)
     for _, p in pairs(Services.Players:GetPlayers()) do
         if p ~= Player then
@@ -943,7 +950,7 @@ BtnFollowToggle.MouseButton1Click:Connect(function()
         local target = FindPlayer(targetName)
         if target then
             States.FollowTarget = target
-            BoxFollowInput.Text = target.Name -- Auto complete
+            BoxFollowInput.Text = target.Name 
             BtnFollowToggle.Text = "Following"
             ToggleVisual(BtnFollowToggle, true)
             Notify("FOLLOW", "Target: " .. target.Name, Color3.fromRGB(0, 255, 100))
@@ -972,11 +979,32 @@ BtnNoDmg.MouseButton1Click:Connect(function()
     ToggleVisual(BtnNoDmg, States.NoDmg)
 end)
 
+-- 5. HIDE ROD BUTTON [NEW]
+BtnHideRod.MouseButton1Click:Connect(function()
+    States.HideRod = not States.HideRod
+    BtnHideRod.Text = "Hide Rod: " .. (States.HideRod and "ON" or "OFF")
+    ToggleVisual(BtnHideRod, States.HideRod)
+    
+    if not States.HideRod then
+        -- Restore Visibility
+        local char = Player.Character
+        if char then
+            for _, t in pairs(char:GetChildren()) do
+                if t:IsA("Tool") then
+                    for _, v in pairs(t:GetDescendants()) do
+                        if v:IsA("BasePart") or v:IsA("MeshPart") then v.Transparency = 0 end
+                    end
+                end
+            end
+        end
+    end
+end)
+
 -- ====================================================
 -- [PLAYER LOOPS]
 -- ====================================================
 
--- Auto Follow Loop
+-- Auto Follow Loop (ZERO DISTANCE FIX)
 task.spawn(function()
     while true do
         task.wait()
@@ -985,15 +1013,38 @@ task.spawn(function()
                 local tChar = States.FollowTarget.Character
                 local tHRP = tChar and tChar:FindFirstChild("HumanoidRootPart")
                 if tHRP and HRP then
-                    -- Magnet: 4 Studs Behind + 2 Studs Up
-                    HRP.CFrame = tHRP.CFrame * CFrame.new(0, 2, 4)
+                    -- Jarak 0 (Menempel Pas)
+                    HRP.CFrame = tHRP.CFrame
                 end
             end)
         end
     end
 end)
 
--- Speed Loop (Hybrid: Player & Boat)
+-- Hide Rod Loop
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if States.HideRod then
+            pcall(function()
+                local char = Player.Character
+                if char then
+                    for _, t in pairs(char:GetChildren()) do
+                        if t:IsA("Tool") then
+                            for _, v in pairs(t:GetDescendants()) do
+                                if (v:IsA("BasePart") or v:IsA("MeshPart")) and v.Transparency == 0 then 
+                                    v.Transparency = 1 
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Speed Loop 
 task.spawn(function()
     while true do
         task.wait()
@@ -1002,7 +1053,6 @@ task.spawn(function()
                 if Hum.Sit then
                     local seat = Hum.SeatPart
                     if seat then
-                        local att = seat:FindFirstChildOfClass("Attachment")
                         if seat.AssemblyLinearVelocity.Magnitude > 0 then
                              seat.AssemblyLinearVelocity = seat.CFrame.LookVector * States.SpeedVal
                         end
@@ -1053,7 +1103,7 @@ BtnClean.MouseButton1Click:Connect(function()
     ToggleVisual(BtnClean, States.AutoClean)
 end)
 
--- [EVENT BUTTON - AGGRESSIVE SCANNER FIXED]
+-- [EVENT BUTTON - FIXED Y OFFSET +3]
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
@@ -1131,19 +1181,17 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP - AGGRESSIVE AGNOSTIC SCANNER]
+-- [AUTO EVENT LOOP - Y OFFSET +3]
 local function ScanForEventProps()
-    -- Scan Props: Terima APAPUN yang ada di sini
     local props = Services.Workspace:FindFirstChild("Props")
     if props then
         for _, v in pairs(props:GetChildren()) do
             if v:IsA("Model") or v:IsA("BasePart") then
-                return v -- Langsung return, jangan pilih-pilih
+                return v 
             end
         end
     end
     
-    -- Scan ActiveEvents: Terima APAPUN
     local active = Services.Workspace:FindFirstChild("ActiveEvents")
     if active then
         for _, v in pairs(active:GetChildren()) do
@@ -1152,7 +1200,6 @@ local function ScanForEventProps()
             end
         end
     end
-    
     return nil
 end
 
@@ -1169,11 +1216,12 @@ task.spawn(function()
                     if not IsInEvent then
                         EventStartCFrame = HRP.CFrame 
                         IsInEvent = true
-                        Notify("AUTO EVENT", "Event Detected! Teleporting...", Color3.fromRGB(255, 255, 0))
+                        Notify("AUTO EVENT", "Event Found! Teleporting...", Color3.fromRGB(255, 255, 0))
                         SetWoW(true)
                     end
                     local targetPos = FoundEvent:GetPivot().Position
-                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 4, targetPos.Z) 
+                    -- FIXED Y OFFSET TO +3
+                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 3, targetPos.Z) 
                     if (HRP.Position - destPos).Magnitude > 15 then
                         HRP.CFrame = CFrame.new(destPos)
                     end
