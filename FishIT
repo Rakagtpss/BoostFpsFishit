@@ -20,16 +20,16 @@ local Cam = Services.Workspace.CurrentCamera
 -- // Konfigurasi Visual (MODERN SIDE UI THEME - RAKA)
 local UI_THEME = {
     Width = 440,   
-    Height = 360,  -- Diperbesar untuk tombol Hide Rod
+    Height = 320,  -- Ukuran pas dan rapi
     Color = Color3.fromRGB(18, 18, 22),       
     SidebarColor = Color3.fromRGB(25, 25, 30),
     Transparency = 0.1, 
     Accent = Color3.fromRGB(64, 162, 227),    -- Cyan Electric
-    TextMain = Color3.fromRGB(240, 240, 240),
-    TextDim = Color3.fromRGB(150, 150, 160),
+    TextMain = Color3.fromRGB(245, 245, 245), -- Putih Terang
+    TextDim = Color3.fromRGB(180, 180, 180),
     FontHeader = Enum.Font.GothamBlack,       
     FontBody = Enum.Font.GothamBold,          
-    CornerRadius = UDim.new(0, 12)
+    CornerRadius = UDim.new(0, 10)
 }
 
 -- Bersihkan UI Lama
@@ -92,6 +92,8 @@ local function Notify(title, text, colorOverride, duration)
     LblTitle.TextColor3 = color
     LblTitle.Font = UI_THEME.FontHeader
     LblTitle.TextSize = 13
+    LblTitle.TextStrokeColor3 = Color3.new(0,0,0)
+    LblTitle.TextStrokeTransparency = 0.6
     LblTitle.TextXAlignment = Enum.TextXAlignment.Left 
     
     local LblMsg = Instance.new("TextLabel", Frame)
@@ -125,7 +127,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Fly Fixed, Hide Rod Added - @8raka_", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "Optimized: Clean UI & Event Fix - @8raka_", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -253,7 +255,7 @@ LogoR.TextSize = 28
 LogoR.Visible = false 
 LogoR.ZIndex = 10
 
--- HEADER (Top Bar)
+-- HEADER
 local Header = Instance.new("Frame", Main)
 Header.Name = "Header"
 Header.Size = UDim2.new(1, 0, 0, 34) 
@@ -391,7 +393,7 @@ PageMain.AutomaticCanvasSize = Enum.AutomaticSize.Y
 PageMain.Visible = true
 
 local GridMain = Instance.new("UIGridLayout", PageMain)
-GridMain.CellSize = UDim2.new(0.48, 0, 0, 32) 
+GridMain.CellSize = UDim2.new(0.48, 0, 0, 30) -- Compact Cell Size
 GridMain.CellPadding = UDim2.new(0, 6, 0, 6)
 GridMain.SortOrder = Enum.SortOrder.LayoutOrder
 
@@ -406,7 +408,7 @@ PagePlayer.AutomaticCanvasSize = Enum.AutomaticSize.Y
 PagePlayer.Visible = false
 
 local GridPlayer = Instance.new("UIGridLayout", PagePlayer)
-GridPlayer.CellSize = UDim2.new(0.48, 0, 0, 32)
+GridPlayer.CellSize = UDim2.new(0.48, 0, 0, 30)
 GridPlayer.CellPadding = UDim2.new(0, 6, 0, 6)
 GridPlayer.SortOrder = Enum.SortOrder.LayoutOrder
 
@@ -421,7 +423,7 @@ PageMisc.AutomaticCanvasSize = Enum.AutomaticSize.Y
 PageMisc.Visible = false
 
 local GridMisc = Instance.new("UIGridLayout", PageMisc)
-GridMisc.CellSize = UDim2.new(0.48, 0, 0, 32)
+GridMisc.CellSize = UDim2.new(0.48, 0, 0, 30)
 GridMisc.CellPadding = UDim2.new(0, 6, 0, 6)
 GridMisc.SortOrder = Enum.SortOrder.LayoutOrder
 
@@ -473,6 +475,7 @@ LogoR.MouseButton1Click:Connect(function()
     end
 end)
 
+-- [UPDATED BUTTON MAKER WITH TEXT STROKE]
 local function MakeBtn(parent, text)
     local b = Instance.new("TextButton", parent)
     b.Text = text
@@ -483,6 +486,11 @@ local function MakeBtn(parent, text)
     b.TextSize = 10 
     b.AutoButtonColor = true
     b.ClipsDescendants = true
+    
+    -- Black Outline for Clarity
+    b.TextStrokeColor3 = Color3.new(0,0,0)
+    b.TextStrokeTransparency = 0.2
+    
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6) 
     local s = Instance.new("UIStroke", b)
     s.Color = Color3.fromRGB(70, 70, 80) 
@@ -520,7 +528,7 @@ local States = {
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
     AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
     Speed=false, SpeedVal=50, Fly=false, FlySpeed=50, NoDmg=false,
-    AutoFollow=false, FollowTarget=nil, HideRod=false
+    AutoFollow=false, FollowTarget=nil
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -578,6 +586,8 @@ BtnSpeedToggle.Text = "Speed: OFF"
 BtnSpeedToggle.TextColor3 = UI_THEME.TextMain
 BtnSpeedToggle.Font = UI_THEME.FontBody
 BtnSpeedToggle.TextSize = 10
+BtnSpeedToggle.TextStrokeColor3 = Color3.new(0,0,0)
+BtnSpeedToggle.TextStrokeTransparency = 0.2
 Instance.new("UICorner", BtnSpeedToggle).CornerRadius = UDim.new(0, 6)
 local sSpd = Instance.new("UIStroke", BtnSpeedToggle)
 sSpd.Color = Color3.fromRGB(70, 70, 80)
@@ -614,6 +624,8 @@ BtnFlyToggle.Text = "Fly: OFF"
 BtnFlyToggle.TextColor3 = UI_THEME.TextMain
 BtnFlyToggle.Font = UI_THEME.FontBody
 BtnFlyToggle.TextSize = 10
+BtnFlyToggle.TextStrokeColor3 = Color3.new(0,0,0)
+BtnFlyToggle.TextStrokeTransparency = 0.2
 Instance.new("UICorner", BtnFlyToggle).CornerRadius = UDim.new(0, 6)
 local sFly = Instance.new("UIStroke", BtnFlyToggle)
 sFly.Color = Color3.fromRGB(70, 70, 80)
@@ -651,6 +663,8 @@ BtnFollowToggle.Text = "Follow: OFF"
 BtnFollowToggle.TextColor3 = UI_THEME.TextMain
 BtnFollowToggle.Font = UI_THEME.FontBody
 BtnFollowToggle.TextSize = 10
+BtnFollowToggle.TextStrokeColor3 = Color3.new(0,0,0)
+BtnFollowToggle.TextStrokeTransparency = 0.2
 Instance.new("UICorner", BtnFollowToggle).CornerRadius = UDim.new(0, 6)
 local sFol = Instance.new("UIStroke", BtnFollowToggle)
 sFol.Color = Color3.fromRGB(70, 70, 80)
@@ -675,7 +689,6 @@ sFolIn.Thickness = 1
 sFolIn.Transparency = 0.5
 
 local BtnNoDmg = MakeBtn(PagePlayer, "No Damage: OFF")
-local BtnHideRod = MakeBtn(PagePlayer, "Hide Rod: OFF") -- [NEW HIDE ROD]
 
 -- TAB MISC
 local StuckContainer = Instance.new("Frame", PageMisc)
@@ -691,6 +704,8 @@ BtnStuckToggle.Text = "Anti-Stuck: OFF"
 BtnStuckToggle.TextColor3 = UI_THEME.TextMain
 BtnStuckToggle.Font = UI_THEME.FontBody
 BtnStuckToggle.TextSize = 10
+BtnStuckToggle.TextStrokeColor3 = Color3.new(0,0,0)
+BtnStuckToggle.TextStrokeTransparency = 0.2
 Instance.new("UICorner", BtnStuckToggle).CornerRadius = UDim.new(0, 6)
 local s1 = Instance.new("UIStroke", BtnStuckToggle)
 s1.Color = Color3.fromRGB(70, 70, 80)
@@ -930,7 +945,7 @@ BoxFlyInput.FocusLost:Connect(function()
     if val then States.FlySpeed = val else BoxFlyInput.Text = "50" end
 end)
 
--- 3. FOLLOW PLAYER BUTTON (FIXED DISTANCE)
+-- 3. FOLLOW PLAYER BUTTON (FIXED ZERO DISTANCE)
 local function FindPlayer(namePart)
     for _, p in pairs(Services.Players:GetPlayers()) do
         if p ~= Player then
@@ -979,27 +994,6 @@ BtnNoDmg.MouseButton1Click:Connect(function()
     ToggleVisual(BtnNoDmg, States.NoDmg)
 end)
 
--- 5. HIDE ROD BUTTON [NEW]
-BtnHideRod.MouseButton1Click:Connect(function()
-    States.HideRod = not States.HideRod
-    BtnHideRod.Text = "Hide Rod: " .. (States.HideRod and "ON" or "OFF")
-    ToggleVisual(BtnHideRod, States.HideRod)
-    
-    if not States.HideRod then
-        -- Restore Visibility
-        local char = Player.Character
-        if char then
-            for _, t in pairs(char:GetChildren()) do
-                if t:IsA("Tool") then
-                    for _, v in pairs(t:GetDescendants()) do
-                        if v:IsA("BasePart") or v:IsA("MeshPart") then v.Transparency = 0 end
-                    end
-                end
-            end
-        end
-    end
-end)
-
 -- ====================================================
 -- [PLAYER LOOPS]
 -- ====================================================
@@ -1015,29 +1009,6 @@ task.spawn(function()
                 if tHRP and HRP then
                     -- Jarak 0 (Menempel Pas)
                     HRP.CFrame = tHRP.CFrame
-                end
-            end)
-        end
-    end
-end)
-
--- Hide Rod Loop
-task.spawn(function()
-    while true do
-        task.wait(0.5)
-        if States.HideRod then
-            pcall(function()
-                local char = Player.Character
-                if char then
-                    for _, t in pairs(char:GetChildren()) do
-                        if t:IsA("Tool") then
-                            for _, v in pairs(t:GetDescendants()) do
-                                if (v:IsA("BasePart") or v:IsA("MeshPart")) and v.Transparency == 0 then 
-                                    v.Transparency = 1 
-                                end
-                            end
-                        end
-                    end
                 end
             end)
         end
@@ -1103,7 +1074,7 @@ BtnClean.MouseButton1Click:Connect(function()
     ToggleVisual(BtnClean, States.AutoClean)
 end)
 
--- [EVENT BUTTON - FIXED Y OFFSET +3]
+-- [EVENT BUTTON - FIXED Y OFFSET +3 & SCAN]
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
@@ -1181,22 +1152,19 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP - Y OFFSET +3]
-local function ScanForEventProps()
-    local props = Services.Workspace:FindFirstChild("Props")
-    if props then
-        for _, v in pairs(props:GetChildren()) do
-            if v:IsA("Model") or v:IsA("BasePart") then
-                return v 
-            end
-        end
-    end
-    
-    local active = Services.Workspace:FindFirstChild("ActiveEvents")
-    if active then
-        for _, v in pairs(active:GetChildren()) do
-            if v:IsA("Model") or v:IsA("BasePart") then
-                return v 
+-- [AUTO EVENT LOOP - REVERT TO PROPS SCAN + 3 STUD]
+local function ScanForEvent()
+    -- Scan Props specifically + ActiveEvents
+    local folders = {Services.Workspace:FindFirstChild("Props"), Services.Workspace:FindFirstChild("ActiveEvents")}
+    for _, folder in pairs(folders) do
+        if folder then
+            for _, v in pairs(folder:GetChildren()) do
+                if v:IsA("Model") or v:IsA("BasePart") then
+                    -- Logic: Must have prompt OR be named like an event
+                    if v:FindFirstChildWhichIsA("ProximityPrompt", true) then return v end
+                    local name = v.Name:lower()
+                    if name:find("event") or name:find("crate") or name:find("supply") then return v end
+                end
             end
         end
     end
@@ -1210,7 +1178,7 @@ task.spawn(function()
             pcall(function()
                 if not HRP or not HRP.Parent then return end
                 
-                local FoundEvent = ScanForEventProps()
+                local FoundEvent = ScanForEvent()
 
                 if FoundEvent then
                     if not IsInEvent then
