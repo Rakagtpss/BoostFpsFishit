@@ -15,11 +15,12 @@ local Player = Services.Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 10)
 local Hum = Char:WaitForChild("Humanoid", 10)
+local Cam = Services.Workspace.CurrentCamera
 
 -- // Konfigurasi Visual (MODERN SIDE UI THEME - RAKA)
 local UI_THEME = {
-    Width = 420,   
-    Height = 290,  
+    Width = 440,   
+    Height = 300,  -- Tinggi disesuaikan untuk 3 Tab
     Color = Color3.fromRGB(18, 18, 22),       
     SidebarColor = Color3.fromRGB(25, 25, 30),
     Transparency = 0.1, 
@@ -124,7 +125,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Updated: Props Event Logic & Title - @8raka_", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "Player Tab Added - @8raka_", UI_THEME.Accent, 2.5)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -164,12 +165,11 @@ Padding.PaddingBottom = UDim.new(0, 10)
 Padding.PaddingLeft = UDim.new(0, 10)
 Padding.PaddingRight = UDim.new(0, 10)
 
--- [UPDATED TITLE]
 local TitleLabel = Instance.new("TextLabel", FloatHUD)
 TitleLabel.LayoutOrder = 1
 TitleLabel.Size = UDim2.new(1, 0, 0, 20)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "SERAPHINxPANEL" -- [UPDATED]
+TitleLabel.Text = "SERAPHINxPANEL" 
 TitleLabel.TextColor3 = UI_THEME.Accent 
 TitleLabel.Font = UI_THEME.FontHeader
 TitleLabel.TextSize = 13
@@ -365,8 +365,9 @@ local function CreateSideTab(name, text, isActive)
     return btn
 end
 
-local TabMainBtn = CreateSideTab("TabMain", "MAIN", true)
-local TabMiscBtn = CreateSideTab("TabMisc", "MISC", false)
+local TabMainBtn   = CreateSideTab("TabMain", "MAIN", true)
+local TabPlayerBtn = CreateSideTab("TabPlayer", "PLAYER", false) -- [NEW TAB]
+local TabMiscBtn   = CreateSideTab("TabMisc", "MISC", false)
 
 -- Divider Line in Sidebar (Visual)
 local SideDivider = Instance.new("Frame", Sidebar)
@@ -401,6 +402,22 @@ GridMain.CellSize = UDim2.new(0.48, 0, 0, 32) -- 2 Kolom
 GridMain.CellPadding = UDim2.new(0, 6, 0, 6)
 GridMain.SortOrder = Enum.SortOrder.LayoutOrder
 
+-- PAGE PLAYER [NEW]
+local PagePlayer = Instance.new("ScrollingFrame", PageArea)
+PagePlayer.Name = "PagePlayer"
+PagePlayer.Size = UDim2.new(1, 0, 1, 0)
+PagePlayer.BackgroundTransparency = 1
+PagePlayer.ScrollBarThickness = 2
+PagePlayer.ScrollBarImageColor3 = UI_THEME.Accent
+PagePlayer.CanvasSize = UDim2.new(0, 0, 0, 0)
+PagePlayer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+PagePlayer.Visible = false
+
+local GridPlayer = Instance.new("UIGridLayout", PagePlayer)
+GridPlayer.CellSize = UDim2.new(0.48, 0, 0, 32)
+GridPlayer.CellPadding = UDim2.new(0, 6, 0, 6)
+GridPlayer.SortOrder = Enum.SortOrder.LayoutOrder
+
 -- PAGE MISC
 local PageMisc = Instance.new("ScrollingFrame", PageArea)
 PageMisc.Name = "PageMisc"
@@ -421,22 +438,23 @@ GridMisc.SortOrder = Enum.SortOrder.LayoutOrder
 local function SwitchTab(tabName)
     local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     
-    if tabName == "Main" then
-        PageMain.Visible = true
-        PageMisc.Visible = false
+    local tabs = {Main = TabMainBtn, Player = TabPlayerBtn, Misc = TabMiscBtn}
+    local pages = {Main = PageMain, Player = PagePlayer, Misc = PageMisc}
+    
+    for name, btn in pairs(tabs) do
+        local isActive = (name == tabName)
+        pages[name].Visible = isActive
         
-        Services.TweenService:Create(TabMainBtn, tweenInfo, {BackgroundTransparency = 0.2, TextColor3 = Color3.new(1,1,1), BackgroundColor3 = UI_THEME.Accent}):Play()
-        Services.TweenService:Create(TabMiscBtn, tweenInfo, {BackgroundTransparency = 1, TextColor3 = UI_THEME.TextDim, BackgroundColor3 = Color3.fromRGB(40,40,45)}):Play()
-    elseif tabName == "Misc" then
-        PageMain.Visible = false
-        PageMisc.Visible = true
-        
-        Services.TweenService:Create(TabMainBtn, tweenInfo, {BackgroundTransparency = 1, TextColor3 = UI_THEME.TextDim, BackgroundColor3 = Color3.fromRGB(40,40,45)}):Play()
-        Services.TweenService:Create(TabMiscBtn, tweenInfo, {BackgroundTransparency = 0.2, TextColor3 = Color3.new(1,1,1), BackgroundColor3 = UI_THEME.Accent}):Play()
+        Services.TweenService:Create(btn, tweenInfo, {
+            BackgroundTransparency = isActive and 0.2 or 1,
+            TextColor3 = isActive and Color3.new(1,1,1) or UI_THEME.TextDim,
+            BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(40,40,45)
+        }):Play()
     end
 end
 
 TabMainBtn.MouseButton1Click:Connect(function() SwitchTab("Main") end)
+TabPlayerBtn.MouseButton1Click:Connect(function() SwitchTab("Player") end)
 TabMiscBtn.MouseButton1Click:Connect(function() SwitchTab("Misc") end)
 
 -- ====================================================
@@ -514,7 +532,9 @@ end
 local States = {
     Freeze=false, WoW=false, Boost=false, Ultra=false, NoRender=false, 
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
-    AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60 
+    AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
+    -- Player States
+    Speed=false, SpeedVal=50, Fly=false, FlySpeed=50, NoDmg=false
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -557,6 +577,81 @@ local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
 local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF") 
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
+
+-- TAB PLAYER BUTTONS (NEW)
+local SpeedContainer = Instance.new("Frame", PagePlayer)
+SpeedContainer.Name = "SpeedContainer"
+SpeedContainer.BackgroundTransparency = 1
+
+local BtnSpeedToggle = Instance.new("TextButton", SpeedContainer)
+BtnSpeedToggle.Name = "Toggle"
+BtnSpeedToggle.Size = UDim2.new(0.65, -4, 1, 0)
+BtnSpeedToggle.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+BtnSpeedToggle.BackgroundTransparency = 0.6
+BtnSpeedToggle.Text = "Speed: OFF"
+BtnSpeedToggle.TextColor3 = UI_THEME.TextMain
+BtnSpeedToggle.Font = UI_THEME.FontBody
+BtnSpeedToggle.TextSize = 10
+Instance.new("UICorner", BtnSpeedToggle).CornerRadius = UDim.new(0, 6)
+local sSpd = Instance.new("UIStroke", BtnSpeedToggle)
+sSpd.Color = Color3.fromRGB(70, 70, 80)
+sSpd.Thickness = 1
+sSpd.Transparency = 0.5
+
+local BoxSpeedInput = Instance.new("TextBox", SpeedContainer)
+BoxSpeedInput.Name = "Input"
+BoxSpeedInput.Size = UDim2.new(0.35, 0, 1, 0)
+BoxSpeedInput.Position = UDim2.new(0.65, 0, 0, 0)
+BoxSpeedInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+BoxSpeedInput.BackgroundTransparency = 0.6
+BoxSpeedInput.Text = "80" 
+BoxSpeedInput.PlaceholderText = "Val"
+BoxSpeedInput.TextColor3 = UI_THEME.Accent
+BoxSpeedInput.Font = UI_THEME.FontHeader
+BoxSpeedInput.TextSize = 10
+Instance.new("UICorner", BoxSpeedInput).CornerRadius = UDim.new(0, 6)
+local sSpdIn = Instance.new("UIStroke", BoxSpeedInput)
+sSpdIn.Color = Color3.fromRGB(70, 70, 80)
+sSpdIn.Thickness = 1
+sSpdIn.Transparency = 0.5
+
+local FlyContainer = Instance.new("Frame", PagePlayer)
+FlyContainer.Name = "FlyContainer"
+FlyContainer.BackgroundTransparency = 1
+
+local BtnFlyToggle = Instance.new("TextButton", FlyContainer)
+BtnFlyToggle.Name = "Toggle"
+BtnFlyToggle.Size = UDim2.new(0.65, -4, 1, 0)
+BtnFlyToggle.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+BtnFlyToggle.BackgroundTransparency = 0.6
+BtnFlyToggle.Text = "Fly: OFF"
+BtnFlyToggle.TextColor3 = UI_THEME.TextMain
+BtnFlyToggle.Font = UI_THEME.FontBody
+BtnFlyToggle.TextSize = 10
+Instance.new("UICorner", BtnFlyToggle).CornerRadius = UDim.new(0, 6)
+local sFly = Instance.new("UIStroke", BtnFlyToggle)
+sFly.Color = Color3.fromRGB(70, 70, 80)
+sFly.Thickness = 1
+sFly.Transparency = 0.5
+
+local BoxFlyInput = Instance.new("TextBox", FlyContainer)
+BoxFlyInput.Name = "Input"
+BoxFlyInput.Size = UDim2.new(0.35, 0, 1, 0)
+BoxFlyInput.Position = UDim2.new(0.65, 0, 0, 0)
+BoxFlyInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+BoxFlyInput.BackgroundTransparency = 0.6
+BoxFlyInput.Text = "50" 
+BoxFlyInput.PlaceholderText = "Spd"
+BoxFlyInput.TextColor3 = UI_THEME.Accent
+BoxFlyInput.Font = UI_THEME.FontHeader
+BoxFlyInput.TextSize = 10
+Instance.new("UICorner", BoxFlyInput).CornerRadius = UDim.new(0, 6)
+local sFlyIn = Instance.new("UIStroke", BoxFlyInput)
+sFlyIn.Color = Color3.fromRGB(70, 70, 80)
+sFlyIn.Thickness = 1
+sFlyIn.Transparency = 0.5
+
+local BtnNoDmg = MakeBtn(PagePlayer, "No Damage: OFF")
 
 -- TAB MISC BUTTONS
 local StuckContainer = Instance.new("Frame", PageMisc)
@@ -682,8 +777,9 @@ Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
     if Title and currentFps then
+        -- [UPDATED COLOR TO BRIGHT WHITE]
         Title.Text = string.format(
-            "SERA <font color=\"rgb(64,162,227)\">HELPER</font> <font size=\"10\" color=\"rgb(150,150,160)\">@8raka_</font> | FPS: <b>%d</b>", 
+            "SERA <font color=\"rgb(64,162,227)\">HELPER</font> <font size=\"10\" color=\"rgb(230,230,230)\">@8raka_</font> | FPS: <b>%d</b>", 
             currentFps
         )
     end
@@ -708,7 +804,155 @@ BtnPanel.MouseButton1Click:Connect(function()
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
--- Button Logic
+-- ====================================================
+-- [BUTTON LOGIC - PLAYER TAB]
+-- ====================================================
+
+-- 1. SPEED BUTTON
+BtnSpeedToggle.MouseButton1Click:Connect(function()
+    States.Speed = not States.Speed
+    local val = tonumber(BoxSpeedInput.Text) or 50
+    States.SpeedVal = val
+    
+    if States.Speed then
+        BtnSpeedToggle.Text = "Speed: ON"
+        ToggleVisual(BtnSpeedToggle, true)
+        -- Reset speed if disabled
+        if not Hum.Sit then Hum.WalkSpeed = 16 end
+    else
+        BtnSpeedToggle.Text = "Speed: OFF"
+        ToggleVisual(BtnSpeedToggle, false)
+        Hum.WalkSpeed = 16
+    end
+end)
+
+BoxSpeedInput.FocusLost:Connect(function()
+    local val = tonumber(BoxSpeedInput.Text)
+    if val then States.SpeedVal = val else BoxSpeedInput.Text = tostring(States.SpeedVal) end
+end)
+
+-- 2. FLY BUTTON
+local FlyBP, FlyBG
+local function ToggleFly(state)
+    if state then
+        FlyBP = Instance.new("BodyPosition")
+        FlyBP.Parent = HRP
+        FlyBP.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+        
+        FlyBG = Instance.new("BodyGyro")
+        FlyBG.Parent = HRP
+        FlyBG.MaxTorque = Vector3.new(9e9,9e9,9e9)
+        FlyBG.P = 10000
+        
+        Connections["Fly"] = Services.RunService.RenderStepped:Connect(function()
+            if HRP and FlyBP and FlyBG then
+                FlyBG.CFrame = Cam.CFrame
+                local speed = States.FlySpeed
+                local velocity = Vector3.new(0,0,0)
+                
+                if Services.UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                    velocity = velocity + Cam.CFrame.LookVector * speed
+                end
+                if Services.UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                    velocity = velocity - Cam.CFrame.LookVector * speed
+                end
+                if Services.UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                    velocity = velocity - Cam.CFrame.RightVector * speed
+                end
+                if Services.UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                    velocity = velocity + Cam.CFrame.RightVector * speed
+                end
+                
+                FlyBP.Position = HRP.Position + velocity
+                
+                -- Noclip while flying
+                if Char then
+                    for _,v in pairs(Char:GetDescendants()) do
+                        if v:IsA("BasePart") then v.CanCollide = false end
+                    end
+                end
+            end
+        end)
+    else
+        if Connections["Fly"] then Connections["Fly"]:Disconnect() end
+        if FlyBP then FlyBP:Destroy() end
+        if FlyBG then FlyBG:Destroy() end
+    end
+end
+
+BtnFlyToggle.MouseButton1Click:Connect(function()
+    States.Fly = not States.Fly
+    local val = tonumber(BoxFlyInput.Text) or 50
+    States.FlySpeed = val / 10 -- Scale down for BP
+    
+    if States.Fly then
+        BtnFlyToggle.Text = "Fly: ON"
+        ToggleVisual(BtnFlyToggle, true)
+        ToggleFly(true)
+    else
+        BtnFlyToggle.Text = "Fly: OFF"
+        ToggleVisual(BtnFlyToggle, false)
+        ToggleFly(false)
+    end
+end)
+
+BoxFlyInput.FocusLost:Connect(function()
+    local val = tonumber(BoxFlyInput.Text)
+    if val then States.FlySpeed = val / 10 else BoxFlyInput.Text = "50" end
+end)
+
+-- 3. NO DAMAGE BUTTON
+BtnNoDmg.MouseButton1Click:Connect(function()
+    States.NoDmg = not States.NoDmg
+    BtnNoDmg.Text = "No Damage: " .. (States.NoDmg and "ON" or "OFF")
+    ToggleVisual(BtnNoDmg, States.NoDmg)
+end)
+
+-- ====================================================
+-- [PLAYER LOOPS]
+-- ====================================================
+
+-- Speed Loop (Hybrid: Player & Boat)
+task.spawn(function()
+    while true do
+        task.wait()
+        if States.Speed then
+            pcall(function()
+                if Hum.Sit then
+                    -- BOAT/VEHICLE SPEED
+                    local seat = Hum.SeatPart
+                    if seat then
+                        -- Metode Dorong Fisik (Works for Fisch Boats)
+                        local att = seat:FindFirstChildOfClass("Attachment")
+                        if seat.AssemblyLinearVelocity.Magnitude > 0 then
+                             seat.AssemblyLinearVelocity = seat.CFrame.LookVector * States.SpeedVal
+                        end
+                    end
+                else
+                    -- PLAYER WALK SPEED
+                    Hum.WalkSpeed = States.SpeedVal
+                end
+            end)
+        end
+    end
+end)
+
+-- No Damage Loop
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if States.NoDmg and Hum then
+            if Hum.Health < Hum.MaxHealth then
+                Hum.Health = Hum.MaxHealth
+            end
+        end
+    end
+end)
+
+-- ====================================================
+-- [BUTTON LOGIC - MAIN/MISC]
+-- ====================================================
+
 BtnStuckToggle.MouseButton1Click:Connect(function()
     States.AntiStuck = not States.AntiStuck
     if States.AntiStuck then
@@ -754,7 +998,6 @@ BtnChest.MouseButton1Click:Connect(function()
     BtnChest.Text = "Auto Chest: " .. (States.AutoChest and "ON" or "OFF")
     ToggleVisual(BtnChest, States.AutoChest)
     if not States.AutoChest then
-        -- Manual Stop: Return if currently looting
         if IsLootingChests and ChestReturnCFrame and HRP then
             HRP.CFrame = ChestReturnCFrame
             Notify("CHEST", "Manual Stop: Returning", UI_THEME.Accent)
@@ -816,9 +1059,8 @@ local function ScanForEventProps()
     if props then
         for _, v in pairs(props:GetChildren()) do
             if v:IsA("Model") or v:IsA("BasePart") then
-                if v:FindFirstChildWhichIsA("ProximityPrompt", true) then return v end
-                if v.Name:lower():find("event") or v.Name:lower():find("crate") or v.Name:lower():find("supply") then
-                    return v
+                if v:FindFirstChildWhichIsA("ProximityPrompt", true) then 
+                    return v 
                 end
             end
         end
@@ -863,7 +1105,7 @@ task.spawn(function()
     end
 end)
 
--- [AUTO CHEST LOOP - AUTO RETURN]
+-- [AUTO CHEST LOOP]
 task.spawn(function()
     while true do
         task.wait(1.5) 
@@ -872,46 +1114,34 @@ task.spawn(function()
                 local storage = Services.Workspace:FindFirstChild("PirateChestStorage")
                 if storage then
                     local chests = storage:GetChildren()
-                    
                     if #chests > 0 then
-                        -- === FASE 1: ADA CHEST ===
                         if not IsLootingChests then
-                            -- Baru mulai looting, simpan posisi awal
                             if HRP then 
                                 ChestReturnCFrame = HRP.CFrame 
                                 IsLootingChests = true
                                 Notify("CHEST", "Starting Loot...", Color3.fromRGB(255, 200, 0))
-                                SetWoW(true) -- Nyalakan WoW
+                                SetWoW(true) 
                             end
                         end
-                        
-                        -- Ambil chest pertama yg ada
                         local v = chests[1]
                         if v and (v:IsA("Model") or v:IsA("BasePart")) then
-                            if HRP then
-                                HRP.CFrame = v:GetPivot() + Vector3.new(0, 3, 0)
-                            end
-                            -- Spam Prompt
+                            if HRP then HRP.CFrame = v:GetPivot() + Vector3.new(0, 3, 0) end
                             local prompt = v:FindFirstChildWhichIsA("ProximityPrompt", true)
                             if prompt then fireproximityprompt(prompt) end
                         end
-                        
                     else
-                        -- === FASE 2: CHEST HABIS (KOSONG) ===
                         if IsLootingChests then
-                            -- Selesai looting, waktunya pulang
                             IsLootingChests = false
                             if ChestReturnCFrame and HRP then
                                 HRP.CFrame = ChestReturnCFrame
                                 Notify("CHEST", "All Looted! Returning...", Color3.fromRGB(0, 255, 100))
                             end
-                            SetWoW(false) -- Matikan WoW
+                            SetWoW(false) 
                         end
                     end
                 end
             end)
         else
-             -- Reset state if disabled manually
             if IsLootingChests then IsLootingChests = false end
         end
     end
