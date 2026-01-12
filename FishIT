@@ -124,7 +124,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Auto Return Logic Added - @8raka_", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "Updated: Props Event Logic & Title - @8raka_", UI_THEME.Accent, 2.5)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -164,14 +164,15 @@ Padding.PaddingBottom = UDim.new(0, 10)
 Padding.PaddingLeft = UDim.new(0, 10)
 Padding.PaddingRight = UDim.new(0, 10)
 
+-- [UPDATED TITLE]
 local TitleLabel = Instance.new("TextLabel", FloatHUD)
 TitleLabel.LayoutOrder = 1
 TitleLabel.Size = UDim2.new(1, 0, 0, 20)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "STATS"
+TitleLabel.Text = "SERAPHINxPANEL" -- [UPDATED]
 TitleLabel.TextColor3 = UI_THEME.Accent 
 TitleLabel.Font = UI_THEME.FontHeader
-TitleLabel.TextSize = 14
+TitleLabel.TextSize = 13
 TitleLabel.TextStrokeTransparency = 1
 
 local Div = Instance.new("Frame", FloatHUD)
@@ -517,9 +518,9 @@ local States = {
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
-local ChestReturnCFrame = nil -- NEW: Posisi Balik Chest
+local ChestReturnCFrame = nil 
 local IsInEvent = false 
-local IsLootingChests = false -- NEW: State Chest
+local IsLootingChests = false 
 local Connections = {}
 local BodyV = nil
 local LastFishCaughtTime = tick()
