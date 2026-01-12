@@ -124,7 +124,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Loaded - @8raka_", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "Deep Scan Event Ready - @8raka_", UI_THEME.Accent, 2.5)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -778,6 +778,82 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
+-- [AUTO EVENT LOOP - DEEP SCANNER]
+local function ScanForEvent()
+    -- 1. Folder Scan (Path Optimization)
+    local folders = {
+        Services.Workspace:FindFirstChild("ActiveEvents"),
+        Services.Workspace:FindFirstChild("Events"),
+        Services.Workspace:FindFirstChild("World"),
+        Services.Workspace:FindFirstChild("Props")
+    }
+    
+    for _, folder in pairs(folders) do
+        if folder then
+            for _, v in pairs(folder:GetChildren()) do
+                -- Cek Prompt (Interaksi)
+                if v:IsA("Model") and v:FindFirstChildWhichIsA("ProximityPrompt", true) then
+                    return v
+                end
+                -- Cek Keyword Nama
+                if v.Name:lower():find("event") or v.Name:lower():find("crate") or v.Name:lower():find("supply") then
+                    return v
+                end
+            end
+        end
+    end
+    
+    -- 2. Deep Workspace Scan (Jika tidak ada di folder)
+    for _, v in pairs(Services.Workspace:GetChildren()) do
+        if v:IsA("Model") and (v.Name:lower():find("event") or v.Name:lower():find("boss")) then
+            return v
+        end
+    end
+    return nil
+end
+
+task.spawn(function()
+    while true do
+        task.wait(3) 
+        if States.AutoEvent then
+            pcall(function()
+                if not HRP or not HRP.Parent then return end
+                
+                -- Gunakan Fungsi Deep Scan
+                local FoundEvent = ScanForEvent()
+
+                if FoundEvent then
+                    if not IsInEvent then
+                        EventStartCFrame = HRP.CFrame 
+                        IsInEvent = true
+                        Notify("AUTO EVENT", "Event Found! Teleporting...", Color3.fromRGB(255, 255, 0))
+                    end
+                    
+                    -- Safe Teleport Logic
+                    local targetPos = FoundEvent:GetPivot().Position
+                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 5, targetPos.Z) -- +5 Y Biar gak nyangkut
+                    
+                    if (HRP.Position - destPos).Magnitude > 15 then
+                        HRP.CFrame = CFrame.new(destPos)
+                    end
+                    if not States.WoW then SetWoW(true) end
+                else
+                    if IsInEvent then
+                        IsInEvent = false
+                        Notify("AUTO EVENT", "Event Finished.", Color3.fromRGB(0, 255, 100))
+                        if EventStartCFrame and HRP then 
+                            HRP.CFrame = EventStartCFrame 
+                            EventStartCFrame = nil 
+                        end
+                        if States.WoW then SetWoW(false) end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- [ORIGINAL BACKPACK LOGIC RESTORED]
 task.spawn(function() 
     while true do 
         task.wait(1) 
@@ -787,7 +863,7 @@ task.spawn(function()
                 local c = ls and ls:FindFirstChild("Caught") and ls.Caught.Value or 0
                 LblFishVal.Text = tostring(c):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
                 
-                -- [REQUESTED REVERT: ORIGINAL LOGIC]
+                -- Restore Code Baris 568 - 584
                 local bagText = "0/?"
                 local backpackGui = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("Backpack")
 
@@ -805,10 +881,7 @@ task.spawn(function()
                         bagText = tostring(#Player.Backpack:GetChildren())
                     end
                 else 
-                    -- Fallback to count children (prevent crash)
-                    if Player:FindFirstChild("Backpack") then
-                         bagText = tostring(#Player.Backpack:GetChildren())
-                    end
+                    bagText = tostring(#Player:WaitForChild("Backpack"):GetChildren())
                 end
                 LblInvVal.Text = bagText
             end) 
