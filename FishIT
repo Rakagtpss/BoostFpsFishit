@@ -124,7 +124,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Side UI + Smart Bag Fix Loaded", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "Loaded: Deep Scan Active - @8raka_", UI_THEME.Accent, 2.5)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -261,28 +261,17 @@ Header.BackgroundColor3 = UI_THEME.SidebarColor
 Header.BackgroundTransparency = 0.5
 Header.BorderSizePixel = 0
 
--- Header Title
+-- Header Title (Updated Layout: Title + Name + FPS in one line)
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1, -50, 1, 0) 
+Title.Size = UDim2.new(1, -40, 1, 0) 
 Title.Position = UDim2.new(0, 14, 0, 0) 
-Title.Text = "SERA <font color=\"rgb(64,162,227)\">HELPER</font>"
+Title.Text = "Loading..." -- Will be updated by FPS Loop
 Title.RichText = true
 Title.TextColor3 = UI_THEME.TextMain
 Title.Font = UI_THEME.FontHeader
 Title.TextSize = 13
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
-
--- By Credit (Small)
-local SubTitle = Instance.new("TextLabel", Header)
-SubTitle.Size = UDim2.new(0, 100, 1, 0)
-SubTitle.Position = UDim2.new(0, 110, 0, 1)
-SubTitle.Text = "@828_raka"
-SubTitle.TextColor3 = UI_THEME.TextDim
-SubTitle.Font = Enum.Font.GothamMedium
-SubTitle.TextSize = 10
-SubTitle.BackgroundTransparency = 1
-SubTitle.TextXAlignment = Enum.TextXAlignment.Left
 
 local HideBtn = Instance.new("TextButton", Header)
 HideBtn.Size = UDim2.new(0, 24, 0, 24) 
@@ -683,13 +672,16 @@ local function ToggleBoost(enable)
     else Notify("BOOSTER", "Boost Disabled", UI_THEME.Accent) end
 end
 
--- FPS Updater
+-- FPS Updater & Header Updater (Format: Title + Name + FPS)
 local fpsT = 0
 Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
     if Title and currentFps then
-        Title.Text = string.format("SERA <font color=\"rgb(64,162,227)\">HELPER</font> | %d FPS", currentFps)
+        Title.Text = string.format(
+            "SERA <font color=\"rgb(64,162,227)\">HELPER</font> <font size=\"10\" color=\"rgb(150,150,160)\">@8raka_</font> | FPS: <b>%d</b>", 
+            currentFps
+        )
     end
 end)
 
@@ -786,22 +778,33 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [SMART BACKPACK FIX]
-local function GetBackpackInfo()
+-- [DEEP SCAN SMART BACKPACK]
+local CachedBackpackLabel = nil
+
+local function GetBackpackDeep()
+    -- 1. Use Cached Label if valid (Fastest)
+    if CachedBackpackLabel and CachedBackpackLabel.Parent and CachedBackpackLabel.Visible then
+        return CachedBackpackLabel.Text
+    end
+
+    -- 2. Deep Scan for label with "/" (e.g., "10/500")
     local pGui = Player:FindFirstChild("PlayerGui")
     if pGui then
-        local targets = {"hud", "main", "ingame", "backpack"} 
-        for _, tName in pairs(targets) do
-            local gui = pGui:FindFirstChild(tName, true) 
-            if gui then
-                for _, v in pairs(gui:GetDescendants()) do
-                    if v:IsA("TextLabel") and v.Visible and v.Text:find("/") and v.Text:match("%d+%s*/%s*%d+") then
-                        return v.Text 
-                    end
+        for _, v in pairs(pGui:GetDescendants()) do
+            if v:IsA("TextLabel") and v.Visible then
+                -- Check for standard weight format "Number / Number"
+                if v.Text:find("/") and v.Text:match("%d") then
+                    -- Filter out dates or irrelevant text
+                     if v.Text:len() < 20 and v.Text:match("%d+/%d+") then
+                        CachedBackpackLabel = v -- Cache it!
+                        return v.Text
+                     end
                 end
             end
         end
     end
+
+    -- 3. Fallback (Manual Count)
     local count = 0
     if Player:FindFirstChild("Backpack") then count = count + #Player.Backpack:GetChildren() end
     if Player.Character then
@@ -814,13 +817,15 @@ end
 
 task.spawn(function() 
     while true do 
-        task.wait(1) 
+        task.wait(1) -- Update every 1s
         if States.Panel then 
             pcall(function() 
                 local ls = Player:FindFirstChild("leaderstats")
                 local c = ls and ls:FindFirstChild("Caught") and ls.Caught.Value or 0
                 LblFishVal.Text = tostring(c):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
-                LblInvVal.Text = GetBackpackInfo()
+                
+                -- Call Deep Scan
+                LblInvVal.Text = GetBackpackDeep()
             end) 
         end 
     end 
