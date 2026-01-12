@@ -129,7 +129,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "New UI + More Feature - @8raka_", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "Updated: Event Height +4 Studs - @8raka_", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -1243,13 +1243,18 @@ task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceE
 
 -- [AUTO EVENT LOOP - PRIORITY & SECONDARY]
 local function FindInFolders(targetName)
-    local folders = {Services.Workspace:FindFirstChild("ActiveEvents"), Services.Workspace:FindFirstChild("Props")}
+    -- SCAN HANYA DI PROPS (OLD METHOD) TAPI BISA MEMBACA NAMA EVENT
+    local folders = {Services.Workspace:FindFirstChild("Props"), Services.Workspace:FindFirstChild("ActiveEvents")}
     for _, folder in pairs(folders) do
         if folder then
             for _, v in pairs(folder:GetChildren()) do
                 if v:IsA("Model") or v:IsA("BasePart") then
-                    if v.Name == targetName or v.Name:find(targetName) then
-                        return v
+                    -- Cek Prompt dulu (tanda object interaktif)
+                    if v:FindFirstChildWhichIsA("ProximityPrompt", true) then
+                        -- Cek Nama sesuai Target
+                        if v.Name == targetName or v.Name:find(targetName) then
+                            return v
+                        end
                     end
                 end
             end
@@ -1293,8 +1298,8 @@ task.spawn(function()
                         SetWoW(true)
                     end
                     local targetPos = FoundEvent:GetPivot().Position
-                    -- Height +3 Studs
-                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 3, targetPos.Z) 
+                    -- Height +4 Studs
+                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 4, targetPos.Z) 
                     if (hrp.Position - destPos).Magnitude > 15 then
                         hrp.CFrame = CFrame.new(destPos)
                     end
