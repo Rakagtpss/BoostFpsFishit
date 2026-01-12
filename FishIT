@@ -18,16 +18,16 @@ local Hum = Char:WaitForChild("Humanoid", 10)
 
 -- // Konfigurasi Visual (MODERN SIDE UI THEME - RAKA)
 local UI_THEME = {
-    Width = 400,   -- Lebih lebar untuk menampung Sidebar
-    Height = 260,  
+    Width = 420,   
+    Height = 280,  
     Color = Color3.fromRGB(18, 18, 22),       
     SidebarColor = Color3.fromRGB(25, 25, 30),
     Transparency = 0.1, 
     Accent = Color3.fromRGB(64, 162, 227),    -- Cyan Electric
     TextMain = Color3.fromRGB(240, 240, 240),
     TextDim = Color3.fromRGB(150, 150, 160),
-    FontHeader = Enum.Font.GothamBlack,       -- Lebih tebal dan modern
-    FontBody = Enum.Font.GothamBold,          -- Jelas dan tegas
+    FontHeader = Enum.Font.GothamBlack,       
+    FontBody = Enum.Font.GothamBold,          
     CornerRadius = UDim.new(0, 12)
 }
 
@@ -41,7 +41,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [SYSTEM] CUSTOM NOTIFICATION (Tetap Minimalis)
+-- [SYSTEM] CUSTOM NOTIFICATION
 -- ====================================================
 local NotifyContainer = Instance.new("Frame", ScreenGui)
 NotifyContainer.Name = "NotificationContainer"
@@ -124,7 +124,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Side UI Loaded - @828_Raka", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "Side UI + Smart Bag Fix Loaded", UI_THEME.Accent, 2.5)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -785,12 +785,46 @@ end)
 -- Background Loops
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
-task.spawn(function() while true do task.wait(1) if States.Panel then pcall(function() 
-    local ls = Player:FindFirstChild("leaderstats")
-    local c = ls and ls:FindFirstChild("Caught") and ls.Caught.Value or 0
-    LblFishVal.Text = tostring(c):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
-    LblInvVal.Text = tostring(#Player:WaitForChild("Backpack"):GetChildren())
-end) end end end)
+
+-- [SMART BACKPACK FIX]
+local function GetBackpackInfo()
+    local pGui = Player:FindFirstChild("PlayerGui")
+    if pGui then
+        local targets = {"hud", "main", "ingame", "backpack"} 
+        for _, tName in pairs(targets) do
+            local gui = pGui:FindFirstChild(tName, true) 
+            if gui then
+                for _, v in pairs(gui:GetDescendants()) do
+                    if v:IsA("TextLabel") and v.Visible and v.Text:find("/") and v.Text:match("%d+%s*/%s*%d+") then
+                        return v.Text 
+                    end
+                end
+            end
+        end
+    end
+    local count = 0
+    if Player:FindFirstChild("Backpack") then count = count + #Player.Backpack:GetChildren() end
+    if Player.Character then
+        for _, v in pairs(Player.Character:GetChildren()) do
+            if v:IsA("Tool") then count = count + 1 end
+        end
+    end
+    return tostring(count)
+end
+
+task.spawn(function() 
+    while true do 
+        task.wait(1) 
+        if States.Panel then 
+            pcall(function() 
+                local ls = Player:FindFirstChild("leaderstats")
+                local c = ls and ls:FindFirstChild("Caught") and ls.Caught.Value or 0
+                LblFishVal.Text = tostring(c):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
+                LblInvVal.Text = GetBackpackInfo()
+            end) 
+        end 
+    end 
+end)
 
 task.delay(1, function()
     Main.Visible = true
