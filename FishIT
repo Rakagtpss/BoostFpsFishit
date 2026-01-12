@@ -1,4 +1,4 @@
--- [1] Notifikasi Awal & Services (Safe Load)
+-- [1] Notifikasi Awal (Custom Safe Load)
 local Services = {
     Players = game:GetService("Players"),
     RunService = game:GetService("RunService"),
@@ -8,8 +8,7 @@ local Services = {
     UserInputService = game:GetService("UserInputService"),
     ReplicatedStorage = game:GetService("ReplicatedStorage"),
     TweenService = game:GetService("TweenService"),
-    Workspace = game:GetService("Workspace"),
-    VirtualUser = game:GetService("VirtualUser")
+    Workspace = game:GetService("Workspace")
 }
 
 local Player = Services.Players.LocalPlayer
@@ -17,20 +16,19 @@ local Char = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Char:WaitForChild("HumanoidRootPart", 10)
 local Hum = Char:WaitForChild("Humanoid", 10)
 
--- // Konfigurasi Visual (MODERN THEME - DEEP NAVY & CYAN)
+-- // Konfigurasi Visual (MODERN SIDE UI THEME - RAKA)
 local UI_THEME = {
-    MinWidth = 260,   
-    MinHeight = 300,  
-    Color = Color3.fromRGB(20, 20, 28),        -- Dark Navy
-    Transparency = 0.05, 
-    HeaderColor = Color3.fromRGB(30, 30, 45), 
-    Accent = Color3.fromRGB(0, 255, 200),      -- Cyan Modern
-    TabOff = Color3.fromRGB(120, 120, 140),
-    TabOn = Color3.fromRGB(0, 255, 200),
-    TextColor = Color3.fromRGB(240, 240, 240),
-    SubTextColor = Color3.fromRGB(160, 160, 180),
-    Font = Enum.Font.GothamBold,
-    BtnFont = Enum.Font.GothamMedium 
+    Width = 400,   -- Lebih lebar untuk menampung Sidebar
+    Height = 260,  
+    Color = Color3.fromRGB(18, 18, 22),       
+    SidebarColor = Color3.fromRGB(25, 25, 30),
+    Transparency = 0.1, 
+    Accent = Color3.fromRGB(64, 162, 227),    -- Cyan Electric
+    TextMain = Color3.fromRGB(240, 240, 240),
+    TextDim = Color3.fromRGB(150, 150, 160),
+    FontHeader = Enum.Font.GothamBlack,       -- Lebih tebal dan modern
+    FontBody = Enum.Font.GothamBold,          -- Jelas dan tegas
+    CornerRadius = UDim.new(0, 12)
 }
 
 -- Bersihkan UI Lama
@@ -43,11 +41,11 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [SYSTEM] CUSTOM NOTIFICATION
+-- [SYSTEM] CUSTOM NOTIFICATION (Tetap Minimalis)
 -- ====================================================
 local NotifyContainer = Instance.new("Frame", ScreenGui)
 NotifyContainer.Name = "NotificationContainer"
-NotifyContainer.Size = UDim2.new(0, 260, 0.6, 0)
+NotifyContainer.Size = UDim2.new(0, 280, 0.6, 0)
 NotifyContainer.AnchorPoint = Vector2.new(1, 1)
 NotifyContainer.Position = UDim2.new(1, -20, 1, -20)
 NotifyContainer.BackgroundTransparency = 1
@@ -57,7 +55,7 @@ local NotifyLayout = Instance.new("UIListLayout", NotifyContainer)
 NotifyLayout.FillDirection = Enum.FillDirection.Vertical
 NotifyLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
 NotifyLayout.SortOrder = Enum.SortOrder.LayoutOrder
-NotifyLayout.Padding = UDim.new(0, 6)
+NotifyLayout.Padding = UDim.new(0, 8)
 
 local function Notify(title, text, colorOverride, duration)
     local color = colorOverride or UI_THEME.Accent
@@ -65,52 +63,60 @@ local function Notify(title, text, colorOverride, duration)
     
     local Frame = Instance.new("Frame")
     Frame.Name = "NotifyItem"
-    Frame.Size = UDim2.new(1, 0, 0, 0)
-    Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40) 
+    Frame.Size = UDim2.new(1, 0, 0, 0) 
+    Frame.BackgroundColor3 = UI_THEME.SidebarColor
     Frame.BackgroundTransparency = 0.1
     Frame.BorderSizePixel = 0
     Frame.Parent = NotifyContainer
     
     local Stroke = Instance.new("UIStroke", Frame)
     Stroke.Color = color
-    Stroke.Thickness = 1.5
-    Stroke.Transparency = 0
+    Stroke.Thickness = 1.2
+    Stroke.Transparency = 0.5
     
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
     
+    local Bar = Instance.new("Frame", Frame)
+    Bar.Size = UDim2.new(0, 4, 1, -10)
+    Bar.Position = UDim2.new(0, 0, 0, 5)
+    Bar.BackgroundColor3 = color
+    Bar.BorderSizePixel = 0
+    Instance.new("UICorner", Bar).CornerRadius = UDim.new(0, 4)
+
     local LblTitle = Instance.new("TextLabel", Frame)
-    LblTitle.Size = UDim2.new(1, -12, 0, 20)
-    LblTitle.Position = UDim2.new(0, 6, 0, 4)
+    LblTitle.Size = UDim2.new(1, -20, 0, 18)
+    LblTitle.Position = UDim2.new(0, 12, 0, 6)
     LblTitle.BackgroundTransparency = 1
     LblTitle.Text = string.upper(title)
     LblTitle.TextColor3 = color
-    LblTitle.Font = Enum.Font.GothamBlack
-    LblTitle.TextSize = 14
+    LblTitle.Font = UI_THEME.FontHeader
+    LblTitle.TextSize = 13
     LblTitle.TextXAlignment = Enum.TextXAlignment.Left 
     
     local LblMsg = Instance.new("TextLabel", Frame)
-    LblMsg.Size = UDim2.new(1, -12, 0, 20)
-    LblMsg.Position = UDim2.new(0, 6, 0, 22)
+    LblMsg.Size = UDim2.new(1, -20, 0, 20)
+    LblMsg.Position = UDim2.new(0, 12, 0, 24)
     LblMsg.BackgroundTransparency = 1
     LblMsg.Text = text
-    LblMsg.TextColor3 = Color3.fromRGB(255, 255, 255)
-    LblMsg.Font = Enum.Font.GothamBold
+    LblMsg.TextColor3 = UI_THEME.TextMain
+    LblMsg.Font = UI_THEME.FontBody
     LblMsg.TextSize = 11
-    LblMsg.TextXAlignment = Enum.TextXAlignment.Left 
+    LblMsg.TextXAlignment = Enum.TextXAlignment.Left
 
-    local TweenIn = Services.TweenService:Create(Frame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, 50)})
+    local TweenIn = Services.TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, 55)})
     TweenIn:Play()
     
     task.delay(timeTime, function()
         if Frame then
             local TweenOut = Services.TweenService:Create(Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-                Size = UDim2.new(1, 0, 0, 0), 
+                Size = UDim2.new(1, 20, 0, 0), 
                 BackgroundTransparency = 1
             })
             TweenOut:Play()
             if Stroke then Services.TweenService:Create(Stroke, TweenInfo.new(0.2), {Transparency = 1}):Play() end
             if LblTitle then Services.TweenService:Create(LblTitle, TweenInfo.new(0.2), {TextTransparency = 1}):Play() end
             if LblMsg then Services.TweenService:Create(LblMsg, TweenInfo.new(0.2), {TextTransparency = 1}):Play() end
+            if Bar then Services.TweenService:Create(Bar, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play() end
             
             TweenOut.Completed:Wait()
             Frame:Destroy()
@@ -118,53 +124,61 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Script Restored & Updated - @828_Raka", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "Side UI Loaded - @828_Raka", UI_THEME.Accent, 2.5)
 
 -- ====================================================
--- [2] MINI FLOATING HUD (PANEL INFO)
+-- [1] MINI FLOATING HUD
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 160, 0, 125) 
+FloatHUD.Size = UDim2.new(0, 160, 0, 120) 
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
-FloatHUD.BackgroundColor3 = Color3.fromRGB(25, 25, 35) 
-FloatHUD.BackgroundTransparency = 0.3
+FloatHUD.BackgroundColor3 = UI_THEME.Color 
+FloatHUD.BackgroundTransparency = UI_THEME.Transparency
 FloatHUD.Visible = false 
 FloatHUD.Active = true 
 
+local GradHud = Instance.new("UIGradient", FloatHUD)
+GradHud.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(220,220,220))
+}
+GradHud.Rotation = 45
+
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_THEME.Accent
-HudStroke.Thickness = 1.5
-HudStroke.Transparency = 0
+HudStroke.Thickness = 1.2
+HudStroke.Transparency = 0.7 
 
-Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", FloatHUD).CornerRadius = UI_THEME.CornerRadius
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
 ListLayout.FillDirection = Enum.FillDirection.Vertical
-ListLayout.Padding = UDim.new(0, 6) 
+ListLayout.Padding = UDim.new(0, 2) 
 ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 ListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 ListLayout.SortOrder = Enum.SortOrder.LayoutOrder 
 
 local Padding = Instance.new("UIPadding", FloatHUD)
 Padding.PaddingTop = UDim.new(0, 10) 
-Padding.PaddingBottom = UDim.new(0, 8)
-Padding.PaddingLeft = UDim.new(0, 5)
-Padding.PaddingRight = UDim.new(0, 5)
+Padding.PaddingBottom = UDim.new(0, 10)
+Padding.PaddingLeft = UDim.new(0, 10)
+Padding.PaddingRight = UDim.new(0, 10)
 
 local TitleLabel = Instance.new("TextLabel", FloatHUD)
 TitleLabel.LayoutOrder = 1
-TitleLabel.Size = UDim2.new(1, 0, 0, 15)
+TitleLabel.Size = UDim2.new(1, 0, 0, 20)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "PANEL SERAPHIN"
+TitleLabel.Text = "STATS"
 TitleLabel.TextColor3 = UI_THEME.Accent 
-TitleLabel.Font = Enum.Font.GothamBlack
+TitleLabel.Font = UI_THEME.FontHeader
 TitleLabel.TextSize = 14
-TitleLabel.TextStrokeTransparency = 0.8
+TitleLabel.TextStrokeTransparency = 1
 
 local Div = Instance.new("Frame", FloatHUD)
 Div.LayoutOrder = 2
-Div.Size = UDim2.new(0.8, 0, 0, 1)
+Div.Size = UDim2.new(1, 0, 0, 1)
 Div.BackgroundColor3 = UI_THEME.Accent
+Div.BackgroundTransparency = 0.5
 Div.BorderSizePixel = 0
 
 local function CreateStatBlock(titleText, defaultVal, order)
@@ -177,22 +191,22 @@ local function CreateStatBlock(titleText, defaultVal, order)
     local LblTitle = Instance.new("TextLabel", Block)
     LblTitle.Name = "Title"
     LblTitle.Size = UDim2.new(1, 0, 0, 12)
-    LblTitle.Position = UDim2.new(0, 0, 0, 0)
+    LblTitle.Position = UDim2.new(0, 0, 0, 4)
     LblTitle.BackgroundTransparency = 1
     LblTitle.Text = string.upper(titleText)
-    LblTitle.TextColor3 = UI_THEME.SubTextColor
-    LblTitle.Font = Enum.Font.GothamBold
+    LblTitle.TextColor3 = UI_THEME.TextDim
+    LblTitle.Font = UI_THEME.FontBody
     LblTitle.TextSize = 9
     
     local LblValue = Instance.new("TextLabel", Block)
     LblValue.Name = "Value"
-    LblValue.Size = UDim2.new(1, 0, 0, 20)
-    LblValue.Position = UDim2.new(0, 0, 0, 14)
+    LblValue.Size = UDim2.new(1, 0, 0, 18)
+    LblValue.Position = UDim2.new(0, 0, 0, 16)
     LblValue.BackgroundTransparency = 1
     LblValue.Text = defaultVal
-    LblValue.TextColor3 = UI_THEME.TextColor
-    LblValue.Font = Enum.Font.GothamBold
-    LblValue.TextSize = 16 
+    LblValue.TextColor3 = UI_THEME.TextMain
+    LblValue.Font = UI_THEME.FontHeader
+    LblValue.TextSize = 14 
     return LblValue 
 end
 
@@ -200,43 +214,89 @@ local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...", 3)
 local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)   
 
 -- ====================================================
--- [3] MAIN UI SETUP (SIDE UI)
+-- [2] MAIN UI (SIDE UI LAYOUT)
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
-Main.Size = UDim2.new(0, UI_THEME.MinWidth, 0, UI_THEME.MinHeight)
-Main.Position = UDim2.new(0, 20, 0.35, 0) 
+Main.Size = UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height)
+Main.Position = UDim2.new(0, 40, 0.5, -UI_THEME.Height/2) 
 Main.BackgroundColor3 = UI_THEME.Color
 Main.BackgroundTransparency = UI_THEME.Transparency
 Main.Active = true
 Main.ClipsDescendants = true 
 Main.Visible = false 
 
+-- Gradient Background
+local MainGrad = Instance.new("UIGradient", Main)
+MainGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(230,230,235))
+}
+MainGrad.Rotation = 60
+
 local MainCorner = Instance.new("UICorner", Main)
-MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.CornerRadius = UI_THEME.CornerRadius
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Color = UI_THEME.Accent
-MainStroke.Thickness = 1.5
-MainStroke.Transparency = 0
+MainStroke.Thickness = 1.2
+MainStroke.Transparency = 0.8
 
+-- Minimized Logo
 local LogoR = Instance.new("TextButton", Main)
 LogoR.Name = "LogoR"
 LogoR.Size = UDim2.new(1, 0, 1, 0)
 LogoR.BackgroundTransparency = 1
-LogoR.Text = "S"
+LogoR.Text = "R"
 LogoR.TextColor3 = UI_THEME.Accent
-LogoR.Font = Enum.Font.GothamBlack
+LogoR.Font = UI_THEME.FontHeader
 LogoR.TextSize = 28
 LogoR.Visible = false 
 LogoR.ZIndex = 10
 
+-- HEADER (Top Bar)
 local Header = Instance.new("Frame", Main)
 Header.Name = "Header"
-Header.Size = UDim2.new(1, 0, 0, 32) 
-Header.BackgroundColor3 = UI_THEME.HeaderColor
+Header.Size = UDim2.new(1, 0, 0, 34) 
+Header.BackgroundColor3 = UI_THEME.SidebarColor
 Header.BackgroundTransparency = 0.5
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
+Header.BorderSizePixel = 0
 
+-- Header Title
+local Title = Instance.new("TextLabel", Header)
+Title.Size = UDim2.new(1, -50, 1, 0) 
+Title.Position = UDim2.new(0, 14, 0, 0) 
+Title.Text = "SERA <font color=\"rgb(64,162,227)\">HELPER</font>"
+Title.RichText = true
+Title.TextColor3 = UI_THEME.TextMain
+Title.Font = UI_THEME.FontHeader
+Title.TextSize = 13
+Title.BackgroundTransparency = 1
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- By Credit (Small)
+local SubTitle = Instance.new("TextLabel", Header)
+SubTitle.Size = UDim2.new(0, 100, 1, 0)
+SubTitle.Position = UDim2.new(0, 110, 0, 1)
+SubTitle.Text = "@828_raka"
+SubTitle.TextColor3 = UI_THEME.TextDim
+SubTitle.Font = Enum.Font.GothamMedium
+SubTitle.TextSize = 10
+SubTitle.BackgroundTransparency = 1
+SubTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local HideBtn = Instance.new("TextButton", Header)
+HideBtn.Size = UDim2.new(0, 24, 0, 24) 
+HideBtn.Position = UDim2.new(1, -30, 0.5, -12)
+HideBtn.Text = "-" 
+HideBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+HideBtn.BackgroundTransparency = 0.8
+HideBtn.TextColor3 = UI_THEME.TextMain
+HideBtn.Font = UI_THEME.FontHeader
+HideBtn.TextSize = 18
+HideBtn.AutoButtonColor = true
+Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(1, 0)
+
+-- Drag Function
 local function EnableDrag(frame, dragInputObj)
     local dragToggle, dragStart, startPos
     local function updateInput(input)
@@ -271,133 +331,126 @@ EnableDrag(Main, Header)
 EnableDrag(Main, LogoR) 
 EnableDrag(FloatHUD, FloatHUD)
 
--- [TITLE SETUP]
-local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1, -50, 1, 0) 
-Title.Position = UDim2.new(0, 8, 0, 0) 
-Title.Text = "SERA HELPER <font size=\"9\" color=\"rgb(180,180,180)\">By @828_raka</font>"
-Title.RichText = true
-Title.TextColor3 = Color3.new(1,1,1)
-Title.Font = UI_THEME.Font
-Title.TextSize = 11
-Title.BackgroundTransparency = 1
-Title.TextXAlignment = Enum.TextXAlignment.Left
+-- ====================================================
+-- [3] SIDE NAVIGATION (SIDEBAR)
+-- ====================================================
+local ContentContainer = Instance.new("Frame", Main)
+ContentContainer.Name = "Container"
+ContentContainer.Size = UDim2.new(1, 0, 1, -34)
+ContentContainer.Position = UDim2.new(0, 0, 0, 34)
+ContentContainer.BackgroundTransparency = 1
 
-local HideBtn = Instance.new("TextButton", Header)
-HideBtn.Size = UDim2.new(0, 45, 0, 20) 
-HideBtn.Position = UDim2.new(1, -50, 0.5, -10)
-HideBtn.Text = "Hide" 
-HideBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-HideBtn.BackgroundTransparency = 0.5
-HideBtn.TextColor3 = UI_THEME.Accent
-HideBtn.Font = Enum.Font.GothamBold
-HideBtn.TextSize = 10
-HideBtn.AutoButtonColor = true
-Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 4)
-local HideStroke = Instance.new("UIStroke", HideBtn)
-HideStroke.Color = UI_THEME.Accent
-HideStroke.Transparency = 0.6
+local Sidebar = Instance.new("Frame", ContentContainer)
+Sidebar.Name = "Sidebar"
+Sidebar.Size = UDim2.new(0, 100, 1, 0)
+Sidebar.BackgroundColor3 = UI_THEME.SidebarColor
+Sidebar.BackgroundTransparency = 0.5
+Sidebar.BorderSizePixel = 0
 
-local TabHolder = Instance.new("Frame", Main)
-TabHolder.Name = "TabHolder"
-TabHolder.Size = UDim2.new(1, 0, 0, 25)
-TabHolder.Position = UDim2.new(0, 0, 0, 32)
-TabHolder.BackgroundTransparency = 1
+local SidebarLayout = Instance.new("UIListLayout", Sidebar)
+SidebarLayout.FillDirection = Enum.FillDirection.Vertical
+SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SidebarLayout.Padding = UDim.new(0, 6)
+SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-local TabMainBtn = Instance.new("TextButton", TabHolder)
-TabMainBtn.Name = "MainTab"
-TabMainBtn.Size = UDim2.new(0.33, 0, 1, 0)
-TabMainBtn.BackgroundTransparency = 1
-TabMainBtn.Text = "MAIN"
-TabMainBtn.Font = Enum.Font.GothamBold
-TabMainBtn.TextSize = 10
-TabMainBtn.TextColor3 = UI_THEME.TabOn
+local SidebarPad = Instance.new("UIPadding", Sidebar)
+SidebarPad.PaddingTop = UDim.new(0, 10)
 
-local TabFishBtn = Instance.new("TextButton", TabHolder)
-TabFishBtn.Name = "FishTab"
-TabFishBtn.Size = UDim2.new(0.33, 0, 1, 0)
-TabFishBtn.Position = UDim2.new(0.33, 0, 0, 0)
-TabFishBtn.BackgroundTransparency = 1
-TabFishBtn.Text = "FISHING"
-TabFishBtn.Font = Enum.Font.GothamBold
-TabFishBtn.TextSize = 10
-TabFishBtn.TextColor3 = UI_THEME.TabOff
-
-local TabMiscBtn = Instance.new("TextButton", TabHolder)
-TabMiscBtn.Name = "MiscTab"
-TabMiscBtn.Size = UDim2.new(0.33, 0, 1, 0)
-TabMiscBtn.Position = UDim2.new(0.66, 0, 0, 0)
-TabMiscBtn.BackgroundTransparency = 1
-TabMiscBtn.Text = "MISC"
-TabMiscBtn.Font = Enum.Font.GothamBold
-TabMiscBtn.TextSize = 10
-TabMiscBtn.TextColor3 = UI_THEME.TabOff
-
-local TabIndicator = Instance.new("Frame", TabHolder)
-TabIndicator.Size = UDim2.new(0.33, 0, 0, 2)
-TabIndicator.Position = UDim2.new(0, 0, 1, -2)
-TabIndicator.BackgroundColor3 = UI_THEME.Accent
-TabIndicator.BorderSizePixel = 0
-
-local PageContainer = Instance.new("Frame", Main)
-PageContainer.Name = "PageContainer"
-PageContainer.Size = UDim2.new(1, 0, 1, -65)
-PageContainer.Position = UDim2.new(0, 0, 0, 60)
-PageContainer.BackgroundTransparency = 1
-
--- helper function for scrolling page
-local function CreateScrollPage(name, visible)
-    local p = Instance.new("ScrollingFrame", PageContainer)
-    p.Name = name
-    p.Size = UDim2.new(1, 0, 1, 0)
-    p.BackgroundTransparency = 1
-    p.Visible = visible
-    p.ScrollBarThickness = 2
-    p.ScrollBarImageColor3 = UI_THEME.Accent
-    p.CanvasSize = UDim2.new(0, 0, 0, 0)
-    p.AutomaticCanvasSize = Enum.AutomaticSize.Y
+-- Function to create Side Buttons
+local function CreateSideTab(name, text, isActive)
+    local btn = Instance.new("TextButton", Sidebar)
+    btn.Name = name
+    btn.Size = UDim2.new(0.85, 0, 0, 32)
+    btn.BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(40, 40, 45)
+    btn.BackgroundTransparency = isActive and 0.2 or 1
+    btn.Text = text
+    btn.Font = UI_THEME.FontBody
+    btn.TextSize = 11
+    btn.TextColor3 = isActive and Color3.new(1,1,1) or UI_THEME.TextDim
+    btn.AutoButtonColor = true
     
-    local g = Instance.new("UIGridLayout", p)
-    g.CellSize = UDim2.new(0.92, 0, 0, 28)
-    g.CellPadding = UDim2.new(0, 0, 0, 6) 
-    g.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    g.SortOrder = Enum.SortOrder.LayoutOrder
-    return p
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(0, 6)
+    
+    return btn
 end
 
-local PageMain = CreateScrollPage("PageMain", true)
-local PageFish = CreateScrollPage("PageFish", false)
-local PageMisc = CreateScrollPage("PageMisc", false)
+local TabMainBtn = CreateSideTab("TabMain", "MAIN", true)
+local TabMiscBtn = CreateSideTab("TabMisc", "MISC", false)
 
+-- Divider Line in Sidebar (Visual)
+local SideDivider = Instance.new("Frame", Sidebar)
+SideDivider.LayoutOrder = 10
+SideDivider.Size = UDim2.new(0.6, 0, 0, 1)
+SideDivider.BackgroundColor3 = UI_THEME.TextDim
+SideDivider.BackgroundTransparency = 0.8
+SideDivider.BorderSizePixel = 0
+
+-- ====================================================
+-- [4] PAGES (CONTENT AREA)
+-- ====================================================
+local PageArea = Instance.new("Frame", ContentContainer)
+PageArea.Name = "PageArea"
+PageArea.Size = UDim2.new(1, -110, 1, -10)
+PageArea.Position = UDim2.new(0, 105, 0, 5)
+PageArea.BackgroundTransparency = 1
+
+-- PAGE MAIN
+local PageMain = Instance.new("ScrollingFrame", PageArea)
+PageMain.Name = "PageMain"
+PageMain.Size = UDim2.new(1, 0, 1, 0)
+PageMain.BackgroundTransparency = 1
+PageMain.ScrollBarThickness = 2
+PageMain.ScrollBarImageColor3 = UI_THEME.Accent
+PageMain.CanvasSize = UDim2.new(0, 0, 0, 0)
+PageMain.AutomaticCanvasSize = Enum.AutomaticSize.Y
+PageMain.Visible = true
+
+local GridMain = Instance.new("UIGridLayout", PageMain)
+GridMain.CellSize = UDim2.new(0.48, 0, 0, 32) -- 2 Kolom
+GridMain.CellPadding = UDim2.new(0, 6, 0, 6)
+GridMain.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- PAGE MISC
+local PageMisc = Instance.new("ScrollingFrame", PageArea)
+PageMisc.Name = "PageMisc"
+PageMisc.Size = UDim2.new(1, 0, 1, 0)
+PageMisc.BackgroundTransparency = 1
+PageMisc.ScrollBarThickness = 2
+PageMisc.ScrollBarImageColor3 = UI_THEME.Accent
+PageMisc.CanvasSize = UDim2.new(0, 0, 0, 0)
+PageMisc.AutomaticCanvasSize = Enum.AutomaticSize.Y
+PageMisc.Visible = false
+
+local GridMisc = Instance.new("UIGridLayout", PageMisc)
+GridMisc.CellSize = UDim2.new(0.48, 0, 0, 32)
+GridMisc.CellPadding = UDim2.new(0, 6, 0, 6)
+GridMisc.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Tab Logic
 local function SwitchTab(tabName)
-    PageMain.Visible = false
-    PageFish.Visible = false
-    PageMisc.Visible = false
-    TabMainBtn.TextColor3 = UI_THEME.TabOff
-    TabFishBtn.TextColor3 = UI_THEME.TabOff
-    TabMiscBtn.TextColor3 = UI_THEME.TabOff
+    local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     
     if tabName == "Main" then
         PageMain.Visible = true
-        TabMainBtn.TextColor3 = UI_THEME.TabOn
-        TabIndicator:TweenPosition(UDim2.new(0, 0, 1, -2), "Out", "Quad", 0.2)
-    elseif tabName == "Fish" then
-        PageFish.Visible = true
-        TabFishBtn.TextColor3 = UI_THEME.TabOn
-        TabIndicator:TweenPosition(UDim2.new(0.33, 0, 1, -2), "Out", "Quad", 0.2)
+        PageMisc.Visible = false
+        
+        Services.TweenService:Create(TabMainBtn, tweenInfo, {BackgroundTransparency = 0.2, TextColor3 = Color3.new(1,1,1), BackgroundColor3 = UI_THEME.Accent}):Play()
+        Services.TweenService:Create(TabMiscBtn, tweenInfo, {BackgroundTransparency = 1, TextColor3 = UI_THEME.TextDim, BackgroundColor3 = Color3.fromRGB(40,40,45)}):Play()
     elseif tabName == "Misc" then
+        PageMain.Visible = false
         PageMisc.Visible = true
-        TabMiscBtn.TextColor3 = UI_THEME.TabOn
-        TabIndicator:TweenPosition(UDim2.new(0.66, 0, 1, -2), "Out", "Quad", 0.2)
+        
+        Services.TweenService:Create(TabMainBtn, tweenInfo, {BackgroundTransparency = 1, TextColor3 = UI_THEME.TextDim, BackgroundColor3 = Color3.fromRGB(40,40,45)}):Play()
+        Services.TweenService:Create(TabMiscBtn, tweenInfo, {BackgroundTransparency = 0.2, TextColor3 = Color3.new(1,1,1), BackgroundColor3 = UI_THEME.Accent}):Play()
     end
 end
 
 TabMainBtn.MouseButton1Click:Connect(function() SwitchTab("Main") end)
-TabFishBtn.MouseButton1Click:Connect(function() SwitchTab("Fish") end)
 TabMiscBtn.MouseButton1Click:Connect(function() SwitchTab("Misc") end)
 
 -- ====================================================
--- [4] LOGIC UI & HELPER FUNCTIONS
+-- [5] LOGIC BUTTONS & HELPER
 -- ====================================================
 local IsMinimized = false
 
@@ -405,8 +458,7 @@ HideBtn.MouseButton1Click:Connect(function()
     if not IsMinimized then
         IsMinimized = true
         Header.Visible = false
-        TabHolder.Visible = false
-        PageContainer.Visible = false
+        ContentContainer.Visible = false
         Main:TweenSize(UDim2.new(0, 45, 0, 45), "Out", "Back", 0.4, true)
         Services.TweenService:Create(MainCorner, TweenInfo.new(0.4), {CornerRadius = UDim.new(1, 0)}):Play()
         Services.TweenService:Create(Main, TweenInfo.new(0.4), {BackgroundTransparency = 0.2}):Play()
@@ -418,98 +470,62 @@ LogoR.MouseButton1Click:Connect(function()
     if IsMinimized then
         IsMinimized = false
         LogoR.Visible = false
-        Main:TweenSize(UDim2.new(0, UI_THEME.MinWidth, 0, UI_THEME.MinHeight), "Out", "Back", 0.4, true)
-        Services.TweenService:Create(MainCorner, TweenInfo.new(0.4), {CornerRadius = UDim.new(0, 8)}):Play()
+        Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height), "Out", "Back", 0.4, true)
+        Services.TweenService:Create(MainCorner, TweenInfo.new(0.4), {CornerRadius = UI_THEME.CornerRadius}):Play()
         Services.TweenService:Create(Main, TweenInfo.new(0.4), {BackgroundTransparency = UI_THEME.Transparency}):Play()
-        task.delay(0.3, function() if not IsMinimized then Header.Visible = true; TabHolder.Visible = true; PageContainer.Visible = true end end)
+        task.delay(0.3, function() if not IsMinimized then Header.Visible = true; ContentContainer.Visible = true end end)
     end
 end)
 
 local function MakeBtn(parent, text)
     local b = Instance.new("TextButton", parent)
     b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(30, 30, 40) 
-    b.BackgroundTransparency = 0.3
-    b.TextColor3 = UI_THEME.TextColor
-    b.Font = UI_THEME.BtnFont 
+    b.BackgroundColor3 = Color3.fromRGB(35, 35, 40) 
+    b.BackgroundTransparency = 0.6
+    b.TextColor3 = UI_THEME.TextMain
+    b.Font = UI_THEME.FontBody 
     b.TextSize = 10 
     b.AutoButtonColor = true
     b.ClipsDescendants = true
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4) 
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6) 
+    
     local s = Instance.new("UIStroke", b)
-    s.Color = UI_THEME.Accent 
+    s.Color = Color3.fromRGB(70, 70, 80) 
     s.Thickness = 1
-    s.Transparency = 0.6
+    s.Transparency = 0.5
     s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     return b
 end
 
-local function MakeInput(parent, title, default, callback)
-    local c = Instance.new("Frame", parent)
-    c.BackgroundTransparency = 1
-    
-    local lbl = Instance.new("TextLabel", c)
-    lbl.Size = UDim2.new(0.6, 0, 1, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = title
-    lbl.TextColor3 = UI_THEME.TextColor
-    lbl.Font = UI_THEME.BtnFont
-    lbl.TextSize = 10
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local box = Instance.new("TextBox", c)
-    box.Size = UDim2.new(0.35, 0, 0.8, 0)
-    box.Position = UDim2.new(0.65, 0, 0.1, 0)
-    box.BackgroundColor3 = Color3.fromRGB(0,0,0)
-    box.BackgroundTransparency = 0.5
-    box.Text = default
-    box.TextColor3 = UI_THEME.Accent
-    box.Font = Enum.Font.GothamBold
-    box.TextSize = 10
-    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
-    local s = Instance.new("UIStroke", box)
-    s.Color = UI_THEME.Accent
-    s.Transparency = 0.6
-    
-    box.FocusLost:Connect(function() callback(box.Text) end)
-    return c
-end
-
 local function ToggleVisual(btn, on)
+    local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    
     if on then
-        btn.BackgroundColor3 = UI_THEME.Accent 
-        btn.BackgroundTransparency = 0.2
-        btn.TextColor3 = Color3.fromRGB(0, 0, 0) 
-        btn.UIStroke.Transparency = 1
-        btn.Font = Enum.Font.GothamBold
+        Services.TweenService:Create(btn, tweenInfo, {
+            BackgroundColor3 = UI_THEME.Accent,
+            BackgroundTransparency = 0.3,
+            TextColor3 = Color3.new(1,1,1)
+        }):Play()
+        Services.TweenService:Create(btn.UIStroke, tweenInfo, {Transparency = 1}):Play()
     else
-        btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40) 
-        btn.BackgroundTransparency = 0.3
-        btn.TextColor3 = UI_THEME.TextColor
-        btn.UIStroke.Transparency = 0.6
-        btn.Font = UI_THEME.BtnFont
+        Services.TweenService:Create(btn, tweenInfo, {
+            BackgroundColor3 = Color3.fromRGB(35, 35, 40),
+            BackgroundTransparency = 0.6,
+            TextColor3 = UI_THEME.TextMain
+        }):Play()
+        Services.TweenService:Create(btn.UIStroke, tweenInfo, {
+            Color = Color3.fromRGB(70, 70, 80),
+            Transparency = 0.5
+        }):Play()
     end
 end
 
--- ====================================================
--- [5] GAME LOGIC VARIABLES (MERGED)
--- ====================================================
+-- States
 local States = {
     Freeze=false, WoW=false, Boost=false, Ultra=false, NoRender=false, 
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
-    AutoEvent=false, AntiStuck=false, StuckTimeout=60,
-    AutoSell=false, SellInterval=120, AutoWeather=false
+    AutoEvent=false, AntiStuck=false, StuckTimeout=60 
 }
-local FishingConfig = {
-    Mode = "Instant", -- Instant / Blatant
-    DelayCharge = 1.30,
-    DelayCatch = 1.05,
-    DelayReset = 0.35,
-    AutoGreat = false,
-    WeatherSlots = {"None", "None", "None"},
-    WeatherList = {"None", "Windy", "Rain", "Fog", "Sunny", "Snow", "Storm"}
-}
-
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
 local IsInEvent = false 
@@ -518,122 +534,27 @@ local BodyV = nil
 local LastFishCaughtTime = tick()
 local LastFishCount = 0
 
--- Remotes
-local pkgs = Services.ReplicatedStorage:WaitForChild("Packages")
-local idx = pkgs:WaitForChild("_Index")
-local net = idx:WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
-
-local Remotes = {
-    ChargeRod    = net:WaitForChild("RF/ChargeFishingRod"),
-    RequestGame  = net:WaitForChild("RF/RequestFishingMinigameStarted"),
-    CompleteGame = net:WaitForChild("RE/FishingCompleted"),
-    CancelInput  = net:WaitForChild("RF/CancelFishingInputs"),
-    SellAll      = net:WaitForChild("RF/SellAllItems"),
-    EquipTool    = net:WaitForChild("RE/EquipToolFromHotbar"),
-    UpdateState  = net:WaitForChild("RF/UpdateAutoFishingState"),
-    PurchaseWeather = net:FindFirstChild("RF/PurchaseWeather")
-}
-
--- Anti-Ban / Infinite Yield Logic (From Custom Fishing)
-local BLOCKED_REMOTES = {
-    [Remotes.ChargeRod]    = true,
-    [Remotes.RequestGame]  = true,
-    [Remotes.CompleteGame] = true,
-    [Remotes.CancelInput]  = true,
-}
-
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local method = getnamecallmethod()
-    -- Jika fishing blocker aktif (saat auto fish jalan) dan script memanggil remote yg diblokir TANPA lewat internal
-    if getgenv().fishingStart and BLOCKED_REMOTES[self] and not checkcaller() then
-        if method == "InvokeServer" then
-            return task.wait(9e9) -- Infinite yield (Freeze script game)
-        elseif method == "FireServer" then
-            return nil
-        end
-    end
-    return oldNamecall(self, ...)
-end)
-
 -- Force Re-Equip
 local function ForceEquipRod()
     pcall(function()
         local args = { [1] = 1 }
-        Remotes.EquipTool:FireServer(unpack(args))
+        local pkgs = Services.ReplicatedStorage:FindFirstChild("Packages")
+        if pkgs then
+            local idx = pkgs:FindFirstChild("_Index")
+            if idx then
+                local remote = idx:FindFirstChild("sleitnick_net@0.2.0")
+                if remote then
+                    remote.net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
+                end
+            end
+        end
     end)
 end
 
--- ====================================================
--- [6] FISHING LOOPS (CUSTOM LOGIC)
--- ====================================================
-getgenv().fishingStart = false
+-- >> TOMBOL UI (LAYOUT RAPI) <<
 
-local function lightSpawn(fn)
-    task.spawn(fn)
-end
-
-local function startFishingLoop() -- INSTANT MODE
-    local _Cancel = Remotes.CancelInput
-    local _Complete = Remotes.CompleteGame
-    local _Charge = Remotes.ChargeRod
-    local _Request = Remotes.RequestGame
-    
-    if FishingConfig.AutoGreat then
-        Remotes.UpdateState:InvokeServer({true})
-    end
-    
-    while getgenv().fishingStart do
-        pcall(function() _Charge:InvokeServer() end) 
-        task.wait(0.055)
-        if not getgenv().fishingStart then break end
-        
-        local args = { 100, 100, 100 } -- Universal Args
-        _Request:InvokeServer(unpack(args))
-        
-        task.wait(FishingConfig.DelayCatch)
-        if not getgenv().fishingStart then break end 
-        
-        pcall(function() _Complete:FireServer() end)
-        task.wait(0.05)
-        pcall(function() _Cancel:InvokeServer() end)
-        task.wait(FishingConfig.DelayReset)
-    end
-end
-
-local function startFishingSuperInstantLoop() -- BLATANT MODE
-    local _Charge = Remotes.ChargeRod
-    local _Request = Remotes.RequestGame
-    local _Complete = Remotes.CompleteGame
-    local _Cancel = Remotes.CancelInput
-    
-    if FishingConfig.AutoGreat then
-        Remotes.UpdateState:InvokeServer({true})
-    end
-    
-    pcall(function() _Cancel:InvokeServer() end)
-    task.wait(0.055)
-    
-    local args = { 100, 100, 100 }
-    
-    while getgenv().fishingStart do
-        lightSpawn(function() _Charge:InvokeServer() end)
-        lightSpawn(function() _Request:InvokeServer(unpack(args)) end)
-        
-        task.wait(FishingConfig.DelayCharge) 
-        pcall(function() _Complete:FireServer() end)
-        task.wait(FishingConfig.DelayReset) 
-        pcall(function() _Cancel:InvokeServer() end)
-    end
-end
-
--- ====================================================
--- [7] UI ELEMENTS CREATION
--- ====================================================
-
--- >> TAB MAIN <<
+-- TAB MAIN BUTTONS
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
-local BtnSell   = MakeBtn(PageMain, "Auto Sell: OFF") -- Added to Main
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnClean  = MakeBtn(PageMain, "Auto Clean: OFF")
 local BtnUltra  = MakeBtn(PageMain, "Ultra HD: OFF") 
@@ -644,89 +565,55 @@ local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 
--- Weather Selector (Main Tab)
-local WeatherLabel = Instance.new("TextLabel", PageMain)
-WeatherLabel.Text = "- BUY WEATHER SELECTOR -"
-WeatherLabel.Size = UDim2.new(1,0,0,15)
-WeatherLabel.BackgroundTransparency = 1
-WeatherLabel.TextColor3 = UI_THEME.SubTextColor
-WeatherLabel.Font = UI_THEME.Font
-WeatherLabel.TextSize = 10
-
-local WBtn1 = MakeBtn(PageMain, "Slot 1: None")
-local WBtn2 = MakeBtn(PageMain, "Slot 2: None")
-local WBtn3 = MakeBtn(PageMain, "Slot 3: None")
-local BtnAutoWeather = MakeBtn(PageMain, "Auto Buy Weather: OFF")
-
--- >> TAB FISHING (NEW CUSTOM) <<
-local LabelConfig = Instance.new("TextLabel", PageFish)
-LabelConfig.Text = "- CONFIGURATION -"
-LabelConfig.Size = UDim2.new(1,0,0,15)
-LabelConfig.BackgroundTransparency = 1
-LabelConfig.TextColor3 = UI_THEME.SubTextColor
-LabelConfig.Font = UI_THEME.Font
-LabelConfig.TextSize = 10
-
-local BtnMode   = MakeBtn(PageFish, "Mode: Instant")
-local InputBait = MakeInput(PageFish, "Delay Bait", tostring(FishingConfig.DelayCharge), function(v) FishingConfig.DelayCharge = tonumber(v) or 1.3 end)
-local InputCatch= MakeInput(PageFish, "Delay Catch", tostring(FishingConfig.DelayCatch), function(v) FishingConfig.DelayCatch = tonumber(v) or 1.05 end)
-local InputReset= MakeInput(PageFish, "Reset Delay", tostring(FishingConfig.DelayReset), function(v) FishingConfig.DelayReset = tonumber(v) or 0.35 end)
-
-local BtnGreat  = MakeBtn(PageFish, "Auto Great: OFF")
-local BtnStart  = MakeBtn(PageFish, "START FISHING")
-
--- >> TAB MISC <<
+-- TAB MISC BUTTONS
 local StuckContainer = Instance.new("Frame", PageMisc)
 StuckContainer.Name = "StuckContainer"
 StuckContainer.BackgroundTransparency = 1
-StuckContainer.Size = UDim2.new(0.92, 0, 0, 28)
 
 local BtnStuckToggle = Instance.new("TextButton", StuckContainer)
 BtnStuckToggle.Name = "Toggle"
 BtnStuckToggle.Size = UDim2.new(0.65, -4, 1, 0)
-BtnStuckToggle.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-BtnStuckToggle.BackgroundTransparency = 0.3
+BtnStuckToggle.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+BtnStuckToggle.BackgroundTransparency = 0.6
 BtnStuckToggle.Text = "Anti-Stuck: OFF"
-BtnStuckToggle.TextColor3 = UI_THEME.TextColor
-BtnStuckToggle.Font = UI_THEME.BtnFont
+BtnStuckToggle.TextColor3 = UI_THEME.TextMain
+BtnStuckToggle.Font = UI_THEME.FontBody
 BtnStuckToggle.TextSize = 10
-Instance.new("UICorner", BtnStuckToggle).CornerRadius = UDim.new(0, 4)
+Instance.new("UICorner", BtnStuckToggle).CornerRadius = UDim.new(0, 6)
 local s1 = Instance.new("UIStroke", BtnStuckToggle)
-s1.Color = UI_THEME.Accent
+s1.Color = Color3.fromRGB(70, 70, 80)
 s1.Thickness = 1
-s1.Transparency = 0.6
+s1.Transparency = 0.5
 
 local BoxStuckInput = Instance.new("TextBox", StuckContainer)
 BoxStuckInput.Name = "Input"
 BoxStuckInput.Size = UDim2.new(0.35, 0, 1, 0)
 BoxStuckInput.Position = UDim2.new(0.65, 0, 0, 0)
-BoxStuckInput.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-BoxStuckInput.BackgroundTransparency = 0.5
+BoxStuckInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+BoxStuckInput.BackgroundTransparency = 0.6
 BoxStuckInput.Text = "60" 
 BoxStuckInput.PlaceholderText = "Sec"
 BoxStuckInput.TextColor3 = UI_THEME.Accent
-BoxStuckInput.Font = Enum.Font.GothamBold
+BoxStuckInput.Font = UI_THEME.FontHeader
 BoxStuckInput.TextSize = 10
-Instance.new("UICorner", BoxStuckInput).CornerRadius = UDim.new(0, 4)
+Instance.new("UICorner", BoxStuckInput).CornerRadius = UDim.new(0, 6)
 local s2 = Instance.new("UIStroke", BoxStuckInput)
-s2.Color = UI_THEME.Accent
+s2.Color = Color3.fromRGB(70, 70, 80)
 s2.Thickness = 1
-s2.Transparency = 0.6
+s2.Transparency = 0.5
 
 local BtnSave   = MakeBtn(PageMisc, "Save Pos")
 local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
 local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
 
--- ====================================================
--- [8] FUNCTION LOGIC & BINDINGS
--- ====================================================
-
--- Water Walk Logic
+-- Logic Water Walk
 local function SetWoW(bool)
     States.WoW = bool
-    BtnWow.Text = "Water Walk: " .. (States.WoW and "ON" or "OFF")
-    ToggleVisual(BtnWow, States.WoW)
+    if typeof(BtnWow) == "Instance" then
+        BtnWow.Text = "Water Walk: " .. (States.WoW and "ON" or "OFF")
+        ToggleVisual(BtnWow, States.WoW)
+    end
     
     if States.WoW then 
         if not HRP or not HRP.Parent then return end 
@@ -755,7 +642,15 @@ local function SetWoW(bool)
     end 
 end
 
--- Ultra Graphics Logic
+local function SetAutoEquip(bool)
+    States.AutoEquip = bool
+    if typeof(BtnEquip) == "Instance" then
+        BtnEquip.Text = "Auto Equip: " .. (States.AutoEquip and "ON" or "OFF")
+        ToggleVisual(BtnEquip, States.AutoEquip)
+    end
+end
+
+-- Ultra HD
 local function SetUltraGraphics(enabled)
     States.Ultra = enabled
     BtnUltra.Text = "Ultra HD: " .. (States.Ultra and "ON" or "OFF")
@@ -766,53 +661,26 @@ local function SetUltraGraphics(enabled)
         Services.Lighting.GlobalShadows = true
         Services.Lighting.Technology = Enum.Technology.Future 
         
-        -- Custom Effects
-        local Effects = {
-            ["Seraphin_Bloom"] = Instance.new("BloomEffect"),
-            ["Seraphin_Color"] = Instance.new("ColorCorrectionEffect"),
-            ["Seraphin_Sun"] = Instance.new("SunRaysEffect"),
-        }
-        Effects["Seraphin_Bloom"].Intensity = 0.8
-        Effects["Seraphin_Color"].Saturation = 0.25 
-        Effects["Seraphin_Sun"].Intensity = 0.25
-
-        for name, fx in pairs(Effects) do
-            fx.Name = name
-            fx.Parent = Services.Lighting
-        end
+        local fx = Instance.new("BloomEffect", Services.Lighting)
+        fx.Name = "Seraphin_Bloom"
+        fx.Intensity = 0.8
+        
         Notify("GRAPHICS", "ULTRA HD ACTIVE", Color3.fromRGB(0, 255, 255))
     else
         for _, v in pairs(Services.Lighting:GetChildren()) do
             if v.Name:find("Seraphin_") then v:Destroy() end
         end
-        Services.Lighting.Technology = Enum.Technology.ShadowMap 
         Notify("GRAPHICS", "Normal Mode", UI_THEME.Accent)
     end
 end
 
--- Booster Logic
+-- Smart Booster
 local function ToggleBoost(enable)
     States.Boost = enable
     BtnBoost.Text = "CPU Booster: " .. (States.Boost and "ON" or "OFF")
     ToggleVisual(BtnBoost, States.Boost)
-
-    if enable then
-        if States.Ultra then SetUltraGraphics(false) end
-        Services.Lighting.GlobalShadows = false
-        pcall(function() settings().Rendering.QualityLevel = "Level01" end)
-        for _, v in pairs(Services.Workspace:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.Material = Enum.Material.SmoothPlastic
-                v.Reflectance = 0
-                v.CastShadow = false
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                v.Enabled = false
-            end
-        end
-        Notify("BOOSTER", "Boost Active", Color3.fromRGB(0, 255, 100))
-    else
-        Notify("BOOSTER", "Restoring...", UI_THEME.Accent)
-    end
+    if enable then Notify("BOOSTER", "Boost Active", Color3.fromRGB(0, 255, 100))
+    else Notify("BOOSTER", "Boost Disabled", UI_THEME.Accent) end
 end
 
 -- FPS Updater
@@ -820,19 +688,20 @@ local fpsT = 0
 Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
-    if Title then
-        Title.Text = string.format("SERA HELPER <font size=\"9\" color=\"rgb(160,160,180)\">By @828_raka</font> | FPS: <b>%d</b>", currentFps)
+    if Title and currentFps then
+        Title.Text = string.format("SERA <font color=\"rgb(64,162,227)\">HELPER</font> | %d FPS", currentFps)
     end
 end)
 
--- Button Bindings
 BtnFps.MouseButton1Click:Connect(function()
-    local caps = {60, 90, 144, 240, 9999}
+    local caps = {60, 90, 144, 240, 99999}
     _G.fpsIndex = (_G.fpsIndex or 0) % #caps + 1 
     local v = caps[_G.fpsIndex]
     if setfpscap then setfpscap(v) end
-    BtnFps.Text = "FPS: " .. ((v >= 9999) and "Unli" or tostring(v))
-    ToggleVisual(BtnFps, true); task.wait(0.1); ToggleVisual(BtnFps, false)
+    local txt = (v >= 9999) and "Unli" or tostring(v)
+    BtnFps.Text = "FPS: " .. txt
+    Services.TweenService:Create(BtnFps, TweenInfo.new(0.1), {BackgroundColor3=UI_THEME.Accent}):Play()
+    task.delay(0.1, function() ToggleVisual(BtnFps, false) end)
 end)
 
 ToggleVisual(BtnPanel, true)
@@ -843,285 +712,85 @@ BtnPanel.MouseButton1Click:Connect(function()
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
+-- Button Logic
+BtnStuckToggle.MouseButton1Click:Connect(function()
+    States.AntiStuck = not States.AntiStuck
+    if States.AntiStuck then
+        BtnStuckToggle.Text = "Anti-Stuck: ON"
+        ToggleVisual(BtnStuckToggle, true)
+        local val = tonumber(BoxStuckInput.Text)
+        if not val or val < 10 then val = 60; BoxStuckInput.Text = "60" end
+        States.StuckTimeout = val
+        LastFishCaughtTime = tick()
+    else
+        BtnStuckToggle.Text = "Anti-Stuck: OFF"
+        ToggleVisual(BtnStuckToggle, false)
+    end
+end)
+
+BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
+BtnClean.MouseButton1Click:Connect(function()
+    States.AutoClean = not States.AutoClean
+    BtnClean.Text = "Auto Clean: " .. (States.AutoClean and "ON" or "OFF")
+    ToggleVisual(BtnClean, States.AutoClean)
+end)
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
     ToggleVisual(BtnEvent, States.AutoEvent)
     if not States.AutoEvent then IsInEvent = false; SetWoW(false) end
 end)
-
-BtnSell.MouseButton1Click:Connect(function()
-    States.AutoSell = not States.AutoSell
-    BtnSell.Text = "Auto Sell: " .. (States.AutoSell and "ON" or "OFF")
-    ToggleVisual(BtnSell, States.AutoSell)
-end)
-
-BtnEquip.MouseButton1Click:Connect(function() 
-    States.AutoEquip = not States.AutoEquip 
-    BtnEquip.Text = "Auto Equip: "..(States.AutoEquip and "ON" or "OFF")
-    ToggleVisual(BtnEquip, States.AutoEquip)
-end)
-
-BtnClean.MouseButton1Click:Connect(function()
-    States.AutoClean = not States.AutoClean
-    BtnClean.Text = "Auto Clean: "..(States.AutoClean and "ON" or "OFF")
-    ToggleVisual(BtnClean, States.AutoClean)
-end)
-
-BtnUltra.MouseButton1Click:Connect(function() SetUltraGraphics(not States.Ultra) end)
-BtnWow.MouseButton1Click:Connect(function() SetWoW(not States.WoW) end)
-
 BtnFreeze.MouseButton1Click:Connect(function() 
-    States.Freeze = not States.Freeze
-    if HRP then HRP.Anchored = States.Freeze end
-    BtnFreeze.Text = "Freeze: "..(States.Freeze and "ON" or "OFF")
-    ToggleVisual(BtnFreeze, States.Freeze)
+    States.Freeze = not States.Freeze 
+    if HRP then HRP.Anchored = States.Freeze end 
+    BtnFreeze.Text = "Freeze: " .. (States.Freeze and "ON" or "OFF")
+    ToggleVisual(BtnFreeze, States.Freeze) 
 end)
-
+BtnWow.MouseButton1Click:Connect(function() SetWoW(not States.WoW) end)
 BtnNoclip.MouseButton1Click:Connect(function() 
-    States.Noclip = not States.Noclip
-    BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF")
-    ToggleVisual(BtnNoclip, States.Noclip)
-    if States.Noclip then
-        Connections["Noclip"] = Services.RunService.Stepped:Connect(function()
-            if Player.Character then
-                for _,v in pairs(Player.Character:GetDescendants()) do
-                    if v:IsA("BasePart") then v.CanCollide = false end
-                end
-            end
-        end)
-    else
-        if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end
-    end
+    States.Noclip = not States.Noclip 
+    BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") 
+    ToggleVisual(BtnNoclip, States.Noclip) 
+    if States.Noclip then 
+        Connections["Noclip"] = Services.RunService.Stepped:Connect(function() 
+            if Player.Character then 
+                for _,v in pairs(Player.Character:GetDescendants()) do 
+                    if v:IsA("BasePart") then v.CanCollide = false end 
+                end 
+            end 
+        end) 
+    else 
+        if Connections["Noclip"] then Connections["Noclip"]:Disconnect() end 
+    end 
 end)
-
 BtnBoost.MouseButton1Click:Connect(function() ToggleBoost(not States.Boost) end)
-
-BtnRender.MouseButton1Click:Connect(function()
-    States.NoRender = not States.NoRender
-    Services.RunService:Set3dRenderingEnabled(not States.NoRender)
-    BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON")
-    ToggleVisual(BtnRender, States.NoRender)
+BtnUltra.MouseButton1Click:Connect(function()
+    if States.Boost then ToggleBoost(false) end
+    SetUltraGraphics(not States.Ultra)
 end)
-
--- Weather Logic Bindings
-local function CycleWeather(btn, slotIdx)
-    local list = FishingConfig.WeatherList
-    local current = FishingConfig.WeatherSlots[slotIdx]
-    local nextIdx = 1
-    
-    for i, v in ipairs(list) do
-        if v == current then nextIdx = i + 1 break end
-    end
-    if nextIdx > #list then nextIdx = 1 end
-    
-    local newVal = list[nextIdx]
-    FishingConfig.WeatherSlots[slotIdx] = newVal
-    btn.Text = "Slot "..slotIdx..": " .. newVal
-end
-
-WBtn1.MouseButton1Click:Connect(function() CycleWeather(WBtn1, 1) end)
-WBtn2.MouseButton1Click:Connect(function() CycleWeather(WBtn2, 2) end)
-WBtn3.MouseButton1Click:Connect(function() CycleWeather(WBtn3, 3) end)
-
-BtnAutoWeather.MouseButton1Click:Connect(function()
-    States.AutoWeather = not States.AutoWeather
-    BtnAutoWeather.Text = "Auto Buy Weather: "..(States.AutoWeather and "ON" or "OFF")
-    ToggleVisual(BtnAutoWeather, States.AutoWeather)
-end)
-
--- Fishing Tab Bindings
-local modeIdx = 1
-local modes = {"Instant", "Blatant"}
-BtnMode.MouseButton1Click:Connect(function()
-    modeIdx = modeIdx + 1
-    if modeIdx > #modes then modeIdx = 1 end
-    FishingConfig.Mode = modes[modeIdx]
-    BtnMode.Text = "Mode: " .. FishingConfig.Mode
-end)
-
-BtnGreat.MouseButton1Click:Connect(function()
-    FishingConfig.AutoGreat = not FishingConfig.AutoGreat
-    BtnGreat.Text = "Auto Great: "..(FishingConfig.AutoGreat and "ON" or "OFF")
-    ToggleVisual(BtnGreat, FishingConfig.AutoGreat)
-end)
-
-BtnStart.MouseButton1Click:Connect(function()
-    getgenv().fishingStart = not getgenv().fishingStart
-    if getgenv().fishingStart then
-        BtnStart.Text = "STOP FISHING"
-        BtnStart.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-        
-        if FishingConfig.Mode == "Instant" then
-            task.spawn(startFishingLoop)
-        else
-            task.spawn(startFishingSuperInstantLoop)
-        end
-    else
-        BtnStart.Text = "START FISHING"
-        BtnStart.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-        if FishingConfig.AutoGreat then Remotes.UpdateState:InvokeServer({false}) end
-        pcall(function() Remotes.CompleteGame:FireServer() end)
-        pcall(function() Remotes.CancelInput:InvokeServer() end)
-    end
-end)
-
--- Misc Tab Bindings
-BtnStuckToggle.MouseButton1Click:Connect(function()
-    States.AntiStuck = not States.AntiStuck
-    BtnStuckToggle.Text = "Anti-Stuck: "..(States.AntiStuck and "ON" or "OFF")
-    ToggleVisual(BtnStuckToggle, States.AntiStuck)
-    if States.AntiStuck then LastFishCaughtTime = tick() end
-end)
-BoxStuckInput.FocusLost:Connect(function()
-    local val = tonumber(BoxStuckInput.Text)
-    if val then States.StuckTimeout = val end
-end)
-BtnSave.MouseButton1Click:Connect(function() 
-    if HRP then SavedCFrame = HRP.CFrame; BtnSave.Text="SAVED"; task.wait(1); BtnSave.Text="Save Pos" end 
-end)
-BtnLoad.MouseButton1Click:Connect(function() 
-    if SavedCFrame and HRP then HRP.CFrame = SavedCFrame end 
+BtnRender.MouseButton1Click:Connect(function() 
+    States.NoRender = not States.NoRender 
+    Services.RunService:Set3dRenderingEnabled(not States.NoRender) 
+    BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON") 
+    ToggleVisual(BtnRender, States.NoRender) 
 end)
 BtnRejoin.MouseButton1Click:Connect(function() Services.TeleportService:Teleport(game.PlaceId, Player) end)
-
--- ====================================================
--- [9] BACKGROUND LOOPS
--- ====================================================
-
--- Auto Clean Loop
-task.spawn(function()
-    while true do
-        task.wait(5)
-        if States.AutoClean then
-            pcall(function()
-                collectgarbage("collect")
-                for _, v in pairs(Services.Workspace:GetDescendants()) do
-                    if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") then
-                        v:Destroy()
-                    end
-                end
-            end)
-        end
-    end
+BtnSave.MouseButton1Click:Connect(function() 
+    if HRP then SavedCFrame = HRP.CFrame; BtnSave.Text="SAVED"; Notify("POSITION", "Location Saved!", UI_THEME.Accent); task.delay(1, function() BtnSave.Text="Save Pos" end) end 
+end)
+BtnLoad.MouseButton1Click:Connect(function() 
+    if SavedCFrame and HRP then HRP.CFrame = SavedCFrame; Notify("POSITION", "Location Loaded!", UI_THEME.Accent) end 
 end)
 
--- Auto Equip Loop
-task.spawn(function()
-    while true do
-        task.wait(2)
-        if States.AutoEquip then ForceEquipRod() end
-    end
-end)
-
--- Auto Event Loop
-task.spawn(function()
-    while true do
-        task.wait(3)
-        if States.AutoEvent then
-            pcall(function()
-                if not HRP then return end
-                local Props = Services.Workspace:FindFirstChild("Props")
-                local FoundEvent = nil
-                if Props then
-                    for _, v in pairs(Props:GetChildren()) do
-                        if v:IsA("Model") or v:IsA("BasePart") then FoundEvent = v; break end
-                    end
-                end
-                
-                if FoundEvent then
-                    if not IsInEvent then EventStartCFrame = HRP.CFrame; IsInEvent = true end
-                    HRP.CFrame = CFrame.new(FoundEvent:GetPivot().Position + Vector3.new(0,3,0))
-                    if not States.WoW then SetWoW(true) end
-                elseif IsInEvent then
-                    IsInEvent = false
-                    if EventStartCFrame then HRP.CFrame = EventStartCFrame end
-                    SetWoW(false)
-                end
-            end)
-        end
-    end
-end)
-
--- Auto Sell Loop
-task.spawn(function()
-    while true do
-        task.wait(States.SellInterval)
-        if States.AutoSell then
-            pcall(function()
-                Notify("MERCHANT", "Auto Selling...", Color3.fromRGB(255, 255, 0))
-                local wasFishing = getgenv().fishingStart
-                if wasFishing then Remotes.CancelInput:InvokeServer() end
-                task.wait(0.5)
-                Remotes.SellAll:InvokeServer()
-                task.wait(1)
-                Notify("MERCHANT", "Sold!", Color3.fromRGB(0, 255, 100))
-            end)
-        end
-    end
-end)
-
--- Auto Weather Loop
-task.spawn(function()
-    while true do
-        task.wait(5)
-        if States.AutoWeather and Remotes.PurchaseWeather then
-            pcall(function()
-                for _, wName in pairs(FishingConfig.WeatherSlots) do
-                    if wName ~= "None" then
-                        -- Logic check here depends on game, simply fire for now as per request
-                        -- Real game logic might need to check if weather is already active
-                         Remotes.PurchaseWeather:InvokeServer(wName) 
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- Stats & Anti Stuck Loop
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if States.Panel then
-            pcall(function()
-                local ls = Player:FindFirstChild("leaderstats")
-                local c = ls and ls:FindFirstChild("Caught")
-                LblFishVal.Text = c and tostring(c.Value) or "0"
-                
-                local bp = Player:FindFirstChild("Backpack")
-                if bp then LblInvVal.Text = tostring(#bp:GetChildren()) end
-            end)
-        end
-        
-        if States.AntiStuck then
-             pcall(function()
-                local ls = Player:FindFirstChild("leaderstats")
-                local cur = ls and ls:FindFirstChild("Caught").Value or 0
-                if cur > LastFishCount then
-                    LastFishCount = cur
-                    LastFishCaughtTime = tick()
-                else
-                    if (tick() - LastFishCaughtTime) > States.StuckTimeout then
-                        Notify("STUCK", "Respawning...", Color3.fromRGB(255, 50, 50))
-                        local pos = HRP.CFrame
-                        Hum.Health = 0
-                        Player.CharacterAdded:Wait()
-                        Char = Player.Character
-                        HRP = Char:WaitForChild("HumanoidRootPart")
-                        Hum = Char:WaitForChild("Humanoid")
-                        task.wait(1)
-                        HRP.CFrame = pos
-                        ForceEquipRod()
-                        LastFishCaughtTime = tick()
-                    end
-                end
-             end)
-        else
-            LastFishCaughtTime = tick()
-        end
-    end
-end)
+-- Background Loops
+task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
+task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
+task.spawn(function() while true do task.wait(1) if States.Panel then pcall(function() 
+    local ls = Player:FindFirstChild("leaderstats")
+    local c = ls and ls:FindFirstChild("Caught") and ls.Caught.Value or 0
+    LblFishVal.Text = tostring(c):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
+    LblInvVal.Text = tostring(#Player:WaitForChild("Backpack"):GetChildren())
+end) end end end)
 
 task.delay(1, function()
     Main.Visible = true
