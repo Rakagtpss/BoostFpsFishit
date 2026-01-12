@@ -20,7 +20,7 @@ local Cam = Services.Workspace.CurrentCamera
 -- // Konfigurasi Visual (MODERN SIDE UI THEME - RAKA)
 local UI_THEME = {
     Width = 440,   
-    Height = 300,  -- Tinggi disesuaikan untuk 3 Tab
+    Height = 340,  -- Diperbesar untuk fitur Follow
     Color = Color3.fromRGB(18, 18, 22),       
     SidebarColor = Color3.fromRGB(25, 25, 30),
     Transparency = 0.1, 
@@ -125,7 +125,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Player Tab Added - @8raka_", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "Auto Follow Added - @8raka_", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -227,7 +227,6 @@ Main.Active = true
 Main.ClipsDescendants = true 
 Main.Visible = false 
 
--- Gradient Background
 local MainGrad = Instance.new("UIGradient", Main)
 MainGrad.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
@@ -262,7 +261,6 @@ Header.BackgroundColor3 = UI_THEME.SidebarColor
 Header.BackgroundTransparency = 0.5
 Header.BorderSizePixel = 0
 
--- Header Title
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -40, 1, 0) 
 Title.Position = UDim2.new(0, 14, 0, 0) 
@@ -286,7 +284,6 @@ HideBtn.TextSize = 18
 HideBtn.AutoButtonColor = true
 Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(1, 0)
 
--- Drag Function
 local function EnableDrag(frame, dragInputObj)
     local dragToggle, dragStart, startPos
     local function updateInput(input)
@@ -322,7 +319,7 @@ EnableDrag(Main, LogoR)
 EnableDrag(FloatHUD, FloatHUD)
 
 -- ====================================================
--- [3] SIDE NAVIGATION (SIDEBAR)
+-- [3] SIDE NAVIGATION
 -- ====================================================
 local ContentContainer = Instance.new("Frame", Main)
 ContentContainer.Name = "Container"
@@ -346,7 +343,6 @@ SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 local SidebarPad = Instance.new("UIPadding", Sidebar)
 SidebarPad.PaddingTop = UDim.new(0, 10)
 
--- Function to create Side Buttons
 local function CreateSideTab(name, text, isActive)
     local btn = Instance.new("TextButton", Sidebar)
     btn.Name = name
@@ -361,15 +357,13 @@ local function CreateSideTab(name, text, isActive)
     
     local corner = Instance.new("UICorner", btn)
     corner.CornerRadius = UDim.new(0, 6)
-    
     return btn
 end
 
 local TabMainBtn   = CreateSideTab("TabMain", "MAIN", true)
-local TabPlayerBtn = CreateSideTab("TabPlayer", "PLAYER", false) -- [NEW TAB]
+local TabPlayerBtn = CreateSideTab("TabPlayer", "PLAYER", false) 
 local TabMiscBtn   = CreateSideTab("TabMisc", "MISC", false)
 
--- Divider Line in Sidebar (Visual)
 local SideDivider = Instance.new("Frame", Sidebar)
 SideDivider.LayoutOrder = 10
 SideDivider.Size = UDim2.new(0.6, 0, 0, 1)
@@ -378,7 +372,7 @@ SideDivider.BackgroundTransparency = 0.8
 SideDivider.BorderSizePixel = 0
 
 -- ====================================================
--- [4] PAGES (CONTENT AREA)
+-- [4] PAGES
 -- ====================================================
 local PageArea = Instance.new("Frame", ContentContainer)
 PageArea.Name = "PageArea"
@@ -386,7 +380,6 @@ PageArea.Size = UDim2.new(1, -110, 1, -10)
 PageArea.Position = UDim2.new(0, 105, 0, 5)
 PageArea.BackgroundTransparency = 1
 
--- PAGE MAIN
 local PageMain = Instance.new("ScrollingFrame", PageArea)
 PageMain.Name = "PageMain"
 PageMain.Size = UDim2.new(1, 0, 1, 0)
@@ -398,11 +391,10 @@ PageMain.AutomaticCanvasSize = Enum.AutomaticSize.Y
 PageMain.Visible = true
 
 local GridMain = Instance.new("UIGridLayout", PageMain)
-GridMain.CellSize = UDim2.new(0.48, 0, 0, 32) -- 2 Kolom
+GridMain.CellSize = UDim2.new(0.48, 0, 0, 32) 
 GridMain.CellPadding = UDim2.new(0, 6, 0, 6)
 GridMain.SortOrder = Enum.SortOrder.LayoutOrder
 
--- PAGE PLAYER [NEW]
 local PagePlayer = Instance.new("ScrollingFrame", PageArea)
 PagePlayer.Name = "PagePlayer"
 PagePlayer.Size = UDim2.new(1, 0, 1, 0)
@@ -418,7 +410,6 @@ GridPlayer.CellSize = UDim2.new(0.48, 0, 0, 32)
 GridPlayer.CellPadding = UDim2.new(0, 6, 0, 6)
 GridPlayer.SortOrder = Enum.SortOrder.LayoutOrder
 
--- PAGE MISC
 local PageMisc = Instance.new("ScrollingFrame", PageArea)
 PageMisc.Name = "PageMisc"
 PageMisc.Size = UDim2.new(1, 0, 1, 0)
@@ -434,17 +425,14 @@ GridMisc.CellSize = UDim2.new(0.48, 0, 0, 32)
 GridMisc.CellPadding = UDim2.new(0, 6, 0, 6)
 GridMisc.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Tab Logic
 local function SwitchTab(tabName)
     local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    
     local tabs = {Main = TabMainBtn, Player = TabPlayerBtn, Misc = TabMiscBtn}
     local pages = {Main = PageMain, Player = PagePlayer, Misc = PageMisc}
     
     for name, btn in pairs(tabs) do
         local isActive = (name == tabName)
         pages[name].Visible = isActive
-        
         Services.TweenService:Create(btn, tweenInfo, {
             BackgroundTransparency = isActive and 0.2 or 1,
             TextColor3 = isActive and Color3.new(1,1,1) or UI_THEME.TextDim,
@@ -458,7 +446,7 @@ TabPlayerBtn.MouseButton1Click:Connect(function() SwitchTab("Player") end)
 TabMiscBtn.MouseButton1Click:Connect(function() SwitchTab("Misc") end)
 
 -- ====================================================
--- [5] LOGIC BUTTONS & HELPER
+-- [5] LOGIC
 -- ====================================================
 local IsMinimized = false
 
@@ -496,7 +484,6 @@ local function MakeBtn(parent, text)
     b.AutoButtonColor = true
     b.ClipsDescendants = true
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6) 
-    
     local s = Instance.new("UIStroke", b)
     s.Color = Color3.fromRGB(70, 70, 80) 
     s.Thickness = 1
@@ -507,7 +494,6 @@ end
 
 local function ToggleVisual(btn, on)
     local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    
     if on then
         Services.TweenService:Create(btn, tweenInfo, {
             BackgroundColor3 = UI_THEME.Accent,
@@ -533,8 +519,8 @@ local States = {
     Freeze=false, WoW=false, Boost=false, Ultra=false, NoRender=false, 
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
     AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
-    -- Player States
-    Speed=false, SpeedVal=50, Fly=false, FlySpeed=50, NoDmg=false
+    Speed=false, SpeedVal=50, Fly=false, FlySpeed=50, NoDmg=false,
+    AutoFollow=false, FollowTarget=nil
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -565,7 +551,7 @@ end
 
 -- >> TOMBOL UI <<
 
--- TAB MAIN BUTTONS
+-- TAB MAIN
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
 local BtnChest  = MakeBtn(PageMain, "Auto Chest: OFF") 
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
@@ -578,7 +564,7 @@ local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 
--- TAB PLAYER BUTTONS (NEW)
+-- TAB PLAYER
 local SpeedContainer = Instance.new("Frame", PagePlayer)
 SpeedContainer.Name = "SpeedContainer"
 SpeedContainer.BackgroundTransparency = 1
@@ -651,9 +637,46 @@ sFlyIn.Color = Color3.fromRGB(70, 70, 80)
 sFlyIn.Thickness = 1
 sFlyIn.Transparency = 0.5
 
+-- [AUTO FOLLOW UI]
+local FollowContainer = Instance.new("Frame", PagePlayer)
+FollowContainer.Name = "FollowContainer"
+FollowContainer.BackgroundTransparency = 1
+
+local BtnFollowToggle = Instance.new("TextButton", FollowContainer)
+BtnFollowToggle.Name = "Toggle"
+BtnFollowToggle.Size = UDim2.new(0.5, -4, 1, 0)
+BtnFollowToggle.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+BtnFollowToggle.BackgroundTransparency = 0.6
+BtnFollowToggle.Text = "Follow: OFF"
+BtnFollowToggle.TextColor3 = UI_THEME.TextMain
+BtnFollowToggle.Font = UI_THEME.FontBody
+BtnFollowToggle.TextSize = 10
+Instance.new("UICorner", BtnFollowToggle).CornerRadius = UDim.new(0, 6)
+local sFol = Instance.new("UIStroke", BtnFollowToggle)
+sFol.Color = Color3.fromRGB(70, 70, 80)
+sFol.Thickness = 1
+sFol.Transparency = 0.5
+
+local BoxFollowInput = Instance.new("TextBox", FollowContainer)
+BoxFollowInput.Name = "Input"
+BoxFollowInput.Size = UDim2.new(0.5, 0, 1, 0)
+BoxFollowInput.Position = UDim2.new(0.5, 0, 0, 0)
+BoxFollowInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+BoxFollowInput.BackgroundTransparency = 0.6
+BoxFollowInput.Text = "" 
+BoxFollowInput.PlaceholderText = "Input Name"
+BoxFollowInput.TextColor3 = UI_THEME.Accent
+BoxFollowInput.Font = UI_THEME.FontHeader
+BoxFollowInput.TextSize = 10
+Instance.new("UICorner", BoxFollowInput).CornerRadius = UDim.new(0, 6)
+local sFolIn = Instance.new("UIStroke", BoxFollowInput)
+sFolIn.Color = Color3.fromRGB(70, 70, 80)
+sFolIn.Thickness = 1
+sFolIn.Transparency = 0.5
+
 local BtnNoDmg = MakeBtn(PagePlayer, "No Damage: OFF")
 
--- TAB MISC BUTTONS
+-- TAB MISC
 local StuckContainer = Instance.new("Frame", PageMisc)
 StuckContainer.Name = "StuckContainer"
 StuckContainer.BackgroundTransparency = 1
@@ -777,9 +800,8 @@ Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
     if Title and currentFps then
-        -- [UPDATED COLOR TO BRIGHT WHITE]
         Title.Text = string.format(
-            "SERA <font color=\"rgb(64,162,227)\">HELPER</font> <font size=\"10\" color=\"rgb(230,230,230)\">@8raka_</font> | FPS: <b>%d</b>", 
+            "SERA <font color=\"rgb(64,162,227)\">HELPER</font> <font size=\"10\" color=\"rgb(255,255,255)\">@8raka_</font> | FPS: <b>%d</b>", 
             currentFps
         )
     end
@@ -805,7 +827,7 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [BUTTON LOGIC - PLAYER TAB]
+-- [BUTTON LOGIC - PLAYER TAB (FIXED FLY & FOLLOW)]
 -- ====================================================
 
 -- 1. SPEED BUTTON
@@ -817,7 +839,6 @@ BtnSpeedToggle.MouseButton1Click:Connect(function()
     if States.Speed then
         BtnSpeedToggle.Text = "Speed: ON"
         ToggleVisual(BtnSpeedToggle, true)
-        -- Reset speed if disabled
         if not Hum.Sit then Hum.WalkSpeed = 16 end
     else
         BtnSpeedToggle.Text = "Speed: OFF"
@@ -831,41 +852,37 @@ BoxSpeedInput.FocusLost:Connect(function()
     if val then States.SpeedVal = val else BoxSpeedInput.Text = tostring(States.SpeedVal) end
 end)
 
--- 2. FLY BUTTON
-local FlyBP, FlyBG
+-- 2. FLY BUTTON (FIXED: Uses BodyVelocity for smooth movement)
+local FlyBV, FlyBG
 local function ToggleFly(state)
     if state then
-        FlyBP = Instance.new("BodyPosition")
-        FlyBP.Parent = HRP
-        FlyBP.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+        if not HRP then return end
         
         FlyBG = Instance.new("BodyGyro")
         FlyBG.Parent = HRP
-        FlyBG.MaxTorque = Vector3.new(9e9,9e9,9e9)
+        FlyBG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
         FlyBG.P = 10000
         
+        FlyBV = Instance.new("BodyVelocity")
+        FlyBV.Parent = HRP
+        FlyBV.Velocity = Vector3.zero
+        FlyBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        
         Connections["Fly"] = Services.RunService.RenderStepped:Connect(function()
-            if HRP and FlyBP and FlyBG then
+            if HRP and FlyBV and FlyBG then
                 FlyBG.CFrame = Cam.CFrame
+                
                 local speed = States.FlySpeed
-                local velocity = Vector3.new(0,0,0)
+                local moveDir = Vector3.zero
+                local camCF = Cam.CFrame
                 
-                if Services.UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                    velocity = velocity + Cam.CFrame.LookVector * speed
-                end
-                if Services.UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                    velocity = velocity - Cam.CFrame.LookVector * speed
-                end
-                if Services.UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                    velocity = velocity - Cam.CFrame.RightVector * speed
-                end
-                if Services.UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                    velocity = velocity + Cam.CFrame.RightVector * speed
-                end
+                if Services.UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camCF.LookVector end
+                if Services.UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camCF.LookVector end
+                if Services.UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camCF.RightVector end
+                if Services.UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camCF.RightVector end
                 
-                FlyBP.Position = HRP.Position + velocity
+                FlyBV.Velocity = moveDir * speed
                 
-                -- Noclip while flying
                 if Char then
                     for _,v in pairs(Char:GetDescendants()) do
                         if v:IsA("BasePart") then v.CanCollide = false end
@@ -875,15 +892,20 @@ local function ToggleFly(state)
         end)
     else
         if Connections["Fly"] then Connections["Fly"]:Disconnect() end
-        if FlyBP then FlyBP:Destroy() end
+        if FlyBV then FlyBV:Destroy() end
         if FlyBG then FlyBG:Destroy() end
+        if Char then
+            for _,v in pairs(Char:GetDescendants()) do
+                if v:IsA("BasePart") then v.CanCollide = true end
+            end
+        end
     end
 end
 
 BtnFlyToggle.MouseButton1Click:Connect(function()
     States.Fly = not States.Fly
     local val = tonumber(BoxFlyInput.Text) or 50
-    States.FlySpeed = val / 10 -- Scale down for BP
+    States.FlySpeed = val 
     
     if States.Fly then
         BtnFlyToggle.Text = "Fly: ON"
@@ -898,10 +920,52 @@ end)
 
 BoxFlyInput.FocusLost:Connect(function()
     local val = tonumber(BoxFlyInput.Text)
-    if val then States.FlySpeed = val / 10 else BoxFlyInput.Text = "50" end
+    if val then States.FlySpeed = val else BoxFlyInput.Text = "50" end
 end)
 
--- 3. NO DAMAGE BUTTON
+-- 3. FOLLOW PLAYER BUTTON (NEW)
+local function FindPlayer(namePart)
+    for _, p in pairs(Services.Players:GetPlayers()) do
+        if p ~= Player then
+            if string.sub(string.lower(p.Name), 1, string.len(namePart)) == string.lower(namePart) or
+               string.sub(string.lower(p.DisplayName), 1, string.len(namePart)) == string.lower(namePart) then
+                return p
+            end
+        end
+    end
+    return nil
+end
+
+BtnFollowToggle.MouseButton1Click:Connect(function()
+    States.AutoFollow = not States.AutoFollow
+    if States.AutoFollow then
+        local targetName = BoxFollowInput.Text
+        local target = FindPlayer(targetName)
+        if target then
+            States.FollowTarget = target
+            BoxFollowInput.Text = target.Name -- Auto complete
+            BtnFollowToggle.Text = "Following"
+            ToggleVisual(BtnFollowToggle, true)
+            Notify("FOLLOW", "Target: " .. target.Name, Color3.fromRGB(0, 255, 100))
+        else
+            States.AutoFollow = false
+            Notify("FOLLOW", "Player Not Found!", Color3.fromRGB(255, 50, 50))
+        end
+    else
+        BtnFollowToggle.Text = "Follow: OFF"
+        ToggleVisual(BtnFollowToggle, false)
+        States.FollowTarget = nil
+    end
+end)
+
+BoxFollowInput.FocusLost:Connect(function()
+    if BoxFollowInput.Text ~= "" then
+        local target = FindPlayer(BoxFollowInput.Text)
+        if target then BoxFollowInput.Text = target.Name end
+    end
+end)
+
+-- 4. NO DAMAGE BUTTON
 BtnNoDmg.MouseButton1Click:Connect(function()
     States.NoDmg = not States.NoDmg
     BtnNoDmg.Text = "No Damage: " .. (States.NoDmg and "ON" or "OFF")
@@ -912,6 +976,23 @@ end)
 -- [PLAYER LOOPS]
 -- ====================================================
 
+-- Auto Follow Loop
+task.spawn(function()
+    while true do
+        task.wait()
+        if States.AutoFollow and States.FollowTarget then
+            pcall(function()
+                local tChar = States.FollowTarget.Character
+                local tHRP = tChar and tChar:FindFirstChild("HumanoidRootPart")
+                if tHRP and HRP then
+                    -- Magnet: 4 Studs Behind + 2 Studs Up
+                    HRP.CFrame = tHRP.CFrame * CFrame.new(0, 2, 4)
+                end
+            end)
+        end
+    end
+end)
+
 -- Speed Loop (Hybrid: Player & Boat)
 task.spawn(function()
     while true do
@@ -919,17 +1000,14 @@ task.spawn(function()
         if States.Speed then
             pcall(function()
                 if Hum.Sit then
-                    -- BOAT/VEHICLE SPEED
                     local seat = Hum.SeatPart
                     if seat then
-                        -- Metode Dorong Fisik (Works for Fisch Boats)
                         local att = seat:FindFirstChildOfClass("Attachment")
                         if seat.AssemblyLinearVelocity.Magnitude > 0 then
                              seat.AssemblyLinearVelocity = seat.CFrame.LookVector * States.SpeedVal
                         end
                     end
                 else
-                    -- PLAYER WALK SPEED
                     Hum.WalkSpeed = States.SpeedVal
                 end
             end)
@@ -975,7 +1053,7 @@ BtnClean.MouseButton1Click:Connect(function()
     ToggleVisual(BtnClean, States.AutoClean)
 end)
 
--- [EVENT BUTTON]
+-- [EVENT BUTTON - AGGRESSIVE SCANNER FIXED]
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
@@ -1053,18 +1131,28 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP]
+-- [AUTO EVENT LOOP - AGGRESSIVE AGNOSTIC SCANNER]
 local function ScanForEventProps()
+    -- Scan Props: Terima APAPUN yang ada di sini
     local props = Services.Workspace:FindFirstChild("Props")
     if props then
         for _, v in pairs(props:GetChildren()) do
             if v:IsA("Model") or v:IsA("BasePart") then
-                if v:FindFirstChildWhichIsA("ProximityPrompt", true) then 
-                    return v 
-                end
+                return v -- Langsung return, jangan pilih-pilih
             end
         end
     end
+    
+    -- Scan ActiveEvents: Terima APAPUN
+    local active = Services.Workspace:FindFirstChild("ActiveEvents")
+    if active then
+        for _, v in pairs(active:GetChildren()) do
+            if v:IsA("Model") or v:IsA("BasePart") then
+                return v 
+            end
+        end
+    end
+    
     return nil
 end
 
@@ -1081,7 +1169,7 @@ task.spawn(function()
                     if not IsInEvent then
                         EventStartCFrame = HRP.CFrame 
                         IsInEvent = true
-                        Notify("AUTO EVENT", "Event Found! Teleporting...", Color3.fromRGB(255, 255, 0))
+                        Notify("AUTO EVENT", "Event Detected! Teleporting...", Color3.fromRGB(255, 255, 0))
                         SetWoW(true)
                     end
                     local targetPos = FoundEvent:GetPivot().Position
