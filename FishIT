@@ -19,7 +19,7 @@ local Hum = Char:WaitForChild("Humanoid", 10)
 -- // Konfigurasi Visual (MODERN SIDE UI THEME - RAKA)
 local UI_THEME = {
     Width = 420,   
-    Height = 280,  
+    Height = 290,  -- Sedikit diperbesar untuk button baru
     Color = Color3.fromRGB(18, 18, 22),       
     SidebarColor = Color3.fromRGB(25, 25, 30),
     Transparency = 0.1, 
@@ -124,7 +124,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Event Logic Fixed (Props) - @8raka_", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "Auto Chest Added - @8raka_", UI_THEME.Accent, 2.5)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -513,7 +513,7 @@ end
 local States = {
     Freeze=false, WoW=false, Boost=false, Ultra=false, NoRender=false, 
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
-    AutoEvent=false, AntiStuck=false, StuckTimeout=60 
+    AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60 
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -544,6 +544,7 @@ end
 
 -- TAB MAIN BUTTONS
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
+local BtnChest  = MakeBtn(PageMain, "Auto Chest: OFF") -- [NEW]
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnClean  = MakeBtn(PageMain, "Auto Clean: OFF")
 local BtnUltra  = MakeBtn(PageMain, "Ultra HD: OFF") 
@@ -727,21 +728,31 @@ BtnClean.MouseButton1Click:Connect(function()
     ToggleVisual(BtnClean, States.AutoClean)
 end)
 
--- [EVENT BUTTON UPDATED LOGIC]
+-- [EVENT BUTTON]
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
     ToggleVisual(BtnEvent, States.AutoEvent)
     
     if not States.AutoEvent then 
-        -- Jika dimatikan manual, TELEPORT BALIK
         if IsInEvent and EventStartCFrame and HRP then 
             HRP.CFrame = EventStartCFrame 
             EventStartCFrame = nil
             Notify("AUTO EVENT", "Manual Off: Returning...", UI_THEME.Accent)
         end
         IsInEvent = false
-        SetWoW(false) -- Matikan WoW
+        SetWoW(false) 
+    end
+end)
+
+-- [AUTO CHEST BUTTON]
+BtnChest.MouseButton1Click:Connect(function()
+    States.AutoChest = not States.AutoChest
+    BtnChest.Text = "Auto Chest: " .. (States.AutoChest and "ON" or "OFF")
+    ToggleVisual(BtnChest, States.AutoChest)
+    if not States.AutoChest then
+        SetWoW(false)
+        Notify("AUTO CHEST", "Stopped", UI_THEME.Accent)
     end
 end)
 
@@ -791,14 +802,11 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP - PROPS ONLY & AUTO RETURN]
+-- [AUTO EVENT LOOP]
 local function ScanForEventProps()
-    -- Hanya Check Workspace.Props sesuai request
     local props = Services.Workspace:FindFirstChild("Props")
     if props then
         for _, v in pairs(props:GetChildren()) do
-            -- Filter agar tidak teleport ke dekorasi biasa
-            -- Cari Model/Part yang punya ProximityPrompt ATAU nama mengandung "Event/Crate"
             if v:IsA("Model") or v:IsA("BasePart") then
                 if v:FindFirstChildWhichIsA("ProximityPrompt", true) then return v end
                 if v.Name:lower():find("event") or v.Name:lower():find("crate") or v.Name:lower():find("supply") then
@@ -812,7 +820,7 @@ end
 
 task.spawn(function()
     while true do
-        task.wait(2) -- Scan setiap 2 detik
+        task.wait(2) 
         if States.AutoEvent then
             pcall(function()
                 if not HRP or not HRP.Parent then return end
@@ -820,32 +828,60 @@ task.spawn(function()
                 local FoundEvent = ScanForEventProps()
 
                 if FoundEvent then
-                    -- EVENT KETEMU
                     if not IsInEvent then
-                        EventStartCFrame = HRP.CFrame -- Simpan Posisi Awal
+                        EventStartCFrame = HRP.CFrame 
                         IsInEvent = true
-                        Notify("AUTO EVENT", "Event in Props! Teleporting...", Color3.fromRGB(255, 255, 0))
-                        SetWoW(true) -- Auto Walk On Water ON
+                        Notify("AUTO EVENT", "Event Found! Teleporting...", Color3.fromRGB(255, 255, 0))
+                        SetWoW(true)
                     end
-                    
-                    -- Teleport ke Event
                     local targetPos = FoundEvent:GetPivot().Position
                     local destPos = Vector3.new(targetPos.X, targetPos.Y + 4, targetPos.Z) 
                     if (HRP.Position - destPos).Magnitude > 15 then
                         HRP.CFrame = CFrame.new(destPos)
                     end
                 else
-                    -- EVENT HILANG (SELESAI)
                     if IsInEvent then
                         IsInEvent = false
                         Notify("AUTO EVENT", "Event Finished. Returning...", Color3.fromRGB(0, 255, 100))
-                        
-                        -- Teleport Balik ke Posisi Awal
                         if EventStartCFrame and HRP then 
                             HRP.CFrame = EventStartCFrame 
                             EventStartCFrame = nil 
                         end
-                        SetWoW(false) -- Matikan WoW
+                        SetWoW(false) 
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- [AUTO CHEST LOOP - PIRATE CHEST STORAGE]
+task.spawn(function()
+    while true do
+        task.wait(2)
+        if States.AutoChest then
+            pcall(function()
+                local storage = Services.Workspace:FindFirstChild("PirateChestStorage")
+                if storage then
+                    local chests = storage:GetChildren()
+                    if #chests > 0 then
+                        -- Ambil Chest Pertama
+                        local v = chests[1]
+                        if v and (v:IsA("Model") or v:IsA("BasePart")) then
+                            Notify("CHEST", "Found Chest! Looting...", Color3.fromRGB(255, 200, 0))
+                            SetWoW(true) -- Nyalakan WoW biar aman
+                            
+                            -- Teleport
+                            if HRP then
+                                HRP.CFrame = v:GetPivot() + Vector3.new(0, 3, 0)
+                            end
+                            
+                            -- Auto Open (Trigger Prompt)
+                            local prompt = v:FindFirstChildWhichIsA("ProximityPrompt", true)
+                            if prompt then
+                                fireproximityprompt(prompt)
+                            end
+                        end
                     end
                 end
             end)
