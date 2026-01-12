@@ -19,7 +19,7 @@ local Hum = Char:WaitForChild("Humanoid", 10)
 -- // Konfigurasi Visual (MODERN SIDE UI THEME - RAKA)
 local UI_THEME = {
     Width = 420,   
-    Height = 290,  -- Sedikit diperbesar untuk button baru
+    Height = 290,  
     Color = Color3.fromRGB(18, 18, 22),       
     SidebarColor = Color3.fromRGB(25, 25, 30),
     Transparency = 0.1, 
@@ -124,7 +124,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Auto Chest Added - @8raka_", UI_THEME.Accent, 2.5)
+Notify("SERAPHIN", "Auto Return Logic Added - @8raka_", UI_THEME.Accent, 2.5)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -517,7 +517,9 @@ local States = {
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
+local ChestReturnCFrame = nil -- NEW: Posisi Balik Chest
 local IsInEvent = false 
+local IsLootingChests = false -- NEW: State Chest
 local Connections = {}
 local BodyV = nil
 local LastFishCaughtTime = tick()
@@ -544,7 +546,7 @@ end
 
 -- TAB MAIN BUTTONS
 local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
-local BtnChest  = MakeBtn(PageMain, "Auto Chest: OFF") -- [NEW]
+local BtnChest  = MakeBtn(PageMain, "Auto Chest: OFF") 
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnClean  = MakeBtn(PageMain, "Auto Clean: OFF")
 local BtnUltra  = MakeBtn(PageMain, "Ultra HD: OFF") 
@@ -751,8 +753,13 @@ BtnChest.MouseButton1Click:Connect(function()
     BtnChest.Text = "Auto Chest: " .. (States.AutoChest and "ON" or "OFF")
     ToggleVisual(BtnChest, States.AutoChest)
     if not States.AutoChest then
+        -- Manual Stop: Return if currently looting
+        if IsLootingChests and ChestReturnCFrame and HRP then
+            HRP.CFrame = ChestReturnCFrame
+            Notify("CHEST", "Manual Stop: Returning", UI_THEME.Accent)
+        end
+        IsLootingChests = false
         SetWoW(false)
-        Notify("AUTO CHEST", "Stopped", UI_THEME.Accent)
     end
 end)
 
@@ -855,41 +862,61 @@ task.spawn(function()
     end
 end)
 
--- [AUTO CHEST LOOP - PIRATE CHEST STORAGE]
+-- [AUTO CHEST LOOP - AUTO RETURN]
 task.spawn(function()
     while true do
-        task.wait(2)
+        task.wait(1.5) 
         if States.AutoChest then
             pcall(function()
                 local storage = Services.Workspace:FindFirstChild("PirateChestStorage")
                 if storage then
                     local chests = storage:GetChildren()
+                    
                     if #chests > 0 then
-                        -- Ambil Chest Pertama
+                        -- === FASE 1: ADA CHEST ===
+                        if not IsLootingChests then
+                            -- Baru mulai looting, simpan posisi awal
+                            if HRP then 
+                                ChestReturnCFrame = HRP.CFrame 
+                                IsLootingChests = true
+                                Notify("CHEST", "Starting Loot...", Color3.fromRGB(255, 200, 0))
+                                SetWoW(true) -- Nyalakan WoW
+                            end
+                        end
+                        
+                        -- Ambil chest pertama yg ada
                         local v = chests[1]
                         if v and (v:IsA("Model") or v:IsA("BasePart")) then
-                            Notify("CHEST", "Found Chest! Looting...", Color3.fromRGB(255, 200, 0))
-                            SetWoW(true) -- Nyalakan WoW biar aman
-                            
-                            -- Teleport
                             if HRP then
                                 HRP.CFrame = v:GetPivot() + Vector3.new(0, 3, 0)
                             end
-                            
-                            -- Auto Open (Trigger Prompt)
+                            -- Spam Prompt
                             local prompt = v:FindFirstChildWhichIsA("ProximityPrompt", true)
-                            if prompt then
-                                fireproximityprompt(prompt)
+                            if prompt then fireproximityprompt(prompt) end
+                        end
+                        
+                    else
+                        -- === FASE 2: CHEST HABIS (KOSONG) ===
+                        if IsLootingChests then
+                            -- Selesai looting, waktunya pulang
+                            IsLootingChests = false
+                            if ChestReturnCFrame and HRP then
+                                HRP.CFrame = ChestReturnCFrame
+                                Notify("CHEST", "All Looted! Returning...", Color3.fromRGB(0, 255, 100))
                             end
+                            SetWoW(false) -- Matikan WoW
                         end
                     end
                 end
             end)
+        else
+             -- Reset state if disabled manually
+            if IsLootingChests then IsLootingChests = false end
         end
     end
 end)
 
--- [ORIGINAL BACKPACK LOGIC RESTORED]
+-- [ORIGINAL BACKPACK LOGIC]
 task.spawn(function() 
     while true do 
         task.wait(1) 
