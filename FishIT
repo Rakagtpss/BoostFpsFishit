@@ -19,19 +19,19 @@ local function GetChar() return Player.Character or Player.CharacterAdded:Wait()
 local function GetRoot() local c = Player.Character; return c and c:FindFirstChild("HumanoidRootPart") end
 local function GetHum() local c = Player.Character; return c and c:FindFirstChild("Humanoid") end
 
--- // Konfigurasi Visual (MODERN SIDE UI THEME - RAKA)
+-- // Konfigurasi Visual (DARK TRANSPARENT + BRIGHT CYAN)
 local UI_THEME = {
     Width = 460,   
-    Height = 340,  
-    Color = Color3.fromRGB(18, 18, 22),       
-    SidebarColor = Color3.fromRGB(20, 50, 60), -- [UPDATED] Dark Cyan Sidebar
-    Transparency = 0.1, 
-    Accent = Color3.fromRGB(64, 162, 227),    -- Cyan Electric
-    TextMain = Color3.fromRGB(245, 245, 245), 
+    Height = 350,  
+    Color = Color3.fromRGB(10, 10, 10),       -- [UPDATED] Dark/Black Base
+    SidebarColor = Color3.fromRGB(0, 255, 255), -- [UPDATED] Bright Cyan Sidebar
+    Transparency = 0.25,                      -- [UPDATED] Transparan
+    Accent = Color3.fromRGB(0, 255, 255),     -- Cyan Electric
+    TextMain = Color3.fromRGB(255, 255, 255), 
     TextDim = Color3.fromRGB(180, 180, 180),
     FontHeader = Enum.Font.GothamBlack,       
     FontBody = Enum.Font.GothamBold,          
-    CornerRadius = UDim.new(0, 10)
+    CornerRadius = UDim.new(0, 8)
 }
 
 -- Bersihkan UI Lama
@@ -43,6 +43,15 @@ ScreenGui.Parent = Services.CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
+-- [BLACK SCREEN OVERLAY]
+local BlackScreen = Instance.new("Frame", ScreenGui)
+BlackScreen.Name = "BlackOverlay"
+BlackScreen.Size = UDim2.new(1, 0, 1, 0)
+BlackScreen.BackgroundColor3 = Color3.new(0, 0, 0)
+BlackScreen.BorderSizePixel = 0
+BlackScreen.Visible = false
+BlackScreen.ZIndex = 0 
+
 -- ====================================================
 -- [SYSTEM] CUSTOM NOTIFICATION
 -- ====================================================
@@ -53,6 +62,7 @@ NotifyContainer.AnchorPoint = Vector2.new(1, 1)
 NotifyContainer.Position = UDim2.new(1, -20, 1, -20)
 NotifyContainer.BackgroundTransparency = 1
 NotifyContainer.ClipsDescendants = false
+NotifyContainer.ZIndex = 100 
 
 local NotifyLayout = Instance.new("UIListLayout", NotifyContainer)
 NotifyLayout.FillDirection = Enum.FillDirection.Vertical
@@ -67,15 +77,15 @@ local function Notify(title, text, colorOverride, duration)
     local Frame = Instance.new("Frame")
     Frame.Name = "NotifyItem"
     Frame.Size = UDim2.new(1, 0, 0, 0) 
-    Frame.BackgroundColor3 = UI_THEME.SidebarColor
-    Frame.BackgroundTransparency = 0.1
+    Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    Frame.BackgroundTransparency = 0.2
     Frame.BorderSizePixel = 0
     Frame.Parent = NotifyContainer
     
     local Stroke = Instance.new("UIStroke", Frame)
     Stroke.Color = color
-    Stroke.Thickness = 1.2
-    Stroke.Transparency = 0.5
+    Stroke.Thickness = 1.5
+    Stroke.Transparency = 0
     
     Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
     
@@ -95,7 +105,7 @@ local function Notify(title, text, colorOverride, duration)
     LblTitle.Font = UI_THEME.FontHeader
     LblTitle.TextSize = 13
     LblTitle.TextStrokeColor3 = Color3.new(0,0,0)
-    LblTitle.TextStrokeTransparency = 0.6
+    LblTitle.TextStrokeTransparency = 0.5
     LblTitle.TextXAlignment = Enum.TextXAlignment.Left 
     
     local LblMsg = Instance.new("TextLabel", Frame)
@@ -129,7 +139,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "New Event Tab & Cyan Theme - @8raka_", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "Dark UI & Dropdown Loaded - @8raka_", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -142,18 +152,12 @@ FloatHUD.BackgroundColor3 = UI_THEME.Color
 FloatHUD.BackgroundTransparency = UI_THEME.Transparency
 FloatHUD.Visible = false 
 FloatHUD.Active = true 
-
-local GradHud = Instance.new("UIGradient", FloatHUD)
-GradHud.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(220,220,220))
-}
-GradHud.Rotation = 45
+FloatHUD.ZIndex = 50
 
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_THEME.Accent
 HudStroke.Thickness = 1.2
-HudStroke.Transparency = 0.7 
+HudStroke.Transparency = 0.5
 
 Instance.new("UICorner", FloatHUD).CornerRadius = UI_THEME.CornerRadius
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
@@ -230,20 +234,14 @@ Main.BackgroundTransparency = UI_THEME.Transparency
 Main.Active = true
 Main.ClipsDescendants = true 
 Main.Visible = false 
-
-local MainGrad = Instance.new("UIGradient", Main)
-MainGrad.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(230,230,235))
-}
-MainGrad.Rotation = 60
+Main.ZIndex = 50
 
 local MainCorner = Instance.new("UICorner", Main)
 MainCorner.CornerRadius = UI_THEME.CornerRadius
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Color = UI_THEME.Accent
 MainStroke.Thickness = 1.2
-MainStroke.Transparency = 0.8
+MainStroke.Transparency = 0.5
 
 -- Minimized Logo
 local LogoR = Instance.new("TextButton", Main)
@@ -261,8 +259,8 @@ LogoR.ZIndex = 10
 local Header = Instance.new("Frame", Main)
 Header.Name = "Header"
 Header.Size = UDim2.new(1, 0, 0, 34) 
-Header.BackgroundColor3 = UI_THEME.SidebarColor
-Header.BackgroundTransparency = 0.5
+Header.BackgroundColor3 = Color3.fromRGB(0,0,0) -- Darker header
+Header.BackgroundTransparency = 0.6
 Header.BorderSizePixel = 0
 
 local Title = Instance.new("TextLabel", Header)
@@ -323,7 +321,7 @@ EnableDrag(Main, LogoR)
 EnableDrag(FloatHUD, FloatHUD)
 
 -- ====================================================
--- [3] SIDE NAVIGATION
+-- [3] SIDE NAVIGATION (BRIGHT CYAN)
 -- ====================================================
 local ContentContainer = Instance.new("Frame", Main)
 ContentContainer.Name = "Container"
@@ -334,9 +332,15 @@ ContentContainer.BackgroundTransparency = 1
 local Sidebar = Instance.new("Frame", ContentContainer)
 Sidebar.Name = "Sidebar"
 Sidebar.Size = UDim2.new(0, 100, 1, 0)
-Sidebar.BackgroundColor3 = UI_THEME.SidebarColor
-Sidebar.BackgroundTransparency = 0.5
+Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 20) 
+Sidebar.BackgroundTransparency = 0.3
 Sidebar.BorderSizePixel = 0
+
+-- [CYAN BORDER FOR SIDEBAR]
+local SidebarStroke = Instance.new("UIStroke", Sidebar)
+SidebarStroke.Color = UI_THEME.SidebarColor -- Bright Cyan
+SidebarStroke.Thickness = 1.5
+SidebarStroke.Transparency = 0
 
 local SidebarLayout = Instance.new("UIListLayout", Sidebar)
 SidebarLayout.FillDirection = Enum.FillDirection.Vertical
@@ -351,12 +355,13 @@ local function CreateSideTab(name, text, isActive)
     local btn = Instance.new("TextButton", Sidebar)
     btn.Name = name
     btn.Size = UDim2.new(0.85, 0, 0, 32)
-    btn.BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(40, 40, 45)
+    btn.BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(30, 30, 35)
     btn.BackgroundTransparency = isActive and 0.2 or 1
     btn.Text = text
     btn.Font = UI_THEME.FontBody
     btn.TextSize = 11
-    btn.TextColor3 = isActive and Color3.new(1,1,1) or UI_THEME.TextDim
+    btn.TextColor3 = isActive and Color3.new(0,0,0) or UI_THEME.TextMain -- Hitam saat aktif biar kontras
+    if not isActive then btn.TextColor3 = UI_THEME.TextDim end
     btn.AutoButtonColor = true
     
     local corner = Instance.new("UICorner", btn)
@@ -365,16 +370,9 @@ local function CreateSideTab(name, text, isActive)
 end
 
 local TabMainBtn   = CreateSideTab("TabMain", "MAIN", true)
-local TabEventBtn  = CreateSideTab("TabEvent", "EVENT", false) -- [NEW TAB]
+local TabEventBtn  = CreateSideTab("TabEvent", "EVENT", false) 
 local TabPlayerBtn = CreateSideTab("TabPlayer", "PLAYER", false) 
 local TabMiscBtn   = CreateSideTab("TabMisc", "MISC", false)
-
-local SideDivider = Instance.new("Frame", Sidebar)
-SideDivider.LayoutOrder = 10
-SideDivider.Size = UDim2.new(0.6, 0, 0, 1)
-SideDivider.BackgroundColor3 = UI_THEME.TextDim
-SideDivider.BackgroundTransparency = 0.8
-SideDivider.BorderSizePixel = 0
 
 -- ====================================================
 -- [4] PAGES
@@ -401,19 +399,11 @@ GridMain.CellPadding = UDim2.new(0, 6, 0, 6)
 GridMain.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- [PAGE EVENT]
-local PageEvent = Instance.new("ScrollingFrame", PageArea)
+local PageEvent = Instance.new("Frame", PageArea) -- Changed to Frame for custom layout
 PageEvent.Name = "PageEvent"
 PageEvent.Size = UDim2.new(1, 0, 1, 0)
 PageEvent.BackgroundTransparency = 1
-PageEvent.ScrollBarThickness = 2
-PageEvent.ScrollBarImageColor3 = UI_THEME.Accent
-PageEvent.CanvasSize = UDim2.new(0, 0, 0, 0)
-PageEvent.AutomaticCanvasSize = Enum.AutomaticSize.Y
 PageEvent.Visible = false
-
-local ListEvent = Instance.new("UIListLayout", PageEvent)
-ListEvent.SortOrder = Enum.SortOrder.LayoutOrder
-ListEvent.Padding = UDim.new(0, 6)
 
 local PagePlayer = Instance.new("ScrollingFrame", PageArea)
 PagePlayer.Name = "PagePlayer"
@@ -455,8 +445,8 @@ local function SwitchTab(tabName)
         pages[name].Visible = isActive
         Services.TweenService:Create(btn, tweenInfo, {
             BackgroundTransparency = isActive and 0.2 or 1,
-            TextColor3 = isActive and Color3.new(1,1,1) or UI_THEME.TextDim,
-            BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(40,40,45)
+            TextColor3 = isActive and Color3.new(0,0,0) or UI_THEME.TextDim,
+            BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(30,30,35)
         }):Play()
     end
 end
@@ -466,40 +456,12 @@ TabEventBtn.MouseButton1Click:Connect(function() SwitchTab("Event") end)
 TabPlayerBtn.MouseButton1Click:Connect(function() SwitchTab("Player") end)
 TabMiscBtn.MouseButton1Click:Connect(function() SwitchTab("Misc") end)
 
--- ====================================================
--- [5] LOGIC
--- ====================================================
-local IsMinimized = false
-
-HideBtn.MouseButton1Click:Connect(function() 
-    if not IsMinimized then
-        IsMinimized = true
-        Header.Visible = false
-        ContentContainer.Visible = false
-        Main:TweenSize(UDim2.new(0, 45, 0, 45), "Out", "Back", 0.4, true)
-        Services.TweenService:Create(MainCorner, TweenInfo.new(0.4), {CornerRadius = UDim.new(1, 0)}):Play()
-        Services.TweenService:Create(Main, TweenInfo.new(0.4), {BackgroundTransparency = 0.2}):Play()
-        task.delay(0.2, function() if IsMinimized then LogoR.Visible = true end end)
-    end
-end)
-
-LogoR.MouseButton1Click:Connect(function()
-    if IsMinimized then
-        IsMinimized = false
-        LogoR.Visible = false
-        Main:TweenSize(UDim2.new(0, UI_THEME.Width, 0, UI_THEME.Height), "Out", "Back", 0.4, true)
-        Services.TweenService:Create(MainCorner, TweenInfo.new(0.4), {CornerRadius = UI_THEME.CornerRadius}):Play()
-        Services.TweenService:Create(Main, TweenInfo.new(0.4), {BackgroundTransparency = UI_THEME.Transparency}):Play()
-        task.delay(0.3, function() if not IsMinimized then Header.Visible = true; ContentContainer.Visible = true end end)
-    end
-end)
-
 -- [UPDATED BUTTON MAKER]
 local function MakeBtn(parent, text)
     local b = Instance.new("TextButton", parent)
     b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(35, 35, 40) 
-    b.BackgroundTransparency = 0.6
+    b.BackgroundColor3 = Color3.fromRGB(30, 30, 35) 
+    b.BackgroundTransparency = 0.4
     b.TextColor3 = UI_THEME.TextMain
     b.Font = UI_THEME.FontBody 
     b.TextSize = 10 
@@ -511,7 +473,7 @@ local function MakeBtn(parent, text)
     
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6) 
     local s = Instance.new("UIStroke", b)
-    s.Color = Color3.fromRGB(70, 70, 80) 
+    s.Color = Color3.fromRGB(60, 60, 70) 
     s.Thickness = 1
     s.Transparency = 0.5
     s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -524,17 +486,17 @@ local function ToggleVisual(btn, on)
         Services.TweenService:Create(btn, tweenInfo, {
             BackgroundColor3 = UI_THEME.Accent,
             BackgroundTransparency = 0.3,
-            TextColor3 = Color3.new(1,1,1)
+            TextColor3 = Color3.new(0,0,0) -- Hitam biar kebaca di Cyan
         }):Play()
         Services.TweenService:Create(btn.UIStroke, tweenInfo, {Transparency = 1}):Play()
     else
         Services.TweenService:Create(btn, tweenInfo, {
-            BackgroundColor3 = Color3.fromRGB(35, 35, 40),
-            BackgroundTransparency = 0.6,
+            BackgroundColor3 = Color3.fromRGB(30, 30, 35),
+            BackgroundTransparency = 0.4,
             TextColor3 = UI_THEME.TextMain
         }):Play()
         Services.TweenService:Create(btn.UIStroke, tweenInfo, {
-            Color = Color3.fromRGB(70, 70, 80),
+            Color = Color3.fromRGB(60, 60, 70),
             Transparency = 0.5
         }):Play()
     end
@@ -559,7 +521,7 @@ local BodyV = nil
 local LastFishCaughtTime = tick()
 local LastFishCount = 0
 
--- Priority List Data
+-- Event List
 local EventList = {
     "Ghost Shark Hunt",
     "Shark Hunt", 
@@ -605,59 +567,88 @@ local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 
--- TAB EVENT (NEW UI)
-local EventContainer = Instance.new("Frame", PageEvent)
-EventContainer.Size = UDim2.new(1, 0, 0, 70)
-EventContainer.BackgroundTransparency = 1
+-- TAB EVENT [NEW DROPDOWN LOGIC]
+local EventMainLayout = Instance.new("UIListLayout", PageEvent)
+EventMainLayout.SortOrder = Enum.SortOrder.LayoutOrder
+EventMainLayout.Padding = UDim.new(0, 10)
 
-local BtnEvent = MakeBtn(EventContainer, "AUTO EVENT: OFF")
-BtnEvent.Size = UDim2.new(0.96, 0, 0, 30)
-BtnEvent.Position = UDim2.new(0.02, 0, 0, 0)
+-- 1. Auto Event Toggle
+local BtnAutoEvent = MakeBtn(PageEvent, "AUTO EVENT: OFF")
+BtnAutoEvent.LayoutOrder = 1
+BtnAutoEvent.Size = UDim2.new(0.98, 0, 0, 35)
 
-local BtnSelectMode = MakeBtn(EventContainer, "Mode: Priority (Click to Change)")
-BtnSelectMode.Size = UDim2.new(0.96, 0, 0, 25)
-BtnSelectMode.Position = UDim2.new(0.02, 0, 0, 35)
+-- 2. Select Mode (Priority/Secondary)
+local BtnSelectMode = MakeBtn(PageEvent, "Mode: Priority (Select Main)")
+BtnSelectMode.LayoutOrder = 2
+BtnSelectMode.Size = UDim2.new(0.98, 0, 0, 25)
 
-local ScrollEvent = Instance.new("ScrollingFrame", PageEvent)
-ScrollEvent.Size = UDim2.new(1, 0, 1, -80)
-ScrollEvent.BackgroundTransparency = 1
-ScrollEvent.ScrollBarThickness = 2
-ScrollEvent.CanvasSize = UDim2.new(0, 0, 0, 0)
-ScrollEvent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+-- 3. DROPDOWN (Button + List)
+local DropdownFrame = Instance.new("Frame", PageEvent)
+DropdownFrame.Name = "Dropdown"
+DropdownFrame.LayoutOrder = 3
+DropdownFrame.Size = UDim2.new(0.98, 0, 0, 150) -- Default Expanded height for calculation
+DropdownFrame.BackgroundTransparency = 1
 
-local LayoutEvent = Instance.new("UIListLayout", ScrollEvent)
-LayoutEvent.Padding = UDim.new(0, 4)
-LayoutEvent.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local BtnDropdownTrigger = MakeBtn(DropdownFrame, "Select: Ghost Shark Hunt")
+BtnDropdownTrigger.Size = UDim2.new(1, 0, 0, 30)
+BtnDropdownTrigger.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 
--- Populate Event List
-for _, eventName in pairs(EventList) do
-    local btn = MakeBtn(ScrollEvent, eventName)
-    btn.Size = UDim2.new(0.9, 0, 0, 25)
+local DropdownList = Instance.new("ScrollingFrame", DropdownFrame)
+DropdownList.Size = UDim2.new(1, 0, 0, 110)
+DropdownList.Position = UDim2.new(0, 0, 0, 32)
+DropdownList.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+DropdownList.BorderSizePixel = 0
+DropdownList.Visible = false -- Hidden by default
+DropdownList.ZIndex = 10
+
+local DropdownLayout = Instance.new("UIListLayout", DropdownList)
+DropdownLayout.Padding = UDim.new(0, 2)
+
+-- Function to Fill Dropdown
+for _, evName in pairs(EventList) do
+    local b = Instance.new("TextButton", DropdownList)
+    b.Size = UDim2.new(1, 0, 0, 25)
+    b.BackgroundTransparency = 0.5
+    b.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    b.Text = evName
+    b.TextColor3 = UI_THEME.TextDim
+    b.Font = UI_THEME.FontBody
+    b.TextSize = 10
     
-    btn.MouseButton1Click:Connect(function()
+    b.MouseButton1Click:Connect(function()
         if States.SelectMode == "Priority" then
-            States.EventPriority = eventName
-            Notify("PRIORITY", "Set to: " .. eventName, Color3.fromRGB(0, 255, 255))
+            States.EventPriority = evName
+            Notify("PRIORITY", "Set to: "..evName, Color3.fromRGB(0, 255, 255))
         else
-            States.EventSecondary = eventName
-            Notify("SECONDARY", "Set to: " .. eventName, Color3.fromRGB(255, 200, 0))
+            States.EventSecondary = evName
+            Notify("SECONDARY", "Set to: "..evName, Color3.fromRGB(255, 200, 0))
         end
+        BtnDropdownTrigger.Text = "Selected: " .. evName
+        DropdownList.Visible = false -- Close dropdown
     end)
 end
 
+-- Toggle Dropdown
+BtnDropdownTrigger.MouseButton1Click:Connect(function()
+    DropdownList.Visible = not DropdownList.Visible
+end)
+
+-- Switch Mode
 BtnSelectMode.MouseButton1Click:Connect(function()
     if States.SelectMode == "Priority" then
         States.SelectMode = "Secondary"
         BtnSelectMode.Text = "Mode: Secondary (Select Backup)"
         BtnSelectMode.TextColor3 = Color3.fromRGB(255, 200, 0)
+        BtnDropdownTrigger.Text = "Select: " .. States.EventSecondary
     else
         States.SelectMode = "Priority"
         BtnSelectMode.Text = "Mode: Priority (Select Main)"
         BtnSelectMode.TextColor3 = UI_THEME.TextMain
+        BtnDropdownTrigger.Text = "Select: " .. States.EventPriority
     end
 end)
 
--- TAB PLAYER (SAME AS BEFORE)
+-- TAB PLAYER
 local SpeedContainer = Instance.new("Frame", PagePlayer)
 SpeedContainer.Name = "SpeedContainer"
 SpeedContainer.BackgroundTransparency = 1
@@ -956,7 +947,7 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [BUTTON LOGIC - PLAYER TAB]
+-- [BUTTON LOGIC - PLAYER TAB (FIXED)]
 -- ====================================================
 
 -- 1. SPEED BUTTON
@@ -982,7 +973,7 @@ BoxSpeedInput.FocusLost:Connect(function()
     if val then States.SpeedVal = val else BoxSpeedInput.Text = tostring(States.SpeedVal) end
 end)
 
--- 2. FLY BUTTON
+-- 2. FLY BUTTON (FIXED STUCK ISSUE)
 local FlyBV, FlyBG
 local function ToggleFly(state)
     local hrp = GetRoot()
@@ -1117,6 +1108,7 @@ end)
 -- [PLAYER LOOPS]
 -- ====================================================
 
+-- Auto Follow Loop
 task.spawn(function()
     while true do
         task.wait()
@@ -1125,12 +1117,15 @@ task.spawn(function()
                 local tChar = States.FollowTarget.Character
                 local tHRP = tChar and tChar:FindFirstChild("HumanoidRootPart")
                 local myHRP = GetRoot()
-                if tHRP and myHRP then myHRP.CFrame = tHRP.CFrame end
+                if tHRP and myHRP then
+                    myHRP.CFrame = tHRP.CFrame
+                end
             end)
         end
     end
 end)
 
+-- Speed Loop 
 task.spawn(function()
     while true do
         task.wait()
@@ -1154,12 +1149,17 @@ task.spawn(function()
     end
 end)
 
+-- No Damage Loop
 task.spawn(function()
     while true do
         task.wait(0.5)
         if States.NoDmg then
             local hum = GetHum()
-            if hum and hum.Health < hum.MaxHealth then hum.Health = hum.MaxHealth end
+            if hum then
+                if hum.Health < hum.MaxHealth then
+                    hum.Health = hum.MaxHealth
+                end
+            end
         end
     end
 end)
@@ -1191,10 +1191,11 @@ BtnClean.MouseButton1Click:Connect(function()
 end)
 
 -- [EVENT BUTTON - NEW LOGIC]
-BtnEvent.MouseButton1Click:Connect(function()
+BtnAutoEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
-    BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
-    ToggleVisual(BtnEvent, States.AutoEvent)
+    BtnAutoEvent.Text = "AUTO EVENT: " .. (States.AutoEvent and "ON" or "OFF")
+    ToggleVisual(BtnAutoEvent, States.AutoEvent)
+    
     if not States.AutoEvent then 
         local hrp = GetRoot()
         if IsInEvent and EventStartCFrame and hrp then 
@@ -1274,33 +1275,19 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP - PRIORITY & SECONDARY]
-local function FindInFolders(targetName)
-    local folders = {Services.Workspace:FindFirstChild("ActiveEvents"), Services.Workspace:FindFirstChild("Props")}
-    for _, folder in pairs(folders) do
-        if folder then
-            for _, v in pairs(folder:GetChildren()) do
-                if v:IsA("Model") or v:IsA("BasePart") then
-                    if v.Name == targetName or v.Name:find(targetName) then
-                        return v
-                    end
-                end
-            end
-        end
-    end
-    return nil
-end
-
+-- [AUTO EVENT LOOP - PATH SCAN]
 local function ScanEvent()
-    local pName = States.PriorityEvent
-    local target = FindInFolders(pName)
-    if target then return target, true end 
-    for _, name in pairs(EventList) do
-        if name ~= pName then
-            local t = FindInFolders(name)
-            if t then return t, false end
-        end
-    end
+    local props = Services.Workspace:FindFirstChild("Props")
+    if not props then return nil end
+    
+    -- 1. Cek Priority
+    local pTarget = props:FindFirstChild(States.EventPriority)
+    if pTarget then return pTarget, true end
+    
+    -- 2. Cek Secondary
+    local sTarget = props:FindFirstChild(States.EventSecondary)
+    if sTarget then return sTarget, false end
+    
     return nil
 end
 
@@ -1323,6 +1310,7 @@ task.spawn(function()
                         SetWoW(true)
                     end
                     local targetPos = FoundEvent:GetPivot().Position
+                    -- Height +3 Studs
                     local destPos = Vector3.new(targetPos.X, targetPos.Y + 3, targetPos.Z) 
                     if (hrp.Position - destPos).Magnitude > 15 then
                         hrp.CFrame = CFrame.new(destPos)
