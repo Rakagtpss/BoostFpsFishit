@@ -19,22 +19,21 @@ local function GetChar() return Player.Character or Player.CharacterAdded:Wait()
 local function GetRoot() local c = Player.Character; return c and c:FindFirstChild("HumanoidRootPart") end
 local function GetHum() local c = Player.Character; return c and c:FindFirstChild("Humanoid") end
 
--- // Konfigurasi Visual (UPDATED THEME)
+-- // Konfigurasi Visual (THEME: CYAN/BLACK - FONT: GOTHAM)
 local UI_THEME = {
     Width = 450,   
     Height = 330,  
     -- Warna Main Frame: Hitam Modern (Deep Dark)
     Color = Color3.fromRGB(10, 10, 12),       
-    -- Sidebar agak lebih terang sedikit dari background agar kontras
     SidebarColor = Color3.fromRGB(15, 15, 18),
-    Transparency = 0.05, -- Lebih solid
+    Transparency = 0.05, 
     -- Warna Accent: Cyan Terang (Electric)
     Accent = Color3.fromRGB(0, 255, 255),    
     TextMain = Color3.fromRGB(255, 255, 255), 
     TextDim = Color3.fromRGB(150, 150, 150),
-    -- Font: Roblox Terbaru (BuilderSans)
-    FontHeader = Enum.Font.BuilderSans,       
-    FontBody = Enum.Font.BuilderSansMedium,          
+    -- Font: KEMBALI KE GOTHAM (Request User)
+    FontHeader = Enum.Font.GothamBlack,       
+    FontBody = Enum.Font.GothamBold,          
     CornerRadius = UDim.new(0, 8)
 }
 
@@ -97,7 +96,7 @@ local function Notify(title, text, colorOverride, duration)
     LblTitle.Text = string.upper(title)
     LblTitle.TextColor3 = color
     LblTitle.Font = UI_THEME.FontHeader
-    LblTitle.TextSize = 14
+    LblTitle.TextSize = 13
     LblTitle.TextStrokeColor3 = Color3.new(0,0,0)
     LblTitle.TextStrokeTransparency = 0.6
     LblTitle.TextXAlignment = Enum.TextXAlignment.Left 
@@ -109,7 +108,7 @@ local function Notify(title, text, colorOverride, duration)
     LblMsg.Text = text
     LblMsg.TextColor3 = UI_THEME.TextMain
     LblMsg.Font = UI_THEME.FontBody
-    LblMsg.TextSize = 12
+    LblMsg.TextSize = 11
     LblMsg.TextXAlignment = Enum.TextXAlignment.Left
 
     local TweenIn = Services.TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, 55)})
@@ -133,7 +132,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "New Theme: Cyan & Black", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "Updated: Y=4 Fixed Height", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -180,7 +179,7 @@ TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = "SERAPHIN PANEL" 
 TitleLabel.TextColor3 = UI_THEME.Accent 
 TitleLabel.Font = UI_THEME.FontHeader
-TitleLabel.TextSize = 14
+TitleLabel.TextSize = 13
 TitleLabel.TextStrokeTransparency = 1
 
 local Div = Instance.new("Frame", FloatHUD)
@@ -205,7 +204,7 @@ local function CreateStatBlock(titleText, defaultVal, order)
     LblTitle.Text = string.upper(titleText)
     LblTitle.TextColor3 = UI_THEME.TextDim
     LblTitle.Font = UI_THEME.FontBody
-    LblTitle.TextSize = 10
+    LblTitle.TextSize = 9
     
     local LblValue = Instance.new("TextLabel", Block)
     LblValue.Name = "Value"
@@ -277,7 +276,7 @@ Title.Text = "Loading..."
 Title.RichText = true
 Title.TextColor3 = UI_THEME.TextMain
 Title.Font = UI_THEME.FontHeader
-Title.TextSize = 14
+Title.TextSize = 13
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -345,7 +344,7 @@ Sidebar.BorderSizePixel = 0
 
 local SidebarStroke = Instance.new("UIStroke", Sidebar)
 SidebarStroke.Color = Color3.fromRGB(40,40,40)
-SidebarStroke.Thickness = 0 -- Optional border
+SidebarStroke.Thickness = 0 
 SidebarStroke.Transparency = 0.5
 
 local SidebarLayout = Instance.new("UIListLayout", Sidebar)
@@ -385,7 +384,7 @@ local function CreateSideTab(name, text, isActive)
 end
 
 local TabMainBtn, StrMain     = CreateSideTab("TabMain", "MAIN", true)
-local TabEventBtn, StrEvent   = CreateSideTab("TabEvent", "EVENT", false) -- [NEW TAB]
+local TabEventBtn, StrEvent   = CreateSideTab("TabEvent", "EVENT", false) 
 local TabPlayerBtn, StrPlayer = CreateSideTab("TabPlayer", "PLAYER", false) 
 local TabMiscBtn, StrMisc     = CreateSideTab("TabMisc", "MISC", false)
 
@@ -424,7 +423,7 @@ local function CreatePage(name, visible)
 end
 
 local PageMain   = CreatePage("PageMain", true)
-local PageEvent  = CreatePage("PageEvent", false) -- [NEW PAGE]
+local PageEvent  = CreatePage("PageEvent", false)
 local PagePlayer = CreatePage("PagePlayer", false)
 local PageMisc   = CreatePage("PageMisc", false)
 
@@ -443,7 +442,7 @@ local function SwitchTab(tabName)
         -- Animasi Button
         Services.TweenService:Create(btn, tweenInfo, {
             BackgroundTransparency = isActive and 0.1 or 1,
-            TextColor3 = isActive and Color3.new(0,0,0) or UI_THEME.TextDim, -- Text hitam saat aktif (background Cyan)
+            TextColor3 = isActive and Color3.new(0,0,0) or UI_THEME.TextDim, 
             BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(25,25,30)
         }):Play()
         
@@ -493,11 +492,11 @@ end)
 local function MakeBtn(parent, text)
     local b = Instance.new("TextButton", parent)
     b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(25, 25, 30) -- Darker button base
+    b.BackgroundColor3 = Color3.fromRGB(25, 25, 30) 
     b.BackgroundTransparency = 0.4
     b.TextColor3 = UI_THEME.TextMain
     b.Font = UI_THEME.FontBody 
-    b.TextSize = 11 
+    b.TextSize = 10 
     b.AutoButtonColor = true
     b.ClipsDescendants = true
     
@@ -520,7 +519,7 @@ local function ToggleVisual(btn, on)
         Services.TweenService:Create(btn, tweenInfo, {
             BackgroundColor3 = UI_THEME.Accent,
             BackgroundTransparency = 0.2,
-            TextColor3 = Color3.new(0,0,0) -- Text hitam di tombol aktif cyan
+            TextColor3 = Color3.new(0,0,0) 
         }):Play()
         Services.TweenService:Create(btn.UIStroke, tweenInfo, {Transparency = 1}):Play()
     else
@@ -542,7 +541,7 @@ local States = {
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
     AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
     Speed=false, SpeedVal=50, Fly=false, FlySpeed=50, NoDmg=false,
-    AutoFollow=false, FollowTarget=nil, PriorityEvent="Ghost Shark Hunt"
+    AutoFollow=false, FollowTarget=nil
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -554,9 +553,8 @@ local BodyV = nil
 local LastFishCaughtTime = tick()
 local LastFishCount = 0
 
--- Priority List
+-- Event List (No Priority)
 local EventList = {"Ghost Shark Hunt", "Worm Hunt", "Treasure Hunt", "Shark Hunt", "Megalodon Hunt"}
-local EventListIndex = 1
 
 -- Restore Data for Booster
 local OriginalSettings = {
@@ -594,9 +592,8 @@ local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 
--- TAB EVENT (MOVED HERE)
+-- TAB EVENT (Prioritas dihapus)
 local BtnEvent  = MakeBtn(PageEvent, "Auto Event: OFF") 
-local BtnPrior  = MakeBtn(PageEvent, "Prioritas: Ghost Shark")
 local BtnChest  = MakeBtn(PageEvent, "Auto Chest: OFF") 
 
 -- TAB PLAYER
@@ -612,7 +609,7 @@ BtnSpeedToggle.BackgroundTransparency = 0.4
 BtnSpeedToggle.Text = "Speed: OFF"
 BtnSpeedToggle.TextColor3 = UI_THEME.TextMain
 BtnSpeedToggle.Font = UI_THEME.FontBody
-BtnSpeedToggle.TextSize = 11
+BtnSpeedToggle.TextSize = 10
 BtnSpeedToggle.TextStrokeColor3 = Color3.new(0,0,0)
 BtnSpeedToggle.TextStrokeTransparency = 0.5
 Instance.new("UICorner", BtnSpeedToggle).CornerRadius = UDim.new(0, 6)
@@ -631,7 +628,7 @@ BoxSpeedInput.Text = "80"
 BoxSpeedInput.PlaceholderText = "Val"
 BoxSpeedInput.TextColor3 = UI_THEME.Accent
 BoxSpeedInput.Font = UI_THEME.FontHeader
-BoxSpeedInput.TextSize = 11
+BoxSpeedInput.TextSize = 10
 Instance.new("UICorner", BoxSpeedInput).CornerRadius = UDim.new(0, 6)
 local sSpdIn = Instance.new("UIStroke", BoxSpeedInput)
 sSpdIn.Color = Color3.fromRGB(60, 60, 70)
@@ -650,7 +647,7 @@ BtnFlyToggle.BackgroundTransparency = 0.4
 BtnFlyToggle.Text = "Fly: OFF"
 BtnFlyToggle.TextColor3 = UI_THEME.TextMain
 BtnFlyToggle.Font = UI_THEME.FontBody
-BtnFlyToggle.TextSize = 11
+BtnFlyToggle.TextSize = 10
 BtnFlyToggle.TextStrokeColor3 = Color3.new(0,0,0)
 BtnFlyToggle.TextStrokeTransparency = 0.5
 Instance.new("UICorner", BtnFlyToggle).CornerRadius = UDim.new(0, 6)
@@ -669,7 +666,7 @@ BoxFlyInput.Text = "50"
 BoxFlyInput.PlaceholderText = "Spd"
 BoxFlyInput.TextColor3 = UI_THEME.Accent
 BoxFlyInput.Font = UI_THEME.FontHeader
-BoxFlyInput.TextSize = 11
+BoxFlyInput.TextSize = 10
 Instance.new("UICorner", BoxFlyInput).CornerRadius = UDim.new(0, 6)
 local sFlyIn = Instance.new("UIStroke", BoxFlyInput)
 sFlyIn.Color = Color3.fromRGB(60, 60, 70)
@@ -689,7 +686,7 @@ BtnFollowToggle.BackgroundTransparency = 0.4
 BtnFollowToggle.Text = "Follow: OFF"
 BtnFollowToggle.TextColor3 = UI_THEME.TextMain
 BtnFollowToggle.Font = UI_THEME.FontBody
-BtnFollowToggle.TextSize = 11
+BtnFollowToggle.TextSize = 10
 BtnFollowToggle.TextStrokeColor3 = Color3.new(0,0,0)
 BtnFollowToggle.TextStrokeTransparency = 0.5
 Instance.new("UICorner", BtnFollowToggle).CornerRadius = UDim.new(0, 6)
@@ -708,7 +705,7 @@ BoxFollowInput.Text = ""
 BoxFollowInput.PlaceholderText = "Input Name"
 BoxFollowInput.TextColor3 = UI_THEME.Accent
 BoxFollowInput.Font = UI_THEME.FontHeader
-BoxFollowInput.TextSize = 11
+BoxFollowInput.TextSize = 10
 Instance.new("UICorner", BoxFollowInput).CornerRadius = UDim.new(0, 6)
 local sFolIn = Instance.new("UIStroke", BoxFollowInput)
 sFolIn.Color = Color3.fromRGB(60, 60, 70)
@@ -730,7 +727,7 @@ BtnStuckToggle.BackgroundTransparency = 0.4
 BtnStuckToggle.Text = "Anti-Stuck: OFF"
 BtnStuckToggle.TextColor3 = UI_THEME.TextMain
 BtnStuckToggle.Font = UI_THEME.FontBody
-BtnStuckToggle.TextSize = 11
+BtnStuckToggle.TextSize = 10
 BtnStuckToggle.TextStrokeColor3 = Color3.new(0,0,0)
 BtnStuckToggle.TextStrokeTransparency = 0.5
 Instance.new("UICorner", BtnStuckToggle).CornerRadius = UDim.new(0, 6)
@@ -749,7 +746,7 @@ BoxStuckInput.Text = "60"
 BoxStuckInput.PlaceholderText = "Sec"
 BoxStuckInput.TextColor3 = UI_THEME.Accent
 BoxStuckInput.Font = UI_THEME.FontHeader
-BoxStuckInput.TextSize = 11
+BoxStuckInput.TextSize = 10
 Instance.new("UICorner", BoxStuckInput).CornerRadius = UDim.new(0, 6)
 local s2 = Instance.new("UIStroke", BoxStuckInput)
 s2.Color = Color3.fromRGB(60, 60, 70)
@@ -1158,16 +1155,6 @@ BtnClean.MouseButton1Click:Connect(function()
     ToggleVisual(BtnClean, States.AutoClean)
 end)
 
--- [EVENT BUTTON - PRIORITY SYSTEM]
-BtnPrior.MouseButton1Click:Connect(function()
-    EventListIndex = EventListIndex + 1
-    if EventListIndex > #EventList then EventListIndex = 1 end
-    States.PriorityEvent = EventList[EventListIndex]
-    BtnPrior.Text = "Prioritas: " .. States.PriorityEvent
-    Services.TweenService:Create(BtnPrior, TweenInfo.new(0.2), {BackgroundColor3=UI_THEME.Accent}):Play()
-    task.delay(0.2, function() ToggleVisual(BtnPrior, false) end)
-end)
-
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
@@ -1252,7 +1239,7 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP - PRIORITY & SECONDARY]
+-- [AUTO EVENT LOOP - UPDATED Y=4]
 local function FindInFolders(targetName)
     local folders = {Services.Workspace:FindFirstChild("ActiveEvents"), Services.Workspace:FindFirstChild("Props")}
     for _, folder in pairs(folders) do
@@ -1270,17 +1257,10 @@ local function FindInFolders(targetName)
 end
 
 local function ScanEvent()
-    -- 1. Scan Priority
-    local pName = States.PriorityEvent
-    local target = FindInFolders(pName)
-    if target then return target, true end 
-
-    -- 2. Scan Others (Secondary)
+    -- Scan Semua Event di List (Tanpa Prioritas)
     for _, name in pairs(EventList) do
-        if name ~= pName then
-            local t = FindInFolders(name)
-            if t then return t, false end
-        end
+        local t = FindInFolders(name)
+        if t then return t end
     end
     return nil
 end
@@ -1293,20 +1273,20 @@ task.spawn(function()
                 local hrp = GetRoot()
                 if not hrp then return end
                 
-                local FoundEvent, IsPriority = ScanEvent()
+                local FoundEvent = ScanEvent()
 
                 if FoundEvent then
                     if not IsInEvent then
                         EventStartCFrame = hrp.CFrame 
                         IsInEvent = true
-                        local msg = IsPriority and "Priority Event Found!" or "Secondary Event Found"
-                        Notify("AUTO EVENT", msg, IsPriority and Color3.fromRGB(0, 255, 255) or Color3.fromRGB(255, 200, 0))
+                        Notify("AUTO EVENT", "Event Found!", Color3.fromRGB(0, 255, 255))
                         SetWoW(true)
                     end
                     local targetPos = FoundEvent:GetPivot().Position
-                    -- Height +3 Studs
-                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 3, targetPos.Z) 
-                    if (hrp.Position - destPos).Magnitude > 15 then
+                    -- [REQUEST] SET FIXED HEIGHT Y = 4
+                    local destPos = Vector3.new(targetPos.X, 4, targetPos.Z) 
+                    
+                    if (hrp.Position - destPos).Magnitude > 5 then
                         hrp.CFrame = CFrame.new(destPos)
                     end
                 else
