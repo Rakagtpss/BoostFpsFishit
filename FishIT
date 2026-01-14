@@ -19,22 +19,24 @@ local function GetChar() return Player.Character or Player.CharacterAdded:Wait()
 local function GetRoot() local c = Player.Character; return c and c:FindFirstChild("HumanoidRootPart") end
 local function GetHum() local c = Player.Character; return c and c:FindFirstChild("Humanoid") end
 
--- // Konfigurasi Visual (THEME: CYAN/BLACK - FONT: GOTHAM)
+-- // Konfigurasi Visual (UPDATED REQUEST)
 local UI_THEME = {
-    Width = 450,   
-    Height = 330,  
-    -- Warna Main Frame: Hitam Modern (Deep Dark)
-    Color = Color3.fromRGB(10, 10, 12),       
-    SidebarColor = Color3.fromRGB(15, 15, 18),
+    -- [REQUEST] Ukuran 400x300
+    Width = 400,   
+    Height = 300,  
+    
+    Color = Color3.fromRGB(12, 12, 14),       
+    SidebarColor = Color3.fromRGB(18, 18, 22),
     Transparency = 0.05, 
-    -- Warna Accent: Cyan Terang (Electric)
     Accent = Color3.fromRGB(0, 255, 255),    
     TextMain = Color3.fromRGB(255, 255, 255), 
     TextDim = Color3.fromRGB(150, 150, 150),
-    -- Font: KEMBALI KE GOTHAM (Request User)
+    
     FontHeader = Enum.Font.GothamBlack,       
     FontBody = Enum.Font.GothamBold,          
-    CornerRadius = UDim.new(0, 8)
+    
+    -- [REQUEST] Sudut Sedikit Lebih Melengkung
+    CornerRadius = UDim.new(0, 14) 
 }
 
 -- Bersihkan UI Lama
@@ -132,7 +134,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Updated: Y=4 Fixed Height", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "UI Resized: 400x300", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -244,9 +246,11 @@ MainGrad.Rotation = 90
 
 local MainCorner = Instance.new("UICorner", Main)
 MainCorner.CornerRadius = UI_THEME.CornerRadius
+
+-- [REQUEST] Pinggir UI Sedikit Tebal
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Color = UI_THEME.Accent
-MainStroke.Thickness = 1.2
+MainStroke.Thickness = 3 -- Ditebalkan
 MainStroke.Transparency = 0.6
 
 -- Minimized Logo
@@ -396,27 +400,29 @@ SideDivider.BackgroundTransparency = 0.8
 SideDivider.BorderSizePixel = 0
 
 -- ====================================================
--- [4] PAGES
+-- [4] PAGES (SCROLL BAR ENABLED)
 -- ====================================================
 local PageArea = Instance.new("Frame", ContentContainer)
 PageArea.Name = "PageArea"
 PageArea.Size = UDim2.new(1, -115, 1, -10)
 PageArea.Position = UDim2.new(0, 110, 0, 5)
 PageArea.BackgroundTransparency = 1
+PageArea.ClipsDescendants = true
 
 local function CreatePage(name, visible)
     local pg = Instance.new("ScrollingFrame", PageArea)
     pg.Name = name
     pg.Size = UDim2.new(1, 0, 1, 0)
     pg.BackgroundTransparency = 1
-    pg.ScrollBarThickness = 2
+    pg.ScrollBarThickness = 4 -- ScrollBar Aktif
     pg.ScrollBarImageColor3 = UI_THEME.Accent
+    pg.ScrollBarImageTransparency = 0.2
     pg.CanvasSize = UDim2.new(0, 0, 0, 0)
     pg.AutomaticCanvasSize = Enum.AutomaticSize.Y
     pg.Visible = visible
     
     local gl = Instance.new("UIGridLayout", pg)
-    gl.CellSize = UDim2.new(0.48, 0, 0, 32) 
+    gl.CellSize = UDim2.new(0.46, 0, 0, 32)  -- Ukuran tombol disesuaikan sedikit agar muat
     gl.CellPadding = UDim2.new(0, 6, 0, 6)
     gl.SortOrder = Enum.SortOrder.LayoutOrder
     return pg
@@ -488,7 +494,7 @@ LogoR.MouseButton1Click:Connect(function()
     end
 end)
 
--- [UPDATED BUTTON MAKER WITH TEXT STROKE]
+-- [UPDATED BUTTON MAKER]
 local function MakeBtn(parent, text)
     local b = Instance.new("TextButton", parent)
     b.Text = text
@@ -513,25 +519,24 @@ local function MakeBtn(parent, text)
     return b
 end
 
+-- [REQUEST] Logic Toggle Visual: TIDAK UBAH WARNA (Hanya Efek Kecil)
 local function ToggleVisual(btn, on)
     local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    -- Kita hanya ubah Transparency atau Stroke sedikit untuk feedback klik
+    -- Warna Background JANGAN diubah jadi Cyan
+    
     if on then
         Services.TweenService:Create(btn, tweenInfo, {
-            BackgroundColor3 = UI_THEME.Accent,
-            BackgroundTransparency = 0.2,
-            TextColor3 = Color3.new(0,0,0) 
+            TextColor3 = UI_THEME.Accent, -- Text jadi Cyan sebagai penanda halus
+            BackgroundTransparency = 0.3  -- Sedikit lebih terang
         }):Play()
-        Services.TweenService:Create(btn.UIStroke, tweenInfo, {Transparency = 1}):Play()
+        Services.TweenService:Create(btn.UIStroke, tweenInfo, {Transparency = 0.4}):Play()
     else
         Services.TweenService:Create(btn, tweenInfo, {
-            BackgroundColor3 = Color3.fromRGB(25, 25, 30),
-            BackgroundTransparency = 0.4,
-            TextColor3 = UI_THEME.TextMain
+            TextColor3 = UI_THEME.TextMain,
+            BackgroundTransparency = 0.4
         }):Play()
-        Services.TweenService:Create(btn.UIStroke, tweenInfo, {
-            Color = Color3.fromRGB(60, 60, 70),
-            Transparency = 0.6
-        }):Play()
+        Services.TweenService:Create(btn.UIStroke, tweenInfo, {Transparency = 0.6}):Play()
     end
 end
 
@@ -553,7 +558,7 @@ local BodyV = nil
 local LastFishCaughtTime = tick()
 local LastFishCount = 0
 
--- Event List (No Priority)
+-- Event List
 local EventList = {"Ghost Shark Hunt", "Worm Hunt", "Treasure Hunt", "Shark Hunt", "Megalodon Hunt"}
 
 -- Restore Data for Booster
@@ -592,7 +597,7 @@ local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 
--- TAB EVENT (Prioritas dihapus)
+-- TAB EVENT
 local BtnEvent  = MakeBtn(PageEvent, "Auto Event: OFF") 
 local BtnChest  = MakeBtn(PageEvent, "Auto Chest: OFF") 
 
@@ -818,7 +823,6 @@ local function SetUltraGraphics(enabled)
         local fx = Instance.new("BloomEffect", Services.Lighting)
         fx.Name = "Seraphin_Bloom"
         fx.Intensity = 0.8
-        
         Notify("GRAPHICS", "ULTRA HD ACTIVE", Color3.fromRGB(0, 255, 255))
     else
         for _, v in pairs(Services.Lighting:GetChildren()) do
@@ -828,7 +832,7 @@ local function SetUltraGraphics(enabled)
     end
 end
 
--- Smart Booster (Upgraded & Restorable)
+-- Smart Booster
 local function ToggleBoost(enable)
     States.Boost = enable
     BtnBoost.Text = "CPU Booster: " .. (States.Boost and "ON" or "OFF")
@@ -836,20 +840,16 @@ local function ToggleBoost(enable)
     
     if enable then
         Notify("BOOSTER", "Maximizing FPS...", Color3.fromRGB(0, 255, 100))
-        
-        -- Save Settings
         OriginalSettings.Lighting.GlobalShadows = Services.Lighting.GlobalShadows
         OriginalSettings.Lighting.Technology = Services.Lighting.Technology
         OriginalSettings.Lighting.EnvironmentDiffuseScale = Services.Lighting.EnvironmentDiffuseScale
         OriginalSettings.Lighting.EnvironmentSpecularScale = Services.Lighting.EnvironmentSpecularScale
         
-        -- Apply Boost (Lighting)
         Services.Lighting.GlobalShadows = false
         Services.Lighting.Technology = Enum.Technology.Voxel
         Services.Lighting.EnvironmentDiffuseScale = 0
         Services.Lighting.EnvironmentSpecularScale = 0
         
-        -- Clear Terrain Water
         if Services.Workspace.Terrain then
             Services.Workspace.Terrain.WaterReflectance = 0
             Services.Workspace.Terrain.WaterTransparency = 0
@@ -857,7 +857,6 @@ local function ToggleBoost(enable)
             Services.Workspace.Terrain.WaterWaveSpeed = 0
         end
         
-        -- Aggressive Part Cleanup
         for _, v in pairs(Services.Workspace:GetDescendants()) do
             if v:IsA("BasePart") and not v:IsA("Terrain") then
                 v.Material = Enum.Material.SmoothPlastic
@@ -870,8 +869,6 @@ local function ToggleBoost(enable)
         end
     else
         Notify("BOOSTER", "Restoring Visuals...", UI_THEME.Accent)
-        
-        -- Restore Lighting
         Services.Lighting.GlobalShadows = OriginalSettings.Lighting.GlobalShadows
         Services.Lighting.Technology = OriginalSettings.Lighting.Technology
         Services.Lighting.EnvironmentDiffuseScale = OriginalSettings.Lighting.EnvironmentDiffuseScale
@@ -925,6 +922,7 @@ BtnSpeedToggle.MouseButton1Click:Connect(function()
     if States.Speed then
         BtnSpeedToggle.Text = "Speed: ON"
         ToggleVisual(BtnSpeedToggle, true)
+        Notify("PLAYER", "Speed Active: " .. val, Color3.fromRGB(0, 255, 100))
         if hum and not hum.Sit then hum.WalkSpeed = 16 end
     else
         BtnSpeedToggle.Text = "Speed: OFF"
@@ -1007,6 +1005,7 @@ BtnFlyToggle.MouseButton1Click:Connect(function()
     if States.Fly then
         BtnFlyToggle.Text = "Fly: ON"
         ToggleVisual(BtnFlyToggle, true)
+        Notify("PLAYER", "Fly Active: " .. val, Color3.fromRGB(0, 255, 100))
         ToggleFly(true)
     else
         BtnFlyToggle.Text = "Fly: OFF"
@@ -1067,13 +1066,13 @@ BtnNoDmg.MouseButton1Click:Connect(function()
     States.NoDmg = not States.NoDmg
     BtnNoDmg.Text = "No Damage: " .. (States.NoDmg and "ON" or "OFF")
     ToggleVisual(BtnNoDmg, States.NoDmg)
+    Notify("PLAYER", "No Damage: "..(States.NoDmg and "ON" or "OFF"), UI_THEME.Accent)
 end)
 
 -- ====================================================
 -- [PLAYER LOOPS]
 -- ====================================================
 
--- Auto Follow Loop
 task.spawn(function()
     while true do
         task.wait()
@@ -1090,7 +1089,6 @@ task.spawn(function()
     end
 end)
 
--- Speed Loop 
 task.spawn(function()
     while true do
         task.wait()
@@ -1114,7 +1112,6 @@ task.spawn(function()
     end
 end)
 
--- No Damage Loop
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -1141,24 +1138,30 @@ BtnStuckToggle.MouseButton1Click:Connect(function()
         local val = tonumber(BoxStuckInput.Text)
         if not val or val < 10 then val = 60; BoxStuckInput.Text = "60" end
         States.StuckTimeout = val
-        LastFishCaughtTime = tick()
+        Notify("MISC", "Anti Stuck: Active", UI_THEME.Accent)
     else
         BtnStuckToggle.Text = "Anti-Stuck: OFF"
         ToggleVisual(BtnStuckToggle, false)
     end
 end)
 
-BtnEquip.MouseButton1Click:Connect(function() SetAutoEquip(not States.AutoEquip) end)
+BtnEquip.MouseButton1Click:Connect(function() 
+    SetAutoEquip(not States.AutoEquip) 
+    Notify("MAIN", "Auto Equip: "..(States.AutoEquip and "ON" or "OFF"), UI_THEME.Accent)
+end)
 BtnClean.MouseButton1Click:Connect(function()
     States.AutoClean = not States.AutoClean
     BtnClean.Text = "Auto Clean: " .. (States.AutoClean and "ON" or "OFF")
     ToggleVisual(BtnClean, States.AutoClean)
+    Notify("MAIN", "Auto Clean: "..(States.AutoClean and "ON" or "OFF"), UI_THEME.Accent)
 end)
 
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
     ToggleVisual(BtnEvent, States.AutoEvent)
+    
+    Notify("EVENT", "Auto Event: "..(States.AutoEvent and "ON" or "OFF"), States.AutoEvent and Color3.fromRGB(0,255,100) or Color3.fromRGB(255,50,50))
     
     if not States.AutoEvent then 
         local hrp = GetRoot()
@@ -1172,11 +1175,13 @@ BtnEvent.MouseButton1Click:Connect(function()
     end
 end)
 
--- [AUTO CHEST BUTTON]
 BtnChest.MouseButton1Click:Connect(function()
     States.AutoChest = not States.AutoChest
     BtnChest.Text = "Auto Chest: " .. (States.AutoChest and "ON" or "OFF")
     ToggleVisual(BtnChest, States.AutoChest)
+    
+    Notify("EVENT", "Auto Chest: "..(States.AutoChest and "ON" or "OFF"), States.AutoChest and Color3.fromRGB(0,255,100) or Color3.fromRGB(255,50,50))
+    
     if not States.AutoChest then
         local hrp = GetRoot()
         if IsLootingChests and ChestReturnCFrame and hrp then
@@ -1193,6 +1198,7 @@ BtnRender.MouseButton1Click:Connect(function()
     Services.RunService:Set3dRenderingEnabled(not States.NoRender) 
     BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON")
     ToggleVisual(BtnRender, States.NoRender)
+    Notify("RENDER", "3D Render: "..(States.NoRender and "OFF" or "ON"), UI_THEME.Accent)
 end)
 
 BtnFreeze.MouseButton1Click:Connect(function() 
@@ -1201,12 +1207,17 @@ BtnFreeze.MouseButton1Click:Connect(function()
     if hrp then hrp.Anchored = States.Freeze end 
     BtnFreeze.Text = "Freeze: " .. (States.Freeze and "ON" or "OFF")
     ToggleVisual(BtnFreeze, States.Freeze) 
+    Notify("MAIN", "Freeze: "..(States.Freeze and "ON" or "OFF"), UI_THEME.Accent)
 end)
-BtnWow.MouseButton1Click:Connect(function() SetWoW(not States.WoW) end)
+BtnWow.MouseButton1Click:Connect(function() 
+    SetWoW(not States.WoW) 
+    Notify("MAIN", "Water Walk: "..(States.WoW and "ON" or "OFF"), UI_THEME.Accent)
+end)
 BtnNoclip.MouseButton1Click:Connect(function() 
     States.Noclip = not States.Noclip 
     BtnNoclip.Text = "No Clip: "..(States.Noclip and "ON" or "OFF") 
     ToggleVisual(BtnNoclip, States.Noclip) 
+    Notify("MAIN", "Noclip: "..(States.Noclip and "ON" or "OFF"), UI_THEME.Accent)
     if States.Noclip then 
         Connections["Noclip"] = Services.RunService.Stepped:Connect(function() 
             local char = GetChar()
@@ -1239,7 +1250,7 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP - UPDATED Y=4]
+-- [AUTO EVENT LOOP - Y=4 FIXED]
 local function FindInFolders(targetName)
     local folders = {Services.Workspace:FindFirstChild("ActiveEvents"), Services.Workspace:FindFirstChild("Props")}
     for _, folder in pairs(folders) do
@@ -1257,7 +1268,6 @@ local function FindInFolders(targetName)
 end
 
 local function ScanEvent()
-    -- Scan Semua Event di List (Tanpa Prioritas)
     for _, name in pairs(EventList) do
         local t = FindInFolders(name)
         if t then return t end
@@ -1283,7 +1293,7 @@ task.spawn(function()
                         SetWoW(true)
                     end
                     local targetPos = FoundEvent:GetPivot().Position
-                    -- [REQUEST] SET FIXED HEIGHT Y = 4
+                    -- Y = 4 Fixed
                     local destPos = Vector3.new(targetPos.X, 4, targetPos.Z) 
                     
                     if (hrp.Position - destPos).Magnitude > 5 then
