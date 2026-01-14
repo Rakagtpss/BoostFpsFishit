@@ -21,10 +21,10 @@ local function GetHum() local c = Player.Character; return c and c:FindFirstChil
 
 -- // Konfigurasi Visual (MODERN SIDE UI THEME - RAKA)
 local UI_THEME = {
-    Width = 440,   
-    Height = 320,  
+    Width = 460,   
+    Height = 340,  
     Color = Color3.fromRGB(18, 18, 22),       
-    SidebarColor = Color3.fromRGB(25, 25, 30),
+    SidebarColor = Color3.fromRGB(20, 50, 60), -- [UPDATED] Dark Cyan Sidebar
     Transparency = 0.1, 
     Accent = Color3.fromRGB(64, 162, 227),    -- Cyan Electric
     TextMain = Color3.fromRGB(245, 245, 245), 
@@ -129,7 +129,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Updated: Event Height +4 Studs - @8raka_", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "New Event Tab & Cyan Theme - @8raka_", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -365,6 +365,7 @@ local function CreateSideTab(name, text, isActive)
 end
 
 local TabMainBtn   = CreateSideTab("TabMain", "MAIN", true)
+local TabEventBtn  = CreateSideTab("TabEvent", "EVENT", false) -- [NEW TAB]
 local TabPlayerBtn = CreateSideTab("TabPlayer", "PLAYER", false) 
 local TabMiscBtn   = CreateSideTab("TabMisc", "MISC", false)
 
@@ -399,6 +400,21 @@ GridMain.CellSize = UDim2.new(0.48, 0, 0, 30)
 GridMain.CellPadding = UDim2.new(0, 6, 0, 6)
 GridMain.SortOrder = Enum.SortOrder.LayoutOrder
 
+-- [PAGE EVENT]
+local PageEvent = Instance.new("ScrollingFrame", PageArea)
+PageEvent.Name = "PageEvent"
+PageEvent.Size = UDim2.new(1, 0, 1, 0)
+PageEvent.BackgroundTransparency = 1
+PageEvent.ScrollBarThickness = 2
+PageEvent.ScrollBarImageColor3 = UI_THEME.Accent
+PageEvent.CanvasSize = UDim2.new(0, 0, 0, 0)
+PageEvent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+PageEvent.Visible = false
+
+local ListEvent = Instance.new("UIListLayout", PageEvent)
+ListEvent.SortOrder = Enum.SortOrder.LayoutOrder
+ListEvent.Padding = UDim.new(0, 6)
+
 local PagePlayer = Instance.new("ScrollingFrame", PageArea)
 PagePlayer.Name = "PagePlayer"
 PagePlayer.Size = UDim2.new(1, 0, 1, 0)
@@ -431,8 +447,8 @@ GridMisc.SortOrder = Enum.SortOrder.LayoutOrder
 
 local function SwitchTab(tabName)
     local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tabs = {Main = TabMainBtn, Player = TabPlayerBtn, Misc = TabMiscBtn}
-    local pages = {Main = PageMain, Player = PagePlayer, Misc = PageMisc}
+    local tabs = {Main = TabMainBtn, Event = TabEventBtn, Player = TabPlayerBtn, Misc = TabMiscBtn}
+    local pages = {Main = PageMain, Event = PageEvent, Player = PagePlayer, Misc = PageMisc}
     
     for name, btn in pairs(tabs) do
         local isActive = (name == tabName)
@@ -446,6 +462,7 @@ local function SwitchTab(tabName)
 end
 
 TabMainBtn.MouseButton1Click:Connect(function() SwitchTab("Main") end)
+TabEventBtn.MouseButton1Click:Connect(function() SwitchTab("Event") end)
 TabPlayerBtn.MouseButton1Click:Connect(function() SwitchTab("Player") end)
 TabMiscBtn.MouseButton1Click:Connect(function() SwitchTab("Misc") end)
 
@@ -477,7 +494,7 @@ LogoR.MouseButton1Click:Connect(function()
     end
 end)
 
--- [UPDATED BUTTON MAKER WITH TEXT STROKE]
+-- [UPDATED BUTTON MAKER]
 local function MakeBtn(parent, text)
     local b = Instance.new("TextButton", parent)
     b.Text = text
@@ -489,7 +506,6 @@ local function MakeBtn(parent, text)
     b.AutoButtonColor = true
     b.ClipsDescendants = true
     
-    -- Black Outline
     b.TextStrokeColor3 = Color3.new(0,0,0)
     b.TextStrokeTransparency = 0.3
     
@@ -530,7 +546,8 @@ local States = {
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
     AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
     Speed=false, SpeedVal=50, Fly=false, FlySpeed=50, NoDmg=false,
-    AutoFollow=false, FollowTarget=nil, PriorityEvent="Ghost Shark Hunt"
+    AutoFollow=false, FollowTarget=nil, 
+    EventPriority="Ghost Shark Hunt", EventSecondary="Worm Hunt", SelectMode="Priority"
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -542,9 +559,14 @@ local BodyV = nil
 local LastFishCaughtTime = tick()
 local LastFishCount = 0
 
--- Priority List
-local EventList = {"Ghost Shark Hunt", "Worm Hunt", "Treasure Hunt", "Shark Hunt", "Megalodon Hunt"}
-local EventListIndex = 1
+-- Priority List Data
+local EventList = {
+    "Ghost Shark Hunt",
+    "Shark Hunt", 
+    "Megalodon Hunt",
+    "Worm Hunt",
+    "Treasure Hunt"
+}
 
 -- Restore Data for Booster
 local OriginalSettings = {
@@ -572,8 +594,6 @@ end
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
-local BtnEvent  = MakeBtn(PageMain, "Auto Event: OFF") 
-local BtnPrior  = MakeBtn(PageMain, "Prioritas: Ghost Shark")
 local BtnChest  = MakeBtn(PageMain, "Auto Chest: OFF") 
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
 local BtnClean  = MakeBtn(PageMain, "Auto Clean: OFF")
@@ -585,7 +605,59 @@ local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 
--- TAB PLAYER
+-- TAB EVENT (NEW UI)
+local EventContainer = Instance.new("Frame", PageEvent)
+EventContainer.Size = UDim2.new(1, 0, 0, 70)
+EventContainer.BackgroundTransparency = 1
+
+local BtnEvent = MakeBtn(EventContainer, "AUTO EVENT: OFF")
+BtnEvent.Size = UDim2.new(0.96, 0, 0, 30)
+BtnEvent.Position = UDim2.new(0.02, 0, 0, 0)
+
+local BtnSelectMode = MakeBtn(EventContainer, "Mode: Priority (Click to Change)")
+BtnSelectMode.Size = UDim2.new(0.96, 0, 0, 25)
+BtnSelectMode.Position = UDim2.new(0.02, 0, 0, 35)
+
+local ScrollEvent = Instance.new("ScrollingFrame", PageEvent)
+ScrollEvent.Size = UDim2.new(1, 0, 1, -80)
+ScrollEvent.BackgroundTransparency = 1
+ScrollEvent.ScrollBarThickness = 2
+ScrollEvent.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollEvent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local LayoutEvent = Instance.new("UIListLayout", ScrollEvent)
+LayoutEvent.Padding = UDim.new(0, 4)
+LayoutEvent.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- Populate Event List
+for _, eventName in pairs(EventList) do
+    local btn = MakeBtn(ScrollEvent, eventName)
+    btn.Size = UDim2.new(0.9, 0, 0, 25)
+    
+    btn.MouseButton1Click:Connect(function()
+        if States.SelectMode == "Priority" then
+            States.EventPriority = eventName
+            Notify("PRIORITY", "Set to: " .. eventName, Color3.fromRGB(0, 255, 255))
+        else
+            States.EventSecondary = eventName
+            Notify("SECONDARY", "Set to: " .. eventName, Color3.fromRGB(255, 200, 0))
+        end
+    end)
+end
+
+BtnSelectMode.MouseButton1Click:Connect(function()
+    if States.SelectMode == "Priority" then
+        States.SelectMode = "Secondary"
+        BtnSelectMode.Text = "Mode: Secondary (Select Backup)"
+        BtnSelectMode.TextColor3 = Color3.fromRGB(255, 200, 0)
+    else
+        States.SelectMode = "Priority"
+        BtnSelectMode.Text = "Mode: Priority (Select Main)"
+        BtnSelectMode.TextColor3 = UI_THEME.TextMain
+    end
+end)
+
+-- TAB PLAYER (SAME AS BEFORE)
 local SpeedContainer = Instance.new("Frame", PagePlayer)
 SpeedContainer.Name = "SpeedContainer"
 SpeedContainer.BackgroundTransparency = 1
@@ -662,7 +734,6 @@ sFlyIn.Color = Color3.fromRGB(70, 70, 80)
 sFlyIn.Thickness = 1
 sFlyIn.Transparency = 0.5
 
--- [AUTO FOLLOW UI]
 local FollowContainer = Instance.new("Frame", PagePlayer)
 FollowContainer.Name = "FollowContainer"
 FollowContainer.BackgroundTransparency = 1
@@ -825,28 +896,16 @@ local function ToggleBoost(enable)
     
     if enable then
         Notify("BOOSTER", "Maximizing FPS...", Color3.fromRGB(0, 255, 100))
-        
-        -- Save Settings
         OriginalSettings.Lighting.GlobalShadows = Services.Lighting.GlobalShadows
         OriginalSettings.Lighting.Technology = Services.Lighting.Technology
-        OriginalSettings.Lighting.EnvironmentDiffuseScale = Services.Lighting.EnvironmentDiffuseScale
-        OriginalSettings.Lighting.EnvironmentSpecularScale = Services.Lighting.EnvironmentSpecularScale
-        
-        -- Apply Boost (Lighting)
         Services.Lighting.GlobalShadows = false
         Services.Lighting.Technology = Enum.Technology.Voxel
-        Services.Lighting.EnvironmentDiffuseScale = 0
-        Services.Lighting.EnvironmentSpecularScale = 0
         
-        -- Clear Terrain Water
         if Services.Workspace.Terrain then
             Services.Workspace.Terrain.WaterReflectance = 0
             Services.Workspace.Terrain.WaterTransparency = 0
-            Services.Workspace.Terrain.WaterWaveSize = 0
-            Services.Workspace.Terrain.WaterWaveSpeed = 0
         end
         
-        -- Aggressive Part Cleanup
         for _, v in pairs(Services.Workspace:GetDescendants()) do
             if v:IsA("BasePart") and not v:IsA("Terrain") then
                 v.Material = Enum.Material.SmoothPlastic
@@ -859,15 +918,8 @@ local function ToggleBoost(enable)
         end
     else
         Notify("BOOSTER", "Restoring Visuals...", UI_THEME.Accent)
-        
-        -- Restore Lighting
         Services.Lighting.GlobalShadows = OriginalSettings.Lighting.GlobalShadows
         Services.Lighting.Technology = OriginalSettings.Lighting.Technology
-        Services.Lighting.EnvironmentDiffuseScale = OriginalSettings.Lighting.EnvironmentDiffuseScale
-        Services.Lighting.EnvironmentSpecularScale = OriginalSettings.Lighting.EnvironmentSpecularScale
-        
-        -- Note: We don't restore every single part material because it causes massive lag/crash.
-        -- Restoring lighting is usually enough to make the game look normal again.
     end
 end
 
@@ -904,7 +956,7 @@ BtnPanel.MouseButton1Click:Connect(function()
 end)
 
 -- ====================================================
--- [BUTTON LOGIC - PLAYER TAB (FIXED)]
+-- [BUTTON LOGIC - PLAYER TAB]
 -- ====================================================
 
 -- 1. SPEED BUTTON
@@ -930,7 +982,7 @@ BoxSpeedInput.FocusLost:Connect(function()
     if val then States.SpeedVal = val else BoxSpeedInput.Text = tostring(States.SpeedVal) end
 end)
 
--- 2. FLY BUTTON (FIXED STUCK ISSUE)
+-- 2. FLY BUTTON
 local FlyBV, FlyBG
 local function ToggleFly(state)
     local hrp = GetRoot()
@@ -1065,7 +1117,6 @@ end)
 -- [PLAYER LOOPS]
 -- ====================================================
 
--- Auto Follow Loop
 task.spawn(function()
     while true do
         task.wait()
@@ -1074,15 +1125,12 @@ task.spawn(function()
                 local tChar = States.FollowTarget.Character
                 local tHRP = tChar and tChar:FindFirstChild("HumanoidRootPart")
                 local myHRP = GetRoot()
-                if tHRP and myHRP then
-                    myHRP.CFrame = tHRP.CFrame
-                end
+                if tHRP and myHRP then myHRP.CFrame = tHRP.CFrame end
             end)
         end
     end
 end)
 
--- Speed Loop 
 task.spawn(function()
     while true do
         task.wait()
@@ -1106,17 +1154,12 @@ task.spawn(function()
     end
 end)
 
--- No Damage Loop
 task.spawn(function()
     while true do
         task.wait(0.5)
         if States.NoDmg then
             local hum = GetHum()
-            if hum then
-                if hum.Health < hum.MaxHealth then
-                    hum.Health = hum.MaxHealth
-                end
-            end
+            if hum and hum.Health < hum.MaxHealth then hum.Health = hum.MaxHealth end
         end
     end
 end)
@@ -1147,21 +1190,11 @@ BtnClean.MouseButton1Click:Connect(function()
     ToggleVisual(BtnClean, States.AutoClean)
 end)
 
--- [EVENT BUTTON - PRIORITY SYSTEM]
-BtnPrior.MouseButton1Click:Connect(function()
-    EventListIndex = EventListIndex + 1
-    if EventListIndex > #EventList then EventListIndex = 1 end
-    States.PriorityEvent = EventList[EventListIndex]
-    BtnPrior.Text = "Prioritas: " .. States.PriorityEvent
-    Services.TweenService:Create(BtnPrior, TweenInfo.new(0.2), {BackgroundColor3=UI_THEME.Accent}):Play()
-    task.delay(0.2, function() ToggleVisual(BtnPrior, false) end)
-end)
-
+-- [EVENT BUTTON - NEW LOGIC]
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
     ToggleVisual(BtnEvent, States.AutoEvent)
-    
     if not States.AutoEvent then 
         local hrp = GetRoot()
         if IsInEvent and EventStartCFrame and hrp then 
@@ -1243,18 +1276,13 @@ task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceE
 
 -- [AUTO EVENT LOOP - PRIORITY & SECONDARY]
 local function FindInFolders(targetName)
-    -- SCAN HANYA DI PROPS (OLD METHOD) TAPI BISA MEMBACA NAMA EVENT
-    local folders = {Services.Workspace:FindFirstChild("Props"), Services.Workspace:FindFirstChild("ActiveEvents")}
+    local folders = {Services.Workspace:FindFirstChild("ActiveEvents"), Services.Workspace:FindFirstChild("Props")}
     for _, folder in pairs(folders) do
         if folder then
             for _, v in pairs(folder:GetChildren()) do
                 if v:IsA("Model") or v:IsA("BasePart") then
-                    -- Cek Prompt dulu (tanda object interaktif)
-                    if v:FindFirstChildWhichIsA("ProximityPrompt", true) then
-                        -- Cek Nama sesuai Target
-                        if v.Name == targetName or v.Name:find(targetName) then
-                            return v
-                        end
+                    if v.Name == targetName or v.Name:find(targetName) then
+                        return v
                     end
                 end
             end
@@ -1264,12 +1292,9 @@ local function FindInFolders(targetName)
 end
 
 local function ScanEvent()
-    -- 1. Scan Priority
     local pName = States.PriorityEvent
     local target = FindInFolders(pName)
     if target then return target, true end 
-
-    -- 2. Scan Others (Secondary)
     for _, name in pairs(EventList) do
         if name ~= pName then
             local t = FindInFolders(name)
@@ -1298,8 +1323,7 @@ task.spawn(function()
                         SetWoW(true)
                     end
                     local targetPos = FoundEvent:GetPivot().Position
-                    -- Height +4 Studs
-                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 4, targetPos.Z) 
+                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 3, targetPos.Z) 
                     if (hrp.Position - destPos).Magnitude > 15 then
                         hrp.CFrame = CFrame.new(destPos)
                     end
