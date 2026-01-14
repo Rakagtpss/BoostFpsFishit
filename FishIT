@@ -23,12 +23,12 @@ local function GetHum() local c = Player.Character; return c and c:FindFirstChil
 local UI_THEME = {
     Width = 460,   
     Height = 350,  
-    Color = Color3.fromRGB(10, 10, 10),       -- [UPDATED] Dark/Black Base
-    SidebarColor = Color3.fromRGB(0, 255, 255), -- [UPDATED] Bright Cyan Sidebar
-    Transparency = 0.25,                      -- [UPDATED] Transparan
-    Accent = Color3.fromRGB(0, 255, 255),     -- Cyan Electric
+    Color = Color3.fromRGB(10, 10, 10),       -- Hitam Pekat
+    SidebarColor = Color3.fromRGB(0, 255, 255), -- Cyan Terang
+    Transparency = 0.15,                      -- Lebih Tebal (Tidak terlalu transparan)
+    Accent = Color3.fromRGB(0, 255, 255),     
     TextMain = Color3.fromRGB(255, 255, 255), 
-    TextDim = Color3.fromRGB(180, 180, 180),
+    TextDim = Color3.fromRGB(200, 200, 200),
     FontHeader = Enum.Font.GothamBlack,       
     FontBody = Enum.Font.GothamBold,          
     CornerRadius = UDim.new(0, 8)
@@ -78,7 +78,7 @@ local function Notify(title, text, colorOverride, duration)
     Frame.Name = "NotifyItem"
     Frame.Size = UDim2.new(1, 0, 0, 0) 
     Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    Frame.BackgroundTransparency = 0.2
+    Frame.BackgroundTransparency = 0.1 -- Lebih Tebal
     Frame.BorderSizePixel = 0
     Frame.Parent = NotifyContainer
     
@@ -105,7 +105,7 @@ local function Notify(title, text, colorOverride, duration)
     LblTitle.Font = UI_THEME.FontHeader
     LblTitle.TextSize = 13
     LblTitle.TextStrokeColor3 = Color3.new(0,0,0)
-    LblTitle.TextStrokeTransparency = 0.5
+    LblTitle.TextStrokeTransparency = 0
     LblTitle.TextXAlignment = Enum.TextXAlignment.Left 
     
     local LblMsg = Instance.new("TextLabel", Frame)
@@ -139,7 +139,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Dark UI & Dropdown Loaded - @8raka_", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "Fix: Minimize, Stroke, & Event Height - @8raka_", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -156,8 +156,8 @@ FloatHUD.ZIndex = 50
 
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Color = UI_THEME.Accent
-HudStroke.Thickness = 1.2
-HudStroke.Transparency = 0.5
+HudStroke.Thickness = 1.5
+HudStroke.Transparency = 0
 
 Instance.new("UICorner", FloatHUD).CornerRadius = UI_THEME.CornerRadius
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
@@ -181,13 +181,13 @@ TitleLabel.Text = "SERAPHINxPANEL"
 TitleLabel.TextColor3 = UI_THEME.Accent 
 TitleLabel.Font = UI_THEME.FontHeader
 TitleLabel.TextSize = 13
-TitleLabel.TextStrokeTransparency = 1
+TitleLabel.TextStrokeTransparency = 0
 
 local Div = Instance.new("Frame", FloatHUD)
 Div.LayoutOrder = 2
 Div.Size = UDim2.new(1, 0, 0, 1)
 Div.BackgroundColor3 = UI_THEME.Accent
-Div.BackgroundTransparency = 0.5
+Div.BackgroundTransparency = 0
 Div.BorderSizePixel = 0
 
 local function CreateStatBlock(titleText, defaultVal, order)
@@ -206,6 +206,7 @@ local function CreateStatBlock(titleText, defaultVal, order)
     LblTitle.TextColor3 = UI_THEME.TextDim
     LblTitle.Font = UI_THEME.FontBody
     LblTitle.TextSize = 9
+    LblTitle.TextStrokeTransparency = 0
     
     local LblValue = Instance.new("TextLabel", Block)
     LblValue.Name = "Value"
@@ -216,6 +217,7 @@ local function CreateStatBlock(titleText, defaultVal, order)
     LblValue.TextColor3 = UI_THEME.TextMain
     LblValue.Font = UI_THEME.FontHeader
     LblValue.TextSize = 14 
+    LblValue.TextStrokeTransparency = 0
     return LblValue 
 end
 
@@ -240,27 +242,34 @@ local MainCorner = Instance.new("UICorner", Main)
 MainCorner.CornerRadius = UI_THEME.CornerRadius
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Color = UI_THEME.Accent
-MainStroke.Thickness = 1.2
-MainStroke.Transparency = 0.5
+MainStroke.Thickness = 1.5
+MainStroke.Transparency = 0
 
 -- Minimized Logo
-local LogoR = Instance.new("TextButton", Main)
+local LogoR = Instance.new("TextButton", ScreenGui) -- Pindahkan ke ScreenGui agar tidak ikut ter-hide
 LogoR.Name = "LogoR"
-LogoR.Size = UDim2.new(1, 0, 1, 0)
-LogoR.BackgroundTransparency = 1
+LogoR.Size = UDim2.new(0, 50, 0, 50)
+LogoR.Position = UDim2.new(0, 20, 0.5, -25)
+LogoR.BackgroundColor3 = UI_THEME.Color
+LogoR.BackgroundTransparency = 0.2
 LogoR.Text = "R"
 LogoR.TextColor3 = UI_THEME.Accent
 LogoR.Font = UI_THEME.FontHeader
 LogoR.TextSize = 28
 LogoR.Visible = false 
-LogoR.ZIndex = 10
+LogoR.ZIndex = 100
+LogoR.AutoButtonColor = true
+Instance.new("UICorner", LogoR).CornerRadius = UDim.new(0, 12)
+local LogoStroke = Instance.new("UIStroke", LogoR)
+LogoStroke.Color = UI_THEME.Accent
+LogoStroke.Thickness = 2
 
 -- HEADER
 local Header = Instance.new("Frame", Main)
 Header.Name = "Header"
 Header.Size = UDim2.new(1, 0, 0, 34) 
-Header.BackgroundColor3 = Color3.fromRGB(0,0,0) -- Darker header
-Header.BackgroundTransparency = 0.6
+Header.BackgroundColor3 = Color3.fromRGB(0,0,0) 
+Header.BackgroundTransparency = 0.5
 Header.BorderSizePixel = 0
 
 local Title = Instance.new("TextLabel", Header)
@@ -273,18 +282,19 @@ Title.Font = UI_THEME.FontHeader
 Title.TextSize = 13
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextStrokeTransparency = 0
 
 local HideBtn = Instance.new("TextButton", Header)
-HideBtn.Size = UDim2.new(0, 24, 0, 24) 
-HideBtn.Position = UDim2.new(1, -30, 0.5, -12)
+HideBtn.Size = UDim2.new(0, 30, 0, 30) 
+HideBtn.Position = UDim2.new(1, -35, 0.5, -15)
 HideBtn.Text = "-" 
-HideBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-HideBtn.BackgroundTransparency = 0.8
+HideBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Merah biar jelas
+HideBtn.BackgroundTransparency = 1
 HideBtn.TextColor3 = UI_THEME.TextMain
 HideBtn.Font = UI_THEME.FontHeader
-HideBtn.TextSize = 18
+HideBtn.TextSize = 24
 HideBtn.AutoButtonColor = true
-Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(1, 0)
+HideBtn.TextStrokeTransparency = 0
 
 local function EnableDrag(frame, dragInputObj)
     local dragToggle, dragStart, startPos
@@ -317,7 +327,7 @@ local function EnableDrag(frame, dragInputObj)
     end)
 end
 EnableDrag(Main, Header)
-EnableDrag(Main, LogoR) 
+EnableDrag(LogoR, LogoR) 
 EnableDrag(FloatHUD, FloatHUD)
 
 -- ====================================================
@@ -338,7 +348,7 @@ Sidebar.BorderSizePixel = 0
 
 -- [CYAN BORDER FOR SIDEBAR]
 local SidebarStroke = Instance.new("UIStroke", Sidebar)
-SidebarStroke.Color = UI_THEME.SidebarColor -- Bright Cyan
+SidebarStroke.Color = UI_THEME.SidebarColor 
 SidebarStroke.Thickness = 1.5
 SidebarStroke.Transparency = 0
 
@@ -360,8 +370,9 @@ local function CreateSideTab(name, text, isActive)
     btn.Text = text
     btn.Font = UI_THEME.FontBody
     btn.TextSize = 11
-    btn.TextColor3 = isActive and Color3.new(0,0,0) or UI_THEME.TextMain -- Hitam saat aktif biar kontras
+    btn.TextColor3 = isActive and Color3.new(0,0,0) or UI_THEME.TextMain 
     if not isActive then btn.TextColor3 = UI_THEME.TextDim end
+    btn.TextStrokeTransparency = 0 -- Black Stroke
     btn.AutoButtonColor = true
     
     local corner = Instance.new("UICorner", btn)
@@ -399,7 +410,7 @@ GridMain.CellPadding = UDim2.new(0, 6, 0, 6)
 GridMain.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- [PAGE EVENT]
-local PageEvent = Instance.new("Frame", PageArea) -- Changed to Frame for custom layout
+local PageEvent = Instance.new("Frame", PageArea)
 PageEvent.Name = "PageEvent"
 PageEvent.Size = UDim2.new(1, 0, 1, 0)
 PageEvent.BackgroundTransparency = 1
@@ -456,7 +467,7 @@ TabEventBtn.MouseButton1Click:Connect(function() SwitchTab("Event") end)
 TabPlayerBtn.MouseButton1Click:Connect(function() SwitchTab("Player") end)
 TabMiscBtn.MouseButton1Click:Connect(function() SwitchTab("Misc") end)
 
--- [UPDATED BUTTON MAKER]
+-- [UPDATED BUTTON MAKER WITH THICK STROKE]
 local function MakeBtn(parent, text)
     local b = Instance.new("TextButton", parent)
     b.Text = text
@@ -468,8 +479,9 @@ local function MakeBtn(parent, text)
     b.AutoButtonColor = true
     b.ClipsDescendants = true
     
+    -- Black Outline (Stroke)
     b.TextStrokeColor3 = Color3.new(0,0,0)
-    b.TextStrokeTransparency = 0.3
+    b.TextStrokeTransparency = 0
     
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6) 
     local s = Instance.new("UIStroke", b)
@@ -486,7 +498,7 @@ local function ToggleVisual(btn, on)
         Services.TweenService:Create(btn, tweenInfo, {
             BackgroundColor3 = UI_THEME.Accent,
             BackgroundTransparency = 0.3,
-            TextColor3 = Color3.new(0,0,0) -- Hitam biar kebaca di Cyan
+            TextColor3 = Color3.new(0,0,0) 
         }):Play()
         Services.TweenService:Create(btn.UIStroke, tweenInfo, {Transparency = 1}):Play()
     else
@@ -555,6 +567,17 @@ end
 
 -- >> TOMBOL UI <<
 
+-- HEADER MINIMIZE LOGIC (FIXED)
+HideBtn.MouseButton1Click:Connect(function() 
+    Main.Visible = false
+    LogoR.Visible = true
+end)
+
+LogoR.MouseButton1Click:Connect(function()
+    Main.Visible = true
+    LogoR.Visible = false
+end)
+
 -- TAB MAIN
 local BtnChest  = MakeBtn(PageMain, "Auto Chest: OFF") 
 local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
@@ -567,7 +590,7 @@ local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF")
 local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 
--- TAB EVENT [NEW DROPDOWN LOGIC]
+-- TAB EVENT [DROPDOWN + THICK LIST]
 local EventMainLayout = Instance.new("UIListLayout", PageEvent)
 EventMainLayout.SortOrder = Enum.SortOrder.LayoutOrder
 EventMainLayout.Padding = UDim.new(0, 10)
@@ -586,7 +609,7 @@ BtnSelectMode.Size = UDim2.new(0.98, 0, 0, 25)
 local DropdownFrame = Instance.new("Frame", PageEvent)
 DropdownFrame.Name = "Dropdown"
 DropdownFrame.LayoutOrder = 3
-DropdownFrame.Size = UDim2.new(0.98, 0, 0, 150) -- Default Expanded height for calculation
+DropdownFrame.Size = UDim2.new(0.98, 0, 0, 150) 
 DropdownFrame.BackgroundTransparency = 1
 
 local BtnDropdownTrigger = MakeBtn(DropdownFrame, "Select: Ghost Shark Hunt")
@@ -595,11 +618,15 @@ BtnDropdownTrigger.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 
 local DropdownList = Instance.new("ScrollingFrame", DropdownFrame)
 DropdownList.Size = UDim2.new(1, 0, 0, 110)
-DropdownList.Position = UDim2.new(0, 0, 0, 32)
-DropdownList.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+DropdownList.Position = UDim2.new(0, 0, 0, 35)
+DropdownList.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Gelap
 DropdownList.BorderSizePixel = 0
 DropdownList.Visible = false -- Hidden by default
-DropdownList.ZIndex = 10
+DropdownList.ZIndex = 20
+
+local DropdownStroke = Instance.new("UIStroke", DropdownList)
+DropdownStroke.Color = UI_THEME.SidebarColor
+DropdownStroke.Thickness = 1.5
 
 local DropdownLayout = Instance.new("UIListLayout", DropdownList)
 DropdownLayout.Padding = UDim.new(0, 2)
@@ -608,12 +635,13 @@ DropdownLayout.Padding = UDim.new(0, 2)
 for _, evName in pairs(EventList) do
     local b = Instance.new("TextButton", DropdownList)
     b.Size = UDim2.new(1, 0, 0, 25)
-    b.BackgroundTransparency = 0.5
+    b.BackgroundTransparency = 0.2
     b.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     b.Text = evName
-    b.TextColor3 = UI_THEME.TextDim
+    b.TextColor3 = UI_THEME.TextMain
     b.Font = UI_THEME.FontBody
     b.TextSize = 10
+    b.TextStrokeTransparency = 0
     
     b.MouseButton1Click:Connect(function()
         if States.SelectMode == "Priority" then
@@ -663,7 +691,7 @@ BtnSpeedToggle.TextColor3 = UI_THEME.TextMain
 BtnSpeedToggle.Font = UI_THEME.FontBody
 BtnSpeedToggle.TextSize = 10
 BtnSpeedToggle.TextStrokeColor3 = Color3.new(0,0,0)
-BtnSpeedToggle.TextStrokeTransparency = 0.3
+BtnSpeedToggle.TextStrokeTransparency = 0
 Instance.new("UICorner", BtnSpeedToggle).CornerRadius = UDim.new(0, 6)
 local sSpd = Instance.new("UIStroke", BtnSpeedToggle)
 sSpd.Color = Color3.fromRGB(70, 70, 80)
@@ -701,7 +729,7 @@ BtnFlyToggle.TextColor3 = UI_THEME.TextMain
 BtnFlyToggle.Font = UI_THEME.FontBody
 BtnFlyToggle.TextSize = 10
 BtnFlyToggle.TextStrokeColor3 = Color3.new(0,0,0)
-BtnFlyToggle.TextStrokeTransparency = 0.3
+BtnFlyToggle.TextStrokeTransparency = 0
 Instance.new("UICorner", BtnFlyToggle).CornerRadius = UDim.new(0, 6)
 local sFly = Instance.new("UIStroke", BtnFlyToggle)
 sFly.Color = Color3.fromRGB(70, 70, 80)
@@ -739,7 +767,7 @@ BtnFollowToggle.TextColor3 = UI_THEME.TextMain
 BtnFollowToggle.Font = UI_THEME.FontBody
 BtnFollowToggle.TextSize = 10
 BtnFollowToggle.TextStrokeColor3 = Color3.new(0,0,0)
-BtnFollowToggle.TextStrokeTransparency = 0.3
+BtnFollowToggle.TextStrokeTransparency = 0
 Instance.new("UICorner", BtnFollowToggle).CornerRadius = UDim.new(0, 6)
 local sFol = Instance.new("UIStroke", BtnFollowToggle)
 sFol.Color = Color3.fromRGB(70, 70, 80)
@@ -780,7 +808,7 @@ BtnStuckToggle.TextColor3 = UI_THEME.TextMain
 BtnStuckToggle.Font = UI_THEME.FontBody
 BtnStuckToggle.TextSize = 10
 BtnStuckToggle.TextStrokeColor3 = Color3.new(0,0,0)
-BtnStuckToggle.TextStrokeTransparency = 0.3
+BtnStuckToggle.TextStrokeTransparency = 0
 Instance.new("UICorner", BtnStuckToggle).CornerRadius = UDim.new(0, 6)
 local s1 = Instance.new("UIStroke", BtnStuckToggle)
 s1.Color = Color3.fromRGB(70, 70, 80)
@@ -1229,6 +1257,7 @@ BtnRender.MouseButton1Click:Connect(function()
     Services.RunService:Set3dRenderingEnabled(not States.NoRender) 
     BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON")
     ToggleVisual(BtnRender, States.NoRender)
+    if States.NoRender then BlackScreen.Visible = true else BlackScreen.Visible = false end
 end)
 
 BtnFreeze.MouseButton1Click:Connect(function() 
@@ -1275,7 +1304,7 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP - PATH SCAN]
+-- [AUTO EVENT LOOP - DIRECT PATH SCAN]
 local function ScanEvent()
     local props = Services.Workspace:FindFirstChild("Props")
     if not props then return nil end
@@ -1311,7 +1340,7 @@ task.spawn(function()
                     end
                     local targetPos = FoundEvent:GetPivot().Position
                     -- Height +3 Studs
-                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 3, targetPos.Z) 
+                    local destPos = Vector3.new(targetPos.X, targetPos.Y + 4, targetPos.Z) 
                     if (hrp.Position - destPos).Magnitude > 15 then
                         hrp.CFrame = CFrame.new(destPos)
                     end
