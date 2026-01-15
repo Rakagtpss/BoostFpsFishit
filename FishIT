@@ -139,7 +139,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "UI Updated", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "UI Updated (Auto Pirate Added)", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -564,7 +564,9 @@ local States = {
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
     AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
     Speed=false, SpeedVal=50, Fly=false, FlySpeed=50, NoDmg=false,
-    AutoFollow=false, FollowTarget=nil
+    AutoFollow=false, FollowTarget=nil,
+    -- [NEW STATE]
+    AutoPirates=false
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -617,7 +619,17 @@ local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 
 -- TAB EVENT
 local BtnEvent  = MakeBtn(PageEvent, "Auto Event: OFF") 
-local BtnChest  = MakeBtn(PageEvent, "Auto Chest: OFF") 
+local BtnChest  = MakeBtn(PageEvent, "Auto Chest: OFF")
+-- [NEW BUTTON]
+local BtnPirates = MakeBtn(PageEvent, "Auto Pirates: OFF")
+
+BtnPirates.MouseButton1Click:Connect(function()
+    States.AutoPirates = not States.AutoPirates
+    BtnPirates.Text = "Auto Pirates: " .. (States.AutoPirates and "ON" or "OFF")
+    ToggleVisual(BtnPirates, States.AutoPirates)
+    
+    Notify("EVENT", "Auto Pirates: "..(States.AutoPirates and "ON" or "OFF"), States.AutoPirates and Color3.fromRGB(0,255,100) or Color3.fromRGB(255,50,50))
+end)
 
 -- TAB PLAYER
 local SpeedContainer = Instance.new("Frame", PagePlayer)
@@ -1130,16 +1142,28 @@ task.spawn(function()
     end
 end)
 
+-- [UPDATED GOD MODE / NO DAMAGE]
 task.spawn(function()
     while true do
-        task.wait(0.5)
+        task.wait() -- Loop sangat cepat (setiap frame)
         if States.NoDmg then
-            local hum = GetHum()
-            if hum then
-                if hum.Health < hum.MaxHealth then
-                    hum.Health = hum.MaxHealth
+            pcall(function()
+                local char = Player.Character
+                local hum = char and char:FindFirstChild("Humanoid")
+                if hum then
+                    -- Reset darah ke penuh instan
+                    if hum.Health < hum.MaxHealth then
+                        hum.Health = hum.MaxHealth
+                    end
+                    
+                    -- Anti Tenggelam: Coba cari value oksigen jika ada
+                    if char:FindFirstChild("Oxygen") then
+                        char.Oxygen.Value = 100
+                    elseif char:FindFirstChild("ClientOxygen") then -- Alternatif nama
+                        char.ClientOxygen.Value = 100
+                    end
                 end
-            end
+            end)
         end
     end
 end)
@@ -1373,6 +1397,46 @@ task.spawn(function()
             end)
         else
             if IsLootingChests then IsLootingChests = false end
+        end
+    end
+end)
+
+-- [AUTO TAKE PIRATES EVENT LOOP]
+task.spawn(function()
+    while true do
+        task.wait(0.1) -- Cek cepat
+        if States.AutoPirates then
+            pcall(function()
+                local root = GetRoot()
+                if not root then return end
+                
+                -- Folder utama target
+                local mainFolder = workspace:FindFirstChild("!!! SEARCH ITEM SPAWNS")
+                
+                if mainFolder then
+                    -- Loop semua folder di dalamnya (TNT, Mushroom, Coin, DeadManCompass)
+                    for _, category in pairs(mainFolder:GetChildren()) do
+                        -- Loop semua item di dalam kategori tersebut
+                        for _, item in pairs(category:GetChildren()) do
+                            if item:IsA("Model") or item:IsA("BasePart") then
+                                -- Cek apakah item memiliki ProximityPrompt untuk diambil
+                                local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                
+                                if prompt and prompt.Enabled then
+                                    -- Teleport ke item agar prompt muncul
+                                    root.CFrame = item:GetPivot() + Vector3.new(0, 3, 0)
+                                    
+                                    -- Tunggu sekejap agar server mendeteksi
+                                    task.wait(0.15)
+                                    
+                                    -- Ambil Item
+                                    fireproximityprompt(prompt)
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
         end
     end
 end)
