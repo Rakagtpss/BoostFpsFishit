@@ -24,17 +24,19 @@ local UI_THEME = {
     Width = 400,   
     Height = 300,  
     
-    Color = Color3.fromRGB(12, 12, 14),       
-    SidebarColor = Color3.fromRGB(18, 18, 22),
+    Color = Color3.fromRGB(12, 12, 14), -- Main BG Gelap
+    
+    -- [REQUEST] Sidebar Lebih Terang (Samping Cyan)
+    SidebarColor = Color3.fromRGB(30, 30, 35), 
+    
     Transparency = 0.05, 
     Accent = Color3.fromRGB(0, 255, 255),    
     TextMain = Color3.fromRGB(255, 255, 255), 
-    TextDim = Color3.fromRGB(150, 150, 150),
+    TextDim = Color3.fromRGB(180, 180, 180),
     
     FontHeader = Enum.Font.GothamBlack,       
     FontBody = Enum.Font.GothamBold,          
     
-    -- [REQUEST] Sudut Melengkung (12 pas untuk ukuran ini)
     CornerRadius = UDim.new(0, 12) 
 }
 
@@ -48,15 +50,25 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [SYSTEM] CUSTOM NOTIFICATION
+-- [SYSTEM] CUSTOM NOTIFICATION (FIXED BOTTOM RIGHT)
 -- ====================================================
 local NotifyContainer = Instance.new("Frame", ScreenGui)
 NotifyContainer.Name = "NotificationContainer"
-NotifyContainer.Size = UDim2.new(0, 280, 0.6, 0)
+-- Ukuran container dibatasi agar tidak naik terlalu tinggi
+NotifyContainer.Size = UDim2.new(0, 280, 0.5, 0) 
+-- AnchorPoint 1,1 artinya titik referensi ada di pojok kanan bawah elemen
 NotifyContainer.AnchorPoint = Vector2.new(1, 1)
+-- Posisi di 1 (Kanan mentok) - 20 pixel, 1 (Bawah mentok) - 20 pixel
 NotifyContainer.Position = UDim2.new(1, -20, 1, -20)
 NotifyContainer.BackgroundTransparency = 1
 NotifyContainer.ClipsDescendants = false
+
+local NotifyLayout = Instance.new("UIListLayout", NotifyContainer)
+NotifyLayout.FillDirection = Enum.FillDirection.Vertical
+-- [FIX] Pastikan VerticalAlignment Bottom agar menumpuk dari bawah
+NotifyLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+NotifyLayout.SortOrder = Enum.SortOrder.LayoutOrder
+NotifyLayout.Padding = UDim.new(0, 8)
 
 local function Notify(title, text, colorOverride, duration)
     local color = colorOverride or UI_THEME.Accent
@@ -127,7 +139,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "UI Update: Logo Box & Draggable", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "UI Updated", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -245,7 +257,7 @@ MainStroke.Color = UI_THEME.Accent
 MainStroke.Thickness = 2
 MainStroke.Transparency = 0.6
 
--- [REQUEST] Logo R dalam Kotak
+-- Logo R dalam Kotak
 local LogoContainer = Instance.new("Frame", Main)
 LogoContainer.Name = "LogoContainer"
 LogoContainer.Size = UDim2.new(0, 28, 0, 28)
@@ -268,7 +280,7 @@ LogoR.BackgroundTransparency = 1
 LogoR.Text = "R"
 LogoR.TextColor3 = UI_THEME.Accent
 LogoR.Font = UI_THEME.FontHeader
-LogoR.TextSize = 18 -- Ukuran font logo dalam kotak
+LogoR.TextSize = 18 
 LogoR.ZIndex = 12
 
 -- HEADER
@@ -302,7 +314,6 @@ HideBtn.TextSize = 18
 HideBtn.AutoButtonColor = true
 Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(1, 0)
 
--- [REQUEST] Bisa drag di seluruh Main UI
 local function EnableDrag(frame, dragInputObj)
     local dragToggle, dragStart, startPos
     local function updateInput(input)
@@ -333,7 +344,7 @@ local function EnableDrag(frame, dragInputObj)
         end
     end)
 end
-EnableDrag(Main, Main) -- Enable drag pada seluruh frame Main
+EnableDrag(Main, Main) 
 EnableDrag(FloatHUD, FloatHUD)
 
 -- ====================================================
@@ -369,12 +380,13 @@ SidebarPad.PaddingTop = UDim.new(0, 10)
 local function CreateSideTab(name, text, isActive)
     local btn = Instance.new("TextButton", Sidebar)
     btn.Name = name
-    btn.Size = UDim2.new(0.85, 0, 0, 32)
+    -- [REQUEST] Tab Button Lebih Kecil (Height 26), Teks Tetap
+    btn.Size = UDim2.new(0.85, 0, 0, 26) 
     btn.BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(25, 25, 30)
     btn.BackgroundTransparency = isActive and 0.1 or 1
     btn.Text = text
     btn.Font = UI_THEME.FontBody
-    -- [REQUEST] Font Tab Lebih Besar
+    -- Ukuran teks tab tetap 12
     btn.TextSize = 12 
     btn.TextColor3 = isActive and Color3.new(0,0,0) or UI_THEME.TextDim
     btn.AutoButtonColor = true
@@ -426,7 +438,6 @@ local function CreatePage(name, visible)
     pg.Visible = visible
     
     local gl = Instance.new("UIGridLayout", pg)
-    -- [REQUEST] Tombol Lebih Kecil (Height 26) tapi Lebar tetap
     gl.CellSize = UDim2.new(0.46, 0, 0, 26)  
     gl.CellPadding = UDim2.new(0, 6, 0, 6)
     gl.SortOrder = Enum.SortOrder.LayoutOrder
@@ -513,7 +524,6 @@ local function MakeBtn(parent, text)
     b.BackgroundTransparency = 0.4
     b.TextColor3 = UI_THEME.TextMain
     b.Font = UI_THEME.FontBody 
-    -- [REQUEST] Ukuran Teks Jangan Dirubah (Tetap 10)
     b.TextSize = 10 
     b.AutoButtonColor = true
     b.ClipsDescendants = true
@@ -1258,7 +1268,7 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP]
+-- [AUTO EVENT LOOP - Y=4 FIXED]
 local function FindInFolders(targetName)
     local folders = {Services.Workspace:FindFirstChild("ActiveEvents"), Services.Workspace:FindFirstChild("Props")}
     for _, folder in pairs(folders) do
