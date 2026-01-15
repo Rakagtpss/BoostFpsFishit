@@ -19,11 +19,10 @@ local function GetChar() return Player.Character or Player.CharacterAdded:Wait()
 local function GetRoot() local c = Player.Character; return c and c:FindFirstChild("HumanoidRootPart") end
 local function GetHum() local c = Player.Character; return c and c:FindFirstChild("Humanoid") end
 
--- // Konfigurasi Visual (UPDATED REQUEST)
+-- // Konfigurasi Visual
 local UI_THEME = {
     Width = 400,   
-    -- [REQUEST] Height diubah jadi 270
-    Height = 270,  
+    Height = 270,  -- Height Tetap 270
     
     Color = Color3.fromRGB(12, 12, 14), 
     SidebarColor = Color3.fromRGB(30, 30, 35), 
@@ -134,7 +133,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Height: 270 | Fire & Cyan Side", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "UI Gradient: Full Border", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -247,10 +246,19 @@ MainGrad.Rotation = 90
 local MainCorner = Instance.new("UICorner", Main)
 MainCorner.CornerRadius = UI_THEME.CornerRadius
 
+-- [REQUEST] MAIN STROKE FULL GRADIENT
 local MainStroke = Instance.new("UIStroke", Main)
-MainStroke.Color = UI_THEME.Accent
-MainStroke.Thickness = 2
-MainStroke.Transparency = 0.6
+MainStroke.Thickness = 2.5 -- [REQUEST] Thickness 2.5
+MainStroke.Transparency = 0
+MainStroke.Color = Color3.new(1, 1, 1) -- Base white untuk gradient
+
+-- [REQUEST] Gradasi Oren Api ke Cyan Cerah di SELURUH pinggir UI
+local MainStrokeGradient = Instance.new("UIGradient", MainStroke)
+MainStrokeGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 0)),   -- Oren Api
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))   -- Cyan Cerah
+}
+MainStrokeGradient.Rotation = 45 -- Rotasi agar terlihat elegan
 
 -- Logo R dalam Kotak
 local LogoContainer = Instance.new("Frame", Main)
@@ -343,7 +351,7 @@ EnableDrag(Main, Main)
 EnableDrag(FloatHUD, FloatHUD)
 
 -- ====================================================
--- [3] SIDE NAVIGATION (DUAL COLOR GRADIENT)
+-- [3] SIDE NAVIGATION
 -- ====================================================
 local ContentContainer = Instance.new("Frame", Main)
 ContentContainer.Name = "Container"
@@ -358,18 +366,11 @@ Sidebar.BackgroundColor3 = UI_THEME.SidebarColor
 Sidebar.BackgroundTransparency = 0.3
 Sidebar.BorderSizePixel = 0
 
--- [REQUEST] Side UI Sedikit Tebal & 2 Warna (Oren Api & Cyan Cerah)
+-- Sidebar Stroke (Opsional/Tipis saja karena Main Frame sudah tebal gradasi)
 local SidebarStroke = Instance.new("UIStroke", Sidebar)
-SidebarStroke.Thickness = 3 -- Sedikit tebal
-SidebarStroke.Transparency = 0
-SidebarStroke.Color = Color3.fromRGB(255, 255, 255) -- Base color white agar gradient muncul
-
-local SidebarGradient = Instance.new("UIGradient", SidebarStroke)
-SidebarGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 0)), -- Oren Api (Fire Orange)
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255)) -- Cyan Cerah (Electric Cyan)
-}
-SidebarGradient.Rotation = 45 -- Miring sedikit agar elegan
+SidebarStroke.Thickness = 1
+SidebarStroke.Transparency = 0.5
+SidebarStroke.Color = Color3.fromRGB(60,60,60)
 
 local SidebarLayout = Instance.new("UIListLayout", Sidebar)
 SidebarLayout.FillDirection = Enum.FillDirection.Vertical
@@ -696,347 +697,6 @@ local sFlyIn = Instance.new("UIStroke", BoxFlyInput)
 sFlyIn.Color = Color3.fromRGB(60, 60, 70)
 sFlyIn.Thickness = 1
 sFlyIn.Transparency = 0.6
-
--- [AUTO FOLLOW UI]
-local FollowContainer = Instance.new("Frame", PagePlayer)
-FollowContainer.Name = "FollowContainer"
-FollowContainer.BackgroundTransparency = 1
-
-local BtnFollowToggle = Instance.new("TextButton", FollowContainer)
-BtnFollowToggle.Name = "Toggle"
-BtnFollowToggle.Size = UDim2.new(0.5, -4, 1, 0)
-BtnFollowToggle.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-BtnFollowToggle.BackgroundTransparency = 0.4
-BtnFollowToggle.Text = "Follow: OFF"
-BtnFollowToggle.TextColor3 = UI_THEME.TextMain
-BtnFollowToggle.Font = UI_THEME.FontBody
-BtnFollowToggle.TextSize = 10
-BtnFollowToggle.TextStrokeColor3 = Color3.new(0,0,0)
-BtnFollowToggle.TextStrokeTransparency = 0.5
-Instance.new("UICorner", BtnFollowToggle).CornerRadius = UDim.new(0, 6)
-local sFol = Instance.new("UIStroke", BtnFollowToggle)
-sFol.Color = Color3.fromRGB(60, 60, 70)
-sFol.Thickness = 1
-sFol.Transparency = 0.6
-
-local BoxFollowInput = Instance.new("TextBox", FollowContainer)
-BoxFollowInput.Name = "Input"
-BoxFollowInput.Size = UDim2.new(0.5, 0, 1, 0)
-BoxFollowInput.Position = UDim2.new(0.5, 0, 0, 0)
-BoxFollowInput.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-BoxFollowInput.BackgroundTransparency = 0.4
-BoxFollowInput.Text = "" 
-BoxFollowInput.PlaceholderText = "Input Name"
-BoxFollowInput.TextColor3 = UI_THEME.Accent
-BoxFollowInput.Font = UI_THEME.FontHeader
-BoxFollowInput.TextSize = 10
-Instance.new("UICorner", BoxFollowInput).CornerRadius = UDim.new(0, 6)
-local sFolIn = Instance.new("UIStroke", BoxFollowInput)
-sFolIn.Color = Color3.fromRGB(60, 60, 70)
-sFolIn.Thickness = 1
-sFolIn.Transparency = 0.6
-
-local BtnNoDmg = MakeBtn(PagePlayer, "No Damage: OFF")
-
--- TAB MISC
-local StuckContainer = Instance.new("Frame", PageMisc)
-StuckContainer.Name = "StuckContainer"
-StuckContainer.BackgroundTransparency = 1
-
-local BtnStuckToggle = Instance.new("TextButton", StuckContainer)
-BtnStuckToggle.Name = "Toggle"
-BtnStuckToggle.Size = UDim2.new(0.65, -4, 1, 0)
-BtnStuckToggle.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-BtnStuckToggle.BackgroundTransparency = 0.4
-BtnStuckToggle.Text = "Anti-Stuck: OFF"
-BtnStuckToggle.TextColor3 = UI_THEME.TextMain
-BtnStuckToggle.Font = UI_THEME.FontBody
-BtnStuckToggle.TextSize = 10
-BtnStuckToggle.TextStrokeColor3 = Color3.new(0,0,0)
-BtnStuckToggle.TextStrokeTransparency = 0.5
-Instance.new("UICorner", BtnStuckToggle).CornerRadius = UDim.new(0, 6)
-local s1 = Instance.new("UIStroke", BtnStuckToggle)
-s1.Color = Color3.fromRGB(60, 60, 70)
-s1.Thickness = 1
-s1.Transparency = 0.6
-
-local BoxStuckInput = Instance.new("TextBox", StuckContainer)
-BoxStuckInput.Name = "Input"
-BoxStuckInput.Size = UDim2.new(0.35, 0, 1, 0)
-BoxStuckInput.Position = UDim2.new(0.65, 0, 0, 0)
-BoxStuckInput.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-BoxStuckInput.BackgroundTransparency = 0.4
-BoxStuckInput.Text = "60" 
-BoxStuckInput.PlaceholderText = "Sec"
-BoxStuckInput.TextColor3 = UI_THEME.Accent
-BoxStuckInput.Font = UI_THEME.FontHeader
-BoxStuckInput.TextSize = 10
-Instance.new("UICorner", BoxStuckInput).CornerRadius = UDim.new(0, 6)
-local s2 = Instance.new("UIStroke", BoxStuckInput)
-s2.Color = Color3.fromRGB(60, 60, 70)
-s2.Thickness = 1
-s2.Transparency = 0.6
-
-local BtnSave   = MakeBtn(PageMisc, "Save Pos")
-local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
-local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
-local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
-
--- Logic Water Walk
-local function SetWoW(bool)
-    States.WoW = bool
-    if typeof(BtnWow) == "Instance" then
-        BtnWow.Text = "Water Walk: " .. (States.WoW and "ON" or "OFF")
-        ToggleVisual(BtnWow, States.WoW)
-    end
-    
-    if States.WoW then 
-        local hrp = GetRoot()
-        if not hrp then return end 
-        if not BodyV then 
-            BodyV = Instance.new("BodyVelocity")
-            BodyV.Name = "WoW_Velocity"
-            BodyV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            BodyV.Velocity = Vector3.zero
-        end
-        BodyV.Parent = hrp
-        if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
-        Connections["WoW"] = Services.RunService.RenderStepped:Connect(function() 
-            local hrpNow = GetRoot()
-            local humNow = GetHum()
-            if hrpNow and humNow and BodyV and BodyV.Parent then
-                local moveDir = humNow.MoveDirection
-                if moveDir.Magnitude > 0 then
-                    local speed = humNow.WalkSpeed
-                    BodyV.Velocity = Vector3.new(moveDir.X * speed, 0, moveDir.Z * speed)
-                else
-                    BodyV.Velocity = Vector3.zero
-                end
-            end 
-        end) 
-    else 
-        if Connections["WoW"] then Connections["WoW"]:Disconnect() end 
-        if BodyV then BodyV:Destroy(); BodyV = nil end 
-    end 
-end
-
-local function SetAutoEquip(bool)
-    States.AutoEquip = bool
-    if typeof(BtnEquip) == "Instance" then
-        BtnEquip.Text = "Auto Equip: " .. (States.AutoEquip and "ON" or "OFF")
-        ToggleVisual(BtnEquip, States.AutoEquip)
-    end
-end
-
--- Ultra HD
-local function SetUltraGraphics(enabled)
-    States.Ultra = enabled
-    BtnUltra.Text = "Ultra HD: " .. (States.Ultra and "ON" or "OFF")
-    ToggleVisual(BtnUltra, States.Ultra)
-
-    if enabled then
-        pcall(function() settings().Rendering.QualityLevel = "Level21" end)
-        Services.Lighting.GlobalShadows = true
-        Services.Lighting.Technology = Enum.Technology.Future 
-        
-        local fx = Instance.new("BloomEffect", Services.Lighting)
-        fx.Name = "Seraphin_Bloom"
-        fx.Intensity = 0.8
-        Notify("GRAPHICS", "ULTRA HD ACTIVE", Color3.fromRGB(0, 255, 255))
-    else
-        for _, v in pairs(Services.Lighting:GetChildren()) do
-            if v.Name:find("Seraphin_") then v:Destroy() end
-        end
-        Notify("GRAPHICS", "Normal Mode", UI_THEME.Accent)
-    end
-end
-
--- Smart Booster
-local function ToggleBoost(enable)
-    States.Boost = enable
-    BtnBoost.Text = "CPU Booster: " .. (States.Boost and "ON" or "OFF")
-    ToggleVisual(BtnBoost, States.Boost)
-    
-    if enable then
-        Notify("BOOSTER", "Maximizing FPS...", Color3.fromRGB(0, 255, 100))
-        OriginalSettings.Lighting.GlobalShadows = Services.Lighting.GlobalShadows
-        OriginalSettings.Lighting.Technology = Services.Lighting.Technology
-        OriginalSettings.Lighting.EnvironmentDiffuseScale = Services.Lighting.EnvironmentDiffuseScale
-        OriginalSettings.Lighting.EnvironmentSpecularScale = Services.Lighting.EnvironmentSpecularScale
-        
-        Services.Lighting.GlobalShadows = false
-        Services.Lighting.Technology = Enum.Technology.Voxel
-        Services.Lighting.EnvironmentDiffuseScale = 0
-        Services.Lighting.EnvironmentSpecularScale = 0
-        
-        if Services.Workspace.Terrain then
-            Services.Workspace.Terrain.WaterReflectance = 0
-            Services.Workspace.Terrain.WaterTransparency = 0
-            Services.Workspace.Terrain.WaterWaveSize = 0
-            Services.Workspace.Terrain.WaterWaveSpeed = 0
-        end
-        
-        for _, v in pairs(Services.Workspace:GetDescendants()) do
-            if v:IsA("BasePart") and not v:IsA("Terrain") then
-                v.Material = Enum.Material.SmoothPlastic
-                v.Reflectance = 0
-            elseif v:IsA("Decal") or v:IsA("Texture") then
-                v.Transparency = 1
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                v.Enabled = false
-            end
-        end
-    else
-        Notify("BOOSTER", "Restoring Visuals...", UI_THEME.Accent)
-        Services.Lighting.GlobalShadows = OriginalSettings.Lighting.GlobalShadows
-        Services.Lighting.Technology = OriginalSettings.Lighting.Technology
-        Services.Lighting.EnvironmentDiffuseScale = OriginalSettings.Lighting.EnvironmentDiffuseScale
-        Services.Lighting.EnvironmentSpecularScale = OriginalSettings.Lighting.EnvironmentSpecularScale
-    end
-end
-
--- FPS Updater
-local fpsT = 0
-Services.RunService.RenderStepped:Connect(function(dt)
-    fpsT = fpsT + (1/dt - fpsT) * 0.1 
-    local currentFps = math.floor(fpsT)
-    if Title and currentFps then
-        Title.Text = string.format(
-            "SERA <font color=\"rgb(0,255,255)\">HELPER</font> <font size=\"10\" color=\"rgb(255,255,255)\">@8raka_</font> | FPS: <b>%d</b>", 
-            currentFps
-        )
-    end
-end)
-
-BtnFps.MouseButton1Click:Connect(function()
-    local caps = {60, 90, 144, 240, 99999}
-    _G.fpsIndex = (_G.fpsIndex or 0) % #caps + 1 
-    local v = caps[_G.fpsIndex]
-    if setfpscap then setfpscap(v) end
-    local txt = (v >= 9999) and "Unli" or tostring(v)
-    BtnFps.Text = "FPS: " .. txt
-    Services.TweenService:Create(BtnFps, TweenInfo.new(0.1), {BackgroundColor3=UI_THEME.Accent}):Play()
-    task.delay(0.1, function() ToggleVisual(BtnFps, false) end)
-end)
-
-ToggleVisual(BtnPanel, true)
-BtnPanel.MouseButton1Click:Connect(function()
-    States.Panel = not States.Panel
-    FloatHUD.Visible = States.Panel
-    BtnPanel.Text = "Panel Info: " .. (States.Panel and "ON" or "OFF")
-    ToggleVisual(BtnPanel, States.Panel)
-end)
-
--- ====================================================
--- [BUTTON LOGIC - PLAYER TAB]
--- ====================================================
-
--- 1. SPEED BUTTON
-BtnSpeedToggle.MouseButton1Click:Connect(function()
-    States.Speed = not States.Speed
-    local val = tonumber(BoxSpeedInput.Text) or 50
-    States.SpeedVal = val
-    
-    local hum = GetHum()
-    if States.Speed then
-        BtnSpeedToggle.Text = "Speed: ON"
-        ToggleVisual(BtnSpeedToggle, true)
-        Notify("PLAYER", "Speed Active: " .. val, Color3.fromRGB(0, 255, 100))
-        if hum and not hum.Sit then hum.WalkSpeed = 16 end
-    else
-        BtnSpeedToggle.Text = "Speed: OFF"
-        ToggleVisual(BtnSpeedToggle, false)
-        if hum then hum.WalkSpeed = 16 end
-    end
-end)
-
-BoxSpeedInput.FocusLost:Connect(function()
-    local val = tonumber(BoxSpeedInput.Text)
-    if val then States.SpeedVal = val else BoxSpeedInput.Text = tostring(States.SpeedVal) end
-end)
-
--- 2. FLY BUTTON
-local FlyBV, FlyBG
-local function ToggleFly(state)
-    local hrp = GetRoot()
-    local hum = GetHum()
-    
-    if state then
-        if not hrp then return end
-        if hum then hum.PlatformStand = true end
-        
-        FlyBG = Instance.new("BodyGyro")
-        FlyBG.Parent = hrp
-        FlyBG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-        FlyBG.P = 10000
-        
-        FlyBV = Instance.new("BodyVelocity")
-        FlyBV.Parent = hrp
-        FlyBV.Velocity = Vector3.zero
-        FlyBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-        
-        Connections["Fly"] = Services.RunService.RenderStepped:Connect(function()
-            local hrpNow = GetRoot()
-            if hrpNow and FlyBV and FlyBG then
-                FlyBG.CFrame = Cam.CFrame
-                
-                local speed = States.FlySpeed
-                local moveDir = Vector3.zero
-                local camCF = Cam.CFrame
-                
-                if Services.UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camCF.LookVector end
-                if Services.UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camCF.LookVector end
-                if Services.UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camCF.RightVector end
-                if Services.UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camCF.RightVector end
-                
-                FlyBV.Velocity = moveDir * speed
-                
-                local char = GetChar()
-                if char then
-                    for _,v in pairs(char:GetDescendants()) do
-                        if v:IsA("BasePart") then v.CanCollide = false end
-                    end
-                end
-            end
-        end)
-    else
-        if Connections["Fly"] then Connections["Fly"]:Disconnect() end
-        if FlyBV then FlyBV:Destroy() end
-        if FlyBG then FlyBG:Destroy() end
-        
-        local humNow = GetHum()
-        if humNow then humNow.PlatformStand = false end
-        
-        local char = GetChar()
-        if char then
-            for _,v in pairs(char:GetDescendants()) do
-                if v:IsA("BasePart") then v.CanCollide = true end
-            end
-        end
-    end
-end
-
-BtnFlyToggle.MouseButton1Click:Connect(function()
-    States.Fly = not States.Fly
-    local val = tonumber(BoxFlyInput.Text) or 50
-    States.FlySpeed = val 
-    
-    if States.Fly then
-        BtnFlyToggle.Text = "Fly: ON"
-        ToggleVisual(BtnFlyToggle, true)
-        Notify("PLAYER", "Fly Active: " .. val, Color3.fromRGB(0, 255, 100))
-        ToggleFly(true)
-    else
-        BtnFlyToggle.Text = "Fly: OFF"
-        ToggleVisual(BtnFlyToggle, false)
-        ToggleFly(false)
-    end
-end)
-
-BoxFlyInput.FocusLost:Connect(function()
-    local val = tonumber(BoxFlyInput.Text)
-    if val then States.FlySpeed = val else BoxFlyInput.Text = "50" end
-end)
 
 -- 3. FOLLOW PLAYER BUTTON
 local function FindPlayer(namePart)
