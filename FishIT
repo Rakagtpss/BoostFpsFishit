@@ -1,3 +1,5 @@
+Tentu, saya telah menghapus fitur Auto Pirates (tombol dan logika pengambilannya) dari skrip, namun tetap mempertahankan Enhanced God Mode agar karakter Anda tetap aman di air.
+Berikut adalah skrip bersihnya:
 -- [1] Notifikasi Awal (Custom Safe Load)
 local Services = {
     Players = game:GetService("Players"),
@@ -19,24 +21,18 @@ local function GetChar() return Player.Character or Player.CharacterAdded:Wait()
 local function GetRoot() local c = Player.Character; return c and c:FindFirstChild("HumanoidRootPart") end
 local function GetHum() local c = Player.Character; return c and c:FindFirstChild("Humanoid") end
 
--- // Konfigurasi Visual (UPDATED REQUEST)
+-- // Konfigurasi Visual
 local UI_THEME = {
     Width = 400,   
     Height = 300,  
-    
-    Color = Color3.fromRGB(12, 12, 14), -- Main BG Gelap
-    
-    -- [REQUEST] Sidebar Lebih Terang (Samping Cyan)
+    Color = Color3.fromRGB(12, 12, 14), 
     SidebarColor = Color3.fromRGB(30, 30, 35), 
-    
     Transparency = 0.05, 
     Accent = Color3.fromRGB(0, 255, 255),    
     TextMain = Color3.fromRGB(255, 255, 255), 
     TextDim = Color3.fromRGB(180, 180, 180),
-    
     FontHeader = Enum.Font.GothamBlack,       
     FontBody = Enum.Font.GothamBold,          
-    
     CornerRadius = UDim.new(0, 12) 
 }
 
@@ -50,22 +46,18 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [SYSTEM] CUSTOM NOTIFICATION (FIXED BOTTOM RIGHT)
+-- [SYSTEM] CUSTOM NOTIFICATION
 -- ====================================================
 local NotifyContainer = Instance.new("Frame", ScreenGui)
 NotifyContainer.Name = "NotificationContainer"
--- Ukuran container dibatasi agar tidak naik terlalu tinggi
 NotifyContainer.Size = UDim2.new(0, 280, 0.5, 0) 
--- AnchorPoint 1,1 artinya titik referensi ada di pojok kanan bawah elemen
 NotifyContainer.AnchorPoint = Vector2.new(1, 1)
--- Posisi di 1 (Kanan mentok) - 20 pixel, 1 (Bawah mentok) - 20 pixel
 NotifyContainer.Position = UDim2.new(1, -20, 1, -20)
 NotifyContainer.BackgroundTransparency = 1
 NotifyContainer.ClipsDescendants = false
 
 local NotifyLayout = Instance.new("UIListLayout", NotifyContainer)
 NotifyLayout.FillDirection = Enum.FillDirection.Vertical
--- [FIX] Pastikan VerticalAlignment Bottom agar menumpuk dari bawah
 NotifyLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
 NotifyLayout.SortOrder = Enum.SortOrder.LayoutOrder
 NotifyLayout.Padding = UDim.new(0, 8)
@@ -139,7 +131,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "UI Updated (Auto Pirate Added)", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "UI Loaded (Pirate Removed)", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -380,13 +372,11 @@ SidebarPad.PaddingTop = UDim.new(0, 10)
 local function CreateSideTab(name, text, isActive)
     local btn = Instance.new("TextButton", Sidebar)
     btn.Name = name
-    -- [REQUEST] Tab Button Lebih Kecil (Height 26), Teks Tetap
     btn.Size = UDim2.new(0.85, 0, 0, 26) 
     btn.BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(25, 25, 30)
     btn.BackgroundTransparency = isActive and 0.1 or 1
     btn.Text = text
     btn.Font = UI_THEME.FontBody
-    -- Ukuran teks tab tetap 12
     btn.TextSize = 12 
     btn.TextColor3 = isActive and Color3.new(0,0,0) or UI_THEME.TextDim
     btn.AutoButtonColor = true
@@ -564,9 +554,7 @@ local States = {
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
     AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
     Speed=false, SpeedVal=50, Fly=false, FlySpeed=50, NoDmg=false,
-    AutoFollow=false, FollowTarget=nil,
-    -- [NEW STATE]
-    AutoPirates=false
+    AutoFollow=false, FollowTarget=nil
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -620,16 +608,6 @@ local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 -- TAB EVENT
 local BtnEvent  = MakeBtn(PageEvent, "Auto Event: OFF") 
 local BtnChest  = MakeBtn(PageEvent, "Auto Chest: OFF")
--- [NEW BUTTON]
-local BtnPirates = MakeBtn(PageEvent, "Auto Pirates: OFF")
-
-BtnPirates.MouseButton1Click:Connect(function()
-    States.AutoPirates = not States.AutoPirates
-    BtnPirates.Text = "Auto Pirates: " .. (States.AutoPirates and "ON" or "OFF")
-    ToggleVisual(BtnPirates, States.AutoPirates)
-    
-    Notify("EVENT", "Auto Pirates: "..(States.AutoPirates and "ON" or "OFF"), States.AutoPirates and Color3.fromRGB(0,255,100) or Color3.fromRGB(255,50,50))
-end)
 
 -- TAB PLAYER
 local SpeedContainer = Instance.new("Frame", PagePlayer)
@@ -1142,7 +1120,7 @@ task.spawn(function()
     end
 end)
 
--- [UPDATED GOD MODE / NO DAMAGE]
+-- [ENHANCED GOD MODE] (Dipertahankan)
 task.spawn(function()
     while true do
         task.wait() -- Loop sangat cepat (setiap frame)
@@ -1159,7 +1137,7 @@ task.spawn(function()
                     -- Anti Tenggelam: Coba cari value oksigen jika ada
                     if char:FindFirstChild("Oxygen") then
                         char.Oxygen.Value = 100
-                    elseif char:FindFirstChild("ClientOxygen") then -- Alternatif nama
+                    elseif char:FindFirstChild("ClientOxygen") then 
                         char.ClientOxygen.Value = 100
                     end
                 end
@@ -1397,46 +1375,6 @@ task.spawn(function()
             end)
         else
             if IsLootingChests then IsLootingChests = false end
-        end
-    end
-end)
-
--- [AUTO TAKE PIRATES EVENT LOOP]
-task.spawn(function()
-    while true do
-        task.wait(0.1) -- Cek cepat
-        if States.AutoPirates then
-            pcall(function()
-                local root = GetRoot()
-                if not root then return end
-                
-                -- Folder utama target
-                local mainFolder = workspace:FindFirstChild("!!! SEARCH ITEM SPAWNS")
-                
-                if mainFolder then
-                    -- Loop semua folder di dalamnya (TNT, Mushroom, Coin, DeadManCompass)
-                    for _, category in pairs(mainFolder:GetChildren()) do
-                        -- Loop semua item di dalam kategori tersebut
-                        for _, item in pairs(category:GetChildren()) do
-                            if item:IsA("Model") or item:IsA("BasePart") then
-                                -- Cek apakah item memiliki ProximityPrompt untuk diambil
-                                local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
-                                
-                                if prompt and prompt.Enabled then
-                                    -- Teleport ke item agar prompt muncul
-                                    root.CFrame = item:GetPivot() + Vector3.new(0, 3, 0)
-                                    
-                                    -- Tunggu sekejap agar server mendeteksi
-                                    task.wait(0.15)
-                                    
-                                    -- Ambil Item
-                                    fireproximityprompt(prompt)
-                                end
-                            end
-                        end
-                    end
-                end
-            end)
         end
     end
 end)
