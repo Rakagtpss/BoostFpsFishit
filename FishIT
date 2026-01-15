@@ -1,5 +1,3 @@
-Tentu, saya telah menghapus fitur Auto Pirates (tombol dan logika pengambilannya) dari skrip, namun tetap mempertahankan Enhanced God Mode agar karakter Anda tetap aman di air.
-Berikut adalah skrip bersihnya:
 -- [1] Notifikasi Awal (Custom Safe Load)
 local Services = {
     Players = game:GetService("Players"),
@@ -21,18 +19,23 @@ local function GetChar() return Player.Character or Player.CharacterAdded:Wait()
 local function GetRoot() local c = Player.Character; return c and c:FindFirstChild("HumanoidRootPart") end
 local function GetHum() local c = Player.Character; return c and c:FindFirstChild("Humanoid") end
 
--- // Konfigurasi Visual
+-- // Konfigurasi Visual (UPDATED REQUEST)
 local UI_THEME = {
     Width = 400,   
-    Height = 300,  
+    -- [REQUEST] Height diubah jadi 270
+    Height = 270,  
+    
     Color = Color3.fromRGB(12, 12, 14), 
     SidebarColor = Color3.fromRGB(30, 30, 35), 
+    
     Transparency = 0.05, 
     Accent = Color3.fromRGB(0, 255, 255),    
     TextMain = Color3.fromRGB(255, 255, 255), 
     TextDim = Color3.fromRGB(180, 180, 180),
+    
     FontHeader = Enum.Font.GothamBlack,       
     FontBody = Enum.Font.GothamBold,          
+    
     CornerRadius = UDim.new(0, 12) 
 }
 
@@ -131,7 +134,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "UI Loaded (Pirate Removed)", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "Height: 270 | Fire & Cyan Side", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -340,7 +343,7 @@ EnableDrag(Main, Main)
 EnableDrag(FloatHUD, FloatHUD)
 
 -- ====================================================
--- [3] SIDE NAVIGATION (CYAN THEME)
+-- [3] SIDE NAVIGATION (DUAL COLOR GRADIENT)
 -- ====================================================
 local ContentContainer = Instance.new("Frame", Main)
 ContentContainer.Name = "Container"
@@ -355,10 +358,18 @@ Sidebar.BackgroundColor3 = UI_THEME.SidebarColor
 Sidebar.BackgroundTransparency = 0.3
 Sidebar.BorderSizePixel = 0
 
+-- [REQUEST] Side UI Sedikit Tebal & 2 Warna (Oren Api & Cyan Cerah)
 local SidebarStroke = Instance.new("UIStroke", Sidebar)
-SidebarStroke.Color = Color3.fromRGB(40,40,40)
-SidebarStroke.Thickness = 0 
-SidebarStroke.Transparency = 0.5
+SidebarStroke.Thickness = 3 -- Sedikit tebal
+SidebarStroke.Transparency = 0
+SidebarStroke.Color = Color3.fromRGB(255, 255, 255) -- Base color white agar gradient muncul
+
+local SidebarGradient = Instance.new("UIGradient", SidebarStroke)
+SidebarGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 0)), -- Oren Api (Fire Orange)
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255)) -- Cyan Cerah (Electric Cyan)
+}
+SidebarGradient.Rotation = 45 -- Miring sedikit agar elegan
 
 local SidebarLayout = Instance.new("UIListLayout", Sidebar)
 SidebarLayout.FillDirection = Enum.FillDirection.Vertical
@@ -607,7 +618,7 @@ local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 
 -- TAB EVENT
 local BtnEvent  = MakeBtn(PageEvent, "Auto Event: OFF") 
-local BtnChest  = MakeBtn(PageEvent, "Auto Chest: OFF")
+local BtnChest  = MakeBtn(PageEvent, "Auto Chest: OFF") 
 
 -- TAB PLAYER
 local SpeedContainer = Instance.new("Frame", PagePlayer)
@@ -1120,28 +1131,16 @@ task.spawn(function()
     end
 end)
 
--- [ENHANCED GOD MODE] (Dipertahankan)
 task.spawn(function()
     while true do
-        task.wait() -- Loop sangat cepat (setiap frame)
+        task.wait(0.5)
         if States.NoDmg then
-            pcall(function()
-                local char = Player.Character
-                local hum = char and char:FindFirstChild("Humanoid")
-                if hum then
-                    -- Reset darah ke penuh instan
-                    if hum.Health < hum.MaxHealth then
-                        hum.Health = hum.MaxHealth
-                    end
-                    
-                    -- Anti Tenggelam: Coba cari value oksigen jika ada
-                    if char:FindFirstChild("Oxygen") then
-                        char.Oxygen.Value = 100
-                    elseif char:FindFirstChild("ClientOxygen") then 
-                        char.ClientOxygen.Value = 100
-                    end
+            local hum = GetHum()
+            if hum then
+                if hum.Health < hum.MaxHealth then
+                    hum.Health = hum.MaxHealth
                 end
-            end)
+            end
         end
     end
 end)
@@ -1270,7 +1269,7 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP - Y=4 FIXED]
+-- [AUTO EVENT LOOP]
 local function FindInFolders(targetName)
     local folders = {Services.Workspace:FindFirstChild("ActiveEvents"), Services.Workspace:FindFirstChild("Props")}
     for _, folder in pairs(folders) do
