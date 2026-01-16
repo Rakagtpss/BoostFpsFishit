@@ -128,7 +128,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "UI Loaded (Holy Anim Added)", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "UI Loaded (Force Hook Active)", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -175,7 +175,7 @@ Padding.PaddingBottom = UDim.new(0, 10)
 Padding.PaddingLeft = UDim.new(0, 10)
 Padding.PaddingRight = UDim.new(0, 10)
 
--- [MODIFIED] SERAPHINxPANEL Text
+-- [UPDATED TEXT: SERAPHINxPANEL]
 local TitleLabel = Instance.new("TextLabel", FloatHUD)
 TitleLabel.LayoutOrder = 1
 TitleLabel.Size = UDim2.new(1, 0, 0, 20)
@@ -556,7 +556,7 @@ local States = {
     AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
     Speed=false, SpeedVal=50, NoDmg=false, 
     AutoFollow=false, FollowTarget=nil,
-    HolyAnim=false -- [NEW STATE]
+    HolyAnim=false
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -587,7 +587,7 @@ local function ForceEquipRod()
     end)
 end
 
--- [NEW] Logic Holy Animation (Overwrite Animations)
+-- [UPDATED FIX] Logic Holy Animation (Force Swap + Refresh)
 local function ToggleHolyAnim(bool)
     States.HolyAnim = bool
     
@@ -600,7 +600,6 @@ local function ToggleHolyAnim(bool)
         return 
     end
 
-    -- Target IDs from Holy Trident (Provided by User)
     local Targets = {
         ["EquipIdle"] = "Holy Trident - EquipIdle",
         ["FishCaught"] = "Holy Trident - FishCaught",
@@ -608,32 +607,57 @@ local function ToggleHolyAnim(bool)
         ["ReelStart"] = "Holy Trident - ReelStart",
         ["ReelingIdle"] = "Holy Trident - ReelingIdle"
     }
+    
+    -- Ambil ID Holy Asli Dulu
+    local HolyIDs = {}
+    for _, holyKey in pairs(Targets) do
+        if AnimModule[holyKey] and AnimModule[holyKey].Animation then
+             HolyIDs[holyKey] = AnimModule[holyKey].Animation.AnimationId
+        end
+    end
 
     if bool then
-        -- Backup Original IDs if not exists
         if not _G.OriginalAnims then _G.OriginalAnims = {} end
 
+        -- 1. SWAP ID
         for animName, animData in pairs(AnimModule) do
             if animData.Animation then
-                -- Check types (e.g., "Flimsy Rod - EquipIdle")
-                for typeKey, holyKey in pairs(Targets) do
-                    -- If match type AND NOT the Holy Trident itself
+                for typeKey, holyName in pairs(Targets) do
+                    -- Jika nama animasi mengandung (misal: "EquipIdle") tapi BUKAN Holy Trident
                     if animName:find(typeKey) and not animName:find("Holy Trident") then
-                        -- Save Original
+                        
+                        -- Simpan Original
                         if not _G.OriginalAnims[animName] then
                             _G.OriginalAnims[animName] = animData.Animation.AnimationId
                         end
                         
-                        -- Swap with Holy ID
-                        local HolyData = AnimModule[holyKey]
-                        if HolyData and HolyData.Animation then
-                            animData.Animation.AnimationId = HolyData.Animation.AnimationId
+                        -- GANTI DENGAN ID HOLY
+                        if HolyIDs[holyName] then
+                            animData.Animation.AnimationId = HolyIDs[holyName]
                         end
                     end
                 end
             end
         end
-        Notify("ANIMATION", "Holy Trident: ACTIVE", Color3.fromRGB(255, 215, 0))
+        
+        -- 2. FORCE STOP CURRENT ANIMATIONS
+        local hum = GetHum()
+        if hum then
+            for _, track in pairs(hum:GetPlayingAnimationTracks()) do
+                track:Stop()
+            end
+        end
+
+        -- 3. RE-EQUIP TOOL (Penting agar game membaca ulang modul)
+        local char = GetChar()
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            if hum then hum:UnequipTools() end
+            task.wait(0.1)
+            ForceEquipRod() -- Pasang lagi pancingan
+        end
+
+        Notify("ANIMATION", "Holy Hook: ACTIVE", Color3.fromRGB(255, 215, 0))
     else
         -- Restore Original IDs
         if _G.OriginalAnims then
@@ -643,6 +667,16 @@ local function ToggleHolyAnim(bool)
                 end
             end
         end
+        
+        -- Refresh lagi saat dimatikan
+        local char = GetChar()
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            if hum then hum:UnequipTools() end
+            task.wait(0.1)
+            ForceEquipRod()
+        end
+
         Notify("ANIMATION", "Restored Default", UI_THEME.Accent)
     end
 end
