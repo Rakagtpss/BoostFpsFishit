@@ -19,24 +19,18 @@ local function GetChar() return Player.Character or Player.CharacterAdded:Wait()
 local function GetRoot() local c = Player.Character; return c and c:FindFirstChild("HumanoidRootPart") end
 local function GetHum() local c = Player.Character; return c and c:FindFirstChild("Humanoid") end
 
--- // Konfigurasi Visual (UPDATED REQUEST)
+-- // Konfigurasi Visual
 local UI_THEME = {
     Width = 400,   
     Height = 300,  
-    
-    Color = Color3.fromRGB(12, 12, 14), -- Main BG Gelap
-    
-    -- [REQUEST] Sidebar Lebih Terang (Samping Cyan)
+    Color = Color3.fromRGB(12, 12, 14), 
     SidebarColor = Color3.fromRGB(30, 30, 35), 
-    
     Transparency = 0.05, 
     Accent = Color3.fromRGB(0, 255, 255),    
     TextMain = Color3.fromRGB(255, 255, 255), 
     TextDim = Color3.fromRGB(180, 180, 180),
-    
     FontHeader = Enum.Font.GothamBlack,       
     FontBody = Enum.Font.GothamBold,          
-    
     CornerRadius = UDim.new(0, 12) 
 }
 
@@ -50,7 +44,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [SYSTEM] CUSTOM NOTIFICATION (FIXED BOTTOM RIGHT)
+-- [SYSTEM] CUSTOM NOTIFICATION
 -- ====================================================
 local NotifyContainer = Instance.new("Frame", ScreenGui)
 NotifyContainer.Name = "NotificationContainer"
@@ -128,14 +122,13 @@ local function Notify(title, text, colorOverride, duration)
             if LblTitle then Services.TweenService:Create(LblTitle, TweenInfo.new(0.2), {TextTransparency = 1}):Play() end
             if LblMsg then Services.TweenService:Create(LblMsg, TweenInfo.new(0.2), {TextTransparency = 1}):Play() end
             if Bar then Services.TweenService:Create(Bar, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play() end
-            
             TweenOut.Completed:Wait()
             Frame:Destroy()
         end
     end)
 end
 
-Notify("SERAPHIN", "UI Updated (Fire Cyan)", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "UI Loaded (Extreme Booster)", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -156,16 +149,15 @@ GradHud.Color = ColorSequence.new{
 }
 GradHud.Rotation = 45
 
--- [MODIFIED] GRADIENT STROKE (Cyan -> Fire Red)
 local HudStroke = Instance.new("UIStroke", FloatHUD)
 HudStroke.Thickness = 2
 HudStroke.Transparency = 0
-HudStroke.Color = Color3.fromRGB(255, 255, 255) -- Base White for Gradient
+HudStroke.Color = Color3.fromRGB(255, 255, 255)
 
 local HudStrokeGrad = Instance.new("UIGradient", HudStroke)
 HudStrokeGrad.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),   -- Cyan
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 60, 0))     -- Fire Red
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 60, 0))
 }
 HudStrokeGrad.Rotation = 45
 
@@ -245,7 +237,6 @@ Main.Active = true
 Main.ClipsDescendants = true 
 Main.Visible = false 
 
--- Modern Flat Dark Gradient
 local MainGrad = Instance.new("UIGradient", Main)
 MainGrad.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 25)),
@@ -256,20 +247,19 @@ MainGrad.Rotation = 90
 local MainCorner = Instance.new("UICorner", Main)
 MainCorner.CornerRadius = UI_THEME.CornerRadius
 
--- [MODIFIED] MAIN BORDER GRADIENT (Cyan -> Fire Red)
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Thickness = 3
 MainStroke.Transparency = 0
-MainStroke.Color = Color3.fromRGB(255, 255, 255) -- Base White
+MainStroke.Color = Color3.fromRGB(255, 255, 255)
 
 local MainStrokeGrad = Instance.new("UIGradient", MainStroke)
 MainStrokeGrad.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),   -- Cyan
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 60, 0))     -- Fire Red
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 60, 0)) 
 }
 MainStrokeGrad.Rotation = 60
 
--- Logo R dalam Kotak
+-- Logo Container
 local LogoContainer = Instance.new("Frame", Main)
 LogoContainer.Name = "LogoContainer"
 LogoContainer.Size = UDim2.new(0, 28, 0, 28)
@@ -360,7 +350,7 @@ EnableDrag(Main, Main)
 EnableDrag(FloatHUD, FloatHUD)
 
 -- ====================================================
--- [3] SIDE NAVIGATION (CYAN THEME)
+-- [3] SIDE NAVIGATION
 -- ====================================================
 local ContentContainer = Instance.new("Frame", Main)
 ContentContainer.Name = "Container"
@@ -375,11 +365,6 @@ Sidebar.BackgroundColor3 = UI_THEME.SidebarColor
 Sidebar.BackgroundTransparency = 0.3
 Sidebar.BorderSizePixel = 0
 
-local SidebarStroke = Instance.new("UIStroke", Sidebar)
-SidebarStroke.Color = Color3.fromRGB(40,40,40)
-SidebarStroke.Thickness = 0 
-SidebarStroke.Transparency = 0.5
-
 local SidebarLayout = Instance.new("UIListLayout", Sidebar)
 SidebarLayout.FillDirection = Enum.FillDirection.Vertical
 SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -392,13 +377,11 @@ SidebarPad.PaddingTop = UDim.new(0, 10)
 local function CreateSideTab(name, text, isActive)
     local btn = Instance.new("TextButton", Sidebar)
     btn.Name = name
-    -- [REQUEST] Tab Button Lebih Kecil (Height 26), Teks Tetap
     btn.Size = UDim2.new(0.85, 0, 0, 26) 
     btn.BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(25, 25, 30)
     btn.BackgroundTransparency = isActive and 0.1 or 1
     btn.Text = text
     btn.Font = UI_THEME.FontBody
-    -- Ukuran teks tab tetap 12
     btn.TextSize = 12 
     btn.TextColor3 = isActive and Color3.new(0,0,0) or UI_THEME.TextDim
     btn.AutoButtonColor = true
@@ -411,7 +394,6 @@ local function CreateSideTab(name, text, isActive)
     str.Thickness = 1
     str.Transparency = isActive and 1 or 0.8
     str.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    
     return btn, str
 end
 
@@ -506,7 +488,6 @@ HideBtn.MouseButton1Click:Connect(function()
         Services.TweenService:Create(MainCorner, TweenInfo.new(0.4), {CornerRadius = UDim.new(0, 10)}):Play()
         Services.TweenService:Create(Main, TweenInfo.new(0.4), {BackgroundTransparency = 0.1}):Play()
         
-        -- Show Logo Box
         task.delay(0.2, function() 
             if IsMinimized then 
                 LogoContainer.Visible = true 
@@ -528,7 +509,6 @@ LogoR.MouseButton1Click:Connect(function()
     end
 end)
 
--- [UPDATED BUTTON MAKER]
 local function MakeBtn(parent, text)
     local b = Instance.new("TextButton", parent)
     b.Text = text
@@ -539,10 +519,8 @@ local function MakeBtn(parent, text)
     b.TextSize = 10 
     b.AutoButtonColor = true
     b.ClipsDescendants = true
-    
     b.TextStrokeColor3 = Color3.new(0,0,0)
     b.TextStrokeTransparency = 0.5
-    
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6) 
     local s = Instance.new("UIStroke", b)
     s.Color = Color3.fromRGB(60, 60, 70) 
@@ -575,7 +553,7 @@ local States = {
     Freeze=false, WoW=false, Boost=false, Ultra=false, NoRender=false, 
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
     AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
-    Speed=false, SpeedVal=50, Fly=false, FlySpeed=50, NoDmg=false,
+    Speed=false, SpeedVal=50, NoDmg=false, -- Fly removed
     AutoFollow=false, FollowTarget=nil
 }
 local SavedCFrame = nil 
@@ -588,14 +566,7 @@ local BodyV = nil
 local LastFishCaughtTime = tick()
 local LastFishCount = 0
 
--- Event List
 local EventList = {"Ghost Shark Hunt", "Worm Hunt", "Treasure Hunt", "Shark Hunt", "Megalodon Hunt"}
-
--- Restore Data for Booster
-local OriginalSettings = {
-    Lighting = {},
-    Terrain = {}
-}
 
 -- Force Re-Equip
 local function ForceEquipRod()
@@ -628,7 +599,7 @@ local BtnRender = MakeBtn(PageMain, "3D Render: ON")
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 
 -- TAB EVENT
-local BtnEvent  = MakeBtn(PageEvent, "Auto Event: OFF") 
+local BtnEvent  = MakeBtn(PageEvent, "Auto Hunt: OFF") -- Renamed
 local BtnChest  = MakeBtn(PageEvent, "Auto Chest: OFF") 
 
 -- TAB PLAYER
@@ -670,43 +641,7 @@ sSpdIn.Color = Color3.fromRGB(60, 60, 70)
 sSpdIn.Thickness = 1
 sSpdIn.Transparency = 0.6
 
-local FlyContainer = Instance.new("Frame", PagePlayer)
-FlyContainer.Name = "FlyContainer"
-FlyContainer.BackgroundTransparency = 1
-
-local BtnFlyToggle = Instance.new("TextButton", FlyContainer)
-BtnFlyToggle.Name = "Toggle"
-BtnFlyToggle.Size = UDim2.new(0.65, -4, 1, 0)
-BtnFlyToggle.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-BtnFlyToggle.BackgroundTransparency = 0.4
-BtnFlyToggle.Text = "Fly: OFF"
-BtnFlyToggle.TextColor3 = UI_THEME.TextMain
-BtnFlyToggle.Font = UI_THEME.FontBody
-BtnFlyToggle.TextSize = 10
-BtnFlyToggle.TextStrokeColor3 = Color3.new(0,0,0)
-BtnFlyToggle.TextStrokeTransparency = 0.5
-Instance.new("UICorner", BtnFlyToggle).CornerRadius = UDim.new(0, 6)
-local sFly = Instance.new("UIStroke", BtnFlyToggle)
-sFly.Color = Color3.fromRGB(60, 60, 70)
-sFly.Thickness = 1
-sFly.Transparency = 0.6
-
-local BoxFlyInput = Instance.new("TextBox", FlyContainer)
-BoxFlyInput.Name = "Input"
-BoxFlyInput.Size = UDim2.new(0.35, 0, 1, 0)
-BoxFlyInput.Position = UDim2.new(0.65, 0, 0, 0)
-BoxFlyInput.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-BoxFlyInput.BackgroundTransparency = 0.4
-BoxFlyInput.Text = "50" 
-BoxFlyInput.PlaceholderText = "Spd"
-BoxFlyInput.TextColor3 = UI_THEME.Accent
-BoxFlyInput.Font = UI_THEME.FontHeader
-BoxFlyInput.TextSize = 10
-Instance.new("UICorner", BoxFlyInput).CornerRadius = UDim.new(0, 6)
-local sFlyIn = Instance.new("UIStroke", BoxFlyInput)
-sFlyIn.Color = Color3.fromRGB(60, 60, 70)
-sFlyIn.Thickness = 1
-sFlyIn.Transparency = 0.6
+-- Fly Removed
 
 -- [AUTO FOLLOW UI]
 local FollowContainer = Instance.new("Frame", PagePlayer)
@@ -862,58 +797,101 @@ local function SetUltraGraphics(enabled)
     end
 end
 
--- Smart Booster
+-- [UPDATED] Smart Booster (Extreme/Burik Mode)
 local function ToggleBoost(enable)
     States.Boost = enable
     BtnBoost.Text = "CPU Booster: " .. (States.Boost and "ON" or "OFF")
     ToggleVisual(BtnBoost, States.Boost)
     
     if enable then
-        Notify("BOOSTER", "Maximizing FPS...", Color3.fromRGB(0, 255, 100))
-        OriginalSettings.Lighting.GlobalShadows = Services.Lighting.GlobalShadows
-        OriginalSettings.Lighting.Technology = Services.Lighting.Technology
-        OriginalSettings.Lighting.EnvironmentDiffuseScale = Services.Lighting.EnvironmentDiffuseScale
-        OriginalSettings.Lighting.EnvironmentSpecularScale = Services.Lighting.EnvironmentSpecularScale
+        Notify("BOOSTER", "Mode Burik: AKTIF", Color3.fromRGB(0, 255, 100))
         
-        Services.Lighting.GlobalShadows = false
-        Services.Lighting.Technology = Enum.Technology.Voxel
-        Services.Lighting.EnvironmentDiffuseScale = 0
-        Services.Lighting.EnvironmentSpecularScale = 0
+        -- 1. NUKE LIGHTING (Siang/Malam/Hujan/Atmosfer)
+        pcall(function()
+            Services.Lighting:ClearAllChildren() -- Hapus Sky, Bloom, Atmosphere, SunRays
+            Services.Lighting.FogEnd = 9e9
+            Services.Lighting.Brightness = 2
+            Services.Lighting.ClockTime = 14 -- Lock Siang
+            Services.Lighting.GlobalShadows = false
+            Services.Lighting.EnvironmentDiffuseScale = 0
+            Services.Lighting.EnvironmentSpecularScale = 0
+        end)
         
+        -- 2. NUKE TERRAIN (Air/Lava/Batu)
         if Services.Workspace.Terrain then
             Services.Workspace.Terrain.WaterReflectance = 0
-            Services.Workspace.Terrain.WaterTransparency = 0
+            Services.Workspace.Terrain.WaterTransparency = 0 -- Air Solid
             Services.Workspace.Terrain.WaterWaveSize = 0
             Services.Workspace.Terrain.WaterWaveSpeed = 0
         end
         
-        for _, v in pairs(Services.Workspace:GetDescendants()) do
-            if v:IsA("BasePart") and not v:IsA("Terrain") then
-                v.Material = Enum.Material.SmoothPlastic
-                v.Reflectance = 0
-            elseif v:IsA("Decal") or v:IsA("Texture") then
-                v.Transparency = 1
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                v.Enabled = false
+        -- 3. NUKE OBJECTS & PATHS (Burik Loop)
+        -- Targets: Global + Specific Paths
+        local Targets = {Services.Workspace}
+        -- Add Specific folders if they exist (Checking safely)
+        if Services.Workspace:FindFirstChild("Sand") then table.insert(Targets, Services.Workspace.Sand) end
+        if Services.Workspace:FindFirstChild("NPC") then table.insert(Targets, Services.Workspace.NPC) end
+        if Services.Workspace:FindFirstChild("Map") then
+            if Services.Workspace.Map:FindFirstChild("wildes_trees") then table.insert(Targets, Services.Workspace.Map.wildes_trees) end
+            if Services.Workspace.Map:FindFirstChild("Model") then table.insert(Targets, Services.Workspace.Map.Model) end
+            if Services.Workspace.Map:FindFirstChild("LimitedEvent_PROPS") then table.insert(Targets, Services.Workspace.Map.LimitedEvent_PROPS) end
+        end
+
+        -- Execute Burik Logic
+        local function Burikify(obj)
+            for _, v in pairs(obj:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.Material = Enum.Material.SmoothPlastic
+                    v.Reflectance = 0
+                    v.Color = Color3.fromRGB(100, 100, 100) -- Abu-abu polos
+                    -- Jika Air/Lava part, buat tidak transparan
+                    if v.Name == "Water" or v.Name == "Lava" then v.Transparency = 0 end
+                elseif v:IsA("Decal") or v:IsA("Texture") then
+                    v.Transparency = 1 -- Hapus texture
+                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") or v:IsA("Explosion") then
+                    v.Enabled = false -- Matikan efek
+                elseif v:IsA("MeshPart") or v:IsA("SpecialMesh") then
+                    if v:IsA("MeshPart") then v.TextureID = "" end
+                    if v:IsA("SpecialMesh") then v.TextureId = "" end
+                elseif v:IsA("Clothing") or v:IsA("Shirt") or v:IsA("Pants") or v:IsA("ShirtGraphic") then
+                    v:Destroy() -- Hapus baju (Efek Skin)
+                end
             end
         end
+
+        for _, target in pairs(Targets) do
+            Burikify(target)
+        end
+        
+        -- Loop tambahan untuk memastikan tool hidden saat boost aktif
+        Connections["HideRod"] = Services.RunService.RenderStepped:Connect(function()
+            local char = GetChar()
+            if char then
+                for _, v in pairs(char:GetDescendants()) do
+                    if v:IsA("Tool") or v.Name:find("Rod") then
+                        -- Sembunyikan visual tool (Handle/Parts)
+                        for _, part in pairs(v:GetDescendants()) do
+                            if part:IsA("BasePart") then part.Transparency = 1 end
+                        end
+                    end
+                end
+            end
+        end)
+
     else
-        Notify("BOOSTER", "Restoring Visuals...", UI_THEME.Accent)
-        Services.Lighting.GlobalShadows = OriginalSettings.Lighting.GlobalShadows
-        Services.Lighting.Technology = OriginalSettings.Lighting.Technology
-        Services.Lighting.EnvironmentDiffuseScale = OriginalSettings.Lighting.EnvironmentDiffuseScale
-        Services.Lighting.EnvironmentSpecularScale = OriginalSettings.Lighting.EnvironmentSpecularScale
+        Notify("BOOSTER", "Boost OFF (Rejoin to Restore)", UI_THEME.Accent)
+        if Connections["HideRod"] then Connections["HideRod"]:Disconnect() end
     end
 end
 
--- FPS Updater
+-- [UPDATED] FPS Updater (Format Text Baru)
 local fpsT = 0
 Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
     local currentFps = math.floor(fpsT)
     if Title and currentFps then
         Title.Text = string.format(
-            "SERA <font color=\"rgb(0,255,255)\">HELPER</font> <font size=\"10\" color=\"rgb(255,255,255)\">@8raka_</font> | FPS: <b>%d</b>", 
+            "SERA <font color=\"rgb(0,255,255)\">HELPERx</font> <font size=\"10\" color=\"rgb(255,255,255)\">@8raka_</font> | FPS: <b>%d</b>", 
             currentFps
         )
     end
@@ -964,89 +942,6 @@ end)
 BoxSpeedInput.FocusLost:Connect(function()
     local val = tonumber(BoxSpeedInput.Text)
     if val then States.SpeedVal = val else BoxSpeedInput.Text = tostring(States.SpeedVal) end
-end)
-
--- 2. FLY BUTTON
-local FlyBV, FlyBG
-local function ToggleFly(state)
-    local hrp = GetRoot()
-    local hum = GetHum()
-    
-    if state then
-        if not hrp then return end
-        if hum then hum.PlatformStand = true end
-        
-        FlyBG = Instance.new("BodyGyro")
-        FlyBG.Parent = hrp
-        FlyBG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-        FlyBG.P = 10000
-        
-        FlyBV = Instance.new("BodyVelocity")
-        FlyBV.Parent = hrp
-        FlyBV.Velocity = Vector3.zero
-        FlyBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-        
-        Connections["Fly"] = Services.RunService.RenderStepped:Connect(function()
-            local hrpNow = GetRoot()
-            if hrpNow and FlyBV and FlyBG then
-                FlyBG.CFrame = Cam.CFrame
-                
-                local speed = States.FlySpeed
-                local moveDir = Vector3.zero
-                local camCF = Cam.CFrame
-                
-                if Services.UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camCF.LookVector end
-                if Services.UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camCF.LookVector end
-                if Services.UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camCF.RightVector end
-                if Services.UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camCF.RightVector end
-                
-                FlyBV.Velocity = moveDir * speed
-                
-                local char = GetChar()
-                if char then
-                    for _,v in pairs(char:GetDescendants()) do
-                        if v:IsA("BasePart") then v.CanCollide = false end
-                    end
-                end
-            end
-        end)
-    else
-        if Connections["Fly"] then Connections["Fly"]:Disconnect() end
-        if FlyBV then FlyBV:Destroy() end
-        if FlyBG then FlyBG:Destroy() end
-        
-        local humNow = GetHum()
-        if humNow then humNow.PlatformStand = false end
-        
-        local char = GetChar()
-        if char then
-            for _,v in pairs(char:GetDescendants()) do
-                if v:IsA("BasePart") then v.CanCollide = true end
-            end
-        end
-    end
-end
-
-BtnFlyToggle.MouseButton1Click:Connect(function()
-    States.Fly = not States.Fly
-    local val = tonumber(BoxFlyInput.Text) or 50
-    States.FlySpeed = val 
-    
-    if States.Fly then
-        BtnFlyToggle.Text = "Fly: ON"
-        ToggleVisual(BtnFlyToggle, true)
-        Notify("PLAYER", "Fly Active: " .. val, Color3.fromRGB(0, 255, 100))
-        ToggleFly(true)
-    else
-        BtnFlyToggle.Text = "Fly: OFF"
-        ToggleVisual(BtnFlyToggle, false)
-        ToggleFly(false)
-    end
-end)
-
-BoxFlyInput.FocusLost:Connect(function()
-    local val = tonumber(BoxFlyInput.Text)
-    if val then States.FlySpeed = val else BoxFlyInput.Text = "50" end
 end)
 
 -- 3. FOLLOW PLAYER BUTTON
@@ -1186,19 +1081,20 @@ BtnClean.MouseButton1Click:Connect(function()
     Notify("MAIN", "Auto Clean: "..(States.AutoClean and "ON" or "OFF"), UI_THEME.Accent)
 end)
 
+-- [UPDATED] Auto Event Logic (Rename to Auto Hunt)
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
-    BtnEvent.Text = "Auto Event: " .. (States.AutoEvent and "ON" or "OFF")
+    BtnEvent.Text = "Auto Hunt: " .. (States.AutoEvent and "ON" or "OFF")
     ToggleVisual(BtnEvent, States.AutoEvent)
     
-    Notify("EVENT", "Auto Event: "..(States.AutoEvent and "ON" or "OFF"), States.AutoEvent and Color3.fromRGB(0,255,100) or Color3.fromRGB(255,50,50))
+    Notify("EVENT", "Auto Hunt: "..(States.AutoEvent and "ON" or "OFF"), States.AutoEvent and Color3.fromRGB(0,255,100) or Color3.fromRGB(255,50,50))
     
     if not States.AutoEvent then 
         local hrp = GetRoot()
         if IsInEvent and EventStartCFrame and hrp then 
             hrp.CFrame = EventStartCFrame 
             EventStartCFrame = nil
-            Notify("AUTO EVENT", "Manual Off: Returning...", UI_THEME.Accent)
+            Notify("AUTO HUNT", "Manual Off: Returning...", UI_THEME.Accent)
         end
         IsInEvent = false
         SetWoW(false) 
@@ -1280,7 +1176,7 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP - Y=4 FIXED]
+-- [AUTO EVENT LOOP - Y=4 FIXED & UPDATED NOTIF]
 local function FindInFolders(targetName)
     local folders = {Services.Workspace:FindFirstChild("ActiveEvents"), Services.Workspace:FindFirstChild("Props")}
     for _, folder in pairs(folders) do
@@ -1319,7 +1215,8 @@ task.spawn(function()
                     if not IsInEvent then
                         EventStartCFrame = hrp.CFrame 
                         IsInEvent = true
-                        Notify("AUTO EVENT", "Event Found!", Color3.fromRGB(0, 255, 255))
+                        -- [UPDATED NOTIFICATION]
+                        Notify("AUTO HUNT", "Teleport Ke ( " .. FoundEvent.Name .. " )", Color3.fromRGB(0, 255, 255))
                         SetWoW(true)
                     end
                     local targetPos = FoundEvent:GetPivot().Position
@@ -1332,7 +1229,7 @@ task.spawn(function()
                 else
                     if IsInEvent then
                         IsInEvent = false
-                        Notify("AUTO EVENT", "Event Finished. Returning...", Color3.fromRGB(0, 255, 100))
+                        Notify("AUTO HUNT", "Event Finished. Returning...", Color3.fromRGB(0, 255, 100))
                         if EventStartCFrame and hrp then 
                             hrp.CFrame = EventStartCFrame 
                             EventStartCFrame = nil 
