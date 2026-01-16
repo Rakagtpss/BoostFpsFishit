@@ -128,14 +128,15 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "UI Loaded (Force Hook Active)", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "Stuck Detector Added", UI_THEME.Accent, 3)
 
 -- ====================================================
--- [1] MINI FLOATING HUD
+-- [1] MINI FLOATING HUD (UPDATED SIZE)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 160, 0, 120) 
+-- Size diperbesar sedikit ke bawah untuk muat Status
+FloatHUD.Size = UDim2.new(0, 160, 0, 155) 
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
 FloatHUD.BackgroundColor3 = UI_THEME.Color 
 FloatHUD.BackgroundTransparency = UI_THEME.Transparency
@@ -175,12 +176,11 @@ Padding.PaddingBottom = UDim.new(0, 10)
 Padding.PaddingLeft = UDim.new(0, 10)
 Padding.PaddingRight = UDim.new(0, 10)
 
--- [UPDATED TEXT: SERAPHINxPANEL]
 local TitleLabel = Instance.new("TextLabel", FloatHUD)
 TitleLabel.LayoutOrder = 1
 TitleLabel.Size = UDim2.new(1, 0, 0, 20)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "SERAPHINxPANEL" 
+TitleLabel.Text = "SERAPHIN PANEL" 
 TitleLabel.TextColor3 = UI_THEME.Accent 
 TitleLabel.Font = UI_THEME.FontHeader
 TitleLabel.TextSize = 13
@@ -223,7 +223,9 @@ local function CreateStatBlock(titleText, defaultVal, order)
 end
 
 local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...", 3) 
-local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)   
+local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)
+-- [NEW] STATUS BLOCK
+local LblStatus  = CreateStatBlock("STATUS", "Idle: 0s", 5)
 
 -- ====================================================
 -- [2] MAIN UI (SIDE UI LAYOUT)
@@ -348,6 +350,7 @@ local function EnableDrag(frame, dragInputObj)
     end)
 end
 EnableDrag(Main, Main) 
+EnableDrag(Main, LogoR) 
 EnableDrag(FloatHUD, FloatHUD)
 
 -- ====================================================
@@ -555,8 +558,7 @@ local States = {
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
     AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
     Speed=false, SpeedVal=50, NoDmg=false, 
-    AutoFollow=false, FollowTarget=nil,
-    HolyAnim=false
+    AutoFollow=false, FollowTarget=nil
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -565,6 +567,7 @@ local IsInEvent = false
 local IsLootingChests = false 
 local Connections = {}
 local BodyV = nil
+-- Variables for Stuck Detector
 local LastFishCaughtTime = tick()
 local LastFishCount = 0
 
@@ -585,100 +588,6 @@ local function ForceEquipRod()
             end
         end
     end)
-end
-
--- [UPDATED FIX] Logic Holy Animation (Force Swap + Refresh)
-local function ToggleHolyAnim(bool)
-    States.HolyAnim = bool
-    
-    local success, AnimModule = pcall(function() 
-        return require(game:GetService("ReplicatedStorage").Modules.Animations) 
-    end)
-    
-    if not success then 
-        Notify("ERROR", "Anim Module Not Found", Color3.fromRGB(255,50,50)) 
-        return 
-    end
-
-    local Targets = {
-        ["EquipIdle"] = "Holy Trident - EquipIdle",
-        ["FishCaught"] = "Holy Trident - FishCaught",
-        ["ReelIntermission"] = "Holy Trident - ReelIntermission",
-        ["ReelStart"] = "Holy Trident - ReelStart",
-        ["ReelingIdle"] = "Holy Trident - ReelingIdle"
-    }
-    
-    -- Ambil ID Holy Asli Dulu
-    local HolyIDs = {}
-    for _, holyKey in pairs(Targets) do
-        if AnimModule[holyKey] and AnimModule[holyKey].Animation then
-             HolyIDs[holyKey] = AnimModule[holyKey].Animation.AnimationId
-        end
-    end
-
-    if bool then
-        if not _G.OriginalAnims then _G.OriginalAnims = {} end
-
-        -- 1. SWAP ID
-        for animName, animData in pairs(AnimModule) do
-            if animData.Animation then
-                for typeKey, holyName in pairs(Targets) do
-                    -- Jika nama animasi mengandung (misal: "EquipIdle") tapi BUKAN Holy Trident
-                    if animName:find(typeKey) and not animName:find("Holy Trident") then
-                        
-                        -- Simpan Original
-                        if not _G.OriginalAnims[animName] then
-                            _G.OriginalAnims[animName] = animData.Animation.AnimationId
-                        end
-                        
-                        -- GANTI DENGAN ID HOLY
-                        if HolyIDs[holyName] then
-                            animData.Animation.AnimationId = HolyIDs[holyName]
-                        end
-                    end
-                end
-            end
-        end
-        
-        -- 2. FORCE STOP CURRENT ANIMATIONS
-        local hum = GetHum()
-        if hum then
-            for _, track in pairs(hum:GetPlayingAnimationTracks()) do
-                track:Stop()
-            end
-        end
-
-        -- 3. RE-EQUIP TOOL (Penting agar game membaca ulang modul)
-        local char = GetChar()
-        if char then
-            local hum = char:FindFirstChild("Humanoid")
-            if hum then hum:UnequipTools() end
-            task.wait(0.1)
-            ForceEquipRod() -- Pasang lagi pancingan
-        end
-
-        Notify("ANIMATION", "Holy Hook: ACTIVE", Color3.fromRGB(255, 215, 0))
-    else
-        -- Restore Original IDs
-        if _G.OriginalAnims then
-            for animName, originalId in pairs(_G.OriginalAnims) do
-                if AnimModule[animName] and AnimModule[animName].Animation then
-                    AnimModule[animName].Animation.AnimationId = originalId
-                end
-            end
-        end
-        
-        -- Refresh lagi saat dimatikan
-        local char = GetChar()
-        if char then
-            local hum = char:FindFirstChild("Humanoid")
-            if hum then hum:UnequipTools() end
-            task.wait(0.1)
-            ForceEquipRod()
-        end
-
-        Notify("ANIMATION", "Restored Default", UI_THEME.Accent)
-    end
 end
 
 -- >> TOMBOL UI <<
@@ -736,9 +645,6 @@ local sSpdIn = Instance.new("UIStroke", BoxSpeedInput)
 sSpdIn.Color = Color3.fromRGB(60, 60, 70)
 sSpdIn.Thickness = 1
 sSpdIn.Transparency = 0.6
-
--- [NEW BUTTON] Holy Anim
-local BtnHoly = MakeBtn(PagePlayer, "Holy Anim: OFF")
 
 -- [AUTO FOLLOW UI]
 local FollowContainer = Instance.new("Frame", PagePlayer)
@@ -894,7 +800,7 @@ local function SetUltraGraphics(enabled)
     end
 end
 
--- Smart Booster (Extreme/Burik Mode)
+-- [UPDATED] Smart Booster (Extreme/Burik Mode)
 local function ToggleBoost(enable)
     States.Boost = enable
     BtnBoost.Text = "CPU Booster: " .. (States.Boost and "ON" or "OFF")
@@ -902,23 +808,27 @@ local function ToggleBoost(enable)
     
     if enable then
         Notify("BOOSTER", "Mode Burik: AKTIF", Color3.fromRGB(0, 255, 100))
+        
+        -- 1. NUKE LIGHTING (Siang/Malam/Hujan/Atmosfer)
         pcall(function()
-            Services.Lighting:ClearAllChildren() 
+            Services.Lighting:ClearAllChildren() -- Hapus Sky, Bloom, Atmosphere, SunRays
             Services.Lighting.FogEnd = 9e9
             Services.Lighting.Brightness = 2
-            Services.Lighting.ClockTime = 14 
+            Services.Lighting.ClockTime = 14 -- Lock Siang
             Services.Lighting.GlobalShadows = false
             Services.Lighting.EnvironmentDiffuseScale = 0
             Services.Lighting.EnvironmentSpecularScale = 0
         end)
         
+        -- 2. NUKE TERRAIN (Air/Lava/Batu)
         if Services.Workspace.Terrain then
             Services.Workspace.Terrain.WaterReflectance = 0
-            Services.Workspace.Terrain.WaterTransparency = 0 
+            Services.Workspace.Terrain.WaterTransparency = 0 -- Air Solid
             Services.Workspace.Terrain.WaterWaveSize = 0
             Services.Workspace.Terrain.WaterWaveSpeed = 0
         end
         
+        -- 3. NUKE OBJECTS & PATHS (Burik Loop)
         local Targets = {Services.Workspace}
         if Services.Workspace:FindFirstChild("Sand") then table.insert(Targets, Services.Workspace.Sand) end
         if Services.Workspace:FindFirstChild("NPC") then table.insert(Targets, Services.Workspace.NPC) end
@@ -933,7 +843,7 @@ local function ToggleBoost(enable)
                 if v:IsA("BasePart") then
                     v.Material = Enum.Material.SmoothPlastic
                     v.Reflectance = 0
-                    v.Color = Color3.fromRGB(100, 100, 100) 
+                    v.Color = Color3.fromRGB(100, 100, 100)
                     if v.Name == "Water" or v.Name == "Lava" then v.Transparency = 0 end
                 elseif v:IsA("Decal") or v:IsA("Texture") then
                     v.Transparency = 1 
@@ -943,7 +853,7 @@ local function ToggleBoost(enable)
                     if v:IsA("MeshPart") then v.TextureID = "" end
                     if v:IsA("SpecialMesh") then v.TextureId = "" end
                 elseif v:IsA("Clothing") or v:IsA("Shirt") or v:IsA("Pants") or v:IsA("ShirtGraphic") then
-                    v:Destroy() 
+                    v:Destroy()
                 end
             end
         end
@@ -971,7 +881,7 @@ local function ToggleBoost(enable)
     end
 end
 
--- FPS Updater
+-- [UPDATED] FPS Updater (Format Text Baru)
 local fpsT = 0
 Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
@@ -1007,7 +917,6 @@ end)
 -- [BUTTON LOGIC - PLAYER TAB]
 -- ====================================================
 
--- 1. SPEED BUTTON
 BtnSpeedToggle.MouseButton1Click:Connect(function()
     States.Speed = not States.Speed
     local val = tonumber(BoxSpeedInput.Text) or 50
@@ -1031,14 +940,6 @@ BoxSpeedInput.FocusLost:Connect(function()
     if val then States.SpeedVal = val else BoxSpeedInput.Text = tostring(States.SpeedVal) end
 end)
 
--- 2. HOLY ANIM BUTTON
-BtnHoly.MouseButton1Click:Connect(function()
-    ToggleHolyAnim(not States.HolyAnim)
-    BtnHoly.Text = "Holy Anim: " .. (States.HolyAnim and "ON" or "OFF")
-    ToggleVisual(BtnHoly, States.HolyAnim)
-end)
-
--- 3. FOLLOW PLAYER BUTTON
 local function FindPlayer(namePart)
     for _, p in pairs(Services.Players:GetPlayers()) do
         if p ~= Player then
@@ -1080,7 +981,6 @@ BoxFollowInput.FocusLost:Connect(function()
     end
 end)
 
--- 4. NO DAMAGE BUTTON
 BtnNoDmg.MouseButton1Click:Connect(function()
     States.NoDmg = not States.NoDmg
     BtnNoDmg.Text = "No Damage: " .. (States.NoDmg and "ON" or "OFF")
@@ -1157,10 +1057,12 @@ BtnStuckToggle.MouseButton1Click:Connect(function()
         local val = tonumber(BoxStuckInput.Text)
         if not val or val < 10 then val = 60; BoxStuckInput.Text = "60" end
         States.StuckTimeout = val
+        LastFishCaughtTime = tick() -- Reset timer when enabled
         Notify("MISC", "Anti Stuck: Active", UI_THEME.Accent)
     else
         BtnStuckToggle.Text = "Anti-Stuck: OFF"
         ToggleVisual(BtnStuckToggle, false)
+        LblStatus.Text = "Safe"
     end
 end)
 
@@ -1377,7 +1279,7 @@ task.spawn(function()
     end
 end)
 
--- [ORIGINAL BACKPACK LOGIC]
+-- [UPDATED] STATUS DETECTOR LOOP
 task.spawn(function() 
     while true do 
         task.wait(1) 
@@ -1385,11 +1287,18 @@ task.spawn(function()
             pcall(function() 
                 local ls = Player:FindFirstChild("leaderstats")
                 local c = ls and ls:FindFirstChild("Caught") and ls.Caught.Value or 0
+                
+                -- Check catch change
+                if c ~= LastFishCount then
+                    LastFishCount = c
+                    LastFishCaughtTime = tick() -- Reset timer on catch
+                end
+                
                 LblFishVal.Text = tostring(c):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
                 
+                -- Backpack
                 local bagText = "0/?"
                 local backpackGui = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("Backpack")
-
                 if backpackGui then
                     local foundLabel = false
                     for _, v in pairs(backpackGui:GetDescendants()) do
@@ -1408,6 +1317,31 @@ task.spawn(function()
                     end
                 end
                 LblInvVal.Text = bagText
+
+                -- [STATUS LOGIC]
+                if States.AntiStuck then
+                    local elapsed = math.floor(tick() - LastFishCaughtTime)
+                    
+                    if elapsed > States.StuckTimeout then
+                        LblStatus.Text = "STUCK! ("..elapsed.."s)"
+                        LblStatus.TextColor3 = Color3.fromRGB(255, 50, 50)
+                        
+                        -- Optional: Auto Jump to Unstuck
+                        local hum = GetHum()
+                        if hum then hum.Jump = true end
+                    else
+                        LblStatus.TextColor3 = UI_THEME.TextMain
+                        if elapsed < 5 then
+                            LblStatus.Text = "Fishing..."
+                            LblStatus.TextColor3 = Color3.fromRGB(0, 255, 100)
+                        else
+                            LblStatus.Text = "Idle: " .. elapsed .. "s"
+                        end
+                    end
+                else
+                    LblStatus.Text = "Safe (Off)"
+                    LblStatus.TextColor3 = UI_THEME.TextDim
+                end
             end) 
         end 
     end 
