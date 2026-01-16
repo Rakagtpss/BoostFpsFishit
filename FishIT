@@ -128,7 +128,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "UI Loaded (Extreme Booster)", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "UI Loaded (Holy Anim Added)", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -175,11 +175,12 @@ Padding.PaddingBottom = UDim.new(0, 10)
 Padding.PaddingLeft = UDim.new(0, 10)
 Padding.PaddingRight = UDim.new(0, 10)
 
+-- [MODIFIED] SERAPHINxPANEL Text
 local TitleLabel = Instance.new("TextLabel", FloatHUD)
 TitleLabel.LayoutOrder = 1
 TitleLabel.Size = UDim2.new(1, 0, 0, 20)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "SERAPHIN PANEL" 
+TitleLabel.Text = "SERAPHINxPANEL" 
 TitleLabel.TextColor3 = UI_THEME.Accent 
 TitleLabel.Font = UI_THEME.FontHeader
 TitleLabel.TextSize = 13
@@ -553,8 +554,9 @@ local States = {
     Freeze=false, WoW=false, Boost=false, Ultra=false, NoRender=false, 
     Noclip=false, Panel=true, AutoEquip=false, AutoClean=false,
     AutoEvent=false, AutoChest=false, AntiStuck=false, StuckTimeout=60,
-    Speed=false, SpeedVal=50, NoDmg=false, -- Fly removed
-    AutoFollow=false, FollowTarget=nil
+    Speed=false, SpeedVal=50, NoDmg=false, 
+    AutoFollow=false, FollowTarget=nil,
+    HolyAnim=false -- [NEW STATE]
 }
 local SavedCFrame = nil 
 local EventStartCFrame = nil 
@@ -585,6 +587,66 @@ local function ForceEquipRod()
     end)
 end
 
+-- [NEW] Logic Holy Animation (Overwrite Animations)
+local function ToggleHolyAnim(bool)
+    States.HolyAnim = bool
+    
+    local success, AnimModule = pcall(function() 
+        return require(game:GetService("ReplicatedStorage").Modules.Animations) 
+    end)
+    
+    if not success then 
+        Notify("ERROR", "Anim Module Not Found", Color3.fromRGB(255,50,50)) 
+        return 
+    end
+
+    -- Target IDs from Holy Trident (Provided by User)
+    local Targets = {
+        ["EquipIdle"] = "Holy Trident - EquipIdle",
+        ["FishCaught"] = "Holy Trident - FishCaught",
+        ["ReelIntermission"] = "Holy Trident - ReelIntermission",
+        ["ReelStart"] = "Holy Trident - ReelStart",
+        ["ReelingIdle"] = "Holy Trident - ReelingIdle"
+    }
+
+    if bool then
+        -- Backup Original IDs if not exists
+        if not _G.OriginalAnims then _G.OriginalAnims = {} end
+
+        for animName, animData in pairs(AnimModule) do
+            if animData.Animation then
+                -- Check types (e.g., "Flimsy Rod - EquipIdle")
+                for typeKey, holyKey in pairs(Targets) do
+                    -- If match type AND NOT the Holy Trident itself
+                    if animName:find(typeKey) and not animName:find("Holy Trident") then
+                        -- Save Original
+                        if not _G.OriginalAnims[animName] then
+                            _G.OriginalAnims[animName] = animData.Animation.AnimationId
+                        end
+                        
+                        -- Swap with Holy ID
+                        local HolyData = AnimModule[holyKey]
+                        if HolyData and HolyData.Animation then
+                            animData.Animation.AnimationId = HolyData.Animation.AnimationId
+                        end
+                    end
+                end
+            end
+        end
+        Notify("ANIMATION", "Holy Trident: ACTIVE", Color3.fromRGB(255, 215, 0))
+    else
+        -- Restore Original IDs
+        if _G.OriginalAnims then
+            for animName, originalId in pairs(_G.OriginalAnims) do
+                if AnimModule[animName] and AnimModule[animName].Animation then
+                    AnimModule[animName].Animation.AnimationId = originalId
+                end
+            end
+        end
+        Notify("ANIMATION", "Restored Default", UI_THEME.Accent)
+    end
+end
+
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
@@ -599,7 +661,7 @@ local BtnRender = MakeBtn(PageMain, "3D Render: ON")
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 
 -- TAB EVENT
-local BtnEvent  = MakeBtn(PageEvent, "Auto Hunt: OFF") -- Renamed
+local BtnEvent  = MakeBtn(PageEvent, "Auto Hunt: OFF") 
 local BtnChest  = MakeBtn(PageEvent, "Auto Chest: OFF") 
 
 -- TAB PLAYER
@@ -641,7 +703,8 @@ sSpdIn.Color = Color3.fromRGB(60, 60, 70)
 sSpdIn.Thickness = 1
 sSpdIn.Transparency = 0.6
 
--- Fly Removed
+-- [NEW BUTTON] Holy Anim
+local BtnHoly = MakeBtn(PagePlayer, "Holy Anim: OFF")
 
 -- [AUTO FOLLOW UI]
 local FollowContainer = Instance.new("Frame", PagePlayer)
@@ -797,7 +860,7 @@ local function SetUltraGraphics(enabled)
     end
 end
 
--- [UPDATED] Smart Booster (Extreme/Burik Mode)
+-- Smart Booster (Extreme/Burik Mode)
 local function ToggleBoost(enable)
     States.Boost = enable
     BtnBoost.Text = "CPU Booster: " .. (States.Boost and "ON" or "OFF")
@@ -805,30 +868,24 @@ local function ToggleBoost(enable)
     
     if enable then
         Notify("BOOSTER", "Mode Burik: AKTIF", Color3.fromRGB(0, 255, 100))
-        
-        -- 1. NUKE LIGHTING (Siang/Malam/Hujan/Atmosfer)
         pcall(function()
-            Services.Lighting:ClearAllChildren() -- Hapus Sky, Bloom, Atmosphere, SunRays
+            Services.Lighting:ClearAllChildren() 
             Services.Lighting.FogEnd = 9e9
             Services.Lighting.Brightness = 2
-            Services.Lighting.ClockTime = 14 -- Lock Siang
+            Services.Lighting.ClockTime = 14 
             Services.Lighting.GlobalShadows = false
             Services.Lighting.EnvironmentDiffuseScale = 0
             Services.Lighting.EnvironmentSpecularScale = 0
         end)
         
-        -- 2. NUKE TERRAIN (Air/Lava/Batu)
         if Services.Workspace.Terrain then
             Services.Workspace.Terrain.WaterReflectance = 0
-            Services.Workspace.Terrain.WaterTransparency = 0 -- Air Solid
+            Services.Workspace.Terrain.WaterTransparency = 0 
             Services.Workspace.Terrain.WaterWaveSize = 0
             Services.Workspace.Terrain.WaterWaveSpeed = 0
         end
         
-        -- 3. NUKE OBJECTS & PATHS (Burik Loop)
-        -- Targets: Global + Specific Paths
         local Targets = {Services.Workspace}
-        -- Add Specific folders if they exist (Checking safely)
         if Services.Workspace:FindFirstChild("Sand") then table.insert(Targets, Services.Workspace.Sand) end
         if Services.Workspace:FindFirstChild("NPC") then table.insert(Targets, Services.Workspace.NPC) end
         if Services.Workspace:FindFirstChild("Map") then
@@ -837,24 +894,22 @@ local function ToggleBoost(enable)
             if Services.Workspace.Map:FindFirstChild("LimitedEvent_PROPS") then table.insert(Targets, Services.Workspace.Map.LimitedEvent_PROPS) end
         end
 
-        -- Execute Burik Logic
         local function Burikify(obj)
             for _, v in pairs(obj:GetDescendants()) do
                 if v:IsA("BasePart") then
                     v.Material = Enum.Material.SmoothPlastic
                     v.Reflectance = 0
-                    v.Color = Color3.fromRGB(100, 100, 100) -- Abu-abu polos
-                    -- Jika Air/Lava part, buat tidak transparan
+                    v.Color = Color3.fromRGB(100, 100, 100) 
                     if v.Name == "Water" or v.Name == "Lava" then v.Transparency = 0 end
                 elseif v:IsA("Decal") or v:IsA("Texture") then
-                    v.Transparency = 1 -- Hapus texture
+                    v.Transparency = 1 
                 elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") or v:IsA("Explosion") then
-                    v.Enabled = false -- Matikan efek
+                    v.Enabled = false 
                 elseif v:IsA("MeshPart") or v:IsA("SpecialMesh") then
                     if v:IsA("MeshPart") then v.TextureID = "" end
                     if v:IsA("SpecialMesh") then v.TextureId = "" end
                 elseif v:IsA("Clothing") or v:IsA("Shirt") or v:IsA("Pants") or v:IsA("ShirtGraphic") then
-                    v:Destroy() -- Hapus baju (Efek Skin)
+                    v:Destroy() 
                 end
             end
         end
@@ -863,13 +918,11 @@ local function ToggleBoost(enable)
             Burikify(target)
         end
         
-        -- Loop tambahan untuk memastikan tool hidden saat boost aktif
         Connections["HideRod"] = Services.RunService.RenderStepped:Connect(function()
             local char = GetChar()
             if char then
                 for _, v in pairs(char:GetDescendants()) do
                     if v:IsA("Tool") or v.Name:find("Rod") then
-                        -- Sembunyikan visual tool (Handle/Parts)
                         for _, part in pairs(v:GetDescendants()) do
                             if part:IsA("BasePart") then part.Transparency = 1 end
                         end
@@ -884,7 +937,7 @@ local function ToggleBoost(enable)
     end
 end
 
--- [UPDATED] FPS Updater (Format Text Baru)
+-- FPS Updater
 local fpsT = 0
 Services.RunService.RenderStepped:Connect(function(dt)
     fpsT = fpsT + (1/dt - fpsT) * 0.1 
@@ -942,6 +995,13 @@ end)
 BoxSpeedInput.FocusLost:Connect(function()
     local val = tonumber(BoxSpeedInput.Text)
     if val then States.SpeedVal = val else BoxSpeedInput.Text = tostring(States.SpeedVal) end
+end)
+
+-- 2. HOLY ANIM BUTTON
+BtnHoly.MouseButton1Click:Connect(function()
+    ToggleHolyAnim(not States.HolyAnim)
+    BtnHoly.Text = "Holy Anim: " .. (States.HolyAnim and "ON" or "OFF")
+    ToggleVisual(BtnHoly, States.HolyAnim)
 end)
 
 -- 3. FOLLOW PLAYER BUTTON
@@ -1081,7 +1141,6 @@ BtnClean.MouseButton1Click:Connect(function()
     Notify("MAIN", "Auto Clean: "..(States.AutoClean and "ON" or "OFF"), UI_THEME.Accent)
 end)
 
--- [UPDATED] Auto Event Logic (Rename to Auto Hunt)
 BtnEvent.MouseButton1Click:Connect(function()
     States.AutoEvent = not States.AutoEvent
     BtnEvent.Text = "Auto Hunt: " .. (States.AutoEvent and "ON" or "OFF")
@@ -1176,7 +1235,7 @@ end)
 task.spawn(function() while true do task.wait(5) if States.AutoClean then pcall(function() collectgarbage("collect") end) end end end)
 task.spawn(function() while true do task.wait(2) if States.AutoEquip then ForceEquipRod() end end end)
 
--- [AUTO EVENT LOOP - Y=4 FIXED & UPDATED NOTIF]
+-- [AUTO EVENT LOOP]
 local function FindInFolders(targetName)
     local folders = {Services.Workspace:FindFirstChild("ActiveEvents"), Services.Workspace:FindFirstChild("Props")}
     for _, folder in pairs(folders) do
@@ -1215,12 +1274,10 @@ task.spawn(function()
                     if not IsInEvent then
                         EventStartCFrame = hrp.CFrame 
                         IsInEvent = true
-                        -- [UPDATED NOTIFICATION]
                         Notify("AUTO HUNT", "Teleport Ke ( " .. FoundEvent.Name .. " )", Color3.fromRGB(0, 255, 255))
                         SetWoW(true)
                     end
                     local targetPos = FoundEvent:GetPivot().Position
-                    -- Y = 4 Fixed
                     local destPos = Vector3.new(targetPos.X, 4, targetPos.Z) 
                     
                     if (hrp.Position - destPos).Magnitude > 5 then
