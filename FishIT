@@ -22,7 +22,7 @@ local function GetHum() local c = Player.Character; return c and c:FindFirstChil
 -- // Konfigurasi Visual (UPDATED REQUEST)
 local UI_THEME = {
     Width = 400,   
-    Height = 250,  
+    Height = 300,  
     
     Color = Color3.fromRGB(12, 12, 14), -- Main BG Gelap
     
@@ -37,7 +37,7 @@ local UI_THEME = {
     FontHeader = Enum.Font.GothamBlack,       
     FontBody = Enum.Font.GothamBold,          
     
-    CornerRadius = UDim.new(0, 15) 
+    CornerRadius = UDim.new(0, 12) 
 }
 
 -- Bersihkan UI Lama
@@ -54,18 +54,14 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 -- ====================================================
 local NotifyContainer = Instance.new("Frame", ScreenGui)
 NotifyContainer.Name = "NotificationContainer"
--- Ukuran container dibatasi agar tidak naik terlalu tinggi
 NotifyContainer.Size = UDim2.new(0, 280, 0.5, 0) 
--- AnchorPoint 1,1 artinya titik referensi ada di pojok kanan bawah elemen
 NotifyContainer.AnchorPoint = Vector2.new(1, 1)
--- Posisi di 1 (Kanan mentok) - 20 pixel, 1 (Bawah mentok) - 20 pixel
 NotifyContainer.Position = UDim2.new(1, -20, 1, -20)
 NotifyContainer.BackgroundTransparency = 1
 NotifyContainer.ClipsDescendants = false
 
 local NotifyLayout = Instance.new("UIListLayout", NotifyContainer)
 NotifyLayout.FillDirection = Enum.FillDirection.Vertical
--- [FIX] Pastikan VerticalAlignment Bottom agar menumpuk dari bawah
 NotifyLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
 NotifyLayout.SortOrder = Enum.SortOrder.LayoutOrder
 NotifyLayout.Padding = UDim.new(0, 8)
@@ -139,7 +135,7 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "UI Updated", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "UI Updated (Fire Cyan)", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD
@@ -160,10 +156,18 @@ GradHud.Color = ColorSequence.new{
 }
 GradHud.Rotation = 45
 
+-- [MODIFIED] GRADIENT STROKE (Cyan -> Fire Red)
 local HudStroke = Instance.new("UIStroke", FloatHUD)
-HudStroke.Color = UI_THEME.Accent
-HudStroke.Thickness = 1
-HudStroke.Transparency = 0.5 
+HudStroke.Thickness = 2
+HudStroke.Transparency = 0
+HudStroke.Color = Color3.fromRGB(255, 255, 255) -- Base White for Gradient
+
+local HudStrokeGrad = Instance.new("UIGradient", HudStroke)
+HudStrokeGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),   -- Cyan
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 60, 0))     -- Fire Red
+}
+HudStrokeGrad.Rotation = 45
 
 Instance.new("UICorner", FloatHUD).CornerRadius = UI_THEME.CornerRadius
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
@@ -183,7 +187,7 @@ local TitleLabel = Instance.new("TextLabel", FloatHUD)
 TitleLabel.LayoutOrder = 1
 TitleLabel.Size = UDim2.new(1, 0, 0, 20)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "SERAPHINxPANEL" 
+TitleLabel.Text = "SERAPHIN PANEL" 
 TitleLabel.TextColor3 = UI_THEME.Accent 
 TitleLabel.Font = UI_THEME.FontHeader
 TitleLabel.TextSize = 13
@@ -252,10 +256,18 @@ MainGrad.Rotation = 90
 local MainCorner = Instance.new("UICorner", Main)
 MainCorner.CornerRadius = UI_THEME.CornerRadius
 
+-- [MODIFIED] MAIN BORDER GRADIENT (Cyan -> Fire Red)
 local MainStroke = Instance.new("UIStroke", Main)
-MainStroke.Color = UI_THEME.Accent
-MainStroke.Thickness = 2
-MainStroke.Transparency = 0.6
+MainStroke.Thickness = 3
+MainStroke.Transparency = 0
+MainStroke.Color = Color3.fromRGB(255, 255, 255) -- Base White
+
+local MainStrokeGrad = Instance.new("UIGradient", MainStroke)
+MainStrokeGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),   -- Cyan
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 60, 0))     -- Fire Red
+}
+MainStrokeGrad.Rotation = 60
 
 -- Logo R dalam Kotak
 local LogoContainer = Instance.new("Frame", Main)
