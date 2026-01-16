@@ -128,14 +128,13 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "Stuck Detector Added", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "Script Loaded (Fixes Applied)", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD (UPDATED SIZE)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
--- Size diperbesar sedikit ke bawah untuk muat Status
 FloatHUD.Size = UDim2.new(0, 160, 0, 155) 
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
 FloatHUD.BackgroundColor3 = UI_THEME.Color 
@@ -224,7 +223,6 @@ end
 
 local LblFishVal = CreateStatBlock("FISH CAUGHT", "Loading...", 3) 
 local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)
--- [NEW] STATUS BLOCK
 local LblStatus  = CreateStatBlock("STATUS", "Idle: 0s", 5)
 
 -- ====================================================
@@ -319,6 +317,7 @@ HideBtn.TextSize = 18
 HideBtn.AutoButtonColor = true
 Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(1, 0)
 
+-- [FIXED] DRAG FUNCTION (LOGO FIX)
 local function EnableDrag(frame, dragInputObj)
     local dragToggle, dragStart, startPos
     local function updateInput(input)
@@ -350,7 +349,7 @@ local function EnableDrag(frame, dragInputObj)
     end)
 end
 EnableDrag(Main, Main) 
-EnableDrag(Main, LogoR) 
+EnableDrag(Main, LogoR) -- Logo R sekarang bisa untuk geser UI
 EnableDrag(FloatHUD, FloatHUD)
 
 -- ====================================================
@@ -1057,7 +1056,7 @@ BtnStuckToggle.MouseButton1Click:Connect(function()
         local val = tonumber(BoxStuckInput.Text)
         if not val or val < 10 then val = 60; BoxStuckInput.Text = "60" end
         States.StuckTimeout = val
-        LastFishCaughtTime = tick() -- Reset timer when enabled
+        LastFishCaughtTime = tick() 
         Notify("MISC", "Anti Stuck: Active", UI_THEME.Accent)
     else
         BtnStuckToggle.Text = "Anti-Stuck: OFF"
@@ -1279,7 +1278,7 @@ task.spawn(function()
     end
 end)
 
--- [UPDATED] STATUS DETECTOR LOOP
+-- [FIXED] STATUS DETECTOR & ANTI-STUCK ACTION LOOP
 task.spawn(function() 
     while true do 
         task.wait(1) 
@@ -1288,15 +1287,15 @@ task.spawn(function()
                 local ls = Player:FindFirstChild("leaderstats")
                 local c = ls and ls:FindFirstChild("Caught") and ls.Caught.Value or 0
                 
-                -- Check catch change
+                -- Reset timer jika jumlah ikan bertambah (Artinya tidak stuck)
                 if c ~= LastFishCount then
                     LastFishCount = c
-                    LastFishCaughtTime = tick() -- Reset timer on catch
+                    LastFishCaughtTime = tick() 
                 end
                 
                 LblFishVal.Text = tostring(c):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
                 
-                -- Backpack
+                -- Backpack Logic
                 local bagText = "0/?"
                 local backpackGui = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("Backpack")
                 if backpackGui then
@@ -1318,17 +1317,32 @@ task.spawn(function()
                 end
                 LblInvVal.Text = bagText
 
-                -- [STATUS LOGIC]
+                -- [LOGIKA ANTI STUCK YANG BARU]
                 if States.AntiStuck then
                     local elapsed = math.floor(tick() - LastFishCaughtTime)
                     
                     if elapsed > States.StuckTimeout then
-                        LblStatus.Text = "STUCK! ("..elapsed.."s)"
-                        LblStatus.TextColor3 = Color3.fromRGB(255, 50, 50)
+                        -- 1. Ubah Teks UI
+                        LblStatus.Text = "FIXING STUCK..."
+                        LblStatus.TextColor3 = Color3.fromRGB(255, 0, 0)
                         
-                        -- Optional: Auto Jump to Unstuck
+                        -- 2. AKSI PERBAIKAN (ACTION)
+                        Notify("ANTI-STUCK", "Terdeteksi Macet! Resetting...", Color3.fromRGB(255, 50, 50))
+                        
+                        -- Aksi A: Lompat (Untuk membetulkan posisi bug)
                         local hum = GetHum()
-                        if hum then hum.Jump = true end
+                        if hum then 
+                            hum.Jump = true 
+                            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+                        end
+                        
+                        -- Aksi B: Lepas & Pasang Pancingan (Reset Tool)
+                        if hum then hum:UnequipTools() end
+                        task.wait(0.5)
+                        ForceEquipRod() -- Paksa pasang lagi
+                        
+                        -- 3. Reset Waktu
+                        LastFishCaughtTime = tick()
                     else
                         LblStatus.TextColor3 = UI_THEME.TextMain
                         if elapsed < 5 then
