@@ -308,7 +308,7 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 local HideBtn = Instance.new("TextButton", Header)
 HideBtn.Size = UDim2.new(0, 24, 0, 24) 
 HideBtn.Position = UDim2.new(1, -30, 0.5, -12)
-HideBtn.Text = "-" 
+HideBtn.Text = "Hide" 
 HideBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 HideBtn.BackgroundTransparency = 0.8
 HideBtn.TextColor3 = UI_THEME.TextMain
@@ -592,19 +592,19 @@ end
 -- >> TOMBOL UI <<
 
 -- TAB MAIN
-local BtnEquip  = MakeBtn(PageMain, "Auto Equip: OFF")
-local BtnClean  = MakeBtn(PageMain, "Auto Clean: OFF")
+local BtnEquip  = MakeBtn(PageMain, "Auto Equip Rod: OFF")
+local BtnClean  = MakeBtn(PageMain, "Auto Clean Ram: OFF")
 local BtnUltra  = MakeBtn(PageMain, "Ultra HD: OFF") 
-local BtnWow    = MakeBtn(PageMain, "Water Walk: OFF")
-local BtnFreeze = MakeBtn(PageMain, "Freeze: OFF")
+local BtnWow    = MakeBtn(PageMain, "Walk In Water: OFF")
+local BtnFreeze = MakeBtn(PageMain, "Freeze Character: OFF")
 local BtnNoclip = MakeBtn(PageMain, "No Clip: OFF")
 local BtnBoost  = MakeBtn(PageMain, "CPU Booster: OFF") 
-local BtnRender = MakeBtn(PageMain, "3D Render: ON") 
+local BtnRender = MakeBtn(PageMain, "3D No Render: ON") 
 local BtnFps    = MakeBtn(PageMain, "FPS: Unli")
 
 -- TAB EVENT
 local BtnEvent  = MakeBtn(PageEvent, "Auto Hunt: OFF") 
-local BtnChest  = MakeBtn(PageEvent, "Auto Chest: OFF") 
+local BtnChest  = MakeBtn(PageEvent, "Auto Chest Pirate: OFF") 
 
 -- TAB PLAYER
 local SpeedContainer = Instance.new("Frame", PagePlayer)
@@ -655,7 +655,7 @@ BtnFollowToggle.Name = "Toggle"
 BtnFollowToggle.Size = UDim2.new(0.5, -4, 1, 0)
 BtnFollowToggle.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 BtnFollowToggle.BackgroundTransparency = 0.4
-BtnFollowToggle.Text = "Follow: OFF"
+BtnFollowToggle.Text = "Follow Player: OFF"
 BtnFollowToggle.TextColor3 = UI_THEME.TextMain
 BtnFollowToggle.Font = UI_THEME.FontBody
 BtnFollowToggle.TextSize = 10
@@ -725,16 +725,16 @@ s2.Color = Color3.fromRGB(60, 60, 70)
 s2.Thickness = 1
 s2.Transparency = 0.6
 
-local BtnSave   = MakeBtn(PageMisc, "Save Pos")
-local BtnLoad   = MakeBtn(PageMisc, "Load Pos")
+local BtnSave   = MakeBtn(PageMisc, "Save Position")
+local BtnLoad   = MakeBtn(PageMisc, "Load Position")
 local BtnRejoin = MakeBtn(PageMisc, "Rejoin Server")
-local BtnPanel  = MakeBtn(PageMisc, "Panel Info: ON")
+local BtnPanel  = MakeBtn(PageMisc, "Panel Seraphin: ON")
 
 -- Logic Water Walk
 local function SetWoW(bool)
     States.WoW = bool
     if typeof(BtnWow) == "Instance" then
-        BtnWow.Text = "Water Walk: " .. (States.WoW and "ON" or "OFF")
+        BtnWow.Text = "Walk In Water: " .. (States.WoW and "ON" or "OFF")
         ToggleVisual(BtnWow, States.WoW)
     end
     
@@ -771,7 +771,7 @@ end
 local function SetAutoEquip(bool)
     States.AutoEquip = bool
     if typeof(BtnEquip) == "Instance" then
-        BtnEquip.Text = "Auto Equip: " .. (States.AutoEquip and "ON" or "OFF")
+        BtnEquip.Text = "Auto Equip Rod: " .. (States.AutoEquip and "ON" or "OFF")
         ToggleVisual(BtnEquip, States.AutoEquip)
     end
 end
@@ -790,7 +790,7 @@ local function SetUltraGraphics(enabled)
         local fx = Instance.new("BloomEffect", Services.Lighting)
         fx.Name = "Seraphin_Bloom"
         fx.Intensity = 0.8
-        Notify("GRAPHICS", "ULTRA HD ACTIVE", Color3.fromRGB(0, 255, 255))
+        Notify("GRAPHICS", "ULTRA HD ", Color3.fromRGB(0, 255, 255))
     else
         for _, v in pairs(Services.Lighting:GetChildren()) do
             if v.Name:find("Seraphin_") then v:Destroy() end
@@ -806,7 +806,7 @@ local function ToggleBoost(enable)
     ToggleVisual(BtnBoost, States.Boost)
     
     if enable then
-        Notify("BOOSTER", "Mode Burik: AKTIF", Color3.fromRGB(0, 255, 100))
+        Notify("BOOSTER", "Cpu Booster Aktif", Color3.fromRGB(0, 255, 100))
         
         -- 1. NUKE LIGHTING (Siang/Malam/Hujan/Atmosfer)
         pcall(function()
@@ -887,14 +887,14 @@ Services.RunService.RenderStepped:Connect(function(dt)
     local currentFps = math.floor(fpsT)
     if Title and currentFps then
         Title.Text = string.format(
-            "SERA <font color=\"rgb(0,255,255)\">HELPERx</font> <font size=\"10\" color=\"rgb(255,255,255)\">@8raka_</font> | FPS: <b>%d</b>", 
+            "SERA <font color=\"rgb(0,255,255)\">HELPERx</font> <font size=\"10\" color=\"rgb(255,255,255)\">| @8raka_</font> | FPS: <b>%d</b>", 
             currentFps
         )
     end
 end)
 
 BtnFps.MouseButton1Click:Connect(function()
-    local caps = {60, 90, 144, 240, 99999}
+    local caps = {60, 90, 144, 240, 999999}
     _G.fpsIndex = (_G.fpsIndex or 0) % #caps + 1 
     local v = caps[_G.fpsIndex]
     if setfpscap then setfpscap(v) end
@@ -908,7 +908,7 @@ ToggleVisual(BtnPanel, true)
 BtnPanel.MouseButton1Click:Connect(function()
     States.Panel = not States.Panel
     FloatHUD.Visible = States.Panel
-    BtnPanel.Text = "Panel Info: " .. (States.Panel and "ON" or "OFF")
+    BtnPanel.Text = "Panel Seraphin: " .. (States.Panel and "ON" or "OFF")
     ToggleVisual(BtnPanel, States.Panel)
 end)
 
@@ -967,7 +967,7 @@ BtnFollowToggle.MouseButton1Click:Connect(function()
             Notify("FOLLOW", "Player Not Found!", Color3.fromRGB(255, 50, 50))
         end
     else
-        BtnFollowToggle.Text = "Follow: OFF"
+        BtnFollowToggle.Text = "Follow Player: OFF"
         ToggleVisual(BtnFollowToggle, false)
         States.FollowTarget = nil
     end
@@ -1051,15 +1051,15 @@ end)
 BtnStuckToggle.MouseButton1Click:Connect(function()
     States.AntiStuck = not States.AntiStuck
     if States.AntiStuck then
-        BtnStuckToggle.Text = "Anti-Stuck: ON"
+        BtnStuckToggle.Text = "Anti Stuck Fishing: ON"
         ToggleVisual(BtnStuckToggle, true)
         local val = tonumber(BoxStuckInput.Text)
         if not val or val < 10 then val = 60; BoxStuckInput.Text = "60" end
         States.StuckTimeout = val
         LastFishCaughtTime = tick() 
-        Notify("MISC", "Anti Stuck: Active", UI_THEME.Accent)
+        Notify("MISC", "Anti Stuck: Fishing Aktif", UI_THEME.Accent)
     else
-        BtnStuckToggle.Text = "Anti-Stuck: OFF"
+        BtnStuckToggle.Text = "Anti Stuck Fishing: OFF"
         ToggleVisual(BtnStuckToggle, false)
         LblStatus.Text = "Safe"
     end
@@ -1067,13 +1067,13 @@ end)
 
 BtnEquip.MouseButton1Click:Connect(function() 
     SetAutoEquip(not States.AutoEquip) 
-    Notify("MAIN", "Auto Equip: "..(States.AutoEquip and "ON" or "OFF"), UI_THEME.Accent)
+    Notify("MAIN", "Auto Equip Rod: "..(States.AutoEquip and "ON" or "OFF"), UI_THEME.Accent)
 end)
 BtnClean.MouseButton1Click:Connect(function()
     States.AutoClean = not States.AutoClean
-    BtnClean.Text = "Auto Clean: " .. (States.AutoClean and "ON" or "OFF")
+    BtnClean.Text = "Auto Clean Ram: " .. (States.AutoClean and "ON" or "OFF")
     ToggleVisual(BtnClean, States.AutoClean)
-    Notify("MAIN", "Auto Clean: "..(States.AutoClean and "ON" or "OFF"), UI_THEME.Accent)
+    Notify("MAIN", "Auto Clean Ram: "..(States.AutoClean and "ON" or "OFF"), UI_THEME.Accent)
 end)
 
 BtnEvent.MouseButton1Click:Connect(function()
@@ -1088,7 +1088,7 @@ BtnEvent.MouseButton1Click:Connect(function()
         if IsInEvent and EventStartCFrame and hrp then 
             hrp.CFrame = EventStartCFrame 
             EventStartCFrame = nil
-            Notify("AUTO HUNT", "Manual Off: Returning...", UI_THEME.Accent)
+            Notify("AUTO HUNT", "Manual Off ", UI_THEME.Accent)
         end
         IsInEvent = false
         SetWoW(false) 
@@ -1097,16 +1097,16 @@ end)
 
 BtnChest.MouseButton1Click:Connect(function()
     States.AutoChest = not States.AutoChest
-    BtnChest.Text = "Auto Chest: " .. (States.AutoChest and "ON" or "OFF")
+    BtnChest.Text = "Auto Chest Pirate: " .. (States.AutoChest and "ON" or "OFF")
     ToggleVisual(BtnChest, States.AutoChest)
     
-    Notify("EVENT", "Auto Chest: "..(States.AutoChest and "ON" or "OFF"), States.AutoChest and Color3.fromRGB(0,255,100) or Color3.fromRGB(255,50,50))
+    Notify("EVENT", "Auto Chest Pirate: "..(States.AutoChest and "ON" or "OFF"), States.AutoChest and Color3.fromRGB(0,255,100) or Color3.fromRGB(255,50,50))
     
     if not States.AutoChest then
         local hrp = GetRoot()
         if IsLootingChests and ChestReturnCFrame and hrp then
             hrp.CFrame = ChestReturnCFrame
-            Notify("CHEST", "Manual Stop: Returning", UI_THEME.Accent)
+            Notify("CHEST", "Manual Stop !", UI_THEME.Accent)
         end
         IsLootingChests = false
         SetWoW(false)
@@ -1116,22 +1116,22 @@ end)
 BtnRender.MouseButton1Click:Connect(function()
     States.NoRender = not States.NoRender
     Services.RunService:Set3dRenderingEnabled(not States.NoRender) 
-    BtnRender.Text = "3D Render: "..(States.NoRender and "OFF" or "ON")
+    BtnRender.Text = "3D No Render: "..(States.NoRender and "OFF" or "ON")
     ToggleVisual(BtnRender, States.NoRender)
-    Notify("RENDER", "3D Render: "..(States.NoRender and "OFF" or "ON"), UI_THEME.Accent)
+    Notify("RENDER", "3D No Render: "..(States.NoRender and "OFF" or "ON"), UI_THEME.Accent)
 end)
 
 BtnFreeze.MouseButton1Click:Connect(function() 
     States.Freeze = not States.Freeze 
     local hrp = GetRoot()
     if hrp then hrp.Anchored = States.Freeze end 
-    BtnFreeze.Text = "Freeze: " .. (States.Freeze and "ON" or "OFF")
+    BtnFreeze.Text = "Freeze Character: " .. (States.Freeze and "ON" or "OFF")
     ToggleVisual(BtnFreeze, States.Freeze) 
-    Notify("MAIN", "Freeze: "..(States.Freeze and "ON" or "OFF"), UI_THEME.Accent)
+    Notify("MAIN", "Freeze Character: "..(States.Freeze and "ON" or "OFF"), UI_THEME.Accent)
 end)
 BtnWow.MouseButton1Click:Connect(function() 
     SetWoW(not States.WoW) 
-    Notify("MAIN", "Water Walk: "..(States.WoW and "ON" or "OFF"), UI_THEME.Accent)
+    Notify("MAIN", "Walk In Water: "..(States.WoW and "ON" or "OFF"), UI_THEME.Accent)
 end)
 BtnNoclip.MouseButton1Click:Connect(function() 
     States.Noclip = not States.Noclip 
@@ -1197,7 +1197,7 @@ end
 
 task.spawn(function()
     while true do
-        task.wait(2) 
+        task.wait(0.5) 
         if States.AutoEvent then
             pcall(function()
                 local hrp = GetRoot()
@@ -1221,7 +1221,7 @@ task.spawn(function()
                 else
                     if IsInEvent then
                         IsInEvent = false
-                        Notify("AUTO HUNT", "Event Finished. Returning...", Color3.fromRGB(0, 255, 100))
+                        Notify("AUTO HUNT", "Event Finishsed Return To Position", Color3.fromRGB(0, 255, 100))
                         if EventStartCFrame and hrp then 
                             hrp.CFrame = EventStartCFrame 
                             EventStartCFrame = nil 
@@ -1249,7 +1249,7 @@ task.spawn(function()
                             if hrp then 
                                 ChestReturnCFrame = hrp.CFrame 
                                 IsLootingChests = true
-                                Notify("CHEST", "Starting Loot...", Color3.fromRGB(255, 200, 0))
+                                Notify("CHEST", "Starting Loot !", Color3.fromRGB(255, 200, 0))
                                 SetWoW(true) 
                             end
                         end
@@ -1265,7 +1265,7 @@ task.spawn(function()
                             local hrp = GetRoot()
                             if ChestReturnCFrame and hrp then
                                 hrp.CFrame = ChestReturnCFrame
-                                Notify("CHEST", "All Looted! Returning...", Color3.fromRGB(0, 255, 100))
+                                Notify("CHEST", "All Looted! ", Color3.fromRGB(0, 255, 100))
                             end
                             SetWoW(false) 
                         end
@@ -1327,7 +1327,7 @@ task.spawn(function()
                         LblStatus.TextColor3 = Color3.fromRGB(255, 0, 0)
                         
                         -- 2. AKSI PERBAIKAN (ACTION)
-                        Notify("ANTI-STUCK", "Terdeteksi Macet! Resetting...", Color3.fromRGB(255, 50, 50))
+                        Notify("ANTI-STUCK", "Terdeteksi Stuck! Resetting...", Color3.fromRGB(255, 50, 50))
                         
                         -- Aksi A: Lompat (Untuk membetulkan posisi bug)
                         local hum = GetHum()
