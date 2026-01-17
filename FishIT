@@ -829,20 +829,7 @@ local function ToggleBoost(enable)
             Services.Workspace.Terrain.WaterWaveSpeed = 0
         end
 
-        -- 3. NUKE EXTRA PATHS
-        pcall(function() Services.SoundService:ClearAllChildren() end)
-        pcall(function()
-            local rs = Services.ReplicatedStorage
-            if rs:FindFirstChild("Passives") then rs.Passives:Destroy() end
-            if rs:FindFirstChild("Controllers") and rs.Controllers:FindFirstChild("VFXController") then 
-                rs.Controllers.VFXController:Destroy() 
-            end
-        end)
-        pcall(function() 
-            if Services.Workspace:FindFirstChild("!! WAVES ") then Services.Workspace["!! WAVES "]:Destroy() end 
-        end)
-        
-        -- 4. NUKE OBJECTS 
+        -- 3. NUKE OBJECTS 
         local Targets = {Services.Workspace}
         if Services.Workspace:FindFirstChild("Sand") then table.insert(Targets, Services.Workspace.Sand) end
         if Services.Workspace:FindFirstChild("NPC") then table.insert(Targets, Services.Workspace.NPC) end
@@ -909,7 +896,7 @@ Services.RunService.RenderStepped:Connect(function(dt)
 end)
 
 BtnFps.MouseButton1Click:Connect(function()
-    local caps = {60, 90, 144, 240, 9999999}
+    local caps = {60, 90, 144, 240, 9999}
     _G.fpsIndex = (_G.fpsIndex or 0) % #caps + 1 
     local v = caps[_G.fpsIndex]
     if setfpscap then setfpscap(v) end
@@ -1380,3 +1367,4 @@ task.delay(1, function()
     Main.Visible = true
     FloatHUD.Visible = States.Panel 
 end)
+
