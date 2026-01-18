@@ -20,26 +20,25 @@ local function GetChar() return Player.Character or Player.CharacterAdded:Wait()
 local function GetRoot() local c = Player.Character; return c and c:FindFirstChild("HumanoidRootPart") end
 local function GetHum() local c = Player.Character; return c and c:FindFirstChild("Humanoid") end
 
--- // KONFIGURASI VISUAL (ROMBAK TOTAL)
+-- // KONFIGURASI VISUAL (UPDATED)
 local UI_THEME = {
-    -- [REQUEST] Lebar diperbesar agar teks muat 1 baris
     Width = 500,   
     Height = 320,  
     
-    -- [REQUEST] Navy Black Dark Transparent
     Color = Color3.fromRGB(8, 10, 20), 
     SidebarColor = Color3.fromRGB(15, 18, 30), 
     
-    Transparency = 0.1, -- Sedikit transparan
-    Accent = Color3.fromRGB(0, 255, 255), -- Cyan Neon
+    Transparency = 0.3,
+    
+    -- [MODIFIED] Warna Neon Biru Tajam
+    Accent = Color3.fromRGB(0, 255, 255), 
     TextMain = Color3.fromRGB(240, 240, 255), 
     TextDim = Color3.fromRGB(150, 160, 180),
     
-    -- [REQUEST] Font Tebal tapi Elegan
-    FontHeader = Enum.Font.GothamBold,       
-    FontBody = Enum.Font.GothamBold,
+    -- [MODIFIED] Font sesuai permintaan (Mapping ke Font Roblox terdekat)
+    FontHeader = Enum.Font.LuckiestGuy,  -- Gaya "Higher Jump"
+    FontBody = Enum.Font.Antique,        -- Gaya "Retro Floral"
     
-    -- [REQUEST] Lengkung Sempurna
     CornerRadius = UDim.new(0, 30) 
 }
 
@@ -135,14 +134,14 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "UI Optimized (Navy Dark)", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "UI Loaded (Neon Blue)", UI_THEME.Accent, 3)
 
 -- ====================================================
 -- [1] MINI FLOATING HUD (NAVY THEME)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 180, 0, 160) -- Sedikit lebih lebar
+FloatHUD.Size = UDim2.new(0, 180, 0, 160)
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
 FloatHUD.BackgroundColor3 = UI_THEME.Color 
 FloatHUD.BackgroundTransparency = UI_THEME.Transparency
@@ -163,8 +162,8 @@ HudStroke.Color = Color3.fromRGB(255, 255, 255)
 
 local HudStrokeGrad = Instance.new("UIGradient", HudStroke)
 HudStrokeGrad.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)), -- Cyan
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 150, 255))  -- Deep Blue Neon
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)), 
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 150, 255))
 }
 HudStrokeGrad.Rotation = 45
 
@@ -186,10 +185,10 @@ local TitleLabel = Instance.new("TextLabel", FloatHUD)
 TitleLabel.LayoutOrder = 1
 TitleLabel.Size = UDim2.new(1, 0, 0, 20)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "SERAPHIN PANEL" 
+TitleLabel.Text = "SERAPHINxPANEL" 
 TitleLabel.TextColor3 = UI_THEME.Accent 
 TitleLabel.Font = UI_THEME.FontHeader
-TitleLabel.TextSize = 13
+TitleLabel.TextSize = 14
 TitleLabel.TextStrokeTransparency = 1
 
 local Div = Instance.new("Frame", FloatHUD)
@@ -254,9 +253,9 @@ MainGrad.Color = ColorSequence.new{
 MainGrad.Rotation = 45
 
 local MainCorner = Instance.new("UICorner", Main)
-MainCorner.CornerRadius = UI_THEME.CornerRadius -- [REQUEST] Lengkung Sempurna
+MainCorner.CornerRadius = UI_THEME.CornerRadius
 
--- Border Neon Cyan
+-- [MODIFIED] Border Neon Blue (Cyan to Deep Blue)
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Thickness = 3
 MainStroke.Transparency = 0
@@ -265,7 +264,7 @@ MainStroke.Color = Color3.fromRGB(255, 255, 255)
 local MainStrokeGrad = Instance.new("UIGradient", MainStroke)
 MainStrokeGrad.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)), -- Cyan
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 255))  -- Blue Neon
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 80, 255))   -- Deep Blue Neon
 }
 MainStrokeGrad.Rotation = 60
 
@@ -278,7 +277,7 @@ LogoContainer.BackgroundColor3 = UI_THEME.SidebarColor
 LogoContainer.BackgroundTransparency = 0
 LogoContainer.Visible = false
 LogoContainer.ZIndex = 11
-Instance.new("UICorner", LogoContainer).CornerRadius = UDim.new(0, 0) -- [REQUEST] KOTAK
+Instance.new("UICorner", LogoContainer).CornerRadius = UDim.new(0, 0) -- KOTAK
 
 local LogoStroke = Instance.new("UIStroke", LogoContainer)
 LogoStroke.Color = UI_THEME.Accent
@@ -298,7 +297,7 @@ LogoR.ZIndex = 12
 -- HEADER
 local Header = Instance.new("Frame", Main)
 Header.Name = "Header"
-Header.Size = UDim2.new(1, 0, 0, 40) -- Header sedikit lebih tinggi
+Header.Size = UDim2.new(1, 0, 0, 40)
 Header.BackgroundColor3 = UI_THEME.SidebarColor
 Header.BackgroundTransparency = 0.5
 Header.BorderSizePixel = 0
@@ -324,9 +323,9 @@ HideBtn.TextColor3 = UI_THEME.TextMain
 HideBtn.Font = UI_THEME.FontHeader
 HideBtn.TextSize = 18
 HideBtn.AutoButtonColor = true
-Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(1, 0) -- Lingkaran
+Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(1, 0) 
 
--- [FIXED] DRAG FUNCTION
+-- DRAG FUNCTION
 local function EnableDrag(frame, dragInputObj)
     local dragToggle, dragStart, startPos
     local function updateInput(input)
@@ -362,7 +361,7 @@ EnableDrag(Main, LogoR)
 EnableDrag(FloatHUD, FloatHUD)
 
 -- ====================================================
--- [3] SIDE NAVIGATION (WIDE LAYOUT)
+-- [3] SIDE NAVIGATION (SMALLER BUTTONS)
 -- ====================================================
 local ContentContainer = Instance.new("Frame", Main)
 ContentContainer.Name = "Container"
@@ -372,7 +371,7 @@ ContentContainer.BackgroundTransparency = 1
 
 local Sidebar = Instance.new("Frame", ContentContainer)
 Sidebar.Name = "Sidebar"
-Sidebar.Size = UDim2.new(0, 120, 1, 0) -- Sidebar diperlebar sedikit
+Sidebar.Size = UDim2.new(0, 120, 1, 0)
 Sidebar.BackgroundColor3 = UI_THEME.SidebarColor
 Sidebar.BackgroundTransparency = 0.3
 Sidebar.BorderSizePixel = 0
@@ -389,7 +388,8 @@ SidebarPad.PaddingTop = UDim.new(0, 15)
 local function CreateSideTab(name, text, isActive)
     local btn = Instance.new("TextButton", Sidebar)
     btn.Name = name
-    btn.Size = UDim2.new(0.85, 0, 0, 30) -- Tab sedikit lebih tinggi
+    -- [MODIFIED] Ukuran tombol sidebar diperkecil (tinggi 30 -> 24)
+    btn.Size = UDim2.new(0.85, 0, 0, 24) 
     btn.BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(20, 25, 40)
     btn.BackgroundTransparency = isActive and 0.1 or 1
     btn.Text = text
@@ -422,11 +422,11 @@ SideDivider.BackgroundTransparency = 0.8
 SideDivider.BorderSizePixel = 0
 
 -- ====================================================
--- [4] PAGES & BUTTONS (TEXT FIT & TIDY)
+-- [4] PAGES & BUTTONS (SMALLER & RETAIN TEXT SIZE)
 -- ====================================================
 local PageArea = Instance.new("Frame", ContentContainer)
 PageArea.Name = "PageArea"
-PageArea.Size = UDim2.new(1, -135, 1, -10) -- Area page menyesuaikan lebar sidebar
+PageArea.Size = UDim2.new(1, -135, 1, -10)
 PageArea.Position = UDim2.new(0, 130, 0, 5)
 PageArea.BackgroundTransparency = 1
 PageArea.ClipsDescendants = true
@@ -444,10 +444,10 @@ local function CreatePage(name, visible)
     pg.Visible = visible
     
     local gl = Instance.new("UIGridLayout", pg)
-    -- [CRITICAL] CellSize disesuaikan dengan Width baru (500)
-    -- Lebar PageArea ~365px. Bagi 2 = ~180px per tombol.
-    gl.CellSize = UDim2.new(0.48, 0, 0, 32)  
-    gl.CellPadding = UDim2.new(0, 8, 0, 8)
+    -- [MODIFIED] Tinggi tombol dikurangi (32 -> 26) agar lebih kecil
+    gl.CellSize = UDim2.new(0.48, 0, 0, 26)  
+    -- [MODIFIED] Padding sedikit dirapatkan
+    gl.CellPadding = UDim2.new(0, 8, 0, 6)
     gl.SortOrder = Enum.SortOrder.LayoutOrder
     return pg
 end
@@ -530,10 +530,9 @@ local function MakeBtn(parent, text)
     b.BackgroundTransparency = 0.3
     b.TextColor3 = UI_THEME.TextMain
     b.Font = UI_THEME.FontBody 
-    -- [REQUEST] TextScaled dengan batasan MaxSize agar tidak pecah
     b.TextScaled = true 
     
-    -- Constraint agar teks tidak terlalu besar saat tombol besar
+    -- Constraint agar teks tidak terlalu besar
     local constraint = Instance.new("UITextSizeConstraint", b)
     constraint.MaxTextSize = 12 
     constraint.MinTextSize = 8
@@ -549,10 +548,10 @@ local function MakeBtn(parent, text)
     s.Transparency = 0.6
     s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     
-    -- Padding teks agar rapi
+    -- [MODIFIED] Padding kiri/kanan dikurangi drastis agar teks muat banyak (6 -> 2)
     local pad = Instance.new("UIPadding", b)
-    pad.PaddingLeft = UDim.new(0, 6)
-    pad.PaddingRight = UDim.new(0, 6)
+    pad.PaddingLeft = UDim.new(0, 2)
+    pad.PaddingRight = UDim.new(0, 2)
     return b
 end
 
@@ -1099,7 +1098,7 @@ BtnStuckToggle.MouseButton1Click:Connect(function()
         if not val or val < 10 then val = 60; BoxStuckInput.Text = "60" end
         States.StuckTimeout = val
         LastFishCaughtTime = tick() 
-        Notify("MISC", "Anti Stuck Fish: Active", UI_THEME.Accent)
+        Notify("MISC", "Anti Stuck Fish: Aktif", UI_THEME.Accent)
     else
         BtnStuckToggle.Text = "Anti Stuck Fish: OFF"
         ToggleVisual(BtnStuckToggle, false)
@@ -1130,7 +1129,7 @@ BtnEvent.MouseButton1Click:Connect(function()
         if IsInEvent and EventStartCFrame and hrp then 
             hrp.CFrame = EventStartCFrame 
             EventStartCFrame = nil
-            Notify("AUTO HUNT", "Manual Off: Returning...", UI_THEME.Accent)
+            Notify("AUTO HUNT", "Manual Off: Returning", UI_THEME.Accent)
         end
         IsInEvent = false
         SetWoW(false) 
@@ -1251,7 +1250,7 @@ task.spawn(function()
                     if not IsInEvent then
                         EventStartCFrame = hrp.CFrame 
                         IsInEvent = true
-                        Notify("AUTO HUNT", "Teleport Ke ( " .. FoundEvent.Name .. " )", Color3.fromRGB(0, 255, 255))
+                        Notify("AUTO HUNT", "Teleport To ( " .. FoundEvent.Name .. " )", Color3.fromRGB(0, 255, 255))
                         SetWoW(true)
                     end
                     local targetPos = FoundEvent:GetPivot().Position
@@ -1263,7 +1262,7 @@ task.spawn(function()
                 else
                     if IsInEvent then
                         IsInEvent = false
-                        Notify("AUTO HUNT", "Event Finished. Returning...", Color3.fromRGB(0, 255, 100))
+                        Notify("AUTO HUNT", "Event Finished ", Color3.fromRGB(0, 255, 100))
                         if EventStartCFrame and hrp then 
                             hrp.CFrame = EventStartCFrame 
                             EventStartCFrame = nil 
@@ -1291,7 +1290,7 @@ task.spawn(function()
                             if hrp then 
                                 ChestReturnCFrame = hrp.CFrame 
                                 IsLootingChests = true
-                                Notify("CHEST", "Starting Loot...", Color3.fromRGB(255, 200, 0))
+                                Notify("CHEST", "Starting Loot ", Color3.fromRGB(255, 200, 0))
                                 SetWoW(true) 
                             end
                         end
@@ -1307,7 +1306,7 @@ task.spawn(function()
                             local hrp = GetRoot()
                             if ChestReturnCFrame and hrp then
                                 hrp.CFrame = ChestReturnCFrame
-                                Notify("CHEST", "All Looted! Returning...", Color3.fromRGB(0, 255, 100))
+                                Notify("CHEST", "All Looted! ", Color3.fromRGB(0, 255, 100))
                             end
                             SetWoW(false) 
                         end
@@ -1365,11 +1364,11 @@ task.spawn(function()
                     
                     if elapsed > States.StuckTimeout then
                         -- 1. Ubah Teks UI
-                        LblStatus.Text = "FIXING STUCK..."
+                        LblStatus.Text = "STUCK"
                         LblStatus.TextColor3 = Color3.fromRGB(255, 0, 0)
                         
                         -- 2. AKSI PERBAIKAN (ACTION)
-                        Notify("ANTI-STUCK", "Terdeteksi Macet! Resetting...", Color3.fromRGB(255, 50, 50))
+                        Notify("ANTI-STUCK", "Terdeteksi Stuck! Resetting", Color3.fromRGB(255, 50, 50))
                         
                         -- Aksi A: Lompat (Untuk membetulkan posisi bug)
                         local hum = GetHum()
@@ -1388,10 +1387,10 @@ task.spawn(function()
                     else
                         LblStatus.TextColor3 = UI_THEME.TextMain
                         if elapsed < 5 then
-                            LblStatus.Text = "Fishing..."
+                            LblStatus.Text = "Fishing"
                             LblStatus.TextColor3 = Color3.fromRGB(0, 255, 100)
                         else
-                            LblStatus.Text = "Idle: " .. elapsed .. "s"
+                            LblStatus.Text = "Stuck: " .. elapsed .. "s"
                         end
                     end
                 else
