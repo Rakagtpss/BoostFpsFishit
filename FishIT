@@ -20,28 +20,30 @@ local function GetChar() return Player.Character or Player.CharacterAdded:Wait()
 local function GetRoot() local c = Player.Character; return c and c:FindFirstChild("HumanoidRootPart") end
 local function GetHum() local c = Player.Character; return c and c:FindFirstChild("Humanoid") end
 
--- // KONFIGURASI VISUAL (ROMBAK TOTAL - SESUAI REQUEST)
+-- // KONFIGURASI VISUAL (UPDATED: POPULAR FONT & NEON BLUE)
 local UI_THEME = {
-    Width = 550,   
-    Height = 350,  
+    -- [REQUEST] Lebar diperbesar agar teks muat 1 baris
+    Width = 500,   
+    Height = 320,  
     
-    -- [REQUEST] Warna Dasar & Sidebar Neon Blue
-    Color = Color3.fromRGB(10, 12, 25), 
-    SidebarColor = Color3.fromRGB(0, 30, 60), -- Base Dark Neon Blue
+    -- [REQUEST] Navy Black Dark Transparent
+    Color = Color3.fromRGB(8, 10, 20), 
+    SidebarColor = Color3.fromRGB(15, 18, 30), 
     
-    Transparency = 0.25, 
-    Accent = Color3.fromRGB(0, 255, 255), -- Cyan Neon (Tetap)
-    AccentBlue = Color3.fromRGB(0, 110, 255), -- Neon Blue Solid
+    Transparency = 0.3, -- Sedikit transparan
     
-    TextMain = Color3.fromRGB(255, 255, 255), 
-    TextDim = Color3.fromRGB(180, 190, 210),
+    -- [UPDATED] Neon Blue Electric (Lebih "Menyala" daripada Cyan biasa)
+    Accent = Color3.fromRGB(0, 140, 255), 
     
-    -- [REQUEST] Font Tebal, Keren, Tidak Lebar (Oswald)
-    FontHeader = Enum.Font.Oswald,       
-    FontBody = Enum.Font.GothamSemibold,
+    TextMain = Color3.fromRGB(240, 240, 255), 
+    TextDim = Color3.fromRGB(150, 160, 180),
     
-    -- [REQUEST] Lengkung Sempurna (High Radius)
-    CornerRadius = UDim.new(0, 25) 
+    -- [UPDATED] Font Populer (Gaya Orca/Fluxus)
+    FontHeader = Enum.Font.FredokaOne, -- Font Tebal & Bulat       
+    FontBody = Enum.Font.GothamBold,   -- Font Jelas & Tegas
+    
+    -- [REQUEST] Lengkung Sempurna
+    CornerRadius = UDim.new(0, 30) 
 }
 
 -- Bersihkan UI Lama
@@ -54,7 +56,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ====================================================
--- [SYSTEM] CUSTOM NOTIFICATION
+-- [SYSTEM] CUSTOM NOTIFICATION (COMPACT & NEON)
 -- ====================================================
 local NotifyContainer = Instance.new("Frame", ScreenGui)
 NotifyContainer.Name = "NotificationContainer"
@@ -77,7 +79,7 @@ local function Notify(title, text, colorOverride, duration)
     local Frame = Instance.new("Frame")
     Frame.Name = "NotifyItem"
     Frame.Size = UDim2.new(1, 0, 0, 0) 
-    Frame.BackgroundColor3 = Color3.fromRGB(10, 15, 30)
+    Frame.BackgroundColor3 = UI_THEME.SidebarColor
     Frame.BackgroundTransparency = 0.1
     Frame.BorderSizePixel = 0
     Frame.Parent = NotifyContainer
@@ -87,7 +89,7 @@ local function Notify(title, text, colorOverride, duration)
     Stroke.Thickness = 1.5
     Stroke.Transparency = 0.2
     
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
     
     local Bar = Instance.new("Frame", Frame)
     Bar.Size = UDim2.new(0, 4, 1, -10) 
@@ -103,20 +105,20 @@ local function Notify(title, text, colorOverride, duration)
     LblTitle.Text = string.upper(title)
     LblTitle.TextColor3 = color
     LblTitle.Font = UI_THEME.FontHeader
-    LblTitle.TextSize = 14
+    LblTitle.TextSize = 13 -- Sedikit dibesarkan karena Fredoka agak kecil
     LblTitle.TextXAlignment = Enum.TextXAlignment.Left 
     
     local LblMsg = Instance.new("TextLabel", Frame)
     LblMsg.Size = UDim2.new(1, -15, 0, 16)
-    LblMsg.Position = UDim2.new(0, 12, 0, 20) 
+    LblMsg.Position = UDim2.new(0, 12, 0, 18) 
     LblMsg.BackgroundTransparency = 1
     LblMsg.Text = text
     LblMsg.TextColor3 = UI_THEME.TextMain
     LblMsg.Font = UI_THEME.FontBody
-    LblMsg.TextSize = 12
+    LblMsg.TextSize = 11
     LblMsg.TextXAlignment = Enum.TextXAlignment.Left
 
-    local TweenIn = Services.TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, 45)})
+    local TweenIn = Services.TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, 42)})
     TweenIn:Play()
     
     task.delay(timeTime, function()
@@ -136,14 +138,14 @@ local function Notify(title, text, colorOverride, duration)
     end)
 end
 
-Notify("SERAPHIN", "UI Update: Neon Blue & Oswald Font", UI_THEME.Accent, 3)
+Notify("SERAPHIN", "UI Loaded (Neon Blue)", UI_THEME.Accent, 3)
 
 -- ====================================================
--- [1] MINI FLOATING HUD
+-- [1] MINI FLOATING HUD (NAVY THEME)
 -- ====================================================
 local FloatHUD = Instance.new("Frame", ScreenGui)
 FloatHUD.Name = "FloatingStats"
-FloatHUD.Size = UDim2.new(0, 180, 0, 160)
+FloatHUD.Size = UDim2.new(0, 180, 0, 160) -- Sedikit lebih lebar
 FloatHUD.Position = UDim2.new(0.85, 0, 0.4, 0)
 FloatHUD.BackgroundColor3 = UI_THEME.Color 
 FloatHUD.BackgroundTransparency = UI_THEME.Transparency
@@ -153,23 +155,25 @@ FloatHUD.Active = true
 local GradHud = Instance.new("UIGradient", FloatHUD)
 GradHud.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, UI_THEME.Color),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 5, 20))
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 5, 10))
 }
 GradHud.Rotation = 45
 
 local HudStroke = Instance.new("UIStroke", FloatHUD)
-HudStroke.Thickness = 2
+HudStroke.Thickness = 2.5
 HudStroke.Transparency = 0
 HudStroke.Color = Color3.fromRGB(255, 255, 255)
 
+-- [UPDATED] NEON BLUE GRADIENT BORDER
 local HudStrokeGrad = Instance.new("UIGradient", HudStroke)
 HudStrokeGrad.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, UI_THEME.Accent), 
-    ColorSequenceKeypoint.new(1, UI_THEME.AccentBlue) 
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),   -- Cyan Bright
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 140, 255)), -- Neon Blue
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 60, 255))     -- Deep Blue
 }
 HudStrokeGrad.Rotation = 45
 
-Instance.new("UICorner", FloatHUD).CornerRadius = UDim.new(0, 15)
+Instance.new("UICorner", FloatHUD).CornerRadius = UI_THEME.CornerRadius
 local ListLayout = Instance.new("UIListLayout", FloatHUD)
 ListLayout.FillDirection = Enum.FillDirection.Vertical
 ListLayout.Padding = UDim.new(0, 2) 
@@ -190,7 +194,7 @@ TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = "SERAPHINxPANEL" 
 TitleLabel.TextColor3 = UI_THEME.Accent 
 TitleLabel.Font = UI_THEME.FontHeader
-TitleLabel.TextSize = 16
+TitleLabel.TextSize = 16 -- Fredoka butuh size agak besar
 TitleLabel.TextStrokeTransparency = 1
 
 local Div = Instance.new("Frame", FloatHUD)
@@ -225,7 +229,7 @@ local function CreateStatBlock(titleText, defaultVal, order)
     LblValue.Text = defaultVal
     LblValue.TextColor3 = UI_THEME.TextMain
     LblValue.Font = UI_THEME.FontHeader
-    LblValue.TextSize = 14 
+    LblValue.TextSize = 15 
     return LblValue 
 end
 
@@ -234,7 +238,7 @@ local LblInvVal  = CreateStatBlock("BACKPACK", "0 / 0", 4)
 local LblStatus  = CreateStatBlock("STATUS", "Idle: 0s", 5)
 
 -- ====================================================
--- [2] MAIN UI (NEON BLUE & PERFECT ROUND)
+-- [2] MAIN UI (WIDE & PERFECT ROUND)
 -- ====================================================
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
@@ -246,41 +250,42 @@ Main.Active = true
 Main.ClipsDescendants = true 
 Main.Visible = false 
 
--- Main Gradient
+-- Background Gradient Navy
 local MainGrad = Instance.new("UIGradient", Main)
 MainGrad.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 12, 30)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 8, 20))
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 20, 35)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 8, 15))
 }
 MainGrad.Rotation = 45
 
--- [REQUEST] Lengkung Sempurna
 local MainCorner = Instance.new("UICorner", Main)
-MainCorner.CornerRadius = UI_THEME.CornerRadius 
+MainCorner.CornerRadius = UI_THEME.CornerRadius -- [REQUEST] Lengkung Sempurna
 
--- Border Neon Blue
+-- Border Neon Cyan
 local MainStroke = Instance.new("UIStroke", Main)
-MainStroke.Thickness = 2
+MainStroke.Thickness = 3
 MainStroke.Transparency = 0
 MainStroke.Color = Color3.fromRGB(255, 255, 255)
 
+-- [UPDATED] NEON BLUE BORDER GRADIENT
 local MainStrokeGrad = Instance.new("UIGradient", MainStroke)
 MainStrokeGrad.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, UI_THEME.Accent), -- Cyan
-    ColorSequenceKeypoint.new(1, UI_THEME.AccentBlue)  -- Neon Blue
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),   -- Cyan
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 140, 255)), -- Neon Blue
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 60, 255))     -- Deep Blue
 }
 MainStrokeGrad.Rotation = 60
 
--- Logo Container (MINIMIZED)
+-- Logo Container (KOTAK TAJAM)
 local LogoContainer = Instance.new("Frame", Main)
 LogoContainer.Name = "LogoContainer"
-LogoContainer.Size = UDim2.new(0, 36, 0, 36)
-LogoContainer.Position = UDim2.new(0.5, -18, 0.5, -18)
+LogoContainer.Size = UDim2.new(0, 32, 0, 32)
+LogoContainer.Position = UDim2.new(0.5, -16, 0.5, -16)
 LogoContainer.BackgroundColor3 = UI_THEME.SidebarColor
 LogoContainer.BackgroundTransparency = 0
 LogoContainer.Visible = false
 LogoContainer.ZIndex = 11
-Instance.new("UICorner", LogoContainer).CornerRadius = UDim.new(0, 10) 
+Instance.new("UICorner", LogoContainer).CornerRadius = UDim.new(0, 0) -- [REQUEST] KOTAK
 
 local LogoStroke = Instance.new("UIStroke", LogoContainer)
 LogoStroke.Color = UI_THEME.Accent
@@ -291,47 +296,42 @@ local LogoR = Instance.new("TextButton", LogoContainer)
 LogoR.Name = "LogoBtn"
 LogoR.Size = UDim2.new(1, 0, 1, 0)
 LogoR.BackgroundTransparency = 1
-LogoR.Text = "S"
+LogoR.Text = "R"
 LogoR.TextColor3 = UI_THEME.Accent
 LogoR.Font = UI_THEME.FontHeader
-LogoR.TextSize = 24 
+LogoR.TextSize = 22 
 LogoR.ZIndex = 12
 
 -- HEADER
 local Header = Instance.new("Frame", Main)
 Header.Name = "Header"
-Header.Size = UDim2.new(1, 0, 0, 45) 
-Header.BackgroundColor3 = Color3.fromRGB(0,0,0)
-Header.BackgroundTransparency = 1 
+Header.Size = UDim2.new(1, 0, 0, 40) -- Header sedikit lebih tinggi
+Header.BackgroundColor3 = UI_THEME.SidebarColor
+Header.BackgroundTransparency = 0.5
 Header.BorderSizePixel = 0
 
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1, -60, 1, 0) 
-Title.Position = UDim2.new(0, 25, 0, 0) 
+Title.Size = UDim2.new(1, -50, 1, 0) 
+Title.Position = UDim2.new(0, 20, 0, 0) 
 Title.Text = "Loading..." 
 Title.RichText = true
 Title.TextColor3 = UI_THEME.TextMain
 Title.Font = UI_THEME.FontHeader
-Title.TextSize = 18
+Title.TextSize = 16
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- [REQUEST] Tombol Hide (Ganti "-" jadi "Hide")
 local HideBtn = Instance.new("TextButton", Header)
-HideBtn.Size = UDim2.new(0, 60, 0, 24) -- Lebih lebar untuk teks
-HideBtn.Position = UDim2.new(1, -75, 0.5, -12)
-HideBtn.Text = "HIDE" 
+HideBtn.Size = UDim2.new(0, 28, 0, 28) 
+HideBtn.Position = UDim2.new(1, -35, 0.5, -14)
+HideBtn.Text = "-" 
 HideBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-HideBtn.BackgroundTransparency = 0.5
-HideBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-HideBtn.Font = UI_THEME.FontHeader -- Oswald
-HideBtn.TextSize = 12
+HideBtn.BackgroundTransparency = 0.6
+HideBtn.TextColor3 = UI_THEME.TextMain
+HideBtn.Font = UI_THEME.FontHeader
+HideBtn.TextSize = 18
 HideBtn.AutoButtonColor = true
-Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 6)
-local HideStroke = Instance.new("UIStroke", HideBtn)
-HideStroke.Color = Color3.fromRGB(60, 60, 80)
-HideStroke.Thickness = 1
-HideStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(1, 0) -- Lingkaran
 
 -- [FIXED] DRAG FUNCTION
 local function EnableDrag(frame, dragInputObj)
@@ -369,61 +369,41 @@ EnableDrag(Main, LogoR)
 EnableDrag(FloatHUD, FloatHUD)
 
 -- ====================================================
--- [3] SIDE NAVIGATION (NEON BLUE EFFECT)
+-- [3] SIDE NAVIGATION (WIDE LAYOUT)
 -- ====================================================
 local ContentContainer = Instance.new("Frame", Main)
 ContentContainer.Name = "Container"
-ContentContainer.Size = UDim2.new(1, 0, 1, -45)
-ContentContainer.Position = UDim2.new(0, 0, 0, 45)
+ContentContainer.Size = UDim2.new(1, 0, 1, -40)
+ContentContainer.Position = UDim2.new(0, 0, 0, 40)
 ContentContainer.BackgroundTransparency = 1
 
 local Sidebar = Instance.new("Frame", ContentContainer)
 Sidebar.Name = "Sidebar"
-Sidebar.Size = UDim2.new(0, 140, 1, 0) 
-Sidebar.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
-Sidebar.BackgroundTransparency = 0.05
+Sidebar.Size = UDim2.new(0, 120, 1, 0) -- Sidebar diperlebar sedikit
+Sidebar.BackgroundColor3 = UI_THEME.SidebarColor
+Sidebar.BackgroundTransparency = 0.3
 Sidebar.BorderSizePixel = 0
-Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 25) -- Rounded mengikuti Main
--- Agar rounded sidebar tidak aneh, kita pakai Frame penutup di kanan agar sisi kanan sidebar rata
-local SidebarCover = Instance.new("Frame", Sidebar)
-SidebarCover.Size = UDim2.new(0, 20, 1, 0)
-SidebarCover.Position = UDim2.new(1, -10, 0, 0)
-SidebarCover.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-SidebarCover.BorderSizePixel = 0
-SidebarCover.ZIndex = 0
-
--- [REQUEST] Sidebar Neon Blue Gradient
-local SideGrad = Instance.new("UIGradient", Sidebar)
-SideGrad.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, UI_THEME.SidebarColor), -- Dark Blue
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 60, 120)) -- Lighter Neon Blue at bottom
-}
-SideGrad.Rotation = 90
--- Copy gradient ke cover
-local SideGradCover = SideGrad:Clone()
-SideGradCover.Parent = SidebarCover
 
 local SidebarLayout = Instance.new("UIListLayout", Sidebar)
 SidebarLayout.FillDirection = Enum.FillDirection.Vertical
 SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
-SidebarLayout.Padding = UDim.new(0, 6)
+SidebarLayout.Padding = UDim.new(0, 8)
 SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local SidebarPad = Instance.new("UIPadding", Sidebar)
-SidebarPad.PaddingTop = UDim.new(0, 10)
+SidebarPad.PaddingTop = UDim.new(0, 15)
 
 local function CreateSideTab(name, text, isActive)
     local btn = Instance.new("TextButton", Sidebar)
     btn.Name = name
-    btn.Size = UDim2.new(0.85, 0, 0, 34) 
-    btn.BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(0, 0, 0)
-    btn.BackgroundTransparency = isActive and 0.1 or 0.6
+    btn.Size = UDim2.new(0.85, 0, 0, 30) -- Tab sedikit lebih tinggi
+    btn.BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(20, 25, 40)
+    btn.BackgroundTransparency = isActive and 0.1 or 1
     btn.Text = text
-    btn.Font = UI_THEME.FontHeader -- Oswald
-    btn.TextSize = 14
-    btn.TextColor3 = isActive and Color3.new(0,0,0) or UI_THEME.TextDim
+    btn.Font = UI_THEME.FontHeader -- Gunakan Font Judul di Tab
+    btn.TextSize = 13 
+    btn.TextColor3 = isActive and Color3.new(255,255,255) or UI_THEME.TextDim
     btn.AutoButtonColor = true
-    btn.ZIndex = 2
     
     local corner = Instance.new("UICorner", btn)
     corner.CornerRadius = UDim.new(0, 8)
@@ -447,15 +427,14 @@ SideDivider.Size = UDim2.new(0.6, 0, 0, 1)
 SideDivider.BackgroundColor3 = UI_THEME.TextDim
 SideDivider.BackgroundTransparency = 0.8
 SideDivider.BorderSizePixel = 0
-SideDivider.ZIndex = 2
 
 -- ====================================================
 -- [4] PAGES & BUTTONS (TEXT FIT & TIDY)
 -- ====================================================
 local PageArea = Instance.new("Frame", ContentContainer)
 PageArea.Name = "PageArea"
-PageArea.Size = UDim2.new(1, -155, 1, -10) 
-PageArea.Position = UDim2.new(0, 150, 0, 5)
+PageArea.Size = UDim2.new(1, -135, 1, -10) -- Area page menyesuaikan lebar sidebar
+PageArea.Position = UDim2.new(0, 130, 0, 5)
 PageArea.BackgroundTransparency = 1
 PageArea.ClipsDescendants = true
 
@@ -464,7 +443,7 @@ local function CreatePage(name, visible)
     pg.Name = name
     pg.Size = UDim2.new(1, 0, 1, 0)
     pg.BackgroundTransparency = 1
-    pg.ScrollBarThickness = 2
+    pg.ScrollBarThickness = 3
     pg.ScrollBarImageColor3 = UI_THEME.Accent
     pg.ScrollBarImageTransparency = 0.5
     pg.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -472,7 +451,9 @@ local function CreatePage(name, visible)
     pg.Visible = visible
     
     local gl = Instance.new("UIGridLayout", pg)
-    gl.CellSize = UDim2.new(0.48, 0, 0, 36) -- Sedikit lebih tinggi untuk font Oswald
+    -- [CRITICAL] CellSize disesuaikan dengan Width baru (500)
+    -- Lebar PageArea ~365px. Bagi 2 = ~180px per tombol.
+    gl.CellSize = UDim2.new(0.48, 0, 0, 32)  
     gl.CellPadding = UDim2.new(0, 8, 0, 8)
     gl.SortOrder = Enum.SortOrder.LayoutOrder
     return pg
@@ -495,9 +476,9 @@ local function SwitchTab(tabName)
         pages[name].Visible = isActive
         
         Services.TweenService:Create(btn, tweenInfo, {
-            BackgroundTransparency = isActive and 0.1 or 0.8,
-            TextColor3 = isActive and Color3.new(0,0,0) or UI_THEME.TextDim, 
-            BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(0,0,0)
+            BackgroundTransparency = isActive and 0.1 or 1,
+            TextColor3 = isActive and Color3.new(255,255,255) or UI_THEME.TextDim, 
+            BackgroundColor3 = isActive and UI_THEME.Accent or Color3.fromRGB(20,25,40)
         }):Play()
         
         if strokes[name] then
@@ -524,8 +505,8 @@ HideBtn.MouseButton1Click:Connect(function()
         Header.Visible = false
         ContentContainer.Visible = false
         -- Shrink Main
-        Main:TweenSize(UDim2.new(0, 50, 0, 50), "Out", "Back", 0.4, true)
-        Services.TweenService:Create(MainCorner, TweenInfo.new(0.4), {CornerRadius = UDim.new(0, 16)}):Play()
+        Main:TweenSize(UDim2.new(0, 45, 0, 45), "Out", "Back", 0.4, true)
+        Services.TweenService:Create(MainCorner, TweenInfo.new(0.4), {CornerRadius = UDim.new(0, 25)}):Play()
         Services.TweenService:Create(Main, TweenInfo.new(0.4), {BackgroundTransparency = 0.1}):Play()
         
         task.delay(0.2, function() 
@@ -552,26 +533,27 @@ end)
 local function MakeBtn(parent, text)
     local b = Instance.new("TextButton", parent)
     b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(20, 25, 40) 
-    b.BackgroundTransparency = 0.4
+    b.BackgroundColor3 = Color3.fromRGB(25, 30, 45) 
+    b.BackgroundTransparency = 0.3
     b.TextColor3 = UI_THEME.TextMain
-    b.Font = UI_THEME.FontBody -- Gotham Semibold
+    b.Font = UI_THEME.FontBody 
+    -- [REQUEST] TextScaled dengan batasan MaxSize agar tidak pecah
     b.TextScaled = true 
     
     -- Constraint agar teks tidak terlalu besar saat tombol besar
     local constraint = Instance.new("UITextSizeConstraint", b)
-    constraint.MaxTextSize = 13
-    constraint.MinTextSize = 9
+    constraint.MaxTextSize = 12 
+    constraint.MinTextSize = 8
     
     b.AutoButtonColor = true
     b.ClipsDescendants = true
     b.TextStrokeColor3 = Color3.new(0,0,0)
-    b.TextStrokeTransparency = 0.6
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8) 
+    b.TextStrokeTransparency = 0.5
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 10) 
     local s = Instance.new("UIStroke", b)
-    s.Color = Color3.fromRGB(60, 80, 120) 
+    s.Color = Color3.fromRGB(60, 80, 100) 
     s.Thickness = 1
-    s.Transparency = 0.7
+    s.Transparency = 0.6
     s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     
     -- Padding teks agar rapi
@@ -586,18 +568,18 @@ local function ToggleVisual(btn, on)
     
     if on then
         Services.TweenService:Create(btn, tweenInfo, {
-            TextColor3 = UI_THEME.Accent, 
+            TextColor3 = Color3.new(255,255,255), 
             BackgroundTransparency = 0.2,
-            BackgroundColor3 = Color3.fromRGB(10, 40, 60)
+            BackgroundColor3 = UI_THEME.Accent -- Gunakan warna Neon Blue
         }):Play()
         Services.TweenService:Create(btn.UIStroke, tweenInfo, {Transparency = 0.2, Color = UI_THEME.Accent}):Play()
     else
         Services.TweenService:Create(btn, tweenInfo, {
             TextColor3 = UI_THEME.TextMain,
-            BackgroundTransparency = 0.4,
-            BackgroundColor3 = Color3.fromRGB(20, 25, 40)
+            BackgroundTransparency = 0.3,
+            BackgroundColor3 = Color3.fromRGB(25, 30, 45)
         }):Play()
-        Services.TweenService:Create(btn.UIStroke, tweenInfo, {Transparency = 0.7, Color = Color3.fromRGB(60, 80, 120)}):Play()
+        Services.TweenService:Create(btn.UIStroke, tweenInfo, {Transparency = 0.6, Color = Color3.fromRGB(60, 80, 100)}):Play()
     end
 end
 
@@ -663,37 +645,37 @@ SpeedContainer.BackgroundTransparency = 1
 local BtnSpeedToggle = Instance.new("TextButton", SpeedContainer)
 BtnSpeedToggle.Name = "Toggle"
 BtnSpeedToggle.Size = UDim2.new(0.65, -6, 1, 0)
-BtnSpeedToggle.BackgroundColor3 = Color3.fromRGB(20, 25, 40)
-BtnSpeedToggle.BackgroundTransparency = 0.4
+BtnSpeedToggle.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
+BtnSpeedToggle.BackgroundTransparency = 0.3
 BtnSpeedToggle.Text = "Speed: OFF"
 BtnSpeedToggle.TextColor3 = UI_THEME.TextMain
 BtnSpeedToggle.Font = UI_THEME.FontBody
 BtnSpeedToggle.TextScaled = true 
-Instance.new("UITextSizeConstraint", BtnSpeedToggle).MaxTextSize = 13
+Instance.new("UITextSizeConstraint", BtnSpeedToggle).MaxTextSize = 12
 BtnSpeedToggle.TextStrokeColor3 = Color3.new(0,0,0)
-BtnSpeedToggle.TextStrokeTransparency = 0.6
-Instance.new("UICorner", BtnSpeedToggle).CornerRadius = UDim.new(0, 8)
+BtnSpeedToggle.TextStrokeTransparency = 0.5
+Instance.new("UICorner", BtnSpeedToggle).CornerRadius = UDim.new(0, 10)
 local sSpd = Instance.new("UIStroke", BtnSpeedToggle)
-sSpd.Color = Color3.fromRGB(60, 80, 120)
+sSpd.Color = Color3.fromRGB(60, 80, 100)
 sSpd.Thickness = 1
-sSpd.Transparency = 0.7
+sSpd.Transparency = 0.6
 
 local BoxSpeedInput = Instance.new("TextBox", SpeedContainer)
 BoxSpeedInput.Name = "Input"
 BoxSpeedInput.Size = UDim2.new(0.35, 0, 1, 0)
 BoxSpeedInput.Position = UDim2.new(0.65, 0, 0, 0)
-BoxSpeedInput.BackgroundColor3 = Color3.fromRGB(20, 25, 40)
-BoxSpeedInput.BackgroundTransparency = 0.4
+BoxSpeedInput.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
+BoxSpeedInput.BackgroundTransparency = 0.3
 BoxSpeedInput.Text = "80" 
 BoxSpeedInput.PlaceholderText = "Val"
 BoxSpeedInput.TextColor3 = UI_THEME.Accent
 BoxSpeedInput.Font = UI_THEME.FontHeader
-BoxSpeedInput.TextSize = 14
-Instance.new("UICorner", BoxSpeedInput).CornerRadius = UDim.new(0, 8)
+BoxSpeedInput.TextSize = 12
+Instance.new("UICorner", BoxSpeedInput).CornerRadius = UDim.new(0, 10)
 local sSpdIn = Instance.new("UIStroke", BoxSpeedInput)
-sSpdIn.Color = Color3.fromRGB(60, 80, 120)
+sSpdIn.Color = Color3.fromRGB(60, 80, 100)
 sSpdIn.Thickness = 1
-sSpdIn.Transparency = 0.7
+sSpdIn.Transparency = 0.6
 
 -- [AUTO FOLLOW UI]
 local FollowContainer = Instance.new("Frame", PagePlayer)
@@ -703,37 +685,37 @@ FollowContainer.BackgroundTransparency = 1
 local BtnFollowToggle = Instance.new("TextButton", FollowContainer)
 BtnFollowToggle.Name = "Toggle"
 BtnFollowToggle.Size = UDim2.new(0.5, -4, 1, 0)
-BtnFollowToggle.BackgroundColor3 = Color3.fromRGB(20, 25, 40)
-BtnFollowToggle.BackgroundTransparency = 0.4
+BtnFollowToggle.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
+BtnFollowToggle.BackgroundTransparency = 0.3
 BtnFollowToggle.Text = "Follow Player: OFF"
 BtnFollowToggle.TextColor3 = UI_THEME.TextMain
 BtnFollowToggle.Font = UI_THEME.FontBody
 BtnFollowToggle.TextScaled = true 
-Instance.new("UITextSizeConstraint", BtnFollowToggle).MaxTextSize = 13
+Instance.new("UITextSizeConstraint", BtnFollowToggle).MaxTextSize = 12
 BtnFollowToggle.TextStrokeColor3 = Color3.new(0,0,0)
-BtnFollowToggle.TextStrokeTransparency = 0.6
-Instance.new("UICorner", BtnFollowToggle).CornerRadius = UDim.new(0, 8)
+BtnFollowToggle.TextStrokeTransparency = 0.5
+Instance.new("UICorner", BtnFollowToggle).CornerRadius = UDim.new(0, 10)
 local sFol = Instance.new("UIStroke", BtnFollowToggle)
-sFol.Color = Color3.fromRGB(60, 80, 120)
+sFol.Color = Color3.fromRGB(60, 80, 100)
 sFol.Thickness = 1
-sFol.Transparency = 0.7
+sFol.Transparency = 0.6
 
 local BoxFollowInput = Instance.new("TextBox", FollowContainer)
 BoxFollowInput.Name = "Input"
 BoxFollowInput.Size = UDim2.new(0.5, 0, 1, 0)
 BoxFollowInput.Position = UDim2.new(0.5, 0, 0, 0)
-BoxFollowInput.BackgroundColor3 = Color3.fromRGB(20, 25, 40)
-BoxFollowInput.BackgroundTransparency = 0.4
+BoxFollowInput.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
+BoxFollowInput.BackgroundTransparency = 0.3
 BoxFollowInput.Text = "" 
 BoxFollowInput.PlaceholderText = "Input Name"
 BoxFollowInput.TextColor3 = UI_THEME.Accent
 BoxFollowInput.Font = UI_THEME.FontHeader
-BoxFollowInput.TextSize = 12
-Instance.new("UICorner", BoxFollowInput).CornerRadius = UDim.new(0, 8)
+BoxFollowInput.TextSize = 11
+Instance.new("UICorner", BoxFollowInput).CornerRadius = UDim.new(0, 10)
 local sFolIn = Instance.new("UIStroke", BoxFollowInput)
-sFolIn.Color = Color3.fromRGB(60, 80, 120)
+sFolIn.Color = Color3.fromRGB(60, 80, 100)
 sFolIn.Thickness = 1
-sFolIn.Transparency = 0.7
+sFolIn.Transparency = 0.6
 
 local BtnNoDmg = MakeBtn(PagePlayer, "No Damage: OFF")
 
@@ -745,37 +727,37 @@ StuckContainer.BackgroundTransparency = 1
 local BtnStuckToggle = Instance.new("TextButton", StuckContainer)
 BtnStuckToggle.Name = "Toggle"
 BtnStuckToggle.Size = UDim2.new(0.65, -6, 1, 0)
-BtnStuckToggle.BackgroundColor3 = Color3.fromRGB(20, 25, 40)
-BtnStuckToggle.BackgroundTransparency = 0.4
+BtnStuckToggle.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
+BtnStuckToggle.BackgroundTransparency = 0.3
 BtnStuckToggle.Text = "Anti Stuck Fish: OFF"
 BtnStuckToggle.TextColor3 = UI_THEME.TextMain
 BtnStuckToggle.Font = UI_THEME.FontBody
 BtnStuckToggle.TextScaled = true 
-Instance.new("UITextSizeConstraint", BtnStuckToggle).MaxTextSize = 13
+Instance.new("UITextSizeConstraint", BtnStuckToggle).MaxTextSize = 12
 BtnStuckToggle.TextStrokeColor3 = Color3.new(0,0,0)
-BtnStuckToggle.TextStrokeTransparency = 0.6
-Instance.new("UICorner", BtnStuckToggle).CornerRadius = UDim.new(0, 8)
+BtnStuckToggle.TextStrokeTransparency = 0.5
+Instance.new("UICorner", BtnStuckToggle).CornerRadius = UDim.new(0, 10)
 local s1 = Instance.new("UIStroke", BtnStuckToggle)
-s1.Color = Color3.fromRGB(60, 80, 120)
+s1.Color = Color3.fromRGB(60, 80, 100)
 s1.Thickness = 1
-s1.Transparency = 0.7
+s1.Transparency = 0.6
 
 local BoxStuckInput = Instance.new("TextBox", StuckContainer)
 BoxStuckInput.Name = "Input"
 BoxStuckInput.Size = UDim2.new(0.35, 0, 1, 0)
 BoxStuckInput.Position = UDim2.new(0.65, 0, 0, 0)
-BoxStuckInput.BackgroundColor3 = Color3.fromRGB(20, 25, 40)
-BoxStuckInput.BackgroundTransparency = 0.4
+BoxStuckInput.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
+BoxStuckInput.BackgroundTransparency = 0.3
 BoxStuckInput.Text = "60" 
 BoxStuckInput.PlaceholderText = "Sec"
 BoxStuckInput.TextColor3 = UI_THEME.Accent
 BoxStuckInput.Font = UI_THEME.FontHeader
-BoxStuckInput.TextSize = 14
-Instance.new("UICorner", BoxStuckInput).CornerRadius = UDim.new(0, 8)
+BoxStuckInput.TextSize = 12
+Instance.new("UICorner", BoxStuckInput).CornerRadius = UDim.new(0, 10)
 local s2 = Instance.new("UIStroke", BoxStuckInput)
-s2.Color = Color3.fromRGB(60, 80, 120)
+s2.Color = Color3.fromRGB(60, 80, 100)
 s2.Thickness = 1
-s2.Transparency = 0.7
+s2.Transparency = 0.6
 
 local BtnSave   = MakeBtn(PageMisc, "Save Position")
 local BtnLoad   = MakeBtn(PageMisc, "Load Position")
@@ -842,7 +824,7 @@ local function SetUltraGraphics(enabled)
         local fx = Instance.new("BloomEffect", Services.Lighting)
         fx.Name = "Seraphin_Bloom"
         fx.Intensity = 0.8
-        Notify("GRAPHICS", "ULTRA HD ACTIVE", Color3.fromRGB(0, 255, 255))
+        Notify("GRAPHICS", "ULTRA HD ACTIVE", UI_THEME.Accent)
     else
         for _, v in pairs(Services.Lighting:GetChildren()) do
             if v.Name:find("Seraphin_") then v:Destroy() end
@@ -954,7 +936,7 @@ Services.RunService.RenderStepped:Connect(function(dt)
     local currentFps = math.floor(fpsT)
     if Title and currentFps then
         Title.Text = string.format(
-            "SERA <font color=\"rgb(0,255,255)\">HELPERx</font> <font size=\"12\" color=\"rgb(255,255,255)\">@8raka_</font> | FPS: <b>%d</b>", 
+            "SERA <font color=\"rgb(0,140,255)\">HELPERx</font> <font size=\"10\" color=\"rgb(255,255,255)\">@8raka_</font> | FPS: <b>%d</b>", 
             currentFps
         )
     end
@@ -1345,7 +1327,7 @@ task.spawn(function()
     end
 end)
 
--- [STATUS DETECTOR]
+-- [FIXED] STATUS DETECTOR & ANTI-STUCK ACTION LOOP
 task.spawn(function() 
     while true do 
         task.wait(1) 
@@ -1354,6 +1336,7 @@ task.spawn(function()
                 local ls = Player:FindFirstChild("leaderstats")
                 local c = ls and ls:FindFirstChild("Caught") and ls.Caught.Value or 0
                 
+                -- Reset timer jika jumlah ikan bertambah (Artinya tidak stuck)
                 if c ~= LastFishCount then
                     LastFishCount = c
                     LastFishCaughtTime = tick() 
@@ -1361,6 +1344,7 @@ task.spawn(function()
                 
                 LblFishVal.Text = tostring(c):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
                 
+                -- Backpack Logic
                 local bagText = "0/?"
                 local backpackGui = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("Backpack")
                 if backpackGui then
@@ -1382,24 +1366,31 @@ task.spawn(function()
                 end
                 LblInvVal.Text = bagText
 
+                -- [LOGIKA ANTI STUCK YANG BARU]
                 if States.AntiStuck then
                     local elapsed = math.floor(tick() - LastFishCaughtTime)
                     
                     if elapsed > States.StuckTimeout then
+                        -- 1. Ubah Teks UI
                         LblStatus.Text = "STUCK"
                         LblStatus.TextColor3 = Color3.fromRGB(255, 0, 0)
                         
+                        -- 2. AKSI PERBAIKAN (ACTION)
                         Notify("ANTI-STUCK", "Terdeteksi Stuck! Resetting", Color3.fromRGB(255, 50, 50))
                         
+                        -- Aksi A: Lompat (Untuk membetulkan posisi bug)
                         local hum = GetHum()
                         if hum then 
                             hum.Jump = true 
                             hum:ChangeState(Enum.HumanoidStateType.Jumping)
                         end
                         
+                        -- Aksi B: Lepas & Pasang Pancingan (Reset Tool)
                         if hum then hum:UnequipTools() end
                         task.wait(0.5)
-                        ForceEquipRod() 
+                        ForceEquipRod() -- Paksa pasang lagi
+                        
+                        -- 3. Reset Waktu
                         LastFishCaughtTime = tick()
                     else
                         LblStatus.TextColor3 = UI_THEME.TextMain
